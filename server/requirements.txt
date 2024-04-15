@@ -1,0 +1,10 @@
+# pika==1.2.0
+fastapi==0.75.0
+uvicorn==0.17.6
+# elasticsearch==8.1.1
+# scylla-driver
+mysql-connector-python
+sqlalchemy
+# scikit-learn
+pymysql
+cryptography
