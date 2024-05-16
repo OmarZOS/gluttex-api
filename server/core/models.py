@@ -80,6 +80,8 @@ class ProductProviderType(Base):
     id_product_provider_type = Column(Integer, primary_key=True)
     product_provider_type_desc = Column(String(45))
 
+    product_provider = relationship('ProductProvider', back_populates='product_provider_type')
+
 
 class ProviderDetails(Base):
     __tablename__ = 'provider_details'
@@ -115,6 +117,7 @@ class Location(Base):
 
     location_address = relationship('Address', back_populates='location')
     person = relationship('Person', back_populates='person_location')
+    product_provider = relationship('ProductProvider', back_populates='product_provider_location')
 
 
 class Person(Base):
@@ -140,19 +143,25 @@ class Person(Base):
     patient = relationship('Patient', back_populates='patient_person')
 
 
-class ProductProvider(Location):
+class ProductProvider(Base):
     __tablename__ = 'product_provider'
     __table_args__ = (
-        ForeignKeyConstraint(['id_product_provider'], ['product_provider_type.id_product_provider_type'], name='fk_product_provider_1'),
-        ForeignKeyConstraint(['id_product_provider'], ['location.id_location'], name='fk_product_provider_2'),
         ForeignKeyConstraint(['product_provider_details_id'], ['provider_details.idprovider_details_id'], name='fk_product_provider_3'),
-        Index('fk_product_provider_3_idx', 'product_provider_details_id')
+        ForeignKeyConstraint(['product_provider_location_id'], ['location.id_location'], name='fk_product_provider_4'),
+        ForeignKeyConstraint(['product_provider_type_id'], ['product_provider_type.id_product_provider_type'], name='fk_product_provider_1'),
+        Index('fk_product_provider_1_idx', 'product_provider_type_id'),
+        Index('fk_product_provider_3_idx', 'product_provider_details_id'),
+        Index('fk_product_provider_4_idx', 'product_provider_location_id')
     )
 
     id_product_provider = Column(Integer, primary_key=True)
     product_provider_details_id = Column(Integer)
+    product_provider_type_id = Column(Integer)
+    product_provider_location_id = Column(Integer)
 
     product_provider_details = relationship('ProviderDetails', back_populates='product_provider')
+    product_provider_location = relationship('Location', back_populates='product_provider')
+    product_provider_type = relationship('ProductProviderType', back_populates='product_provider')
     product = relationship('Product', back_populates='product_provider')
 
 
@@ -208,9 +217,9 @@ class Product(Base):
     id_product = Column(Integer, primary_key=True)
     product_name = Column(String(45))
     product_brand = Column(String(45))
+    product_barcode = Column(String(45))
     product_provider_id = Column(Integer)
     product_category_id = Column(Integer)
-    product_barcode = Column(String(45))
 
     product_category = relationship('ProductCategory', back_populates='product')
     product_provider = relationship('ProductProvider', back_populates='product')

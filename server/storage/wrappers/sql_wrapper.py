@@ -1,5 +1,5 @@
-from constants import *
-from storage.storage_service.StorageService import *
+from server.constants import *
+from server.storage.storage_service.StorageService import *
 from sqlalchemy import create_engine 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import joinedload
@@ -78,7 +78,7 @@ def get_all_records(engine,model_class):
 def get_record_by_id(engine,model_class, id):
     session = get_session(engine)
     data = session.query(model_class).get(id)
-    session.expunge(data)
+    # session.expunge(data)
     return data
 
 # Function to get objects from a table based on conditions

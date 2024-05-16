@@ -6,22 +6,22 @@ Base = declarative_base()
 metadata = Base.metadata
 
 
-class PersonDetails_API(BaseModel):
+    
+
+class Person_API(BaseModel):
+    id_person: int
+    person_details_id: Optional[int]
+
+    # PersonDetails
     id_person_details: int
     person_first_name: Optional[str]
     person_last_name: Optional[str]
     person_birth_date: Optional[str]  # You might need to handle date formats
     person_gender: Optional[str]
     person_nationality: Optional[str]
-    
+
     # Blood type
     id_blood_type: int
-    blood_type_desc: Optional[str]
-
-class Person_API(BaseModel):
-    id_person: int
-    person_details_id: Optional[int]
-
 
 # -------------------------------------------------------------------------------------
 
@@ -47,13 +47,11 @@ class AppUser_API(BaseModel):
     app_user_name: Optional[str]
     app_user_password: Optional[str]
     app_user_person_id: Optional[int]
-    app_user_type_id: Optional[int]
     app_user_preferences: Optional[str]
     app_user_image: Optional[bytes]
 
     #  AppUserType
-    id_app_user_type: int
-    app_user_type_desc: Optional[str]
+    app_user_type_id: Optional[int]
 
 
 # -------------------------------------------------------------------------------------
@@ -86,7 +84,6 @@ class Product_API(BaseModel):
 
     # ProductCategory_API
     id_product_category: int
-    product_category_desc: Optional[str]
 
 
 class ProductImage_API(BaseModel):
@@ -95,18 +92,18 @@ class ProductImage_API(BaseModel):
     product_ref_id: Optional[int]
 
 
-class ProviderDetails_API(BaseModel):
-    idprovider_details_id: int
-    provider_name: Optional[str]
-    provider_contact_info: Optional[str]
-
 class ProductProvider_API(BaseModel):
     id_product_provider: int
     product_provider_details_id: Optional[int]
 
     # provider type
+    id_product_provider_type: int
     product_provider_type_desc: Optional[str]
 
+    # provider details
+    idprovider_details_id: int
+    provider_name: Optional[str]
+    provider_contact_info: Optional[str]
 # -------------------------------------------------------------------------------------
 
 class Recipe_API(BaseModel):
