@@ -3,8 +3,8 @@
 # store, it can support multiple
 # storage engines, the insertion/fetch logic is in here
 
-from constants import DB_URI
-import storage.wrappers.sql_wrapper as medicom_store
+from server.constants import DB_URI
+import server.storage.wrappers.sql_wrapper as medicom_store
 
 def insert_record(item):
     try:

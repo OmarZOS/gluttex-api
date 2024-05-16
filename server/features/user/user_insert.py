@@ -1,50 +1,48 @@
 
 # here, we make schema translations
 
-import json
-from core.api_models import User_API
-from core.messages import SUCCESS_MESSAGE
-from core.models import UserMed, UserMedPreferences, UserMedRole
-from features.insertion import insert_or_complete_or_raise
+from server.core.api_models import AppUser_API, Location_API, Person_API
+from server.core.messages import APPUSER_ALREADY_EXISTS, SUCCESS_MESSAGE
+from server.core.models import Address, AppUser, BloodType, Location, Person, PersonDetails
+from server.features.insertion import get_existent_object, insert_or_complete_or_raise
+from server.features.person.person_fetch import fetch_person, fetch_person_object
+from server.features.person.person_insert import generate_person_object
+from server.features.search import find_object_by_id
+from server.features.user.user_fetch import fetch_user_by_id, fetch_user_by_name, fetch_user_type_by_id, fetch_user_type_object_by_id
 
-def insert_preferences(user: User_API):
-    med_pref = UserMedPreferences(
-        user_preferencesId=user.preferences_id,
-        preferences=json.dumps(user.user_preferences))
+
+
+def insert_user(user: AppUser_API,mensch: Person_API=None,location: Location_API=None):
     
-    code,med_pref,msg = insert_or_complete_or_raise(med_pref)
-    if (code == 1): return msg
-    return med_pref
+    if fetch_user_by_name(user.app_user_name) != []:
+        raise Exception(APPUSER_ALREADY_EXISTS)
 
+    user_type = fetch_user_type_object_by_id(user.app_user_type_id)
 
-def insert_role(user: User_API):
-    med_role = UserMedRole(
-        user_RoleId=user.user_RoleId,
-        user_role=user.user_role)
-    
-    code,med_role,msg = insert_or_complete_or_raise(med_role)
-    if (code == 1): return msg
-    return med_role
-
-def insert_user(user: User_API):
-
-    preferences = insert_preferences(user)
-    role = insert_role(user)
-
-    med_user = UserMed(
-                        user_MedId= user.user_MedId,
-                        user_Medname= user.user_Medname,
-                        email= user.email,
-                        password= user.password,
-                        fullName= user.fullName,
-                        address= user.address,
-                        User_MedRole = role,
-                        User_MedPreferences = preferences
+    app_user = AppUser(
+                        # id_app_user= user.id_app_user,
+                        app_user_name= user.app_user_name,
+                        app_user_password= user.app_user_password,
+                        app_user_preferences= user.app_user_preferences,
+                        app_user_image = user.app_user_image,
+                        # app_user_person_id= person.id_person,
+                        app_user_type_id= user_type.id_app_user_type,
                         )
-    code,med_user,msg = insert_or_complete_or_raise(med_user)
-    if (code == 1): return msg
+    if mensch:
+        person_object = fetch_person_object(mensch.id_person)
+        if person_object :
+            app_user.app_user_person_id= person_object.id_person
+        else:
+            
+            person = generate_person_object(mensch,location)
+            
+            app_user.app_user_person = person
+
+
+    code,app_user,msg = insert_or_complete_or_raise(app_user)
+    if (code == 1): raise Exception(msg)
     
-    return SUCCESS_MESSAGE
+    return app_user
 
 
 

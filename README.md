@@ -38,7 +38,7 @@ You can use docker-compose to build and deploy the containers:
 #### Development
 Connect to the container 
 
-    sudo docker exec -it mysql-node mysql -u root
+    sudo docker exec -it gluttex-db mysql -u root gluttex -p
 
 Create a user that can access from anywhere:
 

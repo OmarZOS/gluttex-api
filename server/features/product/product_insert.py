@@ -1,43 +1,53 @@
 
 # here, we make schema translations
 
-from core.api_models import Product_API
-from core.models import *
-from features.insertion import insert_or_complete_or_raise
+from server.core.api_models import Product_API, ProductImage_API
+from server.core.messages import PRODUCT_ALREADY_EXISTS, PRODUCT_CATEGORY_NOT_EXISTS, PRODUCT_NOT_EXISTS
+from server.core.models import *
+from server.features.insertion import insert_or_complete_or_raise
+from server.features.product.product_fetch import fetch_product_by_id
+from server.features.supplier.supplier_fetch import fetch_supplier_by_id
+import server.storage.storage_broker as storage_broker
 
 
-def insert_category(prod: Product_API):
-    start_category = Category(categoryId=prod.categoryId,
-                            categoryName=prod.categoryName,
-                            description=prod.category_description)
-    code,end_category,msg = insert_or_complete_or_raise(start_category)
-    if (code == 1): return msg
-    return end_category
 
-def insert_supplier(prod: Product_API):
-    start_supplier = ProductSupplier(supplierId=prod.supplierId,
-                               supplierName=prod.supplierName)
-    code,end_supplier,msg = insert_or_complete_or_raise(start_supplier)
-    if (code == 1): return msg
-    return end_supplier
+def fetch_product_category_object_by_id(category_id: str):
+    record = storage_broker.get(ProductCategory,{ProductCategory.id_product_category:category_id},None,[])
+    if record == []:
+        return None
+    supplier = ProductCategory(id_product_category = record[0].id_product_category)
+    return supplier 
 
 
-def insert_product(prod: Product_API):
+
+def build_product(product: Product_API):
+    return Product(product_name=product.product_name,
+                    product_brand=product.product_brand,
+                    product_barcode=product.product_barcode)
+
+def insert_product(product_api: Product_API, image: ProductImage_API):
     
-    category = insert_category(prod)
-    
-    supplier = insert_supplier(prod)
+    product_old = fetch_product_by_id(product_api.id_product)
+    if product_old != None : 
+        raise Exception(PRODUCT_ALREADY_EXISTS)
 
-    product = Product(productId=prod.productId,
-                        productName=prod.productName,
-                        description=prod.description,
-                        price=prod.price,
-                        availability=prod.availability,
-                        Category_=[category],
-                        ProductSupplier=[supplier]
-                        )
+    product_category = fetch_product_category_object_by_id(product_api.id_product_category)
+    if product_category == None : 
+        raise Exception(PRODUCT_CATEGORY_NOT_EXISTS)
+
+    product_supplier = fetch_supplier_by_id(product_api.product_provider_id)
+    if product_supplier == None : 
+        raise Exception(PRODUCT_NOT_EXISTS)
+
+    product = build_product(product_api)
+
+    product.product_provider_id = product_supplier.id_product_provider
+    product.product_category_id = product_category.id_product_category
+    
+
+
     code,product,msg = insert_or_complete_or_raise(product)
     if (code == 1): return msg
     
-    return "Insertion successfull."
+    return product
 
