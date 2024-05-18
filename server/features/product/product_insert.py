@@ -36,7 +36,7 @@ def insert_product(product_api: Product_API, image: ProductImage_API):
         raise Exception(PRODUCT_CATEGORY_NOT_EXISTS)
 
     product_supplier = fetch_supplier_by_id(product_api.product_provider_id)
-    if product_supplier == None : 
+    if product_supplier == [] : 
         raise Exception(PRODUCT_NOT_EXISTS)
 
     product = build_product(product_api)

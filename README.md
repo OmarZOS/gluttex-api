@@ -57,14 +57,16 @@ To generate the `models.py` file, you can execute the following instruction:
 
 ### Progress
     
-- Serving feature. ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/20)
+- Serving feature. ![x](https://us-central1-progress-markdown.cloudfunctions.net/progress/70)
   - Product.
-  - User.
-- [x] 3rd Party storage solutions. ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/20)
-  - [ ] SQL based storage.
+  - Category.
+  - Supplier.
+  - App user.
+- [x] 3rd Party storage solutions. ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/60)
+  - [x] SQL based storage.
     - [x] Insertion.
     - [x] Retrieval.
-    - [ ] Search.
+    - [x] Deletion.
 
 - [x] Containerisation. ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/90)
   - [x] Automation of deployment. (docker-compose)

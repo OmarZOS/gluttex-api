@@ -13,5 +13,6 @@ BLOOD_TYPE_NOT_EXISTS = "Blood type does not exist."
 PRODUCT_SUPPLIER_ALREADY_EXISTS = "Supplier already exists."
 APPUSERTYPE_NOT_EXISTS = "AppUserType id erroneous or invalid"
 APPUSER_ALREADY_EXISTS = "User already exists."
+APPUSER_NOT_EXISTS = "User doesn't exist."
 
 
