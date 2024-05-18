@@ -12,53 +12,26 @@ def get_engine(db_uri):
     return engine
 
 def get_session(engine,object=None):
-    
+    Session = sessionmaker(bind=engine)
     if object:        
-        if object_session(object):
-            return object_session(object)
+        # Return the session if the object is already associated with one
+        existing_session = object_session(object)
+        if existing_session:
+            return existing_session
 
     # Create the database engine and session
-    Session = sessionmaker(bind=engine)
     return Session()
 
 # Function to add a record to a table
 def add_record(engine, obj):
-    session = get_session(engine, obj)
-    obj_class = type(obj)
-    obj_dict = {
-        attr: value
-        for attr, value in obj.__dict__.items()
-        if not attr.startswith('_') and value is not None
-    }
-    
-    # Get the primary key column name
-    primary_key_name = obj_class.__table__.primary_key.columns.keys()[0]
-
-    # Get the primary key value
-    primary_key_value = obj_dict.get(primary_key_name)
-
-    if primary_key_value is not None:
-        # Check if the object with the given primary key value exists in the database
-        existing_obj = session.query(obj_class).filter(getattr(obj_class, primary_key_name) == primary_key_value).first()
-
-        if existing_obj is not None:
-            # Object already exists, return the existing object
-            session.expunge(existing_obj)
-            return existing_obj
-
-    # Exclude the primary key attribute from obj_dict
-    obj_dict = {attr: value for attr, value in obj_dict.items() if attr != primary_key_name}
-    # Create a new object with non-empty attributes
-    new_obj = obj_class(**obj_dict)
-
+    session = get_session(engine,obj)    
     # Add the new object to the session and commit
-    session.add(new_obj)
+    session.add(obj)
     session.commit()
-    session.refresh(new_obj)
-    session.expunge(new_obj) 
-
+    session.refresh(obj)
+    session.expunge(obj) 
     # Return the added object
-    return new_obj
+    return obj
 
 def add_records(engine, objs):
     session = get_session(engine)
@@ -66,7 +39,7 @@ def add_records(engine, objs):
     session.commit()
     for obj in objs:
         session.refresh(obj)
-        session.expunge(obj)  # Expunge each object individually
+        # # # session.expunge(obj)  # Expunge each object individually
     return objs
 
 # Function to get all records from a table
@@ -78,7 +51,7 @@ def get_all_records(engine,model_class):
 def get_record_by_id(engine,model_class, id):
     session = get_session(engine)
     data = session.query(model_class).get(id)
-    # session.expunge(data)
+    # # # session.expunge(data)
     return data
 
 # Function to get objects from a table based on conditions
@@ -106,22 +79,33 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
     # Fetch all records
     records = query.all()
 
-    # Expunge the results
-    session.expunge_all()
+    # # Expunge the results
+    # session.expunge_all()
 
     return records
 
 # Function to update an record in a table
 def update_record(engine,obj):
-    session = get_session(engine)
+    session = get_session(engine, obj)
     session.commit()
     session.refresh(obj)
-    session.expunge(obj)
+    # # session.expunge(obj)
     return obj
 
 # Function to delete an record from a table
 def delete_record(engine,obj):
-    session = get_session(engine)
-    session.delete(obj)
+    session = get_session(engine, obj)
+    data = session.delete(obj)
+    # session.expunge(obj)
     session.commit()
-    session.expunge(obj)
+    return data
+
+def delete_record_by_id(engine,model_class, id):
+
+    # Get the primary key column name
+    primary_key_name = model_class.__table__.primary_key.columns.keys()[0]
+
+    session = get_session(engine)
+    data = session.delete()   #.query(model_class).filter(primary_key_name == str(id)).delete()
+    # # # session.expunge(data)
+    return data

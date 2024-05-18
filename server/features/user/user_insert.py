@@ -33,16 +33,14 @@ def insert_user(user: AppUser_API,mensch: Person_API=None,location: Location_API
         if person_object :
             app_user.app_user_person_id= person_object.id_person
         else:
-            
             person = generate_person_object(mensch,location)
-            
             app_user.app_user_person = person
 
 
-    code,app_user,msg = insert_or_complete_or_raise(app_user)
+    code,nutzer,msg = insert_or_complete_or_raise(app_user)
     if (code == 1): raise Exception(msg)
     
-    return app_user
+    return nutzer
 
 
 

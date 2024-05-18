@@ -20,8 +20,6 @@ def insert_person_details(person: Person_API):
     return person_detail
 
 def generate_person_object(person: Person_API,location: Location_API=None):
-    
-
 
     blood_type = fetch_person_blood_type_object(person.id_blood_type)
     
@@ -54,7 +52,7 @@ def generate_person_object(person: Person_API,location: Location_API=None):
         mensch.person_location_id = location.id_location
     else:
         mensch.person_location = Location(
-                    
+
                     location_latitude = location.location_latitude,
                     location_longitude = location.location_longitude,
                     location_name = location.location_name,

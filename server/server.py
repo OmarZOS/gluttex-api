@@ -9,7 +9,9 @@ from server.features.person.person_fetch import fetch_person_blood_type, fetch_p
 from server.features.product.product_fetch import fetch_all_product, fetch_product_by_id, get_product_categories, get_products_by_category_id
 from server.features.product.product_insert import insert_product
 from server.features.person.person_insert import insert_person, insert_person_details
+from server.features.supplier.supplier_fetch import fetch_supplier_by_id
 from server.features.supplier.supplier_insert import insert_supplier
+from server.features.user.user_delete import delete_user
 from server.features.user.user_fetch import fetch_all_users, fetch_user_by_id
 from server.features.user.user_insert import insert_user
 
@@ -52,6 +54,11 @@ def insert_User(supplier: ProductProvider_API,location:Location_API):
     )
     return res
 
+@app.get("/supplier/{supplier_id}")
+def get_Supplier_by_id(supplier_id: int):
+    res = fetch_supplier_by_id(supplier_id)
+    return res
+
 @app.get("/product/{Product_id}")
 def get_Product_by_id(Product_id: int):
     res = fetch_product_by_id(Product_id)
@@ -86,6 +93,22 @@ def get_User_by_id(user_id: int):
 
 @app.put("/appUser/add")
 def insert_User(user: AppUser_API,person: Person_API=None,location: Location_API=None):
+    """
+    This function is responsible for inserting a new user into the system.
+
+    Parameters:
+    user (AppUser_API): The user object to be inserted.
+    person (Person_API, optional): The person object associated with the user. Defaults to None.
+    location (Location_API, optional): The location object associated with the user. Defaults to None.
+
+    Returns:
+    JSONResponse: A JSON response object containing the result of the insertion operation.
+                 If successful, the response will contain the inserted user's details.
+                 If an error occurs, the response will contain an error message.
+
+    Raises:
+    Exception: If any error occurs during the insertion process.
+    """
     try:
         res = insert_user(user,person,location)
     except Exception as e:
@@ -94,6 +117,19 @@ def insert_User(user: AppUser_API,person: Person_API=None,location: Location_API
         content=jsonable_encoder({"detail": str(e), "Error": "Couldn't insert user."}),
     )
     return res
+
+
+@app.delete("/appUser/delete")
+def delete_User(user: AppUser_API):
+    try:
+        res = delete_user(user)
+    except Exception as e:
+        res = JSONResponse(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't delete user."}),
+    )
+    return res
+
 
 # @app.get("/person")
 # def get_all_persons():
@@ -116,9 +152,5 @@ def insert_User(user: AppUser_API,person: Person_API=None,location: Location_API
 
 
 
-# /appUser/delete
-# /appUser
 # /product/delete
-# /product
 # /supplier/delete
-# /supplier
