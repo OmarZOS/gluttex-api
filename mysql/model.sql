@@ -437,6 +437,51 @@ INSERT INTO `gluttex`.`product_provider_type` ( `product_provider_type_desc`) VA
 ('Shop');
 
 
+-- -- Insert into provider_details
+-- INSERT INTO `gluttex`.`provider_details` (`idprovider_details_id`, `details`) VALUES
+-- (1, 'Details A'),
+-- (2, 'Details B'),
+-- (3, 'Details C'),
+-- (4, 'Details D');
+
+-- -- Insert into location
+-- INSERT INTO `gluttex`.`location` (`id_location`, `location_name`) VALUES
+-- (1, 'Location A'),
+-- (2, 'Location B'),
+-- (3, 'Location C'),
+-- (4, 'Location D');
+
+
+-- -- Insert into product_provider
+-- INSERT INTO `gluttex`.`product_provider` (`product_provider_details_id`, `product_provider_type_id`, `product_provider_location_id`) VALUES
+-- (1, 1, 1),
+-- (2, 2, 2),
+-- (3, 1, 3),
+-- (4, 2, 4),
+-- (1, 2, 3),
+-- (2, 1, 4),
+-- (3, 2, 1),
+-- (4, 1, 2);
+
+-- -- Insert into product
+-- INSERT INTO `gluttex`.`product` (`product_name`, `product_brand`, `product_provider_id`, `product_category_id`, `product_barcode`) VALUES
+-- ('Product 1', 'Brand A', 1, 1, 'Barcode001'),
+-- ('Product 2', 'Brand B', 2, 2, 'Barcode002'),
+-- ('Product 3', 'Brand C', 3, 3, 'Barcode003'),
+-- ('Product 4', 'Brand D', 4, 4, 'Barcode004'),
+-- ('Product 5', 'Brand E', 1, 2, 'Barcode005'),
+-- ('Product 6', 'Brand F', 2, 3, 'Barcode006'),
+-- ('Product 7', 'Brand G', 3, 4, 'Barcode007'),
+-- ('Product 8', 'Brand H', 4, 1, 'Barcode008'),
+-- ('Product 9', 'Brand I', 1, 3, 'Barcode009'),
+-- ('Product 10', 'Brand J', 2, 4, 'Barcode010'),
+-- ('Product 11', 'Brand K', 3, 1, 'Barcode011'),
+-- ('Product 12', 'Brand L', 4, 2, 'Barcode012');
+
+
+
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;

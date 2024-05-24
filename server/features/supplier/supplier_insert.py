@@ -1,12 +1,12 @@
 
 
 
-from server.core.api_models import Location_API, ProductProvider_API
-from server.core.messages import PRODUCT_SUPPLIER_ALREADY_EXISTS
-from server.core.models import ProductProvider, ProductProviderType, ProviderDetails
-from server.features.insertion import insert_or_complete_or_raise
-from server.features.location.location_insert import build_location
-from server.features.supplier.supplier_fetch import fetch_supplier_by_id, fetch_supplier_type_object_by_id
+from core.api_models import Location_API, ProductProvider_API
+from core.messages import PRODUCT_SUPPLIER_ALREADY_EXISTS
+from core.models import ProductProvider, ProductProviderType, ProviderDetails
+from features.insertion import insert_or_complete_or_raise
+from features.location.location_insert import build_location
+from features.supplier.supplier_fetch import fetch_supplier_by_id, fetch_supplier_type_object_by_id
 
 
 def build_supplier_details(provider: ProductProvider_API):

@@ -5,9 +5,9 @@
 
 
 
-from server.core.api_models import Location_API, ProductProvider_API
-from server.core.models import ProductProvider, ProductProviderType, ProviderDetails
-import server.storage.storage_broker as storage_broker
+from core.api_models import Location_API, ProductProvider_API
+from core.models import ProductProvider, ProductProviderType, ProviderDetails
+import storage.storage_broker as storage_broker
 
 
 

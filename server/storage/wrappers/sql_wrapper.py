@@ -1,5 +1,5 @@
-from server.constants import *
-from server.storage.storage_service.StorageService import *
+from constants import *
+from storage.storage_service.StorageService import *
 from sqlalchemy import create_engine 
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import joinedload
