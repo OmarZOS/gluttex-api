@@ -1,7 +1,7 @@
 
-from server.core.api_models import Product_API
-from server.core.models import  Product, ProductCategory
-import server.storage.storage_broker as storage_broker
+from core.api_models import Product_API
+from core.models import  Product, ProductCategory, ProductProvider, ProductProviderType
+import storage.storage_broker as storage_broker
 
 
 
@@ -28,12 +28,11 @@ def fetch_product_object_by_id(product_id: str):
 #     return storage_broker.get(Category,{Category.categoryId:Category_id},[])
 
 def get_products_by_category_id(category_id: int):
-    return storage_broker.get(Product,{Product.product_category_id:category_id},[])
+    return storage_broker.get(Product,{Product.product_category_id:category_id},[ProductCategory,ProductProvider],[Product.product_category,Product.product_provider])
 
 
 def get_product_categories():
     return storage_broker.get(ProductCategory)
 
-
 def fetch_all_product():
-    return storage_broker.get(Product)
+    return storage_broker.get(Product,None,[ProductCategory,ProductProvider,ProductProviderType],[Product.product_category,Product.product_provider])

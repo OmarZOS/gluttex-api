@@ -1,19 +1,19 @@
 from fastapi import FastAPI,status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
-from server.core.api_models import AppUser_API, Location_API, Person_API, Product_API, ProductImage_API, ProductProvider_API
-from server.core.models import BloodType
-from server.features.location.location_fetch import fetch_location
-from server.features.location.location_insert import insert_location
-from server.features.person.person_fetch import fetch_person_blood_type, fetch_person_details
-from server.features.product.product_fetch import fetch_all_product, fetch_product_by_id, get_product_categories, get_products_by_category_id
-from server.features.product.product_insert import insert_product
-from server.features.person.person_insert import insert_person, insert_person_details
-from server.features.supplier.supplier_fetch import fetch_supplier_by_id
-from server.features.supplier.supplier_insert import insert_supplier
-from server.features.user.user_delete import delete_user
-from server.features.user.user_fetch import fetch_all_users, fetch_user_by_id
-from server.features.user.user_insert import insert_user
+from core.api_models import AppUser_API, Location_API, Person_API, Product_API, ProductImage_API, ProductProvider_API
+from core.models import BloodType
+from features.location.location_fetch import fetch_location
+from features.location.location_insert import insert_location
+from features.person.person_fetch import fetch_person_blood_type, fetch_person_details
+from features.product.product_fetch import fetch_all_product, fetch_product_by_id, get_product_categories, get_products_by_category_id
+from features.product.product_insert import insert_product
+from features.person.person_insert import insert_person, insert_person_details
+from features.supplier.supplier_fetch import fetch_supplier_by_id
+from features.supplier.supplier_insert import insert_supplier
+from features.user.user_delete import delete_user
+from features.user.user_fetch import fetch_all_users, fetch_user_by_id
+from features.user.user_insert import insert_user
 
 # ----------- App initialisation -------------------------------------
 
@@ -29,7 +29,11 @@ def home():
 
 @app.get("/Product/all")
 def get_all_Products():
-    return fetch_all_product()
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, 
+        content=jsonable_encoder(fetch_all_product()),
+    )
+    
 
 @app.put("/product/add")
 def insert_User(product: Product_API, image: ProductImage_API):

@@ -3,7 +3,7 @@
 # # code,obj,msg = insert_or_complete_or_raise(obj)
 # #     if (code == 1): return msg
 
-import server.storage.storage_broker as storage_broker
+import storage.storage_broker as storage_broker
 
 def insert_or_complete_or_raise(obj):
     data = None

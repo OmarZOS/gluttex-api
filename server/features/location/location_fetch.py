@@ -1,7 +1,7 @@
 
-from server.core.models import Address, AppUser, AppUserType, BloodType, Location, Person, PersonDetails
-import server.storage.storage_broker as storage_broker
-from server.features.person.person_fetch import fetch_person_blood_type_object, fetch_person_details_object
+from core.models import Address, AppUser, AppUserType, BloodType, Location, Person, PersonDetails
+import storage.storage_broker as storage_broker
+from features.person.person_fetch import fetch_person_blood_type_object, fetch_person_details_object
 
 def fetch_location_object(location_id: str):
     record = storage_broker.get(Location,{Location.id_location:location_id},None,[])

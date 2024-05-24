@@ -1,10 +1,10 @@
 
-from server.core.api_models import Location_API, Person_API
-from server.core.messages import BLOOD_TYPE_NOT_EXISTS
-from server.core.models import BloodType, Location, Person, PersonDetails
-from server.features.insertion import insert_or_complete_or_raise
-from server.core.models import  Product
-import server.storage.storage_broker as storage_broker
+from core.api_models import Location_API, Person_API
+from core.messages import BLOOD_TYPE_NOT_EXISTS
+from core.models import BloodType, Location, Person, PersonDetails
+from features.insertion import insert_or_complete_or_raise
+from core.models import  Product
+import storage.storage_broker as storage_broker
 
 
 def fetch_person_blood_type_object(person_blood_type_id: str):

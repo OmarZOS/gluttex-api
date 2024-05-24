@@ -1,9 +1,9 @@
 
 # here, we make schema translations
 
-from server.core.api_models import Location_API
-from server.core.models import Address, Location
-from server.features.insertion import insert_or_complete_or_raise
+from core.api_models import Location_API
+from core.models import Address, Location
+from features.insertion import insert_or_complete_or_raise
 
 def build_location(location: Location_API):
     address = Address(

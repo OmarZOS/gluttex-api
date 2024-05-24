@@ -1,9 +1,9 @@
-from server.core.api_models import Location_API, Person_API
-from server.core.messages import BLOOD_TYPE_NOT_EXISTS
-from server.core.models import Address, BloodType, Location, Person, PersonDetails
-from server.features.insertion import insert_or_complete_or_raise
-from server.features.location.location_fetch import fetch_address_object, fetch_location, fetch_location_object
-from server.features.person.person_fetch import fetch_person_blood_type_object, fetch_person_details_object
+from core.api_models import Location_API, Person_API
+from core.messages import BLOOD_TYPE_NOT_EXISTS
+from core.models import Address, BloodType, Location, Person, PersonDetails
+from features.insertion import insert_or_complete_or_raise
+from features.location.location_fetch import fetch_address_object, fetch_location, fetch_location_object
+from features.person.person_fetch import fetch_person_blood_type_object, fetch_person_details_object
 
 def insert_person_details(person: Person_API):
     person_detail = PersonDetails(

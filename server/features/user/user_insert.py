@@ -1,14 +1,14 @@
 
 # here, we make schema translations
 
-from server.core.api_models import AppUser_API, Location_API, Person_API
-from server.core.messages import APPUSER_ALREADY_EXISTS, SUCCESS_MESSAGE
-from server.core.models import Address, AppUser, BloodType, Location, Person, PersonDetails
-from server.features.insertion import get_existent_object, insert_or_complete_or_raise
-from server.features.person.person_fetch import fetch_person, fetch_person_object
-from server.features.person.person_insert import generate_person_object
-from server.features.search import find_object_by_id
-from server.features.user.user_fetch import fetch_user_by_id, fetch_user_by_name, fetch_user_type_by_id, fetch_user_type_object_by_id
+from core.api_models import AppUser_API, Location_API, Person_API
+from core.messages import APPUSER_ALREADY_EXISTS, SUCCESS_MESSAGE
+from core.models import Address, AppUser, BloodType, Location, Person, PersonDetails
+from features.insertion import get_existent_object, insert_or_complete_or_raise
+from features.person.person_fetch import fetch_person, fetch_person_object
+from features.person.person_insert import generate_person_object
+from features.search import find_object_by_id
+from features.user.user_fetch import fetch_user_by_id, fetch_user_by_name, fetch_user_type_by_id, fetch_user_type_object_by_id
 
 
 
