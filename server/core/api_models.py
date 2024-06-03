@@ -76,14 +76,17 @@ class Patient_API(BaseModel):
 
 class Product_API(BaseModel):
     id_product: int
+    product_provider_id: int
+    id_product_category: int
+    product_category_id: Optional[int]
+    product_price : float
+    product_quantity : int
     product_name: Optional[str]
     product_brand: Optional[str]
-    product_provider_id: Optional[int]
-    product_category_id: Optional[int]
     product_barcode: Optional[str]
+    product_description : Optional[str]
 
     # ProductCategory_API
-    id_product_category: int
 
 
 class ProductImage_API(BaseModel):
@@ -95,15 +98,15 @@ class ProductImage_API(BaseModel):
 class ProductProvider_API(BaseModel):
     id_product_provider: int
     product_provider_details_id: Optional[int]
-
     # provider type
     id_product_provider_type: int
     product_provider_type_desc: Optional[str]
-
     # provider details
     idprovider_details_id: int
     provider_name: Optional[str]
     provider_contact_info: Optional[str]
+
+
 # -------------------------------------------------------------------------------------
 
 class Recipe_API(BaseModel):

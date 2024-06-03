@@ -29,7 +29,7 @@ def add_record(engine, obj):
     session.add(obj)
     session.commit()
     session.refresh(obj)
-    session.expunge(obj) 
+    # session.expunge(obj) 
     # Return the added object
     return obj
 
@@ -80,16 +80,17 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
     records = query.all()
 
     # # Expunge the results
-    # session.expunge_all()
+    session.expunge_all()
 
     return records
 
 # Function to update an record in a table
 def update_record(engine,obj):
     session = get_session(engine, obj)
-    session.commit()
-    session.refresh(obj)
-    # # session.expunge(obj)
+    session.add(obj)  # Make sure the object is persistent
+    session.commit()  # Commit the session to save the changes
+    session.refresh(obj)  # Refresh the object to get the updated state
+    session.expunge(obj)  # Optionally expunge the object from the session
     return obj
 
 # Function to delete an record from a table

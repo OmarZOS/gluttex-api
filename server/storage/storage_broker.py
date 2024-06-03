@@ -36,7 +36,14 @@ def delete_record(item):
     except:
         raise Exception('An exception occurred while connecting to the database.')
     medicom_store.delete_record(engine,item)
-    
+
+def update_record(item):
+    try:
+        engine = medicom_store.get_engine(DB_URI)
+    except:
+        raise Exception('An exception occurred while connecting to the database.')
+    return medicom_store.update_record(engine,item)
+
 
 def delete_record_by_id(table,id):
     try:

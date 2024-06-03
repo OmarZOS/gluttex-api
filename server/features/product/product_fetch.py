@@ -30,9 +30,8 @@ def fetch_product_object_by_id(product_id: str):
 def get_products_by_category_id(category_id: int):
     return storage_broker.get(Product,{Product.product_category_id:category_id},[ProductCategory,ProductProvider],[Product.product_category,Product.product_provider])
 
-
 def get_product_categories():
     return storage_broker.get(ProductCategory)
 
 def fetch_all_product():
-    return storage_broker.get(Product,None,[ProductCategory,ProductProvider,ProductProviderType],[Product.product_category,Product.product_provider])
+    return storage_broker.get(Product,None,[ProductCategory,ProductProvider,ProductProviderType],[Product.product_category,Product.product_provider,Product.product_image])

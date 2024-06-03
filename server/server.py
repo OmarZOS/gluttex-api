@@ -9,11 +9,24 @@ from features.person.person_fetch import fetch_person_blood_type, fetch_person_d
 from features.product.product_fetch import fetch_all_product, fetch_product_by_id, get_product_categories, get_products_by_category_id
 from features.product.product_insert import insert_product
 from features.person.person_insert import insert_person, insert_person_details
-from features.supplier.supplier_fetch import fetch_supplier_by_id
+from features.supplier.supplier_fetch import fetch_supplier_by_id, fetch_supplier_categories, fetch_suppliers
 from features.supplier.supplier_insert import insert_supplier
 from features.user.user_delete import delete_user
 from features.user.user_fetch import fetch_all_users, fetch_user_by_id
 from features.user.user_insert import insert_user
+from features.product.product_update import update_product
+from features.product.product_delete import delete_product
+
+from fastapi import FastAPI, File, UploadFile
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.datastructures import UploadFile as StarletteUploadFile
+
+class LargeFileMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        request._max_body_size = 1024 * 1024 * 50  # Set maximum body size to 50 MB
+        response = await call_next(request)
+        return response
+
 
 # ----------- App initialisation -------------------------------------
 
@@ -35,8 +48,20 @@ def get_all_Products():
     )
     
 
+@app.post("/product/{product_id}")
+def update_Product(product_id: int,product: Product_API, image: ProductImage_API):
+    
+    try:
+        res = update_product(product_id,product, image)
+    except Exception as e:
+        res = JSONResponse(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't update product."}),
+    )
+    return res
+
 @app.put("/product/add")
-def insert_User(product: Product_API, image: ProductImage_API):
+def insert_Product(product: Product_API, image: ProductImage_API):
     
     try:
         res = insert_product(product, image)
@@ -60,12 +85,47 @@ def insert_User(supplier: ProductProvider_API,location:Location_API):
 
 @app.get("/supplier/{supplier_id}")
 def get_Supplier_by_id(supplier_id: int):
-    res = fetch_supplier_by_id(supplier_id)
+    try:
+        res = fetch_supplier_by_id(supplier_id)
+    except Exception as e:
+        res = JSONResponse(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't get supplier."}),
+    )
     return res
+
+@app.get("/Supplier/all")
+def get_all_Suppliers():
+    try:
+        res = fetch_suppliers()
+    except Exception as e:
+        res = JSONResponse(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't get suppliers."}),
+    )
+    return res
+
+@app.get("/Supplier/Category/all")
+def get_all_Supplier_categories():
+    try:
+        res = fetch_supplier_categories()
+    except Exception as e:
+        res = JSONResponse(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't get supplier categories."}),
+    )
+    return res
+
 
 @app.get("/product/{Product_id}")
 def get_Product_by_id(Product_id: int):
     res = fetch_product_by_id(Product_id)
+    return res
+
+
+@app.delete("/Product/delete/{Product_id}")
+def delete_Product_by_id(Product_id: int):
+    res = delete_product(Product_id)
     return res
 
 @app.get("/product/category/{category_id}")
