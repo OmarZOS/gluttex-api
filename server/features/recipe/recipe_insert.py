@@ -1,0 +1,60 @@
+
+# here, we make schema translations
+
+from core.api_models import Recipe_API, RecipeImage_API
+from core.messages import RECIPE_ALREADY_EXISTS, RECIPE_CATEGORY_NOT_EXISTS, RECIPE_NOT_EXISTS
+from core.models import *
+from features.insertion import insert_or_complete_or_raise
+from features.recipe.recipe_fetch import fetch_recipe_by_id, fetch_recipe_by_name
+from features.supplier.supplier_fetch import fetch_supplier_by_id
+from features.user.user_fetch import fetch_user_by_id
+import storage.storage_broker as storage_broker
+from datetime import datetime;
+
+
+def fetch_recipe_category_object_by_id(category_id: str):
+    record = storage_broker.get(RecipeCategory,{RecipeCategory.id_recipe_category:category_id},None,[])
+    if record == []:
+        return None
+    supplier = RecipeCategory(id_recipe_category = record[0].id_recipe_category)
+    return supplier 
+
+def build_recipe(recipe: Recipe_API):
+    return Recipe(
+        recipe_preparation_time  = recipe.recipe_preparation_time,
+        recipe_instructions  = recipe.recipe_instructions,
+        recipe_name  = recipe.recipe_name,
+        recipe_description  = recipe.recipe_description,
+        recipe_creation  = datetime.now(),
+        recipe_last_updated  = datetime.now())
+
+def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
+    
+    recipe_old = fetch_recipe_by_name(recipe_api.recipe_name)
+    if recipe_old != None : 
+        raise Exception(RECIPE_ALREADY_EXISTS)
+
+    recipe_category = fetch_recipe_category_object_by_id(recipe_api.id_recipe_category)
+    if recipe_category == None : 
+        raise Exception(RECIPE_CATEGORY_NOT_EXISTS)
+
+    recipe_owners = fetch_user_by_id(recipe_api.recipe_owner_id)
+    if recipe_owners == [] : 
+        raise Exception(RECIPE_NOT_EXISTS)
+
+    recipe = build_recipe(recipe_api)
+
+    recipe.recipe_category_id = recipe_category.id_recipe_category
+    
+
+    if (image.recipe_image_data):
+        # if (image.id_recipe_image==0):
+        recipe_image = RecipeImage(recipe_image_data  = image.recipe_image_data)
+        recipe.recipe_image = [recipe_image]
+    
+    code,recipe,msg = insert_or_complete_or_raise(recipe)
+
+    if (code == 1): return msg
+    
+    return recipe
+
