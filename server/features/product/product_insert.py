@@ -8,7 +8,7 @@ from features.insertion import insert_or_complete_or_raise
 from features.product.product_fetch import fetch_product_by_id
 from features.supplier.supplier_fetch import fetch_supplier_by_id
 import storage.storage_broker as storage_broker
-
+from datetime import datetime;
 
 
 def fetch_product_category_object_by_id(category_id: str):
@@ -21,7 +21,13 @@ def fetch_product_category_object_by_id(category_id: str):
 def build_product(product: Product_API):
     return Product(product_name=product.product_name,
                     product_brand=product.product_brand,
-                    product_barcode=product.product_barcode)
+                    product_barcode=product.product_barcode,
+                    product_price = product.product_price,
+                    product_quantity = product.product_quantity,
+                    product_description = product.product_description,
+                    last_updated = datetime.now(),
+                    created = datetime.now()
+                    )
 
 def insert_product(product_api: Product_API, image: ProductImage_API):
     
@@ -43,8 +49,13 @@ def insert_product(product_api: Product_API, image: ProductImage_API):
     product.product_category_id = product_category.id_product_category
     
 
-
+    if (image.product_image_data):
+        # if (image.id_product_image==0):
+        product_image = ProductImage(product_image_data  = image.product_image_data)
+        product.product_image = [product_image]
+    
     code,product,msg = insert_or_complete_or_raise(product)
+
     if (code == 1): return msg
     
     return product

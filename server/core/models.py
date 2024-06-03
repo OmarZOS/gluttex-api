@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DECIMAL, Date, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
+from sqlalchemy import Column, DECIMAL, Date, DateTime, Double, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -93,6 +93,15 @@ class ProviderDetails(Base):
     product_provider = relationship('ProductProvider', back_populates='product_provider_details')
 
 
+class ProviderOrganisation(Base):
+    __tablename__ = 'provider_organisation'
+
+    idprovider_organisation = Column(Integer, primary_key=True)
+    provider_organisation_name = Column(String(45))
+
+    product_provider = relationship('ProductProvider', back_populates='product_provider_org')
+
+
 class RecipeCategory(Base):
     __tablename__ = 'recipe_category'
 
@@ -148,8 +157,10 @@ class ProductProvider(Base):
     __table_args__ = (
         ForeignKeyConstraint(['product_provider_details_id'], ['provider_details.idprovider_details_id'], name='fk_product_provider_3'),
         ForeignKeyConstraint(['product_provider_location_id'], ['location.id_location'], name='fk_product_provider_4'),
+        ForeignKeyConstraint(['product_provider_org_id'], ['provider_organisation.idprovider_organisation'], name='fk_product_provider_2'),
         ForeignKeyConstraint(['product_provider_type_id'], ['product_provider_type.id_product_provider_type'], name='fk_product_provider_1'),
         Index('fk_product_provider_1_idx', 'product_provider_type_id'),
+        Index('fk_product_provider_2_idx', 'product_provider_org_id'),
         Index('fk_product_provider_3_idx', 'product_provider_details_id'),
         Index('fk_product_provider_4_idx', 'product_provider_location_id')
     )
@@ -158,9 +169,11 @@ class ProductProvider(Base):
     product_provider_details_id = Column(Integer)
     product_provider_type_id = Column(Integer)
     product_provider_location_id = Column(Integer)
+    product_provider_org_id = Column(Integer)
 
     product_provider_details = relationship('ProviderDetails', back_populates='product_provider')
     product_provider_location = relationship('Location', back_populates='product_provider')
+    product_provider_org = relationship('ProviderOrganisation', back_populates='product_provider')
     product_provider_type = relationship('ProductProviderType', back_populates='product_provider')
     product = relationship('Product', back_populates='product_provider')
 
@@ -217,9 +230,14 @@ class Product(Base):
     id_product = Column(Integer, primary_key=True)
     product_name = Column(String(45))
     product_brand = Column(String(45))
-    product_barcode = Column(String(45))
     product_provider_id = Column(Integer)
     product_category_id = Column(Integer)
+    product_barcode = Column(String(45))
+    last_updated = Column(DateTime)
+    created = Column(DateTime)
+    product_description = Column(String(300))
+    product_price = Column(Double(asdecimal=True))
+    product_quantity = Column(Integer)
 
     product_category = relationship('ProductCategory', back_populates='product')
     product_provider = relationship('ProductProvider', back_populates='product')
@@ -269,6 +287,7 @@ class Recipe(Base):
     recipe_category_id = Column(Integer)
     recipe_preparation_time = Column(String(45))
     recipe_instructions = Column(Text)
+    recipe_last_updated = Column(DateTime)
 
     recipe_category = relationship('RecipeCategory', back_populates='recipe')
     recipe_owner = relationship('AppUser', back_populates='recipe')

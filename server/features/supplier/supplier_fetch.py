@@ -12,9 +12,22 @@ import storage.storage_broker as storage_broker
 
 
 def fetch_supplier_by_id(provider_id: str):
-    records = storage_broker.get(ProductProvider,{ProductProvider.id_product_provider:provider_id},None,[])
+    records = storage_broker.get(ProductProvider,{ProductProvider.id_product_provider:provider_id},None,[ProductProvider.product_provider_location,ProductProvider.product_provider_type,ProductProvider.product_provider_details])
     # if records == []: return None
     return records
+
+def fetch_suppliers():
+    records = storage_broker.get(ProductProvider,{},None,[ProductProvider.product_provider_location,ProductProvider.product_provider_type,ProductProvider.product_provider_details])
+    # if records == []: return None
+    return records
+
+def fetch_supplier_categories():
+    records = storage_broker.get(ProductProviderType,{},None,[])
+    # if records == []: return None
+    return records
+
+
+
 
 def fetch_supplier_type_object_by_id(type_id: str):
     records = storage_broker.get(ProductProviderType,{ProductProviderType.id_product_provider_type:type_id},None,[])
