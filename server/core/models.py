@@ -70,6 +70,7 @@ class ProductCategory(Base):
 
     id_product_category = Column(Integer, primary_key=True)
     product_category_desc = Column(String(45))
+    product_category_icon = Column(Text)
 
     product = relationship('Product', back_populates='product_category')
 
@@ -107,6 +108,7 @@ class RecipeCategory(Base):
 
     id_recipe_category = Column(Integer, primary_key=True)
     recipe_category_desc = Column(String(45))
+    recipe_category_icon = Column(Text)
 
     recipe = relationship('Recipe', back_populates='recipe_category')
 
@@ -194,6 +196,9 @@ class AppUser(Base):
     app_user_type_id = Column(Integer)
     app_user_preferences = Column(Text)
     app_user_image = Column(LargeBinary)
+    app_user_last_active = Column(DateTime)
+    app_user_last_updated = Column(DateTime)
+    app_user_creation = Column(DateTime)
 
     app_user_person = relationship('Person', back_populates='app_user')
     app_user_type = relationship('AppUserType', back_populates='app_user')
@@ -287,11 +292,15 @@ class Recipe(Base):
     recipe_category_id = Column(Integer)
     recipe_preparation_time = Column(String(45))
     recipe_instructions = Column(Text)
+    recipe_name = Column(String(45))
+    recipe_description = Column(String(300))
+    recipe_creation = Column(DateTime)
     recipe_last_updated = Column(DateTime)
-
     recipe_category = relationship('RecipeCategory', back_populates='recipe')
     recipe_owner = relationship('AppUser', back_populates='recipe')
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='containing_recipe')
+    recipe_image = relationship('RecipeImage', back_populates='recipe_ref')
+
 
 
 class RecipeContainsIngredient(Base):
@@ -310,3 +319,17 @@ class RecipeContainsIngredient(Base):
 
     contained_ingredient = relationship('Ingredient', back_populates='recipe_contains_ingredient')
     containing_recipe = relationship('Recipe', back_populates='recipe_contains_ingredient')
+
+
+class RecipeImage(Base):
+    __tablename__ = 'recipe_image'
+    __table_args__ = (
+        ForeignKeyConstraint(['recipe_ref_id'], ['recipe.id_recipe'], name='fk_recipe_image_1'),
+        Index('fk_recipe_image_1_idx', 'recipe_ref_id')
+    )
+
+    id_recipe_image = Column(Integer, primary_key=True)
+    recipe_image_data = Column(LargeBinary)
+    recipe_ref_id = Column(Integer)
+
+    recipe_ref = relationship('Recipe', back_populates='recipe_image')

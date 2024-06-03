@@ -115,6 +115,8 @@ class Recipe_API(BaseModel):
     recipe_category_id: Optional[int]
     recipe_preparation_time: Optional[str]
     recipe_instructions: Optional[str]
+    recipe_name : str
+    recipe_description : Optional[str]
 
     # RecipeCategory_API
     id_recipe_category: int
@@ -129,3 +131,9 @@ class RecipeContainsIngredient_API(BaseModel):
 class Ingredient_API(BaseModel):
     id_ingredient: int
     ingredient_name: Optional[str]
+
+
+class RecipeImage_API(BaseModel):
+    id_recipe_image: int
+    recipe_image_data: Optional[bytes]
+    recipe_ref_id: Optional[int]
