@@ -17,15 +17,15 @@ from features.recipe.recipe_insert import fetch_recipe_category_object_by_id
 
 def update_recipe(recipe_id: int,recipe_api: Recipe_API, image: RecipeImage_API):
     
-    recipe_category = fetch_recipe_category_object_by_id(recipe_api.id_recipe_category)
-    if recipe_category == None : 
-        raise Exception(RECIPE_CATEGORY_NOT_EXISTS)
 
+    recipe_category = fetch_recipe_category_object_by_id(recipe_api.recipe_category_id)
+    if recipe_category == [] : 
+        raise Exception(RECIPE_CATEGORY_NOT_EXISTS)
     
-    recipe_old = fetch_recipe_by_id(recipe_id)
-    if recipe_old == None : 
+    recipes_old = fetch_recipe_by_id(recipe_id)
+    if recipes_old == [] : 
         raise Exception(RECIPE_NOT_EXISTS)
-    # print(recipe_old)
+    recipe_old = recipes_old[0]
 
     recipe_old.recipe_preparation_time  = recipe_api.recipe_preparation_time,
     recipe_old.recipe_instructions  = recipe_api.recipe_instructions,

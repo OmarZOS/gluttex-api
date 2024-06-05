@@ -18,6 +18,13 @@ def fetch_recipe_by_name(recipe_name: str):
 
 
 
+def fetch_recipe_category_object_by_id(category_id: str):
+    record = storage_broker.get(RecipeCategory,{RecipeCategory.id_recipe_category:category_id},None,[])
+    if record == []:
+        return None
+    supplier = RecipeCategory(id_recipe_category = record[0].id_recipe_category)
+    return supplier 
+
 
 # def fetch_recipes_by_category(Category_id: int):
 #     return storage_broker.get(Category,{Category.categoryId:Category_id},[])
