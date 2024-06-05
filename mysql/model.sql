@@ -464,14 +464,14 @@ INSERT INTO `gluttex`.`app_user_type` ( `app_user_type_desc`) VALUES
 ( 'Cooking chef');
 
 INSERT INTO `gluttex`.`blood_type` ( `blood_type_desc`) VALUES
-('Type O+'),
-('Type A+'),
-('Type B+'),
-('Type AB+'),
-('Type O-'),
-('Type A-'),
-('Type B-'),
-('Type AB-');
+('O+'),
+('A+'),
+('B+'),
+('AB+'),
+('O-'),
+('A-'),
+('B-'),
+('AB-');
 
 INSERT INTO `gluttex`.`product_category` ( `product_category_desc`) VALUES
 ('Computing'),

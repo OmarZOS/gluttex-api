@@ -9,7 +9,7 @@ def fetch_all_users():
     return storage_broker.get(AppUser)
 
 def fetch_user_by_id(user_id: str):
-    return storage_broker.get(AppUser,{AppUser.id_app_user:user_id},None,[AppUser.app_user_type,AppUser.app_user_person])
+    return storage_broker.get(AppUser,{AppUser.id_app_user:user_id},[AppUserType,Person,PersonDetails],["*"])
 
 # def fetch_user_object_by_id(user_id: str):
 #     records = storage_broker.get(AppUser,{AppUser.id_app_user:user_id},None,[AppUser.app_user_type,AppUser.app_user_person,Person.person_details])
@@ -36,8 +36,8 @@ def fetch_user_object_by_id(user_id: int):
                                         ,app_user_person_id = record[0].app_user_person_id)
     return user_obj
 
-def fetch_user_by_id(user_id: int):
-    return storage_broker.get(AppUser,{AppUser.id_app_user:user_id},None,[])
+# def fetch_user_by_id(user_id: int):
+#     return storage_broker.get(AppUser,{AppUser.id_app_user:user_id},None,[],[AppUser.app_user_person,AppUser.app_user_type])
 
 def fetch_user_type_by_id(type_id: str):
     return storage_broker.get(AppUserType,{AppUserType.id_app_user_type:type_id},None,[])

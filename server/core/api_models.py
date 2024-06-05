@@ -110,17 +110,15 @@ class ProductProvider_API(BaseModel):
 # -------------------------------------------------------------------------------------
 
 class Recipe_API(BaseModel):
+    
     id_recipe: int
+    recipe_category_id: int
+    recipe_name : str
     recipe_owner_id: Optional[int]
-    recipe_category_id: Optional[int]
     recipe_preparation_time: Optional[str]
     recipe_instructions: Optional[str]
-    recipe_name : str
     recipe_description : Optional[str]
 
-    # RecipeCategory_API
-    id_recipe_category: int
-    recipe_category_desc: Optional[str]
 
 class RecipeContainsIngredient_API(BaseModel):
     idrecipe_contains_ingredient_id: int
