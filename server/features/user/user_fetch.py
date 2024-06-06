@@ -1,9 +1,8 @@
 
 
 from core.messages import APPUSER_NOT_EXISTS, APPUSERTYPE_NOT_EXISTS
-from core.models import AppUser, AppUserType, BloodType, Location, Person, PersonDetails
+from core.models import AppUser, AppUserType, Person, PersonDetails
 import storage.storage_broker as storage_broker
-from features.person.person_fetch import fetch_person_blood_type_object, fetch_person_details_object
 
 def fetch_all_users():
     return storage_broker.get(AppUser)

@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`app_user` (
   `app_user_person_id` INT NULL,
   `app_user_type_id` INT NULL,
   `app_user_preferences` TEXT NULL,
-  `app_user_image` BLOB NULL,
+  `app_user_image` LONGTEXT NULL,
   `app_user_last_active` DATETIME NULL,
   `app_user_last_updated` DATETIME NULL,
   `app_user_creation` DATETIME NULL,
@@ -426,7 +426,7 @@ DROP TABLE IF EXISTS `gluttex`.`product_image` ;
 
 CREATE TABLE IF NOT EXISTS `gluttex`.`product_image` (
   `id_product_image` INT NOT NULL AUTO_INCREMENT,
-  `product_image_data` BLOB NULL,
+  `product_image_data` LONGTEXT NULL,
   `product_ref_id` INT NULL,
   PRIMARY KEY (`id_product_image`),
   INDEX `fk_product_image_1_idx` (`product_ref_id` ASC) VISIBLE,
@@ -445,7 +445,7 @@ DROP TABLE IF EXISTS `gluttex`.`recipe_image` ;
 
 CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_image` (
   `id_recipe_image` INT NOT NULL AUTO_INCREMENT,
-  `recipe_image_data` BLOB NULL,
+  `recipe_image_data` LONGTEXT NULL,
   `recipe_ref_id` INT NULL,
   PRIMARY KEY (`id_recipe_image`),
   INDEX `fk_recipe_image_1_idx` (`recipe_ref_id` ASC) VISIBLE,
@@ -474,99 +474,19 @@ INSERT INTO `gluttex`.`blood_type` ( `blood_type_desc`) VALUES
 ('AB-');
 
 INSERT INTO `gluttex`.`product_category` ( `product_category_desc`) VALUES
-('Computing'),
-('Mechanical'),
-('Agriculture'),
-('Electronic'),
-('Chemistry'),
-('Medical');
+('Baked Goods'),
+('Spreads'),
+('Cereals'),
+('Pasta'),
+('Snacks'),
+('Beverages'),
+('Desserts');
 
 INSERT INTO `gluttex`.`product_provider_type` ( `product_provider_type_desc`) VALUES
 ('Restaurant'),
+('Bakery'),
 ('Factory'),
-('Seller'),
-('Shop');
-
-
-INSERT INTO `gluttex`.`ingredient` ( `ingredient_name`) VALUES
-("Rice"),
-("Quinoa"),
-("Buckwheat"),
-("Amaranth"),
-("Millet"),
-("Sorghum"),
-("Teff"),
-("Gluten-free oats"),
-("Cornmeal"),
-("Almond flour"),
-("Coconut flour"),
-("Tapioca flour"),
-("Potato flour"),
-("Chickpea flour"),
-("Arrowroot flour"),
-("Chicken"),
-("Beef"),
-("Pork"),
-("Turkey"),
-("Lamb"),
-("Fish"),
-("Shellfish"),
-("Eggs"),
-("Tofu"),
-("Tempeh"),
-("Beans"),
-("Lentils"),
-("Peas"),
-("Milk"),
-("Cheese"),
-("Yogurt"),
-("Butter"),
-("Cream"),
-("Cottage cheese"),
-("Sour cream"),
-("Almond milk"),
-("Coconut milk"),
-("Soy milk"),
-("Rice milk"),
-("Olive oil"),
-("Coconut oil"),
-("Avocado oil"),
-("Canola oil"),
-("Sunflower oil"),
-("Butter"),
-("Ghee"),
-("Basil"),
-("Oregano"),
-("Thyme"),
-("Rosemary"),
-("Parsley"),
-("Cilantro"),
-("Dill"),
-("Sage"),
-("Mint"),
-("Chives"),
-("Cinnamon"),
-("Nutmeg"),
-("Paprika"),
-("Turmeric"),
-("Cumin"),
-("Coriander"),
-("Black pepper"),
-("Salt"),
-("Olive oil"),
-("Coconut oil"),
-("Avocado oil"),
-("Canola oil"),
-("Sunflower oil"),
-("Butter"),
-("Ghee"),
-("Sugar"),
-("Brown sugar"),
-("Honey"),
-("Maple syrup"),
-("Agave nectar"),
-("Stevia");
-
+('Supermarket');
 
 
 INSERT INTO `gluttex`.`recipe_category` ( `recipe_category_desc`) VALUES
@@ -597,146 +517,219 @@ INSERT INTO `gluttex`.`recipe_category` ( `recipe_category_desc`) VALUES
 
 
 
+-- INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+-- ('Smart Technologies', 'Phone: +213 609 1126074, Email: mjmhqzs@example.com'),
+-- ('Eco Systems', 'Phone: +213 606 7668104, Email: fbkulvv@example.com'),
+-- ('Smart Corporation', 'Phone: +213 675 9893109, Email: jkjkbvj@example.com'),
+-- ('Health Industries', 'Phone: +213 604 3331217, Email: uxsjtfy@example.com'),
+-- ('Tech Partners', 'Phone: +213 641 7681417, Email: lksfdtv@example.com'),
+-- ('Green Enterprises', 'Phone: +213 627 6240490, Email: lcaleej@example.com'),
+-- ('Green Consulting', 'Phone: +213 641 9897301, Email: yfpplzr@example.com'),
+-- ('Smart Corporation', 'Phone: +213 611 5823312, Email: kbcxhps@example.com'),
+-- ('Eco Partners', 'Phone: +213 640 4406431, Email: jqaeljx@example.com'),
+-- ('Innovative Enterprises', 'Phone: +213 600 6854116, Email: aakgoqm@example.com'),
+-- ('Global Solutions', 'Phone: +213 661 6236168, Email: unadtjk@example.com'),
+-- ('Green Corporation', 'Phone: +213 653 3147806, Email: qrhkloy@example.com'),
+-- ('Prime Technologies', 'Phone: +213 608 5803282, Email: mplnqpb@example.com'),
+-- ('Innovative Corporation', 'Phone: +213 682 5387637, Email: ongcbmo@example.com'),
+-- ('Prime Technologies', 'Phone: +213 635 4163080, Email: yvqcumv@example.com'),
+-- ('Global Services', 'Phone: +213 667 6194095, Email: npxexni@example.com'),
+-- ('Bright Solutions', 'Phone: +213 609 5237134, Email: rospbtg@example.com'),
+-- ('Health Industries', 'Phone: +213 674 4584401, Email: iqqrnoz@example.com'),
+-- ('Tech Consulting', 'Phone: +213 639 6918018, Email: mzgzxmy@example.com'),
+-- ('Dynamic Technologies', 'Phone: +213 622 5664114, Email: nqhtvuh@example.com'),
+-- ('Bright Solutions', 'Phone: +213 655 1527858, Email: eorfakx@example.com'),
+-- ('Bright Solutions', 'Phone: +213 688 7400754, Email: vpltnqs@example.com'),
+-- ('Prime Consulting', 'Phone: +213 611 3908501, Email: vcfjnyj@example.com'),
+-- ('Prime Solutions', 'Phone: +213 690 5009291, Email: emdrlxj@example.com'),
+-- ('Smart Technologies', 'Phone: +213 644 9988918, Email: zzpbmpp@example.com'),
+-- ('Bright Industries', 'Phone: +213 684 3960601, Email: prieuim@example.com'),
+-- ('Global Technologies', 'Phone: +213 638 7617405, Email: mrphlvv@example.com'),
+-- ('Eco Consulting', 'Phone: +213 662 6706103, Email: khphupc@example.com'),
+-- ('Green Partners', 'Phone: +213 635 9913502, Email: wlfnjcv@example.com'),
+-- ('Global Consulting', 'Phone: +213 643 2839789, Email: upgoewx@example.com');
+
+
+
+
+-- INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`) VALUES
+-- ('31.4704', '10.5995','Algiers'),
+-- ('21.9235', '6.6383','Oran'),
+-- ('33.3383', '-0.7512','Constantine'),
+-- ('30.3659', '11.3850','Annaba'),
+-- ('31.2074', '8.0155','Blida'),
+-- ('32.3339', '-0.0670','Batna'),
+-- ('26.7321', '9.2440','Sétif'),
+-- ('33.0055', '-5.9117','Tlemcen'),
+-- ('30.2891', '2.5290','Biskra'),
+-- ('29.1807', '3.8425','Béjaïa'),
+-- ('26.1838', '-7.1486','Tizi Ouzou'),
+-- ('32.5957', '-3.5024','Chlef'),
+-- ('34.7306', '8.1922','Sidi Bel Abbès'),
+-- ('31.0770', '-1.8179','Djelfa'),
+-- ('26.7578', '11.0753','Guelma'),
+-- ('28.5457', '-5.5282','Mascara'),
+-- ('33.0417', '1.0216','Skikda'),
+-- ('29.2655', '11.9160','Ouargla'),
+-- ('33.7725', '1.0248','Relizane'),
+-- ('27.2296', '-7.0964','Tiaret'),
+-- ('36.0817', '9.7897','Tindouf'),
+-- ('31.9784', '1.2928','Laghouat'),
+-- ('30.6563', '2.6474','Tebessa'),
+-- ('31.1872', '9.6848','Mostaganem'),
+-- ('24.3694', '-8.1194','Bordj Bou Arreridj'),
+-- ('19.3143', '2.7007','Boumerdès'),
+-- ('26.6551', '-2.8732','Ain Temouchent'),
+-- ('33.1827', '4.8710','Médéa'),
+-- ('31.6452', '1.0392','El Oued'),
+-- ('25.2283', '-0.0806','Khenchela');
+
+-- Insert data into the address table
+INSERT INTO `gluttex`.`address` (`address_street`, `address_city`, `address_country`)
+VALUES
+('Rue Lamameri Ali', 'Bouzareah', 'Algeria'),
+('Avenue Houari Boumedien', 'Bordj El Bahri', 'Algeria'),
+('Route de Dar El Beida', 'Bab Ezzouar', 'Algeria'),
+('N63', 'Mahelma', 'Algeria'),
+('Khraicia', 'Khraicia', 'Algeria'),
+('Cheraga', 'Chéraga', 'Algeria');
+
+
+-- Insertions for Amissan -gluten free-
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
-('Smart Technologies', 'Phone: +213 609 1126074, Email: mjmhqzs@example.com'),
-('Eco Systems', 'Phone: +213 606 7668104, Email: fbkulvv@example.com'),
-('Smart Corporation', 'Phone: +213 675 9893109, Email: jkjkbvj@example.com'),
-('Health Industries', 'Phone: +213 604 3331217, Email: uxsjtfy@example.com'),
-('Tech Partners', 'Phone: +213 641 7681417, Email: lksfdtv@example.com'),
-('Green Enterprises', 'Phone: +213 627 6240490, Email: lcaleej@example.com'),
-('Green Consulting', 'Phone: +213 641 9897301, Email: yfpplzr@example.com'),
-('Smart Corporation', 'Phone: +213 611 5823312, Email: kbcxhps@example.com'),
-('Eco Partners', 'Phone: +213 640 4406431, Email: jqaeljx@example.com'),
-('Innovative Enterprises', 'Phone: +213 600 6854116, Email: aakgoqm@example.com'),
-('Global Solutions', 'Phone: +213 661 6236168, Email: unadtjk@example.com'),
-('Green Corporation', 'Phone: +213 653 3147806, Email: qrhkloy@example.com'),
-('Prime Technologies', 'Phone: +213 608 5803282, Email: mplnqpb@example.com'),
-('Innovative Corporation', 'Phone: +213 682 5387637, Email: ongcbmo@example.com'),
-('Prime Technologies', 'Phone: +213 635 4163080, Email: yvqcumv@example.com'),
-('Global Services', 'Phone: +213 667 6194095, Email: npxexni@example.com'),
-('Bright Solutions', 'Phone: +213 609 5237134, Email: rospbtg@example.com'),
-('Health Industries', 'Phone: +213 674 4584401, Email: iqqrnoz@example.com'),
-('Tech Consulting', 'Phone: +213 639 6918018, Email: mzgzxmy@example.com'),
-('Dynamic Technologies', 'Phone: +213 622 5664114, Email: nqhtvuh@example.com'),
-('Bright Solutions', 'Phone: +213 655 1527858, Email: eorfakx@example.com'),
-('Bright Solutions', 'Phone: +213 688 7400754, Email: vpltnqs@example.com'),
-('Prime Consulting', 'Phone: +213 611 3908501, Email: vcfjnyj@example.com'),
-('Prime Solutions', 'Phone: +213 690 5009291, Email: emdrlxj@example.com'),
-('Smart Technologies', 'Phone: +213 644 9988918, Email: zzpbmpp@example.com'),
-('Bright Industries', 'Phone: +213 684 3960601, Email: prieuim@example.com'),
-('Global Technologies', 'Phone: +213 638 7617405, Email: mrphlvv@example.com'),
-('Eco Consulting', 'Phone: +213 662 6706103, Email: khphupc@example.com'),
-('Green Partners', 'Phone: +213 635 9913502, Email: wlfnjcv@example.com'),
-('Global Consulting', 'Phone: +213 643 2839789, Email: upgoewx@example.com');
-
-
-
-
-INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`) VALUES
-('31.4704', '10.5995','Algiers'),
-('21.9235', '6.6383','Oran'),
-('33.3383', '-0.7512','Constantine'),
-('30.3659', '11.3850','Annaba'),
-('31.2074', '8.0155','Blida'),
-('32.3339', '-0.0670','Batna'),
-('26.7321', '9.2440','Sétif'),
-('33.0055', '-5.9117','Tlemcen'),
-('30.2891', '2.5290','Biskra'),
-('29.1807', '3.8425','Béjaïa'),
-('26.1838', '-7.1486','Tizi Ouzou'),
-('32.5957', '-3.5024','Chlef'),
-('34.7306', '8.1922','Sidi Bel Abbès'),
-('31.0770', '-1.8179','Djelfa'),
-('26.7578', '11.0753','Guelma'),
-('28.5457', '-5.5282','Mascara'),
-('33.0417', '1.0216','Skikda'),
-('29.2655', '11.9160','Ouargla'),
-('33.7725', '1.0248','Relizane'),
-('27.2296', '-7.0964','Tiaret'),
-('36.0817', '9.7897','Tindouf'),
-('31.9784', '1.2928','Laghouat'),
-('30.6563', '2.6474','Tebessa'),
-('31.1872', '9.6848','Mostaganem'),
-('24.3694', '-8.1194','Bordj Bou Arreridj'),
-('19.3143', '2.7007','Boumerdès'),
-('26.6551', '-2.8732','Ain Temouchent'),
-('33.1827', '4.8710','Médéa'),
-('31.6452', '1.0392','El Oued'),
-('25.2283', '-0.0806','Khenchela');
-
-
-
-
-
+('Amissan -gluten free-', 'Facebook: https://www.facebook.com/profile.php?id=100063573159141, Phone number: 0781 56 64 26');
+INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
+('36.79664864280521', '3.00456923564612', 'Rue Lamameri Ali', 1);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
-(1,1,1),
-(2,2,2),
-(3,3,3),
-(4,4,4),
-(5,5,1),
-(6,6,2),
-(7,7,3),
-(8,8,4),
-(9,9,1),
-(10,10,2),
-(11,11,3),
-(12,12,4),
-(13,13,1),
-(14,14,2),
-(15,15,3),
-(16,16,4),
-(17,17,1),
-(18,18,2),
-(19,19,3),
-(20,20,4),
-(21,21,1),
-(22,22,2),
-(23,23,3),
-(24,24,4),
-(25,25,1),
-(26,26,2),
-(27,27,3),
-(28,28,4),
-(29,29,1),
-(30,30,2);
+(1,1,2);
+
+-- Insertions for Magasin habibou sans gluten
+INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+('Magasin habibou sans gluten', 'Facebook: https://www.facebook.com/profile.php?id=100063549909208');
+INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
+('36.79104995021719', '3.244388200045344', 'Avenue Houari Boumedien', 2);
+INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+(2,2,2);
+
+-- Insertions for Uno
+INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+('Uno', 'Facebook: https://www.facebook.com/UNO.Hypermarche/, Instagram: https://www.instagram.com/uno_hypermarche/');
+INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
+('36.71305045006746', '3.191942199815943', 'Route de Dar El Beida', 3);
+INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+(3,3,4);
+
+-- Insertions for Superette université
+INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+('Superette université', 'N/A');
+INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
+('36.68805559407475', '2.872905857188605', 'N63', 4);
+INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+(4,4,4);
+
+-- Insertions for Corridors Shopping
+INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+('Corridors Shopping', 'N/A');
+INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
+('36.6683827', '2.9833228', 'Khraicia', 5);
+INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+(5,5,1);
+
+-- Insertions for Caramel sans gluten
+INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
+('Caramel sans gluten', 'N/A');
+INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
+('36.75573869999999', '2.9514329', 'Cheraga', 6);
+INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
+(6,6,4);
 
 
+-- Insert data into person_details table
+INSERT INTO gluttex.person_details 
+    (person_first_name, person_last_name, person_birth_date, person_gender, person_nationality) 
+VALUES 
+    ('Some', 'One', '2003-01-01', 'Male', 'Algerian');
+
+-- Get the ID of the newly inserted person_details
+
+-- Insert data into person table
+INSERT INTO gluttex.person 
+    (person_details_id, person_blood_type_id, person_location_id) 
+VALUES 
+    (1, 1, 1); 
+
+-- Insert data into app_user table
+INSERT INTO gluttex.app_user 
+    (app_user_name, app_user_password, app_user_person_id, app_user_type_id) 
+VALUES 
+    ('SomeOne', 'password', 1, 1); 
 
 
-
-
+-- Baked Goods
 INSERT INTO `gluttex`.`product` (`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
-('Product 1', 'Brand A','This Product 1, You can enjoy this lorem ipsum totem dolor.', 1, 1, '1234567890123', 100, 50,CURDATE(),CURDATE()),
-('Product 2', 'Brand B','This Product 2, You can enjoy this lorem ipsum totem dolor.', 2, 2, '2234567890123', 150, 30,CURDATE(),CURDATE()),
-('Product 3', 'Brand C','This Product 3, You can enjoy this lorem ipsum totem dolor.', 3, 3, '3234567890123', 200, 20,CURDATE(),CURDATE()),
-('Product 4', 'Brand D','This Product 4, You can enjoy this lorem ipsum totem dolor.', 4, 4, '4234567890123', 250, 40,CURDATE(),CURDATE()),
-('Product 5', 'Brand E','This Product 5, You can enjoy this lorem ipsum totem dolor.', 5, 1, '5234567890123', 300, 10,CURDATE(),CURDATE()),
-('Product 6', 'Brand F','This Product 6, You can enjoy this lorem ipsum totem dolor.', 6, 2, '6234567890123', 350, 60,CURDATE(),CURDATE()),
-('Product 7', 'Brand G','This Product 7, You can enjoy this lorem ipsum totem dolor.', 7, 3, '7234567890123', 400, 80,CURDATE(),CURDATE()),
-('Product 8', 'Brand H','This Product 8, You can enjoy this lorem ipsum totem dolor.', 8, 4, '8234567890123', 450, 90,CURDATE(),CURDATE()),
-('Product 9', 'Brand I','This Product 9, You can enjoy this lorem ipsum totem dolor.', 9, 1, '9234567890123', 500, 70,CURDATE(),CURDATE()),
-('Product 10', 'Brand J','This Product 10, You can enjoy this lorem ipsum totem dolor.', 10, 2, '1034567890123', 550, 50,CURDATE(),CURDATE()),
-('Product 11', 'Brand K','This Product 11, You can enjoy this lorem ipsum totem dolor.', 11, 3, '1134567890123', 600, 30,CURDATE(),CURDATE()),
-('Product 12', 'Brand L','This Product 12, You can enjoy this lorem ipsum totem dolor.', 12, 4, '1234567890124', 650, 20,CURDATE(),CURDATE());
+('Grano\'Sac Raisin Cacahuetes', 'Grano\'Sac','Delicious gluten-free baked goods made with raisins and peanuts. Perfect for a nutritious snack.', 1, 1, '1234567890123', 5.99, 100, CURDATE(), CURDATE()),
+('Butter Biscuits LEGER', 'LEGER','Light and crispy gluten-free butter biscuits, a guilt-free treat for any time of the day.', 1, 1, '1234567890124', 4.49, 150, CURDATE(), CURDATE()),
+('Cookies', 'Home Bakery','Indulgent gluten-free cookies baked to perfection, a delightful blend of flavors in every bite.', 1, 1, '1234567890125', 3.99, 200, CURDATE(), CURDATE()),
+('Gullon Cookies', 'Gullon','Classic gluten-free cookies from Gullon, a favorite snack for both kids and adults.', 1, 1, '1234567890126', 6.29, 120, CURDATE(), CURDATE());
+
+-- Spreads
+INSERT INTO `gluttex`.`product` (`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+('Date Butter', 'NutriLife','A rich and creamy date butter, packed with nutrients and perfect for spreading on toast or crackers.', 1, 2, '1234567890127', 7.99, 80, CURDATE(), CURDATE()),
+('CARAIBE Crème à Tartiner', 'CARAIBE','Decadent chocolate spread from CARAIBE, a luxurious treat for chocolate lovers.', 1, 2, '1234567890128', 8.49, 100, CURDATE(), CURDATE()),
+('JUMPY Beurre De Cacahuète', 'JUMPY','Smooth and creamy peanut butter spread, a versatile ingredient for sandwiches, smoothies, and desserts.', 1, 2, '1234567890129', 5.79, 90, CURDATE(), CURDATE());
+
+-- Cereals
+INSERT INTO `gluttex`.`product` (`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+('Semoule de pain', 'BioCereal','Organic gluten-free semolina, perfect for making bread, couscous, and various desserts.', 1, 3, '1234567890130', 3.99, 120, CURDATE(), CURDATE()),
+('Flocons D\'avoine (fariné)', 'NatureLand','Finely ground gluten-free oat flakes, ideal for baking bread, cookies, and other baked goods.', 1, 3, '1234567890131', 6.49, 80, CURDATE(), CURDATE()),
+('Flocons D\'avoine (petits)', 'Healthy Harvest','Whole gluten-free oat flakes, a nutritious addition to your breakfast bowl or baked treats.', 1, 3, '1234567890132', 4.99, 100, CURDATE(), CURDATE());
 
 
--- INSERT INTO `gluttex`.`recipe` 
--- (`recipe_owner_id`, `recipe_category_id`, `recipe_preparation_time`, `recipe_instructions`, `recipe_name`, `recipe_description`, `recipe_creation`, `recipe_last_updated`)
--- VALUES
--- (1, 1, '30 minutes', 'Step 1: Do this.\nStep 2: Do that.', 'Tasty Appetizer', 'A delicious appetizer to start your meal.', NOW(), NOW()),
--- (1, 2, '45 minutes', 'Step 1: Prepare ingredients.\nStep 2: Cook.', 'Hearty Soup', 'A warm and comforting soup.', NOW(), NOW()),
--- (1, 3, '20 minutes', 'Step 1: Chop vegetables.\nStep 2: Mix ingredients.', 'Fresh Salad', 'A fresh and healthy salad.', NOW(), NOW()),
--- (1, 4, '1 hour', 'Step 1: Marinate meat.\nStep 2: Grill.', 'Grilled Chicken', 'Juicy grilled chicken with herbs.', NOW(), NOW()),
--- (1, 5, '30 minutes', 'Step 1: Boil water.\nStep 2: Cook side dish.', 'Mashed Potatoes', 'Creamy mashed potatoes.', NOW(), NOW()),
--- (1, 6, '40 minutes', 'Step 1: Prepare pasta.\nStep 2: Cook sauce.', 'Spaghetti Bolognese', 'Classic Italian pasta dish.', NOW(), NOW()),
--- (1, 7, '1 hour 30 minutes', 'Step 1: Prepare casserole.\nStep 2: Bake.', 'Cheesy Casserole', 'Cheesy and delicious casserole.', NOW(), NOW()),
--- (1, 8, '25 minutes', 'Step 1: Mix ingredients.\nStep 2: Cook.', 'Pancakes', 'Fluffy and light pancakes.', NOW(), NOW()),
--- (1, 9, '3 hours', 'Step 1: Prepare dough.\nStep 2: Bake.', 'Sourdough Bread', 'Homemade sourdough bread.', NOW(), NOW()),
--- (1, 10, '1 hour 15 minutes', 'Step 1: Prepare ingredients.\nStep 2: Bake.', 'Chocolate Cake', 'Rich and moist chocolate cake.', NOW(), NOW());
 
+
+
+
+
+-- Pasta
+INSERT INTO `gluttex`.`product` (`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+('Farine à Pizza', 'Mama\'s Kitchen','Premium gluten-free pizza flour blend, perfect for making homemade pizzas with a crispy crust.', 1, 4, '1234567890133', 5.99, 150, CURDATE(), CURDATE()),
+('COUDE Pâtes sans gluten', 'Italian Delight','Gluten-free elbow pasta, ideal for pasta salads, casseroles, and creamy pasta dishes.', 1, 4, '1234567890134', 4.49, 100, CURDATE(), CURDATE());
+
+-- Snacks
+INSERT INTO `gluttex`.`product` (`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+('Grano\'Sac Raisin Cacahuetes', 'Grano\'Sac','Delicious gluten-free baked goods made with raisins and peanuts. Perfect for a nutritious snack.', 1, 5, '1234567890123', 5.99, 100, CURDATE(), CURDATE()),
+('Cookies', 'Home Bakery','Indulgent gluten-free cookies baked to perfection, a delightful blend of flavors in every bite.', 1, 5, '1234567890125', 3.99, 200, CURDATE(), CURDATE()),
+('Gullon Cookies', 'Gullon','Classic gluten-free cookies from Gullon, a favorite snack for both kids and adults.', 1, 5, '1234567890126', 6.29, 120, CURDATE(), CURDATE());
+
+-- Desserts
+INSERT INTO `gluttex`.`product` (`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+('Confiture Delicia fruit', 'Delicia','Exquisite gluten-free fruit jam, bursting with natural flavors and sweetness.', 1, 7, '1234567890135', 7.99, 80, CURDATE(), CURDATE()),
+('Confiture Ela fraise', 'Ela','Delightful strawberry jam, perfect for spreading on toast, biscuits, or pairing with cheese.', 1, 7, '1234567890136', 6.49, 90, CURDATE(), CURDATE()),
+('Flan Vanille Nouara', 'Nouara','Creamy vanilla flan dessert, a classic indulgence that melts in your mouth with every spoonful.', 1, 7, '1234567890137', 8.99, 70, CURDATE(), CURDATE());
+
+-- Beverages
+INSERT INTO `gluttex`.`product` (`product_name`, `product_brand`,`product_description`, `product_provider_id`, `product_category_id`, `product_barcode`, `product_price`, `product_quantity`,`last_updated`,`created`) VALUES
+('Chocolat en poudre', 'ChocoMelt','Rich and velvety chocolate powder, perfect for making hot chocolate drinks or adding to desserts.', 1, 6, '1234567890138', 9.49, 60, CURDATE(), CURDATE());
+
+
+INSERT INTO `gluttex`.`recipe` 
+(`recipe_owner_id`, `recipe_category_id`, `recipe_preparation_time`, `recipe_instructions`, `recipe_name`, `recipe_description`, `recipe_creation`, `recipe_last_updated`)
+VALUES
+(1, 1, '30 minutes', 'Step 1: Do this.\nStep 2: Do that.', 'Tasty Appetizer', 'A delicious appetizer to start your meal.', NOW(), NOW()),
+(1, 2, '45 minutes', 'Step 1: Prepare ingredients.\nStep 2: Cook.', 'Hearty Soup', 'A warm and comforting soup.', NOW(), NOW()),
+(1, 3, '20 minutes', 'Step 1: Chop vegetables.\nStep 2: Mix ingredients.', 'Fresh Salad', 'A fresh and healthy salad.', NOW(), NOW()),
+(1, 4, '1 hour', 'Step 1: Marinate meat.\nStep 2: Grill.', 'Grilled Chicken', 'Juicy grilled chicken with herbs.', NOW(), NOW()),
+(1, 5, '30 minutes', 'Step 1: Boil water.\nStep 2: Cook side dish.', 'Mashed Potatoes', 'Creamy mashed potatoes.', NOW(), NOW()),
+(1, 6, '40 minutes', 'Step 1: Prepare pasta.\nStep 2: Cook sauce.', 'Spaghetti Bolognese', 'Classic Italian pasta dish.', NOW(), NOW()),
+(1, 7, '1 hour 30 minutes', 'Step 1: Prepare casserole.\nStep 2: Bake.', 'Cheesy Casserole', 'Cheesy and delicious casserole.', NOW(), NOW()),
+(1, 8, '25 minutes', 'Step 1: Mix ingredients.\nStep 2: Cook.', 'Pancakes', 'Fluffy and light pancakes.', NOW(), NOW()),
+(1, 9, '3 hours', 'Step 1: Prepare dough.\nStep 2: Bake.', 'Sourdough Bread', 'Homemade sourdough bread.', NOW(), NOW()),
+(1, 10, '1 hour 15 minutes', 'Step 1: Prepare ingredients.\nStep 2: Bake.', 'Chocolate Cake', 'Rich and moist chocolate cake.', NOW(), NOW());
 
 
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+

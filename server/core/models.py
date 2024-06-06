@@ -1,4 +1,5 @@
-from sqlalchemy import Column, DECIMAL, Date, DateTime, Double, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
+from sqlalchemy import Column, DECIMAL, Date, DateTime, Double, ForeignKeyConstraint, Index, Integer, String, Text
+from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -195,7 +196,7 @@ class AppUser(Base):
     app_user_person_id = Column(Integer)
     app_user_type_id = Column(Integer)
     app_user_preferences = Column(Text)
-    app_user_image = Column(LargeBinary)
+    app_user_image = Column(LONGTEXT)
     app_user_last_active = Column(DateTime)
     app_user_last_updated = Column(DateTime)
     app_user_creation = Column(DateTime)
@@ -272,7 +273,7 @@ class ProductImage(Base):
     )
 
     id_product_image = Column(Integer, primary_key=True)
-    product_image_data = Column(LargeBinary)
+    product_image_data = Column(LONGTEXT)
     product_ref_id = Column(Integer)
 
     product_ref = relationship('Product', back_populates='product_image')
@@ -296,11 +297,11 @@ class Recipe(Base):
     recipe_description = Column(String(300))
     recipe_creation = Column(DateTime)
     recipe_last_updated = Column(DateTime)
+
     recipe_category = relationship('RecipeCategory', back_populates='recipe')
     recipe_owner = relationship('AppUser', back_populates='recipe')
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='containing_recipe')
     recipe_image = relationship('RecipeImage', back_populates='recipe_ref')
-
 
 
 class RecipeContainsIngredient(Base):
@@ -329,7 +330,7 @@ class RecipeImage(Base):
     )
 
     id_recipe_image = Column(Integer, primary_key=True)
-    recipe_image_data = Column(LargeBinary)
+    recipe_image_data = Column(LONGTEXT)
     recipe_ref_id = Column(Integer)
 
     recipe_ref = relationship('Recipe', back_populates='recipe_image')
