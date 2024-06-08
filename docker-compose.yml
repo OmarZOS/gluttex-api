@@ -3,7 +3,7 @@ services:
   mysql:
     image: mysql
     container_name: gluttex-db
-    restart: always
+    # restart: always
     command: --init-file /data/application/init.sql
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}

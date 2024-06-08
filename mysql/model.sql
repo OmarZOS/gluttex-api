@@ -726,6 +726,16 @@ VALUES
 (1, 9, '3 hours', 'Step 1: Prepare dough.\nStep 2: Bake.', 'Sourdough Bread', 'Homemade sourdough bread.', NOW(), NOW()),
 (1, 10, '1 hour 15 minutes', 'Step 1: Prepare ingredients.\nStep 2: Bake.', 'Chocolate Cake', 'Rich and moist chocolate cake.', NOW(), NOW());
 
+INSERT INTO  `gluttex`.`disease_severity` (`disease_severity_desc`) VALUES
+('Marsh 0'),
+('Marsh 1'),
+('Marsh 2'),
+('Marsh 3'),
+('Marsh 3a'),
+('Marsh 3b'),
+('Marsh 3c'),
+('Marsh 4');
+
 
 
 SET SQL_MODE=@OLD_SQL_MODE;

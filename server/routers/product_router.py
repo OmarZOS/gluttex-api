@@ -2,7 +2,7 @@ from fastapi import APIRouter,status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from core.api_models import Product_API, ProductImage_API
-from features.product.product_fetch import fetch_all_product, fetch_product_by_id, get_product_categories, get_products_by_category_id
+from features.product.product_fetch import fetch_all_product, fetch_product_by_id, get_product_categories, get_product_image_by_id, get_products_by_category_id
 from features.product.product_insert import insert_product
 from features.product.product_update import update_product
 from features.product.product_delete import delete_product
@@ -26,7 +26,21 @@ def get_all_Products():
         content=jsonable_encoder({"detail": str(e), "Error": "Couldn't fetch products."}),
     )
     return res
+   
+@product_router.get("/image/product/{image_id}")
+def getProductImage(image_id : int):
+    try:
+        res = JSONResponse(
+        status_code=status.HTTP_200_OK, 
+        content=jsonable_encoder(get_product_image_by_id(image_id)))
+    except Exception as e:
+        res = JSONResponse(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't fetch image."}),
+    )
+    return res
     
+
 
 @product_router.post("/product/{product_id}")
 def update_Product(product_id: int,product: Product_API, image: ProductImage_API):

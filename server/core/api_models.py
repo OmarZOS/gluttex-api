@@ -48,7 +48,7 @@ class AppUser_API(BaseModel):
     app_user_password: Optional[str]
     app_user_person_id: Optional[int]
     app_user_preferences: Optional[str]
-    app_user_image: Optional[bytes]
+    app_user_image: Optional[str]
 
     #  AppUserType
     app_user_type_id: Optional[int]
@@ -91,7 +91,7 @@ class Product_API(BaseModel):
 
 class ProductImage_API(BaseModel):
     id_product_image: int
-    product_image_data: Optional[bytes]
+    product_image_data: Optional[str]
     product_ref_id: Optional[int]
 
 
@@ -133,5 +133,5 @@ class Ingredient_API(BaseModel):
 
 class RecipeImage_API(BaseModel):
     id_recipe_image: int
-    recipe_image_data: Optional[bytes]
+    recipe_image_data: Optional[str]
     recipe_ref_id: Optional[int]
