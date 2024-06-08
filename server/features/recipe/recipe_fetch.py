@@ -1,9 +1,13 @@
 
 from core.api_models import Recipe_API
-from core.models import  Recipe, RecipeCategory
+from core.models import  Recipe, RecipeCategory, RecipeImage
 import storage.storage_broker as storage_broker
 
 
+
+
+def get_recipe_image_by_id(image_id: int):
+    return storage_broker.get(RecipeImage,{RecipeImage.id_recipe_image:image_id},[],None,[])
 
 
 def fetch_recipe_by_id(prod_id: int):
@@ -36,4 +40,4 @@ def get_recipe_categories():
     return storage_broker.get(RecipeCategory)
 
 def fetch_all_recipe():
-    return storage_broker.get(Recipe,None,[RecipeCategory],[Recipe.recipe_category,Recipe.recipe_image])
+    return storage_broker.get(Recipe,None,[RecipeCategory],[Recipe.recipe_category,{Recipe.recipe_image: [RecipeImage.id_recipe_image]}])

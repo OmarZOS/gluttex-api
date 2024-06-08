@@ -1,6 +1,6 @@
 
 from core.api_models import Product_API
-from core.models import  Product, ProductCategory, ProductProvider, ProductProviderType
+from core.models import  Product, ProductCategory, ProductImage, ProductProvider, ProductProviderType
 import storage.storage_broker as storage_broker
 
 
@@ -30,8 +30,17 @@ def fetch_product_object_by_id(product_id: str):
 def get_products_by_category_id(category_id: int):
     return storage_broker.get(Product,{Product.product_category_id:category_id},[ProductCategory,ProductProvider],[Product.product_category,Product.product_provider])
 
+def get_product_image_by_id(image_id: int):
+    return storage_broker.get(ProductImage,{ProductImage.id_product_image:image_id},[],None,[])
+
 def get_product_categories():
     return storage_broker.get(ProductCategory)
 
 def fetch_all_product():
-    return storage_broker.get(Product,None,[ProductCategory,ProductProvider,ProductProviderType],[Product.product_category,Product.product_provider,Product.product_image])
+    
+    return storage_broker.get(Product,conditions=None,join_tables=[ProductCategory],eager_load_depth= 
+                              [
+        Product.product_category, 
+        Product.product_provider, 
+        {Product.product_image: [ProductImage.id_product_image]}  # Nested eager load for specific fields
+    ])

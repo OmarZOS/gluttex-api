@@ -2,87 +2,113 @@ from constants import *
 from storage.storage_service.StorageService import *
 from sqlalchemy import create_engine 
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload,contains_eager
 from sqlalchemy.orm import object_session
+from contextlib import contextmanager
 
+@contextmanager
+def session_scope(engine):
+    session = get_session(engine)
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 # engine = create_engine(DB_URI)
 def get_engine(db_uri):
     engine = create_engine(db_uri)
     return engine
 
-def get_session(engine,object=None):
+def get_session(engine, obj=None):
     Session = sessionmaker(bind=engine)
-    if object:        
-        # Return the session if the object is already associated with one
-        existing_session = object_session(object)
+    if obj:
+        existing_session = object_session(obj)
         if existing_session:
             return existing_session
+    return Session()
 
     # Create the database engine and session
     return Session()
 
 # Function to add a record to a table
 def add_record(engine, obj):
-    session = get_session(engine,obj)    
-    # Add the new object to the session and commit
-    session.add(obj)
-    session.commit()
-    session.refresh(obj)
-    # session.expunge(obj) 
-    # Return the added object
-    return obj
+    with session_scope(engine) as session:
+        session = get_session(engine,obj)    
+        # Add the new object to the session and commit
+        session.add(obj)
+        session.commit()
+        session.refresh(obj)
+        # session.expunge(obj) 
+        # Return the added object
+        return obj
 
 def add_records(engine, objs):
-    session = get_session(engine)
-    session.add_all(objs)
-    session.commit()
-    for obj in objs:
-        session.refresh(obj)
-        # # # session.expunge(obj)  # Expunge each object individually
-    return objs
+    with session_scope(engine) as session:
+        session.add_all(objs)
+        session.commit()
+        for obj in objs:
+            session.refresh(obj)
+            # # # session.expunge(obj)  # Expunge each object individually
+        return objs
 
 # Function to get all records from a table
 def get_all_records(engine,model_class):
-    session = get_session(engine)
-    return session.query(model_class).all()
+    with session_scope(engine) as session:
+        session = get_session(engine)
+        return session.query(model_class).all()
 
 # Function to get an record by ID from a table
 def get_record_by_id(engine,model_class, id):
-    session = get_session(engine)
-    data = session.query(model_class).get(id)
-    # # # session.expunge(data)
-    return data
+    with session_scope(engine) as session:
+        data = session.query(model_class).get(id)
+        # # # session.expunge(data)
+        return data
 
 # Function to get objects from a table based on conditions
-def get_records(engine, model_class, conditions=None, join_tables=None, eager_load_depth=None):
-    session = get_session(engine)
-    query = session.query(model_class)
+def get_records(engine, model_class, conditions=None, join_tables=None, eager_load_depth=None, fields=None):
+    with session_scope(engine) as session:
+        query = session.query(model_class)
 
-    # Join tables if specified
-    if join_tables:
-        for join_table in join_tables:
-            query = query.join(join_table)
+        # Specify columns to select
+        # if fields!= []:
+        #     if len(fields)>0:
+        #         columns = [getattr(model_class, str(field).split(".")[1]) for field in fields]
+        #         query = query.with_entities(*columns)
 
-    # Apply conditions if specified
-    if conditions:
-        for attr, value in conditions.items():
-            query = query.filter(getattr(model_class, str(attr).split(".")[1]) == str(value))
+        # Join tables if specified
+        if join_tables:
+            for join_table in join_tables:
+                query = query.join(join_table)
 
-    # Use joinedload to eager load relationships with specified depth
-    if eager_load_depth is not None:
-        for attr in eager_load_depth:
-            query = query.options(joinedload(attr))
-            
-    # # Use joinedload to eager load relationships
-    # query = query.options(joinedload('*'))
-    # Fetch all records
-    records = query.all()
+        # Apply conditions if specified
+        if conditions:
+            for attr, value in conditions.items():
+                query = query.filter(getattr(model_class, str(attr).split(".")[1]) == str(value))
 
-    # # Expunge the results
-    session.expunge_all()
+        # Use joinedload to eager load relationships with specified depth
+        if eager_load_depth is not None:
+            for attr in eager_load_depth:
+                if isinstance(attr, dict):
+                    # Handle nested eager loading with specific fields
+                    for relationship, nested_fields in attr.items():
+                        print(f"{relationship}, {nested_fields}")
+                        nested_loader = joinedload(getattr(model_class, str(relationship).split(".")[1]))
+                        for nested_field in nested_fields:
+                            nested_loader = nested_loader.load_only(nested_field)
+                        query = query.options(nested_loader)
+                else:
+                    query = query.options(joinedload(getattr(model_class, str(attr).split(".")[1])))
+        # Fetch all records
+        records = query.all()
 
-    return records
+        # Expunge the results
+        session.expunge_all()
+
+        return records
 
 # Function to update an record in a table
 def update_record(engine,obj):

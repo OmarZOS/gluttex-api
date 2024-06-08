@@ -2,7 +2,7 @@ from fastapi import APIRouter,status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from core.api_models import Recipe_API, RecipeImage_API
-from features.recipe.recipe_fetch import fetch_all_recipe, fetch_recipe_by_id, get_recipe_categories, get_recipes_by_category_id
+from features.recipe.recipe_fetch import fetch_all_recipe, fetch_recipe_by_id, get_recipe_categories, get_recipe_image_by_id, get_recipes_by_category_id
 from features.recipe.recipe_insert import insert_recipe
 from features.recipe.recipe_update import update_recipe
 from features.recipe.recipe_delete import delete_recipe
@@ -52,7 +52,18 @@ def insert_Recipe(recipe: Recipe_API, image: RecipeImage_API):
     )
     return res
 
-
+@recipe_router.get("/image/recipe/{image_id}")
+def getRecipeImage(image_id : int):
+    try:
+        res = JSONResponse(
+        status_code=status.HTTP_200_OK, 
+        content=jsonable_encoder(get_recipe_image_by_id(image_id)))
+    except Exception as e:
+        res = JSONResponse(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't fetch image."}),
+    )
+    return res
 
 @recipe_router.get("/recipe/{Recipe_id}")
 def get_Recipe_by_id(Recipe_id: int):
