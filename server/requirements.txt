@@ -8,3 +8,4 @@ sqlalchemy
 # scikit-learn
 pymysql
 cryptography
+httpx

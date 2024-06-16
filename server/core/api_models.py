@@ -1,5 +1,5 @@
 from sqlalchemy.orm import declarative_base
-from typing import Optional
+from typing import Optional,Dict
 from pydantic import BaseModel
 
 Base = declarative_base()
@@ -61,15 +61,18 @@ class Patient_API(BaseModel):
     patient_person_id: Optional[int]
     patient_disease_severity_id: Optional[int]
 
-    #  Diagnosis
-    id_diagnosis: int
-    diagnosis_details: Optional[str]
-    diagnosis_date: Optional[str]  # You might need to handle date formats
-    patient_id: Optional[int]
+class Serology_API(BaseModel):
+    id_patient: int
+    serology_indicator_ids: list[int]
+    serology_indicator_values: list[str]
+    serology_date: str
 
-    # DiseaseSeverity_API
-    id_disease_severity: int
-    disease_severity_desc: Optional[str]
+class Symptoms_API(BaseModel):
+    id_patient: int
+    symptom_ids: list[int]
+    symptoms_occurence_reason : Optional[str]
+    symptoms_occurence_since_reason : Optional[str]
+    
 
 
 # -------------------------------------------------------------------------------------
@@ -110,7 +113,6 @@ class ProductProvider_API(BaseModel):
 # -------------------------------------------------------------------------------------
 
 class Recipe_API(BaseModel):
-    
     id_recipe: int
     recipe_category_id: int
     recipe_name : str
@@ -118,6 +120,7 @@ class Recipe_API(BaseModel):
     recipe_preparation_time: Optional[str]
     recipe_instructions: Optional[str]
     recipe_description : Optional[str]
+    recipe_ingredients: Optional[Dict[int, str]]
 
 
 class RecipeContainsIngredient_API(BaseModel):

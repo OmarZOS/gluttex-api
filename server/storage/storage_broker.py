@@ -6,6 +6,7 @@
 from constants import DB_URI
 import storage.wrappers.sql_wrapper as medicom_store
 
+
 def insert_record(item):
     try:
         engine = medicom_store.get_engine(DB_URI)
