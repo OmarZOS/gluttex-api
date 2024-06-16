@@ -1,5 +1,4 @@
-from sqlalchemy import Column, DECIMAL, Date, DateTime, Double, ForeignKeyConstraint, Index, Integer, String, Text
-from sqlalchemy.dialects.mysql import LONGTEXT
+from sqlalchemy import Column, DECIMAL, Date, DateTime, Double, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -100,6 +99,7 @@ class ProviderOrganisation(Base):
 
     idprovider_organisation = Column(Integer, primary_key=True)
     provider_organisation_name = Column(String(45))
+    provider_organisation_desc = Column(String(300))
 
     product_provider = relationship('ProductProvider', back_populates='product_provider_org')
 
@@ -112,6 +112,26 @@ class RecipeCategory(Base):
     recipe_category_icon = Column(Text)
 
     recipe = relationship('Recipe', back_populates='recipe_category')
+
+
+class SerologyIndicator(Base):
+    __tablename__ = 'serology_indicator'
+
+    id_serology_indicator = Column(Integer, primary_key=True)
+    serology_indicator_name = Column(String(45))
+    serology_indicator_desc = Column(String(300))
+
+    serology = relationship('Serology', back_populates='indicator')
+
+
+class Symptom(Base):
+    __tablename__ = 'symptom'
+
+    id_symptom = Column(Integer, primary_key=True)
+    symptom_name = Column(String(45))
+    symptom_desc = Column(String(300))
+
+    presented_symptom = relationship('PresentedSymptom', back_populates='symptom')
 
 
 class Location(Base):
@@ -196,7 +216,7 @@ class AppUser(Base):
     app_user_person_id = Column(Integer)
     app_user_type_id = Column(Integer)
     app_user_preferences = Column(Text)
-    app_user_image = Column(LONGTEXT)
+    app_user_image = Column(LargeBinary)
     app_user_last_active = Column(DateTime)
     app_user_last_updated = Column(DateTime)
     app_user_creation = Column(DateTime)
@@ -204,6 +224,7 @@ class AppUser(Base):
     app_user_person = relationship('Person', back_populates='app_user')
     app_user_type = relationship('AppUserType', back_populates='app_user')
     recipe = relationship('Recipe', back_populates='recipe_owner')
+    report = relationship('Report', back_populates='app_user')
 
 
 class Patient(Base):
@@ -221,7 +242,8 @@ class Patient(Base):
 
     patient_disease_severity = relationship('DiseaseSeverity', back_populates='patient')
     patient_person = relationship('Person', back_populates='patient')
-    diagnosis = relationship('Diagnosis', back_populates='patient')
+    serology = relationship('Serology', back_populates='patient')
+    symptoms_occurence = relationship('SymptomsOccurence', back_populates='patient')
 
 
 class Product(Base):
@@ -250,21 +272,6 @@ class Product(Base):
     product_image = relationship('ProductImage', back_populates='product_ref')
 
 
-class Diagnosis(Base):
-    __tablename__ = 'diagnosis'
-    __table_args__ = (
-        ForeignKeyConstraint(['patient_id'], ['patient.id_patient'], name='fk_diagnosis_1'),
-        Index('fk_diagnosis_1_idx', 'patient_id')
-    )
-
-    id_diagnosis = Column(Integer, primary_key=True)
-    diagnosis_details = Column(Text)
-    diagnosis_date = Column(Date)
-    patient_id = Column(Integer)
-
-    patient = relationship('Patient', back_populates='diagnosis')
-
-
 class ProductImage(Base):
     __tablename__ = 'product_image'
     __table_args__ = (
@@ -273,7 +280,7 @@ class ProductImage(Base):
     )
 
     id_product_image = Column(Integer, primary_key=True)
-    product_image_data = Column(LONGTEXT)
+    product_image_data = Column(LargeBinary)
     product_ref_id = Column(Integer)
 
     product_ref = relationship('Product', back_populates='product_image')
@@ -304,6 +311,73 @@ class Recipe(Base):
     recipe_image = relationship('RecipeImage', back_populates='recipe_ref')
 
 
+class Report(Base):
+    __tablename__ = 'report'
+    __table_args__ = (
+        ForeignKeyConstraint(['report_owner'], ['app_user.id_app_user'], name='fk_report_1'),
+        Index('fk_report_1_idx', 'report_owner')
+    )
+
+    id_report = Column(Integer, primary_key=True)
+    report_text = Column(Text)
+    report_owner = Column(Integer)
+
+    app_user = relationship('AppUser', back_populates='report')
+
+
+class Serology(Base):
+    __tablename__ = 'serology'
+    __table_args__ = (
+        ForeignKeyConstraint(['indicator_id'], ['serology_indicator.id_serology_indicator'], name='fk_serology_1'),
+        ForeignKeyConstraint(['patient_id'], ['patient.id_patient'], name='fk_diagnosis_1'),
+        Index('fk_diagnosis_1_idx', 'patient_id'),
+        Index('fk_serology_1_idx', 'indicator_id')
+    )
+
+    id_serology = Column(Integer, primary_key=True)
+    indicator_id = Column(Integer)
+    serology_date = Column(Date)
+    patient_id = Column(Integer)
+    indicator_value = Column(String(45))
+
+    indicator = relationship('SerologyIndicator', back_populates='serology')
+    patient = relationship('Patient', back_populates='serology')
+
+
+class SymptomsOccurence(Base):
+    __tablename__ = 'symptoms_occurence'
+    __table_args__ = (
+        ForeignKeyConstraint(['symptoms_occurence_ref_patient'], ['patient.id_patient'], name='fk_symptoms_causality_1'),
+        Index('fk_symptoms_causality_1_idx', 'symptoms_occurence_ref_patient')
+    )
+
+    id_symptoms_occurence = Column(Integer, primary_key=True)
+    symptoms_occurence_submission_time = Column(DateTime)
+    symptoms_occurence_reason = Column(String(300))
+    symptoms_occurence_since_reason = Column(DateTime)
+    symptoms_occurence_ref_patient = Column(Integer)
+
+    patient = relationship('Patient', back_populates='symptoms_occurence')
+    presented_symptom = relationship('PresentedSymptom', back_populates='symptoms_occurence')
+
+
+class PresentedSymptom(Base):
+    __tablename__ = 'presented_symptom'
+    __table_args__ = (
+        ForeignKeyConstraint(['presented_symptom_ref_symptom'], ['symptom.id_symptom'], name='fk_presented_symptom_1'),
+        ForeignKeyConstraint(['presented_symptom_ref_symptoms_occurence'], ['symptoms_occurence.id_symptoms_occurence'], name='fk_presented_symptom_2'),
+        Index('fk_presented_symptom_1_idx', 'presented_symptom_ref_symptom'),
+        Index('fk_presented_symptom_2_idx', 'presented_symptom_ref_symptoms_occurence')
+    )
+
+    id_presented_symptom = Column(Integer, primary_key=True)
+    presented_symptom_ref_symptoms_occurence = Column(Integer)
+    presented_symptom_ref_symptom = Column(Integer)
+
+    symptom = relationship('Symptom', back_populates='presented_symptom')
+    symptoms_occurence = relationship('SymptomsOccurence', back_populates='presented_symptom')
+
+
 class RecipeContainsIngredient(Base):
     __tablename__ = 'recipe_contains_ingredient'
     __table_args__ = (
@@ -330,7 +404,7 @@ class RecipeImage(Base):
     )
 
     id_recipe_image = Column(Integer, primary_key=True)
-    recipe_image_data = Column(LONGTEXT)
+    recipe_image_data = Column(LargeBinary)
     recipe_ref_id = Column(Integer)
 
     recipe_ref = relationship('Recipe', back_populates='recipe_image')
