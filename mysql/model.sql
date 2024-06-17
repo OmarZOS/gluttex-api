@@ -487,7 +487,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`symptoms_occurence` (
   `id_symptoms_occurence` INT NOT NULL AUTO_INCREMENT,
   `symptoms_occurence_submission_time` DATETIME NULL,
   `symptoms_occurence_reason` VARCHAR(300) NULL,
-  `symptoms_occurence_since_reason` DATETIME NULL,
+  `reason_date` DATETIME NULL,
   `symptoms_occurence_ref_patient` INT NULL,
   PRIMARY KEY (`id_symptoms_occurence`),
   INDEX `fk_symptoms_causality_1_idx` (`symptoms_occurence_ref_patient` ASC) VISIBLE,
