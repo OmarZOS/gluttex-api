@@ -63,8 +63,8 @@ class Patient_API(BaseModel):
 
 class Serology_API(BaseModel):
     id_patient: int
-    serology_indicator_ids: list[int]
-    serology_indicator_values: list[str]
+    serology_indicator_id: int
+    serology_indicator_value: str
     serology_date: str
 
 class Symptoms_API(BaseModel):

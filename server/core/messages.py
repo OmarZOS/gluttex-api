@@ -24,3 +24,8 @@ APPUSER_ALREADY_EXISTS = "User already exists."
 APPUSER_NOT_EXISTS = "User doesn't exist."
 
 
+
+SEROLOGY_ALREADY_EXISTS = "Serology already exists"
+SEROLOGY_INDICATOR_NOT_EXISTS = "Serology indicator does not exist"
+PATIENT_NOT_EXISTS = "Patient does not exist"
+SEROLOGY_NOT_EXISTS = "Serology does not exist"

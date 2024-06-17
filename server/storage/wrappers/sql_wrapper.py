@@ -95,7 +95,6 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
                 if isinstance(attr, dict):
                     # Handle nested eager loading with specific fields
                     for relationship, nested_fields in attr.items():
-                        print(f"{relationship}, {nested_fields}")
                         nested_loader = joinedload(getattr(model_class, str(relationship).split(".")[1]))
                         for nested_field in nested_fields:
                             nested_loader = nested_loader.load_only(nested_field)
