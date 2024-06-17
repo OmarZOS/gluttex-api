@@ -71,7 +71,7 @@ class Symptoms_API(BaseModel):
     id_patient: int
     symptom_ids: list[int]
     symptoms_occurence_reason : Optional[str]
-    symptoms_occurence_since_reason : Optional[str]
+    reason_date : Optional[str]
     
 
 

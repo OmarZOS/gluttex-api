@@ -354,7 +354,7 @@ class SymptomsOccurence(Base):
     id_symptoms_occurence = Column(Integer, primary_key=True)
     symptoms_occurence_submission_time = Column(DateTime)
     symptoms_occurence_reason = Column(String(300))
-    symptoms_occurence_since_reason = Column(DateTime)
+    reason_date = Column(DateTime)
     symptoms_occurence_ref_patient = Column(Integer)
 
     patient = relationship('Patient', back_populates='symptoms_occurence')
