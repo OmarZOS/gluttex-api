@@ -7,5 +7,4 @@ mysql-connector-python
 sqlalchemy
 # scikit-learn
 pymysql
-cryptography
 httpx

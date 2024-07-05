@@ -2,7 +2,6 @@ from fastapi import APIRouter,status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from core.api_models import Patient_API, Serology_API, Symptoms_API
-from fastapi.responses import JSONResponse
 from features.health.fetch_serology import get_serology_history
 from features.health.insert_serology import insert_serology
 from features.health.update_serology import update_serology

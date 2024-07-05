@@ -61,3 +61,5 @@ def delete_User(user: AppUser_API):
         content=jsonable_encoder({"detail": str(e), "Error": "Couldn't delete user."}),
     )
     return res
+
+
