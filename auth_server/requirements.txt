@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+
+authlib
+bcrypt
+python-jose
+# sqlite
+sqlalchemy
+passlib
+

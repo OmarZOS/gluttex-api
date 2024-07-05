@@ -32,12 +32,37 @@ services:
       - SQL_DATABASE=${MYSQL_DATABASE}
       - SQL_USER=${MYSQL_USER}
       - SQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - API_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - API_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - API_FACEBOOK_CLIENT_ID=${FACEBOOK_CLIENT_ID}
+      - API_FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}
+      - API_INSTAGRAM_CLIENT_ID=${INSTAGRAM_CLIENT_ID}
+      - API_INSTAGRAM_CLIENT_SECRET=${INSTAGRAM_CLIENT_SECRET}
+      - API_SECRET_KEY=${SECRET_KEY}
     networks:
       - gluttex-net
     volumes:
       - ./server/:/code
+  gluttex-auth:
+    container_name: gluttex-auth
+    hostname: gluttex-auth
+    restart: always
+    build:  auth_server/.
+    image: omarzos/gluttex-auth
+    ports:
+      - ${AUTH_PORT}:8000
+    environment:
+      - ALGORITHM=${ALGORITHM}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - API_SECRET_KEY=${SECRET_KEY}
+    networks:
+      - gluttex-net
+    volumes:
+      - ./auth_server/:/code
+      - ./auth_db:/data
 volumes:
   data:
+  auth_db:
 networks:
   gluttex-net:
     name: gluttex-net

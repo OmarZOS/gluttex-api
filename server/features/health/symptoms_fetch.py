@@ -1,5 +1,5 @@
 
-from core.models import Patient, Symptom, SymptomsOccurence
+from core.models import Symptom, SymptomsOccurence
 import storage.storage_broker as storage_broker
 
 
