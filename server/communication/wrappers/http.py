@@ -1,15 +1,25 @@
+import httpx
 
+async def send_post_request( endpoint: str, input_data: dict,flags: dict = None) -> httpx.Response:
+    async with httpx.AsyncClient(verify=False) as client:
+        url = f"{endpoint}"
+        response = await client.post(url, json=input_data, **(flags or {}))
+        return response
 
-async def process_data(input_data: dict):
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.post(f"{ML_SERVER_URL}/compute", json=input_data)
-            response.raise_for_status()
-            result = response.json()
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    return result
+async def send_get_request( endpoint: str, params: dict = None,flags: dict = None) -> httpx.Response:
+    async with httpx.AsyncClient(verify=False) as client:
+        url = f"{endpoint}"
+        response = await client.get(url, params=params, **(flags or {}))
+        return response
 
+async def send_put_request( endpoint: str, input_data: dict,flags: dict = None) -> httpx.Response:
+    async with httpx.AsyncClient(verify=False) as client:
+        url = f"{endpoint}"
+        response = await client.put(url, json=input_data, **(flags or {}))
+        return response
 
+async def send_delete_request( endpoint: str, params: dict = None,flags: dict = None) -> httpx.Response:
+    async with httpx.AsyncClient(verify=False) as client:
+        url = f"{endpoint}"
+        response = await client.delete(url, params=params, **(flags or {}))
+        return response

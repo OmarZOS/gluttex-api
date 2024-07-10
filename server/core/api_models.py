@@ -3,10 +3,7 @@ from typing import Optional,Dict
 from pydantic import BaseModel
 
 Base = declarative_base()
-metadata = Base.metadata
-
-
-    
+metadata = Base.metadata    
 
 class Person_API(BaseModel):
     id_person: int

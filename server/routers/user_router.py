@@ -24,7 +24,7 @@ def get_User_by_id(user_id: int):
     return res
 
 @app_user_router.put("/appUser/add")
-def insert_User(user: AppUser_API,person: Person_API=None,location: Location_API=None):
+async def insert_User(user: AppUser_API,person: Person_API=None,location: Location_API=None):
     """
     This function is responsible for inserting a new user into the system.
 
@@ -42,7 +42,7 @@ def insert_User(user: AppUser_API,person: Person_API=None,location: Location_API
     Exception: If any error occurs during the insertion process.
     """
     try:
-        res = insert_user(user,person,location)
+        res = await insert_user(user,person,location)
     except Exception as e:
         res = JSONResponse(
         status_code=status.HTTP_406_NOT_ACCEPTABLE,

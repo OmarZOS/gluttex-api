@@ -4,8 +4,9 @@ from typing import Optional
 from datetime import datetime
 
 class UserBase(BaseModel):
+    
     username: str
-    email: str
+    email: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     phone_number : Optional[str] = None
@@ -20,12 +21,15 @@ class UserBase(BaseModel):
     mfa_enabled : Optional[bool] = False
 
 class UserCreate(UserBase):
+    # this is the most important id to get the user from the database
+    app_user_id: int
     password: str
 
 class UserResponse(UserBase):
     id: int
     created_at: datetime
     updated_at: datetime
+    hashed_password: str
 
     class Config:
         orm_mode = True
@@ -44,8 +48,6 @@ class User(BaseModel):
     full_name: Optional[str] 
     disabled: Optional[bool] 
 
-class UserInDB(User):
-    hashed_password: str
 
 class UserUpdate(UserBase):
     new_username: Optional[str] 

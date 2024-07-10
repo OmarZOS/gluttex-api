@@ -19,7 +19,7 @@ app.include_router(supplier_router)
 app.include_router(product_router)
 app.include_router(recipe_router)
 app.include_router(health_router)
-# app.include_router(app_user_router)
+app.include_router(app_user_router)
 
 # ------------- Standard endpoints -----------------------------------------------
 

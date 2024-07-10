@@ -101,6 +101,11 @@ The server uses an SQLite database for storing user information. This enhances s
 ## Token Authentication
 The server uses OAuth2 with password (and hashing) bearer tokens. This ensures that each request to the protected endpoints is authenticated.
 
+## Certification
+
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout certificates/key.pem -out certficates/cert.pem -config cert.cnf
+
+
 ## Setup
 To set up the authentication server, follow these steps:
 1. Clone the repository.
