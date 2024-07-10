@@ -3,8 +3,8 @@
 
 import communication.wrappers.http as http_broker
 
-async def send_post_request(endpoint: str, input_data: dict,flags: dict = None) :
-    response = await http_broker.send_post_request(endpoint, input_data,flags)
+async def send_post_request(endpoint: str, json_data: dict=None, payload_data: dict=None,flags: dict = None) :
+    response = await http_broker.send_post_request(endpoint,json_data, payload_data,flags)
     # print(response.content)
     return response
 

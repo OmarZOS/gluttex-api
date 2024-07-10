@@ -27,7 +27,7 @@ async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Loca
     app_user = AppUser(
                         # id_app_user= user.id_app_user,
                         app_user_name= user.app_user_name,
-                        app_user_password= user.app_user_password,
+                        app_user_password= "", # intentionally empty
                         app_user_preferences= user.app_user_preferences,
                         app_user_image = user.app_user_image,
                         # app_user_person_id= person.id_person,
@@ -51,13 +51,11 @@ async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Loca
     user_auth_data = {
         "username":nutzer.app_user_name,
         "app_user_id":nutzer.id_app_user,
-        "password":nutzer.app_user_password,   
+        "password":user.app_user_password,   
     }
 
     # create auth record for user
     user_auth_record = await create_user(user_auth_data)
-    # print(new_data )
-    # print( new_data["hashed_password"])
     update_user_password(nutzer,user_auth_record["hashed_password"])
     
     return nutzer

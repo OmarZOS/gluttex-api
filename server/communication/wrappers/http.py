@@ -1,9 +1,11 @@
 import httpx
 
-async def send_post_request( endpoint: str, input_data: dict,flags: dict = None) -> httpx.Response:
+async def send_post_request( endpoint: str, json_data: dict=None, payload_data: dict=None,flags: dict = {}) -> httpx.Response:
     async with httpx.AsyncClient(verify=False) as client:
         url = f"{endpoint}"
-        response = await client.post(url, json=input_data, **(flags or {}))
+        # print(input_data)
+        # print(flags)
+        response = await client.post(url,json=json_data, data= payload_data,headers= flags )
         return response
 
 async def send_get_request( endpoint: str, params: dict = None,flags: dict = None) -> httpx.Response:

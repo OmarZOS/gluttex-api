@@ -20,7 +20,6 @@ def get_user_by_email(db: Session, email: str):
 def create_user(db: Session, user: schemas.UserCreate):
     salt = generate_salt()
     hashed_password = hash_with_salt(user.password, salt)
-    
     db_user = models.AppUser(
         username = user.username,
         email = user.email,
