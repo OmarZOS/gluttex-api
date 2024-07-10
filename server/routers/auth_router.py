@@ -1,12 +1,8 @@
 from fastapi import APIRouter,Request
 from authlib.integrations.starlette_client import OAuth
 from constants import FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, INSTAGRAM_CLIENT_ID, INSTAGRAM_CLIENT_SECRET, SECRET_KEY
-# from features.auth.jwt import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
-# from features.auth.hash import get_password_hash, verify_password
-
 
 auth_router = APIRouter()
-
 
 # OAuth configuration
 oauth = OAuth()

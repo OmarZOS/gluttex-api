@@ -9,16 +9,21 @@ from features.person.person_fetch import fetch_person, fetch_person_object
 from features.person.person_insert import generate_person_object
 from features.search import find_object_by_id
 from features.user.user_fetch import fetch_user_by_id, fetch_user_by_name, fetch_user_type_by_id, fetch_user_type_object_by_id
+from features.user.user_net import create_user
+from features.user.user_update import update_user_password
+import datetime
 
 
 
-def insert_user(user: AppUser_API,mensch: Person_API=None,location: Location_API=None):
+
+async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Location_API=None):
     
     if fetch_user_by_name(user.app_user_name) != []:
         raise Exception(APPUSER_ALREADY_EXISTS)
 
     user_type = fetch_user_type_object_by_id(user.app_user_type_id)
-
+    if isinstance(user.app_user_image, str):
+        user.app_user_image = user.app_user_image.encode('utf-8')
     app_user = AppUser(
                         # id_app_user= user.id_app_user,
                         app_user_name= user.app_user_name,
@@ -27,6 +32,9 @@ def insert_user(user: AppUser_API,mensch: Person_API=None,location: Location_API
                         app_user_image = user.app_user_image,
                         # app_user_person_id= person.id_person,
                         app_user_type_id= user_type.id_app_user_type,
+                        app_user_last_active= str(datetime.datetime.now()),
+                        app_user_last_updated= str(datetime.datetime.now()),
+                        app_user_creation= str(datetime.datetime.now()),
                         )
     if mensch:
         person_object = fetch_person_object(mensch.id_person)
@@ -36,9 +44,21 @@ def insert_user(user: AppUser_API,mensch: Person_API=None,location: Location_API
             person = generate_person_object(mensch,location)
             app_user.app_user_person = person
 
-
     code,nutzer,msg = insert_or_complete_or_raise(app_user)
     if (code == 1): raise Exception(msg)
+    
+    # create auth record for user
+    user_auth_data = {
+        "username":nutzer.app_user_name,
+        "app_user_id":nutzer.id_app_user,
+        "password":nutzer.app_user_password,   
+    }
+
+    # create auth record for user
+    user_auth_record = await create_user(user_auth_data)
+    # print(new_data )
+    # print( new_data["hashed_password"])
+    update_user_password(nutzer,user_auth_record["hashed_password"])
     
     return nutzer
 

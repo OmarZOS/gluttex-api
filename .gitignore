@@ -4,3 +4,4 @@
 *.cpython
 *.pyc
 auth_test.html
+auth_db_data.db
