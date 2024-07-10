@@ -1,6 +1,10 @@
 from fastapi import APIRouter,Request
 from authlib.integrations.starlette_client import OAuth
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from constants import FACEBOOK_CLIENT_ID, FACEBOOK_CLIENT_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, INSTAGRAM_CLIENT_ID, INSTAGRAM_CLIENT_SECRET, SECRET_KEY
+from core.api_models import AuthData_API
+from features.user.user_net import login_for_access_token
 
 auth_router = APIRouter()
 
@@ -49,5 +53,14 @@ async def auth(request: Request, provider: str):
     request.session['user'] = dict(user)
     return {'token': token, 'user': user}
 
-
+@auth_router.post("/authentication/token")
+async def login_user(user: AuthData_API):
+    try:
+        res = await login_for_access_token(user)
+    except Exception as e:
+        res = JSONResponse(
+        status_code=406,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't login."}),
+    )
+    return res
 
