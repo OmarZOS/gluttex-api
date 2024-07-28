@@ -8,17 +8,26 @@ from routers.user_router import app_user_router
 from routers.recipe_router import recipe_router
 from routers.health_router import health_router
 from routers.auth_router import auth_router
-
+from features.auth.decoder import verify_token
+from fastapi.middleware.cors import CORSMiddleware
 
 # ----------- App initialisation -------------------------------------
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to restrict origins in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(auth_router)
-app.include_router(supplier_router)
-app.include_router(product_router)
-app.include_router(recipe_router)
-app.include_router(health_router)
+app.include_router(supplier_router) # , dependencies=[Depends(verify_token)]
+app.include_router(product_router) # , dependencies=[Depends(verify_token)]
+app.include_router(recipe_router) # , dependencies=[Depends(verify_token)]
+app.include_router(health_router) # , dependencies=[Depends(verify_token)]
 app.include_router(app_user_router)
 
 # ------------- Standard endpoints -----------------------------------------------

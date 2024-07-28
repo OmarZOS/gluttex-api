@@ -38,6 +38,7 @@ class UserResponse(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    app_user_id: str
 
 class TokenData(BaseModel):
     username: Optional[str] 

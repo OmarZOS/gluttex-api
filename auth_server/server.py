@@ -50,7 +50,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
-        data={"sub": user.username,
+        data={"sub": user.app_user_id,
               "first_name":user.first_name,
                 "last_name":user.last_name,
                 "date_of_birth":user.date_of_birth,
@@ -59,7 +59,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
                 "mfa_enabled":user.mfa_enabled,
               }, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer","app_user_id": str(user.app_user_id)}
 
 @app.get("/users/me/", response_model=schemas.UserResponse)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_user)):

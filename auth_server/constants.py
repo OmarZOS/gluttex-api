@@ -3,7 +3,7 @@ import os
 
 
 SECRET_KEY = os.getenv("API_SECRET_KEY",'')
-ALGORITHM = os.getenv("ALGORITHM",'')
+ALGORITHM = os.getenv("API_ALGORITHM",'')
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES",10))
 
 
