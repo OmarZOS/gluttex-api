@@ -38,8 +38,8 @@ async def login_for_access_token( app_user : AuthData_API):
 
 async def update_user_password( user_data: dict, token: str):
     headers = {"Authorization": f"Bearer {token}"}
-    url = f"https://{AUTH_SERVER_NAME}:8000{AUTH_CHANGE_ENDPOINT}"
-    return await send_put_request(url, user_data, flags=headers)
+    url = f"https://{AUTH_SERVER_NAME}:{AUTH_PORT}{AUTH_CHANGE_ENDPOINT}"
+    return await send_put_request(url, payload_data=user_data, flags=headers)
 
 
 
