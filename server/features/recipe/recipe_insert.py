@@ -16,6 +16,7 @@ def build_recipe(recipe: Recipe_API):
         recipe_preparation_time  = recipe.recipe_preparation_time,
         recipe_instructions  = recipe.recipe_instructions,
         recipe_name  = recipe.recipe_name,
+        recipe_owner_id = recipe.recipe_owner_id,
         recipe_description  = recipe.recipe_description,
         recipe_creation  = datetime.now(),
         recipe_last_updated  = datetime.now())
