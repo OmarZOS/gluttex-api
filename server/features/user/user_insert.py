@@ -60,8 +60,3 @@ async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Loca
     
     return nutzer
 
-
-
-
-
-

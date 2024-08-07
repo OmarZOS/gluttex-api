@@ -43,15 +43,21 @@ def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
         recipe_image = RecipeImage(recipe_image_data  = image.recipe_image_data)
         recipe.recipe_image = [recipe_image]
 
-    code,recipe,msg = insert_or_complete_or_raise(recipe)
-    if (code == 1): return msg
-    
     if (recipe_api.recipe_ingredients):
-        id_recipe = recipe.id_recipe
-        for id,value in recipe_api.recipe_ingredients.items():
-            containment = RecipeContainsIngredient(contained_ingredient_id =id,contained_quantity=value,containing_recipe_id=id_recipe)
-            code,containment,msg = insert_or_complete_or_raise(containment)
+        RecipeContainsIngredient()
 
     
+    if (recipe_api.recipe_ingredients):
+        # id_recipe = recipe.id_recipe
+        ingredient_list = []
+        for id,value in recipe_api.recipe_ingredients.items():
+            containment = RecipeContainsIngredient(contained_ingredient_id =id,contained_quantity=value)
+            ingredient_list.append(containment)
+            # code,containment,msg = insert_or_complete_or_raise(containment)
+        recipe.recipe_contains_ingredient = ingredient_list
+
+    
+    code,recipe,msg = insert_or_complete_or_raise(recipe)
+    if (code == 1): return msg
     return recipe
 
