@@ -5,8 +5,9 @@ uvicorn==0.17.6
 # scylla-driver
 mysql-connector-python
 sqlalchemy
-
+prometheus_client
 python-jose
 Authlib
 pymysql
 httpx
+sse_starlette

@@ -18,6 +18,7 @@ services:
         # - ./mysql/my.cnf:/etc/mysql/my.cnf  # Mount custom my.cnf
     networks:
       - gluttex-net
+
   gluttex-api:
     container_name: gluttex-api
     hostname: gluttex-api
@@ -49,6 +50,7 @@ services:
       - gluttex-net
     volumes:
       - ./server/:/code
+
   gluttex-auth:
     container_name: gluttex-auth
     hostname: gluttex-auth
@@ -66,9 +68,21 @@ services:
     volumes:
       - ./auth_server/:/code
       - ./auth_db/auth_db.db:/auth_db_data.db
+
+  # prometheus:
+  #   image: prom/prometheus
+  #   container_name: prometheus
+  #   ports:
+  #     - ${MONITOR_PORT}:9090
+  #   volumes:
+  #     - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+  #   networks:
+  #     - gluttex-net
+
 volumes:
   data:
   auth_db:
+
 networks:
   gluttex-net:
     name: gluttex-net

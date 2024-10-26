@@ -53,4 +53,4 @@ def get_ingredients():
 
 
 def fetch_all_recipe():
-    return storage_broker.get(Recipe,None,[RecipeCategory],[Recipe.recipe_category,{Recipe.recipe_image: [RecipeImage.id_recipe_image]}])
+    return storage_broker.get(Recipe,None,[RecipeCategory],[Recipe.recipe_category,Recipe.recipe_contains_ingredient,{Recipe.recipe_image: [RecipeImage.id_recipe_image]}])
