@@ -44,8 +44,6 @@ def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
         recipe_image = RecipeImage(recipe_image_data  = image.recipe_image_data)
         recipe.recipe_image = [recipe_image]
 
-    if (recipe_api.recipe_ingredients):
-        RecipeContainsIngredient()
 
     
     if (recipe_api.recipe_ingredients):

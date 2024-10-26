@@ -48,7 +48,8 @@ class Ingredient(Base):
 
     id_ingredient = Column(Integer, primary_key=True)
     ingredient_name = Column(String(45))
-
+    ingredient_icon = Column(Text)
+    
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='contained_ingredient')
 
 

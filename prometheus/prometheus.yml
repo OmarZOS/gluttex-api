@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s # Set the scrape interval to 15 seconds. Default is 1 minute.
+
+scrape_configs:
+  - job_name: 'gluttex-db'
+    static_configs:
+      - targets: ['gluttex-db:3306']
+
+  - job_name: 'gluttex-api'
+    static_configs:
+      - targets: ['gluttex-api:9000']
+
+  - job_name: 'gluttex-auth'
+    static_configs:
+      - targets: ['gluttex-auth:9090']

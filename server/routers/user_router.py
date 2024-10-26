@@ -7,11 +7,7 @@ from features.user.user_fetch import fetch_all_users, fetch_user_by_id
 from features.user.user_insert import insert_user
 
 
-
-
 app_user_router = APIRouter()
-
-
 
 
 @app_user_router.get("/appUser")
@@ -20,6 +16,15 @@ def get_all_Users():
 
 @app_user_router.get("/appUser/{user_id}")
 def get_User_by_id(user_id: int):
+    """The selected code snippet is a FastAPI endpoint for fetching a single user from the system. It is defined within the `app_user_router` and is accessible via the GET request method at the "/appUser/{user_id}" endpoint.
+
+The endpoint takes a path parameter `user_id` of type `int`. This parameter is used to identify the user to be fetched.
+
+Inside the function `get_User_by_id`, the `fetch_user_by_id` function is called with the provided `user_id`. This function is responsible for retrieving the user details from the database based on the given `user_id`.
+
+The retrieved user details are then returned as the response of the endpoint. If an error occurs during the retrieval process, an appropriate error response is returned with a status code of 406 (Not Acceptable) and an error message.
+
+Overall, this code snippet demonstrates how to create a FastAPI endpoint for fetching a single user based on the provided `user_id`."""
     res = fetch_user_by_id(user_id)
     return res
 
@@ -53,6 +58,7 @@ async def insert_User(user: AppUser_API,person: Person_API=None,location: Locati
 
 @app_user_router.delete("/appUser/delete")
 def delete_User(user: AppUser_API):
+    """The selected code snippet is a FastAPI endpoint for deleting a user from the system. It is defined within the app_user_router and is accessible via the DELETE request method at the "/appUser/delete" endpoint."""
     try:
         res = delete_user(user)
     except Exception as e:
