@@ -38,7 +38,6 @@ class Location_API(BaseModel):
 
 # -------------------------------------------------------------------------------------
 
-
 class AppUser_API(BaseModel):
     id_app_user: int
     app_user_name: Optional[str]
@@ -53,8 +52,6 @@ class AuthData_API(BaseModel):
     id_app_user: int
     app_user_name: Optional[str]
     app_user_password: Optional[str]
-
-
 
 # -------------------------------------------------------------------------------------
 
@@ -75,8 +72,6 @@ class Symptoms_API(BaseModel):
     symptoms_occurence_reason : Optional[str]
     reason_date : Optional[str]
     
-
-
 # -------------------------------------------------------------------------------------
 
 class Product_API(BaseModel):
@@ -99,7 +94,6 @@ class ProductImage_API(BaseModel):
     product_image_data: Optional[str]
     product_ref_id: Optional[int]
 
-
 class ProductProvider_API(BaseModel):
     id_product_provider: int
     product_provider_details_id: Optional[int]
@@ -110,7 +104,6 @@ class ProductProvider_API(BaseModel):
     idprovider_details_id: int
     provider_name: Optional[str]
     provider_contact_info: Optional[str]
-
 
 # -------------------------------------------------------------------------------------
 
@@ -124,7 +117,6 @@ class Recipe_API(BaseModel):
     recipe_description : Optional[str]
     recipe_ingredients: Optional[Dict[int, str]]
 
-
 class RecipeContainsIngredient_API(BaseModel):
     idrecipe_contains_ingredient_id: int
     containing_recipe_id: Optional[int]
@@ -135,8 +127,27 @@ class Ingredient_API(BaseModel):
     id_ingredient: int
     ingredient_name: Optional[str]
 
-
 class RecipeImage_API(BaseModel):
     id_recipe_image: int
     recipe_image_data: Optional[str]
     recipe_ref_id: Optional[int]
+
+class PlacedOrder_API(BaseModel):
+    id_placed_order : Optional[int]
+    ordered_timestamp : Optional[str]
+    order_discount : Optional[str]
+
+class OrderedItem_API(BaseModel):
+    
+    id_ordered_item : Optional[int]
+    ordered_product_id : Optional[int]
+    ordering_user_id : Optional[int]
+    order_ref : Optional[int]
+    
+    product_discount : Optional[int]
+    ordered_quantity : Optional[int]
+    unit_price : Optional[int]
+    applied_vat : Optional[int]
+
+
+

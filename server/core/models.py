@@ -1,4 +1,5 @@
-from sqlalchemy import Column, DECIMAL, Date, DateTime, Double, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
+from sqlalchemy import Column, DECIMAL, Date, DateTime, Float, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
+
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -49,7 +50,7 @@ class Ingredient(Base):
     id_ingredient = Column(Integer, primary_key=True)
     ingredient_name = Column(String(45))
     ingredient_icon = Column(Text)
-    
+
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='contained_ingredient')
 
 
@@ -64,6 +65,16 @@ class PersonDetails(Base):
     person_nationality = Column(String(45))
 
     person = relationship('Person', back_populates='person_details')
+
+
+class PlacedOrder(Base):
+    __tablename__ = 'placed_order'
+
+    id_placed_order = Column(Integer, primary_key=True)
+    ordered_timestamp = Column(Date)
+    order_discount = Column(Integer)
+
+    ordered_item = relationship('OrderedItem', back_populates='placed_order')
 
 
 class ProductCategory(Base):
@@ -224,6 +235,7 @@ class AppUser(Base):
 
     app_user_person = relationship('Person', back_populates='app_user')
     app_user_type = relationship('AppUserType', back_populates='app_user')
+    ordered_item = relationship('OrderedItem', back_populates='ordering_user')
     recipe = relationship('Recipe', back_populates='recipe_owner')
     report = relationship('Report', back_populates='app_user')
 
@@ -265,12 +277,39 @@ class Product(Base):
     last_updated = Column(DateTime)
     created = Column(DateTime)
     product_description = Column(String(300))
-    product_price = Column(Double(asdecimal=True))
+    product_price = Column(Float(asdecimal=True))
     product_quantity = Column(Integer)
+    product_quantifier = Column(String(45))
 
     product_category = relationship('ProductCategory', back_populates='product')
     product_provider = relationship('ProductProvider', back_populates='product')
+    ordered_item = relationship('OrderedItem', back_populates='ordered_product')
     product_image = relationship('ProductImage', back_populates='product_ref')
+
+
+class OrderedItem(Base):
+    __tablename__ = 'ordered_item'
+    __table_args__ = (
+        ForeignKeyConstraint(['order_ref'], ['placed_order.id_placed_order'], name='fk_ordered_item_3'),
+        ForeignKeyConstraint(['ordered_product_id'], ['product.id_product'], name='fk_ordered_item_1'),
+        ForeignKeyConstraint(['ordering_user_id'], ['app_user.id_app_user'], name='fk_ordered_item_2'),
+        Index('fk_ordered_item_1_idx', 'ordered_product_id'),
+        Index('fk_ordered_item_2_idx', 'ordering_user_id'),
+        Index('fk_ordered_item_3_idx', 'order_ref')
+    )
+
+    id_ordered_item = Column(Integer, primary_key=True)
+    ordered_product_id = Column(Integer)
+    ordering_user_id = Column(Integer)
+    ordered_quantity = Column(String(100))
+    applied_vat = Column(Integer)
+    order_ref = Column(Integer)
+    unit_price = Column(Integer)
+    product_discount = Column(Integer)
+
+    placed_order = relationship('PlacedOrder', back_populates='ordered_item')
+    ordered_product = relationship('Product', back_populates='ordered_item')
+    ordering_user = relationship('AppUser', back_populates='ordered_item')
 
 
 class ProductImage(Base):
