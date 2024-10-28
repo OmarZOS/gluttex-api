@@ -15,6 +15,9 @@ RECIPE_CATEGORY_NOT_EXISTS = "Recipe category does not exist."
 RECIPE_NOT_EXISTS = "Recipe does not exist."
 
 
+PRODUCT_QUANTITY_NOT_ENOUGH = "Insufficient quantity to order product."
+
+
 
 PRODUCT_SUPPLIER_NOT_EXISTS = "Product provider does not exist."
 BLOOD_TYPE_NOT_EXISTS = "Blood type does not exist."

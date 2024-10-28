@@ -8,6 +8,7 @@ from routers.user_router import app_user_router
 from routers.recipe_router import recipe_router
 from routers.health_router import health_router
 from routers.auth_router import auth_router
+from routers.business_router import business_router
 from features.auth.decoder import verify_token
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -38,6 +39,7 @@ app.include_router(product_router) # , dependencies=[Depends(verify_token)]
 app.include_router(recipe_router) # , dependencies=[Depends(verify_token)]
 app.include_router(health_router) # , dependencies=[Depends(verify_token)]
 app.include_router(app_user_router)
+app.include_router(business_router)
 
 
 # @app.middleware("http")
