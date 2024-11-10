@@ -565,7 +565,7 @@ DROP TABLE IF EXISTS `gluttex`.`placed_order` ;
 
 CREATE TABLE IF NOT EXISTS `gluttex`.`placed_order` (
   `id_placed_order` INT NOT NULL AUTO_INCREMENT,
-  `ordered_timestamp` DATE NULL,
+  `ordered_timestamp` DATETIME NULL,
   `order_discount` INT NULL,
   PRIMARY KEY (`id_placed_order`))
 ENGINE = InnoDB;
