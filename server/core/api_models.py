@@ -135,10 +135,9 @@ class RecipeImage_API(BaseModel):
 class PlacedOrder_API(BaseModel):
     id_placed_order : Optional[int]
     ordered_timestamp : Optional[str]
-    order_discount : Optional[str]
+    order_discount : Optional[int]
 
 class OrderedItem_API(BaseModel):
-    
     id_ordered_item : Optional[int]
     ordered_product_id : Optional[int]
     ordering_user_id : Optional[int]

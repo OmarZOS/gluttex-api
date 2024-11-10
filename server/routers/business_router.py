@@ -17,7 +17,7 @@ subscribers = {}
 
 
 
-@business_router.put("/business/payment/add")
+@business_router.put("/business/order/add")
 def insert_placed_order(ordered_items: List[OrderedItem_API], submitted_order: PlacedOrder_API):
     
     try:
