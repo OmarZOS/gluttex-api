@@ -14,7 +14,7 @@ from datetime import datetime;
 def build_ordered_item(api_ordered_item: OrderedItem_API):
     ordered_item = OrderedItem(
         ordered_product_id = api_ordered_item.ordered_product_id,
-        ordering_user_id = api_ordered_item.ordering_user_id,
+        # ordering_user_id = api_ordered_item.ordering_user_id,
         order_ref = api_ordered_item.order_ref,
         ordered_quantity = api_ordered_item.ordered_quantity,
         applied_vat = api_ordered_item.applied_vat,
@@ -34,21 +34,23 @@ def insert_order(api_ordered_items: list[OrderedItem_API],placed_order: PlacedOr
         if ordered_product.product_quantity < ordered_item.ordered_quantity : 
             raise Exception(PRODUCT_QUANTITY_NOT_ENOUGH)
 
-        ordering_user = fetch_user_by_id(ordered_item.ordering_user_id)
+        ordering_user = fetch_user_by_id(placed_order.ordering_user_id)
         if ordering_user == []: 
             raise Exception(APPUSER_NOT_EXISTS)
         
         ordered_items.append(ordered_item)
         ordered_products.append(ordered_product)
 
-
+    order_total_price = 0
     for ordered_item,ordered_product in zip(ordered_items,ordered_products):
         ordered_product.product_quantity = ordered_product.product_quantity - ordered_item.ordered_quantity
         update_record_in_api(ordered_product)
-
-
-    placed_order = PlacedOrder(ordered_timestamp = datetime.now(), 
-                    order_discount = placed_order.order_discount)
+        # order_total_price += ordered_product.product_quantity*
+        
+    placed_order = PlacedOrder(
+        ordering_user_id = ordering_user.id_app_user,
+        ordered_timestamp = datetime.now(), 
+                    order_discount = placed_order.order_discount,total_price = order_total_price)
 
     placed_order.ordered_item = ordered_items
 

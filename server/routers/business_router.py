@@ -10,6 +10,7 @@ import asyncio
 from typing import List
 
 from features.order.order_insert import insert_order
+from features.order.order_fetch import fetch_placed_orders_by_user
 
 
 business_router = APIRouter()
@@ -26,6 +27,18 @@ def insert_placed_order(ordered_items: List[OrderedItem_API], submitted_order: P
         res = JSONResponse(
         status_code=status.HTTP_406_NOT_ACCEPTABLE,
         content=jsonable_encoder({"detail": str(e), "Error": "Couldn't insert business."}),
+    )
+    return res
+
+@business_router.get("/business/user/{user_id}/order/all")
+def insert_placed_order(user_id):
+    
+    try:
+        res = fetch_placed_orders_by_user(user_id)
+    except Exception as e:
+        res = JSONResponse(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't fetch orders."}),
     )
     return res
 

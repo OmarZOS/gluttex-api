@@ -67,16 +67,6 @@ class PersonDetails(Base):
     person = relationship('Person', back_populates='person_details')
 
 
-class PlacedOrder(Base):
-    __tablename__ = 'placed_order'
-
-    id_placed_order = Column(Integer, primary_key=True)
-    ordered_timestamp = Column(Date)
-    order_discount = Column(Integer)
-
-    ordered_item = relationship('OrderedItem', back_populates='placed_order')
-
-
 class ProductCategory(Base):
     __tablename__ = 'product_category'
 
@@ -235,7 +225,7 @@ class AppUser(Base):
 
     app_user_person = relationship('Person', back_populates='app_user')
     app_user_type = relationship('AppUserType', back_populates='app_user')
-    ordered_item = relationship('OrderedItem', back_populates='ordering_user')
+    placed_order = relationship('PlacedOrder', back_populates='ordering_user')
     recipe = relationship('Recipe', back_populates='recipe_owner')
     report = relationship('Report', back_populates='app_user')
 
@@ -283,33 +273,25 @@ class Product(Base):
 
     product_category = relationship('ProductCategory', back_populates='product')
     product_provider = relationship('ProductProvider', back_populates='product')
-    ordered_item = relationship('OrderedItem', back_populates='ordered_product')
     product_image = relationship('ProductImage', back_populates='product_ref')
+    ordered_item = relationship('OrderedItem', back_populates='ordered_product')
 
 
-class OrderedItem(Base):
-    __tablename__ = 'ordered_item'
+class PlacedOrder(Base):
+    __tablename__ = 'placed_order'
     __table_args__ = (
-        ForeignKeyConstraint(['order_ref'], ['placed_order.id_placed_order'], name='fk_ordered_item_3'),
-        ForeignKeyConstraint(['ordered_product_id'], ['product.id_product'], name='fk_ordered_item_1'),
-        ForeignKeyConstraint(['ordering_user_id'], ['app_user.id_app_user'], name='fk_ordered_item_2'),
-        Index('fk_ordered_item_1_idx', 'ordered_product_id'),
-        Index('fk_ordered_item_2_idx', 'ordering_user_id'),
-        Index('fk_ordered_item_3_idx', 'order_ref')
+        ForeignKeyConstraint(['ordering_user_id'], ['app_user.id_app_user'], name='fk_placed_order_1'),
+        Index('fk_placed_order_1_idx', 'ordering_user_id')
     )
 
-    id_ordered_item = Column(Integer, primary_key=True)
-    ordered_product_id = Column(Integer)
+    id_placed_order = Column(Integer, primary_key=True)
+    ordered_timestamp = Column(DateTime)
+    order_discount = Column(Integer)
+    total_price = Column(Integer)
     ordering_user_id = Column(Integer)
-    ordered_quantity = Column(String(100))
-    applied_vat = Column(Integer)
-    order_ref = Column(Integer)
-    unit_price = Column(Integer)
-    product_discount = Column(Integer)
 
-    placed_order = relationship('PlacedOrder', back_populates='ordered_item')
-    ordered_product = relationship('Product', back_populates='ordered_item')
-    ordering_user = relationship('AppUser', back_populates='ordered_item')
+    ordering_user = relationship('AppUser', back_populates='placed_order')
+    ordered_item = relationship('OrderedItem', back_populates='placed_order')
 
 
 class ProductImage(Base):
@@ -399,6 +381,27 @@ class SymptomsOccurence(Base):
 
     patient = relationship('Patient', back_populates='symptoms_occurence')
     presented_symptom = relationship('PresentedSymptom', back_populates='symptoms_occurence')
+
+
+class OrderedItem(Base):
+    __tablename__ = 'ordered_item'
+    __table_args__ = (
+        ForeignKeyConstraint(['order_ref'], ['placed_order.id_placed_order'], name='fk_ordered_item_3'),
+        ForeignKeyConstraint(['ordered_product_id'], ['product.id_product'], name='fk_ordered_item_1'),
+        Index('fk_ordered_item_1_idx', 'ordered_product_id'),
+        Index('fk_ordered_item_3_idx', 'order_ref')
+    )
+
+    id_ordered_item = Column(Integer, primary_key=True)
+    ordered_product_id = Column(Integer)
+    ordered_quantity = Column(String(100))
+    applied_vat = Column(Integer)
+    order_ref = Column(Integer)
+    unit_price = Column(Integer)
+    product_discount = Column(Integer)
+
+    placed_order = relationship('PlacedOrder', back_populates='ordered_item')
+    ordered_product = relationship('Product', back_populates='ordered_item')
 
 
 class PresentedSymptom(Base):
