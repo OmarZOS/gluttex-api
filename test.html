@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Updates Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .log {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Product Updates Test</h1>
+    <label for="productId">Enter Product ID:</label>
+    <input type="number" id="productId" placeholder="e.g., 123" />
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+
+    <div class="log" id="log">
+        <p><strong>Logs:</strong></p>
+    </div>
+
+    <script>
+        let eventSource = null;
+
+        function connect() {
+            const productId = document.getElementById("productId").value;
+            if (!productId) {
+                alert("Please enter a Product ID.");
+                return;
+            }
+
+            // Establish SSE connection
+            const url = `http://localhost:9000/products/observer/${productId}`;
+            eventSource = new EventSource(url);
+
+            logMessage(`Connecting to updates for Product ID: ${productId}...`);
+
+            // Listen for messages
+            eventSource.onmessage = (event) => {
+                logMessage(`Message received: ${event.data}`);
+            };
+
+            // Handle specific update events
+            eventSource.addEventListener("update", (event) => {
+                logMessage(`Update: ${event.data}`);
+            });
+
+            // Handle errors
+            eventSource.onerror = () => {
+                logMessage("Error occurred. Disconnected.");
+                disconnect();
+            };
+        }
+
+        function disconnect() {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+                logMessage("Disconnected.");
+            }
+        }
+
+        function logMessage(message) {
+            const logDiv = document.getElementById("log");
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<p>[${timestamp}] ${message}</p>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>

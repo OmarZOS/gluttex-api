@@ -13,6 +13,12 @@ from features.supplier.supplier_fetch import fetch_supplier_by_id
 from features.product.product_insert import fetch_product_category_object_by_id
 import storage.storage_broker as storage_broker
 
+subscribers = {}
+
+async def notify_subscribers(product_id, data):
+    if product_id in subscribers:
+        for queue in subscribers[product_id]:
+            await queue.put(data)
 
 
 

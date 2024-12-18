@@ -32,7 +32,7 @@ def insert_order(api_ordered_items: list[OrderedItem_API],placed_order: PlacedOr
             raise Exception(PRODUCT_NOT_EXISTS)
         
         if ordered_product.product_quantity < ordered_item.ordered_quantity : 
-            raise Exception(PRODUCT_QUANTITY_NOT_ENOUGH)
+            raise Exception(ordered_product.product_name+" " +PRODUCT_QUANTITY_NOT_ENOUGH)
 
         ordering_user = fetch_user_by_id(placed_order.ordering_user_id)
         if ordering_user == []: 
@@ -42,10 +42,13 @@ def insert_order(api_ordered_items: list[OrderedItem_API],placed_order: PlacedOr
         ordered_products.append(ordered_product)
 
     order_total_price = 0
+    quantities = []
     for ordered_item,ordered_product in zip(ordered_items,ordered_products):
+        
         ordered_product.product_quantity = ordered_product.product_quantity - ordered_item.ordered_quantity
+        quantities.append(ordered_product.product_quantity)
         update_record_in_api(ordered_product)
-        # order_total_price += ordered_product.product_quantity*
+        order_total_price += ordered_item.ordered_quantity*(float(ordered_product.product_price))*(1+ordered_item.applied_vat)
         
     placed_order = PlacedOrder(
         ordering_user_id = ordering_user.id_app_user,
@@ -57,5 +60,5 @@ def insert_order(api_ordered_items: list[OrderedItem_API],placed_order: PlacedOr
     code,final_order,msg = insert_or_complete_or_raise(placed_order)
     if (code == 1): return msg
 
-    return final_order
+    return quantities,final_order
 
