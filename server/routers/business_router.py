@@ -2,15 +2,15 @@ from fastapi import APIRouter,status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from core.api_models import OrderedItem_API, PlacedOrder_API
-# from features.business.business_fetch import fetch_all_business, fetch_business_by_id, get_business_categories, get_business_image_by_id, get_businesss_by_category_id
-# from features.business.business_insert import insert_business
-# from features.business.business_update import update_business
-# from features.business.business_delete import delete_business
 import asyncio
 from typing import List
+from starlette.background import BackgroundTasks
+
+
 
 from features.order.order_insert import insert_order
 from features.order.order_fetch import fetch_placed_orders_by_user
+from features.product.product_update import notify_subscribers
 
 
 business_router = APIRouter()
@@ -19,10 +19,15 @@ subscribers = {}
 
 
 @business_router.put("/business/order/add")
-def insert_placed_order(ordered_items: List[OrderedItem_API], submitted_order: PlacedOrder_API):
+def insert_placed_order(ordered_items: List[OrderedItem_API], submitted_order: PlacedOrder_API, background_tasks: BackgroundTasks):
     
     try:
-        res = insert_order(ordered_items, submitted_order)
+        quantities,res = insert_order(ordered_items, submitted_order)
+        index = 0
+        for item in ordered_items:            
+            background_tasks.add_task(notify_subscribers, item.ordered_product_id, {"product_quantity": quantities[index]})
+            index += 1
+
     except Exception as e:
         res = JSONResponse(
         status_code=status.HTTP_406_NOT_ACCEPTABLE,

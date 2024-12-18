@@ -3,11 +3,11 @@ import asyncio
 from typing import List
 import random
 
-BASE_URL = "http://localhost:8000/business/order/add"
+BASE_URL = "http://localhost:9000/business/order/add"
 
 # Sample Data for Testing
 sample_ordered_item = {
-    "id_ordered_item": None,
+    "id_ordered_item": 0,
     "ordered_product_id": 1,
     "ordering_user_id": 1,
     "order_ref": 12345,
@@ -18,9 +18,9 @@ sample_ordered_item = {
 }
 
 sample_placed_order = {
-    "id_placed_order": None,
+    "id_placed_order": 0,
     "ordered_timestamp": "2024-10-30T10:00:00",
-    "order_discount": "5"
+    "order_discount": 0
 }
 
 # Basic request function

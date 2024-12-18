@@ -80,7 +80,7 @@ class Product_API(BaseModel):
     id_product_category: int
     product_category_id: Optional[int]
     product_price : float
-    product_quantity : int
+    product_quantity : float
     product_name: Optional[str]
     product_brand: Optional[str]
     product_barcode: Optional[str]
@@ -135,7 +135,7 @@ class RecipeImage_API(BaseModel):
 class PlacedOrder_API(BaseModel):
     id_placed_order : Optional[int]
     ordered_timestamp : Optional[str]
-    order_discount : Optional[int]
+    order_discount : Optional[float]
     ordering_user_id : Optional[int]
 
 class OrderedItem_API(BaseModel):
@@ -143,10 +143,10 @@ class OrderedItem_API(BaseModel):
     ordered_product_id : Optional[int]
     order_ref : Optional[int]
     
-    product_discount : Optional[int]
-    ordered_quantity : Optional[int]
-    unit_price : Optional[int]
-    applied_vat : Optional[int]
+    product_discount : Optional[float]
+    ordered_quantity : Optional[float]
+    unit_price : Optional[float]
+    applied_vat : Optional[float]
 
 
 

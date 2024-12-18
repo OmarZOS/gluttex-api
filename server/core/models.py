@@ -286,8 +286,8 @@ class PlacedOrder(Base):
 
     id_placed_order = Column(Integer, primary_key=True)
     ordered_timestamp = Column(DateTime)
-    order_discount = Column(Integer)
-    total_price = Column(Integer)
+    order_discount = Column(Float(asdecimal=True))
+    total_price = Column(Float(asdecimal=True))
     ordering_user_id = Column(Integer)
 
     ordering_user = relationship('AppUser', back_populates='placed_order')
@@ -395,10 +395,10 @@ class OrderedItem(Base):
     id_ordered_item = Column(Integer, primary_key=True)
     ordered_product_id = Column(Integer)
     ordered_quantity = Column(String(100))
-    applied_vat = Column(Integer)
+    applied_vat = Column(Float(asdecimal=True))
     order_ref = Column(Integer)
-    unit_price = Column(Integer)
-    product_discount = Column(Integer)
+    unit_price = Column(Float(asdecimal=True))
+    product_discount = Column(Float(asdecimal=True))
 
     placed_order = relationship('PlacedOrder', back_populates='ordered_item')
     ordered_product = relationship('Product', back_populates='ordered_item')
