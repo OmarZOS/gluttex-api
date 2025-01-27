@@ -7,19 +7,25 @@ def fetch_all_users():
     return storage_broker.get(AppUser)
 
 def fetch_user_by_id(user_id: str):
-    user = storage_broker.get(AppUser
-                              ,{AppUser.id_app_user :user_id}
-                              ,[AppUserType,Person]
-                              ,[AppUser.app_user_type,AppUser.app_user_person]
+    user_list = storage_broker.get(AppUser
+                              ,{AppUser.id_app_user :int(user_id)}
+                              ,[AppUserType]
+                              ,[AppUser.app_user_type]
                               ,None
-                              )[0]
-    person =  storage_broker.get(Person
-                              ,{Person.id_person :user.app_user_person.id_person}
-                              ,[PersonDetails,BloodType]
-                              ,[Person.person_blood_type,Person.person_location,Person.person_details]
-                              ,None
-                              )[0]
-    user.app_user_person = person
+                              )
+    user = None
+    if len(user_list)>0:
+        user  = user_list[0]
+        person_list =  storage_broker.get(Person
+                                ,{Person.id_person :user.app_user_person_id}
+                                ,[PersonDetails,BloodType]
+                                ,[Person.person_blood_type,Person.person_location,Person.person_details]
+                                ,None
+                                )
+        if len(person_list)>0:
+            person  = person_list[0]
+            user.app_user_person = person
+    
     return user
 
 # def fetch_user_object_by_id(user_id: str):

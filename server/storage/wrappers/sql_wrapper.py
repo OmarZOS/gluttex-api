@@ -31,9 +31,6 @@ def get_session(engine, obj=None):
             return existing_session
     return Session()
 
-    # Create the database engine and session
-    return Session()
-
 # Function to add a record to a table
 def add_record(engine, obj):
     with session_scope(engine) as session:
@@ -69,7 +66,7 @@ def get_record_by_id(engine,model_class, id):
         return data
 
 # Function to get objects from a table based on conditions
-def get_records(engine, model_class, conditions=None, join_tables=None, eager_load_depth=None, fields=None):
+def get_records(engine, model_class, conditions=None, join_tables=None, eager_load_depth=None, offset=0, limit=10):
     with session_scope(engine) as session:
         query = session.query(model_class)
 
@@ -102,7 +99,7 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
                 else:
                     query = query.options(joinedload(getattr(model_class, str(attr).split(".")[1])))
         # Fetch all records
-        records = query.all()
+        records = query.offset(offset).limit(limit).all()
 
         # Expunge the results
         session.expunge_all()

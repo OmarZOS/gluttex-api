@@ -27,8 +27,8 @@ def fetch_product_object_by_id(product_id: str):
 # def fetch_products_by_category(Category_id: int):
 #     return storage_broker.get(Category,{Category.categoryId:Category_id},[])
 
-def get_products_by_category_id(category_id: int):
-    return storage_broker.get(Product,{Product.product_category_id:category_id},[ProductCategory,ProductProvider],[Product.product_category,Product.product_provider])
+def get_products_by_category_id(category_id: int,offset: int,limit: int):
+    return storage_broker.get(Product,{Product.product_category_id:category_id},[ProductCategory,ProductProvider],[Product.product_category,Product.product_provider],None,offset,limit)
 
 def get_product_image_by_id(image_id: int):
     return storage_broker.get(ProductImage,{ProductImage.id_product_image:image_id},[],None,[])
@@ -36,11 +36,11 @@ def get_product_image_by_id(image_id: int):
 def get_product_categories():
     return storage_broker.get(ProductCategory)
 
-def fetch_all_product():
+def fetch_all_product(offset, limit):
     
     return storage_broker.get(Product,conditions=None,join_tables=[ProductCategory],eager_load_depth= 
                               [
         Product.product_category, 
         Product.product_provider, 
-        {Product.product_image: [ProductImage.id_product_image]}  # Nested eager load for specific fields
-    ])
+        {Product.product_image: [ProductImage.id_product_image],}  # Nested eager load for specific fields
+    ],offset=offset, limit=limit)

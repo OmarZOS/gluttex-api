@@ -15,21 +15,21 @@ def insert_record(item):
     res = medicom_store.add_record(engine,item)
     return res
 
-def get(table,conditions=None, join_tables=None,eagerjoinload=None):
+def get(table,conditions=None, join_tables=None,eagerjoinload=None,offset=0, limit=10):
     try:
         engine = medicom_store.get_engine(DB_URI)
     except:
         raise Exception('An exception occurred while connecting to the database.')
-    res = medicom_store.get_records(engine,table,conditions,join_tables,eagerjoinload)
+    res = medicom_store.get_records(engine,table,conditions,join_tables,eagerjoinload,offset,limit)
     return res
 
-def get(table, conditions=None,  join_tables=None, eager_load_depth=None,fields=None):
+def get(table, conditions=None,  join_tables=None, eager_load_depth=None,fields=None,offset=0, limit=10):
     try:
         engine = medicom_store.get_engine(DB_URI)
     except:
         raise Exception('An exception occurred while connecting to the database.')
     # raise Exception('bing')
-    res = medicom_store.get_records(engine,table,conditions,join_tables,eager_load_depth,fields)
+    res = medicom_store.get_records(engine,table,conditions,join_tables,eager_load_depth,offset,limit)
     return res
 
 def delete_record(item):

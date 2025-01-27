@@ -57,12 +57,18 @@ To generate the `models.py` file, you can execute the following instruction:
 
 ### Progress
     
-- Serving feature. ![x](https://us-central1-progress-markdown.cloudfunctions.net/progress/80)
+- Serving feature. ![x](https://us-central1-progress-markdown.cloudfunctions.net/progress/90)
   - Product.
-    - `SSE` providing `price` and `quantity`.
+    - Ordering Products.
+    - Polling to monitor `quantity` changes.
   - Category.
   - Supplier.
   - App user.
+- Auth server. ![x](https://us-central1-progress-markdown.cloudfunctions.net/progress/60)
+  - App user creation.
+  - Logging in feature.
+  - Changing password.
+  - ssl certificate (locally generated).
 - [x] 3rd Party storage solutions. ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/70)
   - [x] SQL based storage.
   - [x] SQLITE based authentication.

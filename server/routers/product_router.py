@@ -46,12 +46,12 @@ async def product_updates(product_id: int):
 
     return EventSourceResponse(event_publisher())
 
-@product_router.get("/Product/all")
-def get_all_Products():
+@product_router.get("/Product/all/{offset}/{limit}")
+def get_all_Products( offset :int, limit:int):
     try:
         res = JSONResponse(
         status_code=status.HTTP_200_OK, 
-        content=jsonable_encoder(fetch_all_product()))
+        content=jsonable_encoder(fetch_all_product(offset, limit)))
     except Exception as e:
         res = JSONResponse(
         status_code=status.HTTP_406_NOT_ACCEPTABLE,
@@ -123,10 +123,10 @@ def delete_Product_by_id(Product_id: int):
     )
     return res
 
-@product_router.get("/product/category/{category_id}")
-def get_products_by_category(category_id: int):
+@product_router.get("/product/category/{category_id}/{offset}/{limit}")
+def get_products_by_category(category_id: int,offset: int,limit: int):
     try:
-        res = get_products_by_category_id(category_id)
+        res = get_products_by_category_id(category_id,offset,limit)
     except Exception as e:
         res = JSONResponse(
         status_code=status.HTTP_406_NOT_ACCEPTABLE,
