@@ -13,12 +13,12 @@ recipe_router = APIRouter()
 
 # # Recipe related endpoints
 
-@recipe_router.get("/Recipe/all")
-def get_all_Recipes():
+@recipe_router.get("/Recipe/all/{offset}/{limit}")
+def get_all_Recipes(offset: int,limit: int):
     try:
         res = JSONResponse(
         status_code=status.HTTP_200_OK, 
-        content=jsonable_encoder(fetch_all_recipe()))
+        content=jsonable_encoder(fetch_all_recipe(offset,limit)))
     except Exception as e:
         res = JSONResponse(
         status_code=status.HTTP_406_NOT_ACCEPTABLE,

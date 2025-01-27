@@ -75,17 +75,17 @@ class Symptoms_API(BaseModel):
 # -------------------------------------------------------------------------------------
 
 class Product_API(BaseModel):
-    id_product: int
-    product_provider_id: int
-    id_product_category: int
+    id_product: Optional[int]
+    product_provider_id: Optional[int]
+    id_product_category: Optional[int]
     product_category_id: Optional[int]
-    product_price : float
-    product_quantity : float
+    product_price : Optional[float]
+    product_quantity : Optional[float]
     product_name: Optional[str]
     product_brand: Optional[str]
     product_barcode: Optional[str]
     product_description : Optional[str]
-
+    product_owner : Optional[int]
     # ProductCategory_API
 
 

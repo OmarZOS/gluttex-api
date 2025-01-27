@@ -2,7 +2,7 @@
 # here, we make schema translations
 
 from core.api_models import Product_API, ProductImage_API
-from core.messages import PRODUCT_ALREADY_EXISTS, PRODUCT_CATEGORY_NOT_EXISTS, PRODUCT_NOT_EXISTS
+from core.messages import PRODUCT_ALREADY_EXISTS, PRODUCT_CATEGORY_NOT_EXISTS, PRODUCT_NOT_EXISTS, SUPPLIER_NOT_EXISTS
 from core.models import *
 from features.insertion import insert_or_complete_or_raise
 from features.product.product_fetch import fetch_product_by_id
@@ -25,6 +25,7 @@ def build_product(product: Product_API):
                     product_price = product.product_price,
                     product_quantity = product.product_quantity,
                     product_description = product.product_description,
+                    product_owner = product.product_owner,
                     last_updated = datetime.now(),
                     created = datetime.now()
                     )
@@ -41,7 +42,7 @@ def insert_product(product_api: Product_API, image: ProductImage_API):
 
     product_suppliers = fetch_supplier_by_id(product_api.product_provider_id)
     if product_suppliers == [] : 
-        raise Exception(PRODUCT_NOT_EXISTS)
+        raise Exception(SUPPLIER_NOT_EXISTS)
 
     product = build_product(product_api)
 

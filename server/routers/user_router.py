@@ -5,6 +5,7 @@ from core.api_models import AppUser_API, Location_API, Person_API
 from features.user.user_delete import delete_user
 from features.user.user_fetch import fetch_all_users, fetch_user_by_id
 from features.user.user_insert import insert_user
+from features.user.user_net import update_user_password
 
 
 app_user_router = APIRouter()
@@ -68,4 +69,14 @@ def delete_User(user: AppUser_API):
     )
     return res
 
-
+@app_user_router.post("/appUser/update")
+def update_User(user: AppUser_API,token:str):
+    """The selected code snippet is a FastAPI endpoint for deleting a user from the system. It is defined within the app_user_router and is accessible via the update request method at the "/appUser/update" endpoint."""
+    try:
+        res = update_user_password(user,token)
+    except Exception as e:
+        res = JSONResponse(
+        status_code=status.HTTP_406_NOT_ACCEPTABLE,
+        content=jsonable_encoder({"detail": str(e), "Error": "Couldn't delete user."}),
+    )
+    return res

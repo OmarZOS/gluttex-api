@@ -14,6 +14,8 @@ RECIPE_ALREADY_EXISTS = "Recipe already exists."
 RECIPE_CATEGORY_NOT_EXISTS = "Recipe category does not exist."
 RECIPE_NOT_EXISTS = "Recipe does not exist."
 
+SUPPLIER_NOT_EXISTS="Supplier does not exist."
+
 
 PRODUCT_QUANTITY_NOT_ENOUGH = "Insufficient quantity to order product."
 

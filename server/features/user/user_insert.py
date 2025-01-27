@@ -4,13 +4,13 @@
 from core.api_models import AppUser_API, Location_API, Person_API
 from core.messages import APPUSER_ALREADY_EXISTS, SUCCESS_MESSAGE
 from core.models import Address, AppUser, BloodType, Location, Person, PersonDetails
-from features.insertion import get_existent_object, insert_or_complete_or_raise
+from features.insertion import delete_record_from_api, get_existent_object, insert_or_complete_or_raise
 from features.person.person_fetch import fetch_person, fetch_person_object
 from features.person.person_insert import generate_person_object
 from features.search import find_object_by_id
 from features.user.user_fetch import fetch_user_by_id, fetch_user_by_name, fetch_user_type_by_id, fetch_user_type_object_by_id
 from features.user.user_net import create_user
-from features.user.user_update import update_user_password
+from features.user.user_update import update_api_user_password
 import datetime
 
 
@@ -20,6 +20,7 @@ async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Loca
     
     if fetch_user_by_name(user.app_user_name) != []:
         raise Exception(APPUSER_ALREADY_EXISTS)
+
 
     user_type = fetch_user_type_object_by_id(user.app_user_type_id)
     if isinstance(user.app_user_image, str):
@@ -46,17 +47,23 @@ async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Loca
 
     code,nutzer,msg = insert_or_complete_or_raise(app_user)
     if (code == 1): raise Exception(msg)
-    
-    # create auth record for user
-    user_auth_data = {
-        "username":nutzer.app_user_name,
-        "app_user_id":nutzer.id_app_user,
-        "password":user.app_user_password,   
-    }
+        
+    try:
+        # create auth record for user
+        user_auth_data = {
+            "username":nutzer.app_user_name,
+            "app_user_id":nutzer.id_app_user,
+            "password":user.app_user_password,   
+        }
 
-    # create auth record for user
-    user_auth_record = await create_user(user_auth_data)
-    update_user_password(nutzer,user_auth_record["hashed_password"])
+        # create auth record for user
+        user_auth_record = await create_user(user_auth_data)
+        update_api_user_password(nutzer,user_auth_record["hashed_password"])
     
-    return nutzer
+        return nutzer
+    except Exception as e:
+        delete_record_from_api(nutzer)
+        raise Exception("Error on creating auth record")
+
+
 

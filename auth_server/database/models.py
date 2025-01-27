@@ -18,7 +18,7 @@ class AppUser(Base):
     id = Column(Integer, primary_key=True, index=True,autoincrement=True)
     username = Column(String, unique=True, index=True, nullable=False)
     # this is the most important id to get the user from the database
-    app_user_id = Column(Integer, unique=True, index=True, nullable=False)
+    app_user_id = Column(Integer,  nullable=True)
     email = Column(String, unique=True, index=True, nullable=True)
     phone_number = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=True)

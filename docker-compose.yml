@@ -4,7 +4,7 @@ services:
     image: mysql
     container_name: gluttex-db
     restart: always
-    command: --init-file /data/application/init.sql
+    command: --max_allowed_packet=256M --init-file /data/application/init.sql
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
@@ -67,7 +67,7 @@ services:
       - gluttex-net
     volumes:
       - ./auth_server/:/code
-      - ./auth_db/auth_db.db:/auth_db_data.db
+      - ./auth_server/auth_db/auth_db.db:/auth_db_data.db
 
   # prometheus:
   #   image: prom/prometheus

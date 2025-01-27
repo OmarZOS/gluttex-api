@@ -1,4 +1,5 @@
 from sqlalchemy import Column, DECIMAL, Date, DateTime, Float, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
+from sqlalchemy.dialects.mysql import LONGTEXT
 
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -177,32 +178,6 @@ class Person(Base):
     patient = relationship('Patient', back_populates='patient_person')
 
 
-class ProductProvider(Base):
-    __tablename__ = 'product_provider'
-    __table_args__ = (
-        ForeignKeyConstraint(['product_provider_details_id'], ['provider_details.idprovider_details_id'], name='fk_product_provider_3'),
-        ForeignKeyConstraint(['product_provider_location_id'], ['location.id_location'], name='fk_product_provider_4'),
-        ForeignKeyConstraint(['product_provider_org_id'], ['provider_organisation.idprovider_organisation'], name='fk_product_provider_2'),
-        ForeignKeyConstraint(['product_provider_type_id'], ['product_provider_type.id_product_provider_type'], name='fk_product_provider_1'),
-        Index('fk_product_provider_1_idx', 'product_provider_type_id'),
-        Index('fk_product_provider_2_idx', 'product_provider_org_id'),
-        Index('fk_product_provider_3_idx', 'product_provider_details_id'),
-        Index('fk_product_provider_4_idx', 'product_provider_location_id')
-    )
-
-    id_product_provider = Column(Integer, primary_key=True)
-    product_provider_details_id = Column(Integer)
-    product_provider_type_id = Column(Integer)
-    product_provider_location_id = Column(Integer)
-    product_provider_org_id = Column(Integer)
-
-    product_provider_details = relationship('ProviderDetails', back_populates='product_provider')
-    product_provider_location = relationship('Location', back_populates='product_provider')
-    product_provider_org = relationship('ProviderOrganisation', back_populates='product_provider')
-    product_provider_type = relationship('ProductProviderType', back_populates='product_provider')
-    product = relationship('Product', back_populates='product_provider')
-
-
 class AppUser(Base):
     __tablename__ = 'app_user'
     __table_args__ = (
@@ -226,8 +201,10 @@ class AppUser(Base):
     app_user_person = relationship('Person', back_populates='app_user')
     app_user_type = relationship('AppUserType', back_populates='app_user')
     placed_order = relationship('PlacedOrder', back_populates='ordering_user')
+    product_provider = relationship('ProductProvider', back_populates='app_user')
     recipe = relationship('Recipe', back_populates='recipe_owner')
     report = relationship('Report', back_populates='app_user')
+    product = relationship('Product', back_populates='app_user')
 
 
 class Patient(Base):
@@ -249,34 +226,6 @@ class Patient(Base):
     symptoms_occurence = relationship('SymptomsOccurence', back_populates='patient')
 
 
-class Product(Base):
-    __tablename__ = 'product'
-    __table_args__ = (
-        ForeignKeyConstraint(['product_category_id'], ['product_category.id_product_category'], name='fk_product_2'),
-        ForeignKeyConstraint(['product_provider_id'], ['product_provider.id_product_provider'], name='fk_product_1'),
-        Index('fk_product_1_idx', 'product_provider_id'),
-        Index('fk_product_2_idx', 'product_category_id')
-    )
-
-    id_product = Column(Integer, primary_key=True)
-    product_name = Column(String(45))
-    product_brand = Column(String(45))
-    product_provider_id = Column(Integer)
-    product_category_id = Column(Integer)
-    product_barcode = Column(String(45))
-    last_updated = Column(DateTime)
-    created = Column(DateTime)
-    product_description = Column(String(300))
-    product_price = Column(Float(asdecimal=True))
-    product_quantity = Column(Integer)
-    product_quantifier = Column(String(45))
-
-    product_category = relationship('ProductCategory', back_populates='product')
-    product_provider = relationship('ProductProvider', back_populates='product')
-    product_image = relationship('ProductImage', back_populates='product_ref')
-    ordered_item = relationship('OrderedItem', back_populates='ordered_product')
-
-
 class PlacedOrder(Base):
     __tablename__ = 'placed_order'
     __table_args__ = (
@@ -294,18 +243,34 @@ class PlacedOrder(Base):
     ordered_item = relationship('OrderedItem', back_populates='placed_order')
 
 
-class ProductImage(Base):
-    __tablename__ = 'product_image'
+class ProductProvider(Base):
+    __tablename__ = 'product_provider'
     __table_args__ = (
-        ForeignKeyConstraint(['product_ref_id'], ['product.id_product'], name='fk_product_image_1'),
-        Index('fk_product_image_1_idx', 'product_ref_id')
+        ForeignKeyConstraint(['product_provider_details_id'], ['provider_details.idprovider_details_id'], name='fk_product_provider_3'),
+        ForeignKeyConstraint(['product_provider_location_id'], ['location.id_location'], name='fk_product_provider_4'),
+        ForeignKeyConstraint(['product_provider_org_id'], ['provider_organisation.idprovider_organisation'], name='fk_product_provider_2'),
+        ForeignKeyConstraint(['product_provider_owner'], ['app_user.id_app_user'], name='fk_product_provider_5'),
+        ForeignKeyConstraint(['product_provider_type_id'], ['product_provider_type.id_product_provider_type'], name='fk_product_provider_1'),
+        Index('fk_product_provider_1_idx', 'product_provider_type_id'),
+        Index('fk_product_provider_2_idx', 'product_provider_org_id'),
+        Index('fk_product_provider_3_idx', 'product_provider_details_id'),
+        Index('fk_product_provider_4_idx', 'product_provider_location_id'),
+        Index('fk_product_provider_5_idx', 'product_provider_owner')
     )
 
-    id_product_image = Column(Integer, primary_key=True)
-    product_image_data = Column(LargeBinary)
-    product_ref_id = Column(Integer)
+    id_product_provider = Column(Integer, primary_key=True)
+    product_provider_details_id = Column(Integer)
+    product_provider_type_id = Column(Integer)
+    product_provider_location_id = Column(Integer)
+    product_provider_org_id = Column(Integer)
+    product_provider_owner = Column(Integer)
 
-    product_ref = relationship('Product', back_populates='product_image')
+    product_provider_details = relationship('ProviderDetails', back_populates='product_provider')
+    product_provider_location = relationship('Location', back_populates='product_provider')
+    product_provider_org = relationship('ProviderOrganisation', back_populates='product_provider')
+    app_user = relationship('AppUser', back_populates='product_provider')
+    product_provider_type = relationship('ProductProviderType', back_populates='product_provider')
+    product = relationship('Product', back_populates='product_provider')
 
 
 class Recipe(Base):
@@ -383,27 +348,6 @@ class SymptomsOccurence(Base):
     presented_symptom = relationship('PresentedSymptom', back_populates='symptoms_occurence')
 
 
-class OrderedItem(Base):
-    __tablename__ = 'ordered_item'
-    __table_args__ = (
-        ForeignKeyConstraint(['order_ref'], ['placed_order.id_placed_order'], name='fk_ordered_item_3'),
-        ForeignKeyConstraint(['ordered_product_id'], ['product.id_product'], name='fk_ordered_item_1'),
-        Index('fk_ordered_item_1_idx', 'ordered_product_id'),
-        Index('fk_ordered_item_3_idx', 'order_ref')
-    )
-
-    id_ordered_item = Column(Integer, primary_key=True)
-    ordered_product_id = Column(Integer)
-    ordered_quantity = Column(String(100))
-    applied_vat = Column(Float(asdecimal=True))
-    order_ref = Column(Integer)
-    unit_price = Column(Float(asdecimal=True))
-    product_discount = Column(Float(asdecimal=True))
-
-    placed_order = relationship('PlacedOrder', back_populates='ordered_item')
-    ordered_product = relationship('Product', back_populates='ordered_item')
-
-
 class PresentedSymptom(Base):
     __tablename__ = 'presented_symptom'
     __table_args__ = (
@@ -419,6 +363,38 @@ class PresentedSymptom(Base):
 
     symptom = relationship('Symptom', back_populates='presented_symptom')
     symptoms_occurence = relationship('SymptomsOccurence', back_populates='presented_symptom')
+
+
+class Product(Base):
+    __tablename__ = 'product'
+    __table_args__ = (
+        ForeignKeyConstraint(['product_category_id'], ['product_category.id_product_category'], name='fk_product_2'),
+        ForeignKeyConstraint(['product_owner'], ['app_user.id_app_user'], name='fk_product_3'),
+        ForeignKeyConstraint(['product_provider_id'], ['product_provider.id_product_provider'], name='fk_product_1'),
+        Index('fk_product_1_idx', 'product_provider_id'),
+        Index('fk_product_2_idx', 'product_category_id'),
+        Index('fk_product_3_idx', 'product_owner')
+    )
+
+    id_product = Column(Integer, primary_key=True)
+    product_name = Column(String(45))
+    product_brand = Column(String(45))
+    product_provider_id = Column(Integer)
+    product_category_id = Column(Integer)
+    product_barcode = Column(String(45))
+    last_updated = Column(DateTime)
+    created = Column(DateTime)
+    product_description = Column(String(300))
+    product_price = Column(Float(asdecimal=True))
+    product_quantity = Column(Integer)
+    product_quantifier = Column(String(45))
+    product_owner = Column(Integer)
+
+    product_category = relationship('ProductCategory', back_populates='product')
+    app_user = relationship('AppUser', back_populates='product')
+    product_provider = relationship('ProductProvider', back_populates='product')
+    ordered_item = relationship('OrderedItem', back_populates='ordered_product')
+    product_image = relationship('ProductImage', back_populates='product_ref')
 
 
 class RecipeContainsIngredient(Base):
@@ -447,7 +423,42 @@ class RecipeImage(Base):
     )
 
     id_recipe_image = Column(Integer, primary_key=True)
-    recipe_image_data = Column(LargeBinary)
+    recipe_image_data = Column(LONGTEXT)
     recipe_ref_id = Column(Integer)
 
     recipe_ref = relationship('Recipe', back_populates='recipe_image')
+
+
+class OrderedItem(Base):
+    __tablename__ = 'ordered_item'
+    __table_args__ = (
+        ForeignKeyConstraint(['order_ref'], ['placed_order.id_placed_order'], name='fk_ordered_item_3'),
+        ForeignKeyConstraint(['ordered_product_id'], ['product.id_product'], name='fk_ordered_item_1'),
+        Index('fk_ordered_item_1_idx', 'ordered_product_id'),
+        Index('fk_ordered_item_3_idx', 'order_ref')
+    )
+
+    id_ordered_item = Column(Integer, primary_key=True)
+    ordered_product_id = Column(Integer)
+    ordered_quantity = Column(String(100))
+    applied_vat = Column(Float(asdecimal=True))
+    order_ref = Column(Integer)
+    unit_price = Column(Float(asdecimal=True))
+    product_discount = Column(Float(asdecimal=True))
+
+    placed_order = relationship('PlacedOrder', back_populates='ordered_item')
+    ordered_product = relationship('Product', back_populates='ordered_item')
+
+
+class ProductImage(Base):
+    __tablename__ = 'product_image'
+    __table_args__ = (
+        ForeignKeyConstraint(['product_ref_id'], ['product.id_product'], name='fk_product_image_1'),
+        Index('fk_product_image_1_idx', 'product_ref_id')
+    )
+
+    id_product_image = Column(Integer, primary_key=True)
+    product_image_data = Column(LONGTEXT)
+    product_ref_id = Column(Integer)
+
+    product_ref = relationship('Product', back_populates='product_image')
