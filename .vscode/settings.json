@@ -1,0 +1,5 @@
+{
+    "docker.imageBuildContextPath": "/usr/libexec/docker/cli-plugins/docker-buildx",
+    "docker.dockerPath": "/snap/bin/docker",
+    "docker.composeCommand": "/usr/libexec/docker/cli-plugins/docker-compose"
+}

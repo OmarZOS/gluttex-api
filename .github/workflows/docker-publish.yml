@@ -29,6 +29,7 @@ jobs:
           file: ./server/Dockerfile  # Path to your Dockerfile
           push: true
           tags: omarzos/gluttex-api:latest
+
       - name: Build and Push Auth Image
         uses: docker/build-push-action@v5
         with:
