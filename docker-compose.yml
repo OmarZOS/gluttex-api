@@ -13,9 +13,8 @@ services:
     ports:
       - ${MYSQL_PORT}:3306
     volumes:
-        - ./mysql/model.sql:/data/application/init.sql
-        - ./data:/var/lib/mysql
-        # - ./mysql/my.cnf:/etc/mysql/my.cnf  # Mount custom my.cnf
+      - ./mysql/model.sql:/data/application/init.sql
+      - ./data:/var/lib/mysql
     networks:
       - gluttex-net
 
@@ -23,10 +22,8 @@ services:
     container_name: gluttex-api
     hostname: gluttex-api
     restart: always
-    build:  server/.
+    build: server/.
     image: omarzos/gluttex-api
-    ports:
-      - ${API_PORT}:8000
     environment:
       - SQL_SCHEMA=${MYSQL_SCHEMA}
       - SQL_HOST=${MYSQL_HOST}
@@ -50,12 +47,18 @@ services:
       - gluttex-net
     volumes:
       - ./server/:/code
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`)"
+      - "traefik.http.services.gluttex-api.loadbalancer.server.port=9000"
+    expose:
+      - ${API_PORT}  # Exposes the API to Traefik internally
 
   gluttex-auth:
     container_name: gluttex-auth
     hostname: gluttex-auth
     restart: always
-    build:  auth_server/.
+    build: auth_server/.
     image: omarzos/gluttex-auth
     ports:
       - ${AUTH_PORT}:8000
@@ -69,9 +72,26 @@ services:
       - ./auth_server/:/code
       - ./auth_server/auth_db/auth_db.db:/auth_db_data.db
 
+  # traefik:
+  #   image: traefik:v2.10
+  #   container_name: traefik
+  #   restart: always
+  #   command:
+  #     - "--api.insecure=true"
+  #     - "--providers.docker=true"
+  #     - "--entrypoints.web.address=:80"
+  #   ports:
+  #     - "80:80"  # HTTP
+  #     - "8080:8080"  # Traefik dashboard
+  #   networks:
+  #     - gluttex-net
+  #   labels:
+  #     - "traefik.enable=true"
+
   # prometheus:
   #   image: prom/prometheus
   #   container_name: prometheus
+  #   restart: always
   #   ports:
   #     - ${MONITOR_PORT}:9090
   #   volumes:
