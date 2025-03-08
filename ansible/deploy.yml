@@ -1,0 +1,72 @@
+- name: Deploy Gluttex API
+  hosts: gluttex
+  become: true
+  tasks:
+    # Install Docker
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    # # Install docker-py to support Docker modules in Ansible
+    # - name: Install Docker SDK for Python
+    #   pip:
+    #     name: docker
+    #     state: present
+
+    # Build Gluttex API Image
+    - name: Build Gluttex API Docker Image
+      docker_image:
+        name: omarzos/gluttex-api
+        build:
+          path: /root/gluttex/server
+        source: build
+        force_source: yes
+        tag: latest
+
+    # Build Gluttex Auth Image
+    - name: Build Gluttex Auth Docker Image
+      docker_image:
+        name: omarzos/gluttex-auth
+        build:
+          path: /root/gluttex/auth_server
+        source: build
+        force_source: yes
+        tag: latest
+
+    # Run API Container
+    - name: Run Gluttex API Container
+      docker_container:
+        name: gluttex-api
+        image: omarzos/gluttex-api:latest  # Reference the built image
+        restart_policy: always
+        env:
+          SQL_HOST: "gluttex-db"
+          SQL_DATABASE: "{{ lookup('env', 'MYSQL_DATABASE') }}"
+          SQL_USER: "{{ lookup('env', 'MYSQL_USER') }}"
+          SQL_PASSWORD: "{{ lookup('env', 'MYSQL_PASSWORD') }}"
+          API_SECRET_KEY: "{{ lookup('env', 'SECRET_KEY') }}"
+          ALGORITHM: "{{ lookup('env', 'ALGORITHM') }}"
+        ports:
+          - "{{ lookup('env', 'API_PORT') }}:9000"
+        networks:
+          - name: gluttex-net
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.gluttex-api.rule: "Host(`gluttex.com`)"
+          traefik.http.services.gluttex-api.loadbalancer.server.port: "9000"
+
+    # Run Auth Container
+    - name: Run Gluttex Auth Container
+      docker_container:
+        name: gluttex-auth
+        image: omarzos/gluttex-auth:latest
+        restart_policy: always
+        env:
+          ACCESS_TOKEN_EXPIRE_MINUTES: "{{ lookup('env', 'ACCESS_TOKEN_EXPIRE_MINUTES') }}"
+          API_SECRET_KEY: "{{ lookup('env', 'SECRET_KEY') }}"
+          API_ALGORITHM: "{{ lookup('env', 'ALGORITHM') }}"
+        ports:
+          - "{{ lookup('env', 'AUTH_PORT') }}:8000"
+        networks:
+          - name: gluttex-net

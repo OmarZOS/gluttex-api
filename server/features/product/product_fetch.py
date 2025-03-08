@@ -1,10 +1,6 @@
 
-from core.api_models import Product_API
 from core.models import  Product, ProductCategory, ProductImage, ProductProvider, ProductProviderType
 import storage.storage_broker as storage_broker
-
-
-
 
 def fetch_product_by_id(prod_id: int):
     records = storage_broker.get(Product,{Product.id_product:prod_id},[])
