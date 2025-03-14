@@ -3,5 +3,6 @@
 /auth_db
 *.cpython
 *.pyc
+.env
 auth_test.html
 auth_db_data.db

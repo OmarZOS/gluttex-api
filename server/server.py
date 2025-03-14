@@ -11,7 +11,7 @@ from routers.auth_router import auth_router
 from routers.business_router import business_router
 from features.auth.decoder import verify_token
 from fastapi.middleware.cors import CORSMiddleware
-from prometheus_fastapi_instrumentator import Instrumentator
+# from prometheus_fastapi_instrumentator import Instrumentator
 
 
 # from prometheus_client import generate_latest, Counter, Histogram, Summary,REGISTRY
@@ -36,8 +36,8 @@ app.add_middleware(
 )
 
 
-# Enable Prometheus monitoring
-Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+# # Enable Prometheus monitoring
+# Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
 
 app.include_router(auth_router)

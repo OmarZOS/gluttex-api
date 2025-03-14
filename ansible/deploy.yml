@@ -1,72 +1,112 @@
-- name: Deploy Gluttex API
-  hosts: gluttex
-  become: true
+---
+- name: Deploy Gluttex Stack
+  hosts: all
+  become: yes
+  vars:
+    API_PORT: "{{ lookup('env', 'API_PORT') }}"
+    SQL_SCHEMA: "{{ lookup('env', 'SQL_SCHEMA') }}"
+    SQL_HOST: "{{ lookup('env', 'SQL_HOST') }}"
+    SQL_DATABASE: "{{ lookup('env', 'SQL_DATABASE') }}"
+    SQL_USER: "{{ lookup('env', 'SQL_USER') }}"
+    SQL_ROOT_PASSWORD: "{{ lookup('env', 'SQL_ROOT_PASSWORD') }}"
+    SQL_PORT: "{{ lookup('env', 'SQL_PORT') }}"
+    GOOGLE_CLIENT_ID: "{{ lookup('env', 'GOOGLE_CLIENT_ID') }}"
+    GOOGLE_CLIENT_SECRET: "{{ lookup('env', 'GOOGLE_CLIENT_SECRET') }}"
+    FACEBOOK_CLIENT_ID: "{{ lookup('env', 'FACEBOOK_CLIENT_ID') }}"
+    FACEBOOK_CLIENT_SECRET: "{{ lookup('env', 'FACEBOOK_CLIENT_SECRET') }}"
+    INSTAGRAM_CLIENT_ID: "{{ lookup('env', 'INSTAGRAM_CLIENT_ID') }}"
+    INSTAGRAM_CLIENT_SECRET: "{{ lookup('env', 'INSTAGRAM_CLIENT_SECRET') }}"
+    SECRET_KEY: "{{ lookup('env', 'SECRET_KEY') }}"
+    ALGORITHM: "{{ lookup('env', 'ALGORITHM') }}"
+    AUTH_SERVER_NAME: "{{ lookup('env', 'AUTH_SERVER_NAME') }}"
+    AUTH_PORT: "{{ lookup('env', 'AUTH_PORT') }}"
+    AUTH_REGISTRATION_ENDPOINT: "{{ lookup('env', 'AUTH_REGISTRATION_ENDPOINT') }}"
+    AUTH_LOGIN_ENDPOINT: "{{ lookup('env', 'AUTH_LOGIN_ENDPOINT') }}"
+    AUTH_CHANGE_ENDPOINT: "{{ lookup('env', 'AUTH_CHANGE_ENDPOINT') }}"
+    ACCESS_TOKEN_EXPIRE_MINUTES: "{{ lookup('env', 'ACCESS_TOKEN_EXPIRE_MINUTES') }}"
+
   tasks:
-    # Install Docker
-    - name: Install Docker
-      apt:
-        name: docker.io
-        state: present
+    - name: Ensure gluttex-net network exists
+      docker_network:
+        name: gluttex-net
+        driver: bridge
 
-    # # Install docker-py to support Docker modules in Ansible
-    # - name: Install Docker SDK for Python
-    #   pip:
-    #     name: docker
-    #     state: present
-
-    # Build Gluttex API Image
-    - name: Build Gluttex API Docker Image
-      docker_image:
-        name: omarzos/gluttex-api
-        build:
-          path: /root/gluttex/server
-        source: build
-        force_source: yes
-        tag: latest
-
-    # Build Gluttex Auth Image
-    - name: Build Gluttex Auth Docker Image
-      docker_image:
-        name: omarzos/gluttex-auth
-        build:
-          path: /root/gluttex/auth_server
-        source: build
-        force_source: yes
-        tag: latest
-
-    # Run API Container
-    - name: Run Gluttex API Container
+    - name: Deploy gluttex-api container
       docker_container:
         name: gluttex-api
-        image: omarzos/gluttex-api:latest  # Reference the built image
+        hostname: gluttex-api
+        image: omarzos/gluttex-api
         restart_policy: always
         env:
-          SQL_HOST: "gluttex-db"
-          SQL_DATABASE: "{{ lookup('env', 'MYSQL_DATABASE') }}"
-          SQL_USER: "{{ lookup('env', 'MYSQL_USER') }}"
-          SQL_PASSWORD: "{{ lookup('env', 'MYSQL_PASSWORD') }}"
-          API_SECRET_KEY: "{{ lookup('env', 'SECRET_KEY') }}"
-          ALGORITHM: "{{ lookup('env', 'ALGORITHM') }}"
+          API_PORT: "{{ API_PORT }}"
+          SQL_SCHEMA: "{{ SQL_SCHEMA }}"
+          SQL_HOST: "{{ SQL_HOST }}"
+          SQL_DATABASE: "{{ SQL_DATABASE }}"
+          SQL_USER: "{{ SQL_USER }}"
+          SQL_PASSWORD: "{{ SQL_ROOT_PASSWORD }}"
+          SQL_PORT: "{{ SQL_PORT }}"
+          API_GOOGLE_CLIENT_ID: "{{ GOOGLE_CLIENT_ID }}"
+          API_GOOGLE_CLIENT_SECRET: "{{ GOOGLE_CLIENT_SECRET }}"
+          API_FACEBOOK_CLIENT_ID: "{{ FACEBOOK_CLIENT_ID }}"
+          API_FACEBOOK_CLIENT_SECRET: "{{ FACEBOOK_CLIENT_SECRET }}"
+          API_INSTAGRAM_CLIENT_ID: "{{ INSTAGRAM_CLIENT_ID }}"
+          API_INSTAGRAM_CLIENT_SECRET: "{{ INSTAGRAM_CLIENT_SECRET }}"
+          API_SECRET_KEY: "{{ SECRET_KEY }}"
+          ALGORITHM: "{{ ALGORITHM }}"
+          AUTH_SERVER_NAME: "{{ AUTH_SERVER_NAME }}"
+          AUTH_PORT: "{{ AUTH_PORT }}"
+          AUTH_REGISTRATION_ENDPOINT: "{{ AUTH_REGISTRATION_ENDPOINT }}"
+          AUTH_LOGIN_ENDPOINT: "{{ AUTH_LOGIN_ENDPOINT }}"
+          AUTH_CHANGE_ENDPOINT: "{{ AUTH_CHANGE_ENDPOINT }}"
         ports:
-          - "{{ lookup('env', 'API_PORT') }}:9000"
+          - "{{ API_PORT }}:{{ API_PORT }}"
+        volumes:
+          - ./server/:/code
         networks:
           - name: gluttex-net
         labels:
           traefik.enable: "true"
-          traefik.http.routers.gluttex-api.rule: "Host(`gluttex.com`)"
+          traefik.http.routers.gluttex-api.rule: "Host(`gluttex.com`) && PathPrefix(`/`)"
           traefik.http.services.gluttex-api.loadbalancer.server.port: "9000"
 
-    # Run Auth Container
-    - name: Run Gluttex Auth Container
+    - name: Deploy gluttex-auth container
       docker_container:
         name: gluttex-auth
-        image: omarzos/gluttex-auth:latest
+        hostname: gluttex-auth
+        image: omarzos/gluttex-auth
         restart_policy: always
         env:
-          ACCESS_TOKEN_EXPIRE_MINUTES: "{{ lookup('env', 'ACCESS_TOKEN_EXPIRE_MINUTES') }}"
-          API_SECRET_KEY: "{{ lookup('env', 'SECRET_KEY') }}"
-          API_ALGORITHM: "{{ lookup('env', 'ALGORITHM') }}"
+          ACCESS_TOKEN_EXPIRE_MINUTES: "{{ ACCESS_TOKEN_EXPIRE_MINUTES }}"
+          AUTH_PORT: "{{ AUTH_PORT }}"
+          API_SECRET_KEY: "{{ SECRET_KEY }}"
+          API_ALGORITHM: "{{ ALGORITHM }}"
         ports:
-          - "{{ lookup('env', 'AUTH_PORT') }}:8000"
+          - "{{ AUTH_PORT }}:{{ AUTH_PORT }}"
+        volumes:
+          - ./auth_server/:/code
+          - ./auth_server/auth_db/auth_db.db:/auth_db_data.db
         networks:
           - name: gluttex-net
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.gluttex-auth.rule: "Host(`gluttex.com`) && PathPrefix(`/`)"
+          traefik.http.services.gluttex-auth.loadbalancer.server.port: "9090"
+
+    - name: Deploy Traefik container
+      docker_container:
+        name: traefik
+        image: traefik:v2.10
+        restart_policy: always
+        command:
+          - "--api.insecure=true"
+          - "--providers.docker=true"
+          - "--entrypoints.web.address=:80"
+        ports:
+          - "80:80"
+          - "8080:8080"
+        networks:
+          - name: gluttex-net
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock
+        labels:
+          traefik.enable: "true"

@@ -1,11 +1,11 @@
 # pika==1.2.0
-fastapi==0.75.0
-uvicorn==0.17.6
+fastapi
+uvicorn
 # elasticsearch==8.1.1
 # scylla-driver
 mysql-connector-python
 sqlalchemy
-prometheus-fastapi-instrumentator
+# prometheus-fastapi-instrumentator
 python-jose
 Authlib
 pymysql
