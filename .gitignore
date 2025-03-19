@@ -1,6 +1,6 @@
 /computing_server
 /data
-/auth_db
+./auth_db
 *.cpython
 *.pyc
 .env
