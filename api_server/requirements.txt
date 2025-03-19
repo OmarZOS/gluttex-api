@@ -1,0 +1,15 @@
+# pika==1.2.0
+fastapi
+uvicorn
+mysql-connector-python
+sqlalchemy
+python-jose
+Authlib
+pymysql
+httpx
+sse_starlette
+pytest
+pytest-asyncio
+# prometheus-fastapi-instrumentator
+# elasticsearch==8.1.1
+# scylla-driver
