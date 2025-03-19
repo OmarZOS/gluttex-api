@@ -53,7 +53,7 @@ services:
       - ./api_server/:/code
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/`) || Host(`134.199.240.34`) "
+      - "traefik.http.routers.gluttex-api.rule=Host(`localhost`) && PathPrefix(`/`) || Host(`134.199.240.34`) "
       - "traefik.http.services.gluttex-api.loadbalancer.server.port=9000"
     # expose:
     #   - 8000  # Exposes the API to Traefik internally
@@ -71,14 +71,15 @@ services:
       - AUTH_PORT=${AUTH_PORT}
       - API_SECRET_KEY=${SECRET_KEY}
       - API_ALGORITHM=${ALGORITHM}
+      - AUTH_DATABASE_URL=${AUTH_DATABASE_URL}
     networks:
       - gluttex-net
     volumes:
       - ./auth_server/:/code
-      - ./auth_server/auth_db/auth_db.db:/auth_db_data.db
+      - ./auth_db/:/auth_db/
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/`) || Host(`134.199.240.34`) "
+      - "traefik.http.routers.gluttex-auth.rule=Host(`localhost`) && PathPrefix(`/`) || Host(`134.199.240.34`) "
       - "traefik.http.services.gluttex-auth.loadbalancer.server.port=9090"
 
   traefik:
