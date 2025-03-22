@@ -3,13 +3,21 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from pathlib import Path
 import shutil
-
+from fastapi.middleware.cors import CORSMiddleware
 from lib import *
 
 app = FastAPI(
     openapi_url="/fs/openapi.json",  # Move OpenAPI to `/api/openapi.json`
     docs_url="/fs/docs",  # Keep Swagger UI at `/docs`
     redoc_url="/fs/redoc"  # Keep ReDoc at `/redoc`
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this for security in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.post("/fs/upload/{entity_type}/{owner_id}/{entity_id}/")
@@ -20,7 +28,7 @@ async def upload_file(entity_type: str, owner_id: str, entity_id: str, file: Upl
     entity_path = get_path(entity_type, owner_id, entity_id)
     entity_path.mkdir(parents=True, exist_ok=True)
 
-    file_path = entity_path / uuid.uuid4()
+    file_path = entity_path / f"{uuid.uuid4()}"
 
     try:
         with file_path.open("wb") as buffer:
@@ -28,8 +36,8 @@ async def upload_file(entity_type: str, owner_id: str, entity_id: str, file: Upl
         print(f"✅ File saved: {file_path}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
-
-    return {"filename": file.filename, "path": str(file_path)}
+    access_path = str(file_path).replace("/fs/data","/fs/files")
+    return {"filename": file.filename, "path": access_path}
 
 @app.get("/fs/{entity_type}/{owner_id}/{entity_id}/{filename}")
 async def get_file(entity_type: str, owner_id: str, entity_id: str, filename: str, detailed: bool = False):

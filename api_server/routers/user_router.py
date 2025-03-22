@@ -42,6 +42,7 @@ async def insert_user_endpoint(user: AppUser_API, person: Person_API = None, loc
     Insert a new user.
     """
     try:
+        return "Nice one kid"
         return await insert_user(user, person, location)
     except Exception as e:
         raise HTTPException(

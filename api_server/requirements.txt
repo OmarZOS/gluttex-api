@@ -8,9 +8,10 @@ Authlib
 pymysql
 httpx
 sse_starlette
+# shapely
 geoalchemy2
-pytest
-pytest-asyncio
+# pytest
+# pytest-asyncio
 # prometheus-fastapi-instrumentator
 # elasticsearch==8.1.1
 # scylla-driver

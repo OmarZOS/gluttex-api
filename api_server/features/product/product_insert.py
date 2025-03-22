@@ -1,6 +1,8 @@
 
 # here, we make schema translations
 
+import uuid
+from features.media_net import upload_image
 from core.api_models import Product_API, ProductImage_API
 from core.messages import PRODUCT_ALREADY_EXISTS, PRODUCT_CATEGORY_NOT_EXISTS, PRODUCT_NOT_EXISTS, SUPPLIER_NOT_EXISTS
 from core.models import *
@@ -30,7 +32,7 @@ def build_product(product: Product_API):
                     created = datetime.now()
                     )
 
-def insert_product(product_api: Product_API, image: ProductImage_API):
+async def insert_product(product_api: Product_API, image: ProductImage_API):
     
     product_old = fetch_product_by_id(product_api.id_product)
     if product_old != None : 
@@ -49,10 +51,10 @@ def insert_product(product_api: Product_API, image: ProductImage_API):
     product.product_provider_id = product_suppliers[0].id_product_provider
     product.product_category_id = product_category.id_product_category
     
-
-    if (image.product_image_url):
+    if (image.product_image_data):
+        inserted_image_url = await upload_image("product",product_api.product_owner,f"{uuid.uuid4()}",image.product_image_data)
         # if (image.id_product_image==0):
-        product_image = ProductImage(product_image_url  = image.product_image_url)
+        product_image = ProductImage(product_image_url  = inserted_image_url["path"])
         product.product_image = [product_image]
     
     code,product,msg = insert_or_complete_or_raise(product)

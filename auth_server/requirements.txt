@@ -3,8 +3,8 @@ uvicorn
 authlib
 bcrypt
 python-jose
-# sqlite
 sqlalchemy
 passlib
-# prometheus-fastapi-instrumentator
 python-multipart
+# sqlite
+# prometheus-fastapi-instrumentator

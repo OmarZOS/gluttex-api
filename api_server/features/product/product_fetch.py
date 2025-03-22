@@ -38,5 +38,5 @@ def fetch_all_product(offset, limit):
                               [
         Product.product_category, 
         Product.product_provider, 
-        {Product.product_image: [ProductImage.id_product_image],}  # Nested eager load for specific fields
+        {Product.product_image: [ProductImage.id_product_image,ProductImage.product_image_url],}  # Nested eager load for specific fields
     ],offset=offset, limit=limit)

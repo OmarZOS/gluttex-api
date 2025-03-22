@@ -1,6 +1,8 @@
 
 # here, we make schema translations
 
+import uuid
+from features.media_net import upload_image
 from core.api_models import Recipe_API, RecipeImage_API
 from core.messages import APPUSER_NOT_EXISTS, RECIPE_ALREADY_EXISTS, RECIPE_CATEGORY_NOT_EXISTS, RECIPE_NOT_EXISTS
 from core.models import *
@@ -21,7 +23,7 @@ def build_recipe(recipe: Recipe_API):
         recipe_creation  = datetime.now(),
         recipe_last_updated  = datetime.now())
 
-def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
+async def  insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
     
     recipe_old = fetch_recipe_by_name(recipe_api.recipe_name)
     if recipe_old != None : 
@@ -39,9 +41,11 @@ def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
 
     recipe.recipe_category_id = recipe_category.id_recipe_category    
 
-    if (image.recipe_image_url):
-        # if (image.id_recipe_image==0):
-        recipe_image = RecipeImage(recipe_image_url  = image.recipe_image_url)
+
+        
+    if (image.recipe_image_data):
+        inserted_image_url = await upload_image("recipe",recipe_api.recipe_owner_id,uuid.uuid4(),image.recipe_image_data)
+        recipe_image = RecipeImage(recipe_image_url  = inserted_image_url["path"])
         recipe.recipe_image = [recipe_image]
 
 

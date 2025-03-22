@@ -36,7 +36,9 @@ AUTH_LOGIN_ENDPOINT = os.getenv("AUTH_LOGIN_ENDPOINT",'')
 AUTH_CHANGE_ENDPOINT = os.getenv("AUTH_CHANGE_ENDPOINT",'')
 
 
-
+FILE_UPLOAD_ENDPOINT= os.getenv("FILE_UPLOAD_ENDPOINT",'')
+FS_HOST= os.getenv("FS_HOST",'')
+FS_PORT= os.getenv("FS_PORT",'')
 
 
 
