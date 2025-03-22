@@ -18,7 +18,7 @@ def fetch_placed_orders_by_user(user_id):
     return storage_broker.get(PlacedOrder
                               ,{PlacedOrder.ordering_user_id :user_id}
                               ,[OrderedItem]
-                              ,[PlacedOrder.ordered_item]
+                              ,None
                               ,None
                               )
 

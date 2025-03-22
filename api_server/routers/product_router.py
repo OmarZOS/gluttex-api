@@ -130,12 +130,12 @@ def update_product_details(
         )
 
 @product_router.put("/product/add")
-def insert_product_details(product: Product_API, image: ProductImage_API):
+async def insert_product_details(product: Product_API, image: ProductImage_API):
     """
     Insert a new product.
     """
     try:
-        return insert_product(product, image)
+        return await  insert_product(product, image)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -1157,6 +1157,41 @@ INSERT INTO `gluttex`.`ingredient` (ingredient_name,ingredient_icon) VALUES
 ('Self-Rising Flour','<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools --> <svg width="800px" height="800px" viewBox="0 0 24 24" id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg"><defs><style>.cls-1{fill:none;stroke:#020202;stroke-miterlimit:10;stroke-width:1.91px;}</style></defs><path class="cls-1" d="M18.68,19.64H5.32q-3.82-7.23,0-15.28H18.68Q22.51,12.4,18.68,19.64Z"/><polygon class="cls-1" points="5.32 19.64 18.68 19.64 19.64 22.5 4.36 22.5 5.32 19.64"/><polygon class="cls-1" points="4.36 1.5 19.64 1.5 18.68 4.36 5.32 4.36 4.36 1.5"/><path class="cls-1" d="M12.35,16a2.36,2.36,0,0,1-1.78.8,2.39,2.39,0,1,1,2.16-3.4"/><circle class="cls-1" cx="13.91" cy="14.86" r="1.91"/><line class="cls-1" x1="8.18" y1="8.18" x2="15.82" y2="8.18"/></svg>'); 
 
 
+INSERT INTO `gluttex`.`product_image` (`product_image_url`, `product_ref_id`) VALUES
+('/fs/product/1/1/a8d09b7c-4373-4279-8b84-156627bcfcfe', 1),
+('/fs/product/1/2/4dcfa594-20da-4173-bf38-d55b5babf5fc', 2),
+('/fs/product/1/3/e79b4666-111e-4fb2-8167-a59e10b5a2b2', 3),
+('/fs/product/1/4/07e09aaa-5ce4-40e5-aaa3-e9df57ca4336', 4),
+('/fs/product/1/5/09bcc68a-7561-47c8-b958-5be505993651', 5),
+('/fs/product/1/6/98283a17-8faf-4288-94f4-b16881cf1a66', 6),
+('/fs/product/1/7/141c909d-7358-4e67-bb22-c56b609ffc5e', 7),
+('/fs/product/1/8/8f598bbb-6330-4a44-8f46-e62f2bc63fbc', 8),
+('/fs/product/1/9/cffcd4ab-9fda-44e1-a554-75bc69d12c03', 9),
+('/fs/product/1/10/07be024b-ebc0-4d70-9173-cb46c2ef6f2b', 10),
+('/fs/product/1/11/d0ba0453-4daa-4710-9b6f-717e9b3a21eb', 11),
+('/fs/product/1/12/fde200b6-6c51-49b5-8f03-4840518abab9', 12),
+('/fs/product/1/13/fc222373-b07d-4ad9-97b4-f5e04de5af19', 13),
+('/fs/product/1/14/3f8ea60b-fcb7-4936-b6ec-9d4c2228a8a4', 14),
+('/fs/product/1/15/9ff2fc1c-a1b2-492d-b9be-62f238335d90', 15),
+('/fs/product/1/16/e6b88aa0-e043-48f6-bab0-877a776d2ada', 16),
+('/fs/product/1/17/7f5bed1f-85d9-48c2-8d51-dd085375b748', 17),
+('/fs/product/1/18/5f9bf70a-f8ff-49fd-9457-57dc463b236a', 18),
+('/fs/product/1/19/4100f11e-9cd8-4e73-b398-7a92213421a6', 19);
+
+INSERT INTO `gluttex`.`recipe_image` (`recipe_image_url`, `recipe_ref_id`) VALUES
+('/fs/recipe/1/1/c3a0479a-7158-453a-aca6-de2686273b9a', 1),
+('/fs/recipe/1/2/c3c495df-499c-4080-bd94-fbfbac4b7373', 2),
+('/fs/recipe/1/3/74a8713d-e4cd-410c-b283-ecd255043eb6', 3),
+('/fs/recipe/1/4/bd454c87-b5f4-4c4c-bb27-0aec9034c6c1', 4),
+('/fs/recipe/1/5/ba7c8858-68ba-4213-9743-5fb73d27bb28', 5),
+('/fs/recipe/1/6/cb8f25b1-cb03-4c80-abf6-401a4fda2e1c', 6),
+('/fs/recipe/1/7/debc1bf2-36c1-4fa3-828d-02a509897de9', 7),
+('/fs/recipe/1/8/0a73e7f6-b355-42cb-b606-c9b0915ea010', 8),
+('/fs/recipe/1/9/8ab55ac5-5974-44bb-bd8e-23db70b7e58b', 9),
+('/fs/recipe/1/10/da75a418-4490-4ec1-b992-197b94929f38', 10);
+
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;

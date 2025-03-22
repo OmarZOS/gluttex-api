@@ -6,7 +6,7 @@
 
 
 from core.api_models import Location_API, ProductProvider_API
-from core.models import ProductProvider, ProductProviderType, ProviderDetails
+from core.models import Location, ProductProvider, ProductProviderType, ProviderDetails
 import storage.storage_broker as storage_broker
 
 
@@ -17,7 +17,7 @@ def fetch_supplier_by_id(provider_id: str):
     return records
 
 def fetch_suppliers(offset,limit):
-    records = storage_broker.get(ProductProvider,{},None,[ProductProvider.product_provider_location,ProductProvider.product_provider_type,ProductProvider.product_provider_details],offset=offset,limit=limit)
+    records = storage_broker.get(ProductProvider,{},None,[{ProductProvider.product_provider_location:[Location.position_wkt,Location.location_name]},ProductProvider.product_provider_type,ProductProvider.product_provider_details],offset=offset,limit=limit)
     # if records == []: return None
     return records
 
