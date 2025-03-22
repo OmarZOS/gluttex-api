@@ -4,5 +4,6 @@
 *.cpython
 *.pyc
 .env
+/fs
 auth_test.html
 auth_db_data.db
