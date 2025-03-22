@@ -14,7 +14,7 @@ async def create_user(user_data: dict):
     url = f"https://{AUTH_SERVER_NAME}:{AUTH_PORT}{AUTH_REGISTRATION_ENDPOINT}"
     
     try:
-        response = await send_post_request(url, payload_data=user_data)
+        response = await send_post_request(url, json_data=user_data)
         response.raise_for_status()  # Raises an error for 4xx/5xx responses
         return response.json()
     except Exception as e:

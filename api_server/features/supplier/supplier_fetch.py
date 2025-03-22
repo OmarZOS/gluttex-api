@@ -16,8 +16,8 @@ def fetch_supplier_by_id(provider_id: str):
     # if records == []: return None
     return records
 
-def fetch_suppliers():
-    records = storage_broker.get(ProductProvider,{},None,[ProductProvider.product_provider_location,ProductProvider.product_provider_type,ProductProvider.product_provider_details])
+def fetch_suppliers(offset,limit):
+    records = storage_broker.get(ProductProvider,{},None,[ProductProvider.product_provider_location,ProductProvider.product_provider_type,ProductProvider.product_provider_details],offset=offset,limit=limit)
     # if records == []: return None
     return records
 

@@ -4,6 +4,9 @@ from core.models import Address, BloodType, Location, Person, PersonDetails
 from features.insertion import insert_or_complete_or_raise
 from features.location.location_fetch import fetch_address_object, fetch_location, fetch_location_object
 from features.person.person_fetch import fetch_person_blood_type_object, fetch_person_details_object
+from geoalchemy2.shape import from_shape
+from shapely.geometry import Point
+
 
 def insert_person_details(person: Person_API):
     person_detail = PersonDetails(
@@ -53,8 +56,7 @@ def generate_person_object(person: Person_API,location: Location_API=None):
     else:
         mensch.person_location = Location(
 
-                    location_latitude = location.location_latitude,
-                    location_longitude = location.location_longitude,
+                    location_position= from_shape(Point(location.location_longitude, location.location_latitude)) ,
                     location_name = location.location_name,
                     location_address_id = location.location_address_id,)
         

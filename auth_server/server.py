@@ -15,7 +15,11 @@ from datetime import timedelta
 models.Base.metadata.create_all(bind=engine)
 
 # Initialize FastAPI app
-app = FastAPI()
+app = FastAPI(
+    openapi_url="/auth/openapi.json",  # Move OpenAPI to `/api/openapi.json`
+    docs_url="/auth/docs",  # Keep Swagger UI at `/docs`
+    redoc_url="/auth/redoc"  # Keep ReDoc at `/redoc`
+)
 
 # CORS Middleware
 app.add_middleware(
@@ -26,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/users/", response_model=schemas.UserResponse)
+@app.post("/auth/users/", response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(dependencies.get_db)):
     """Register a new user."""
     db_user = crud.get_user_by_username(db, username=user.username)
@@ -41,7 +45,7 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(dependencies.get
             detail=f"Couldn't create user: {str(e)}"
         )
 
-@app.post("/token", response_model=schemas.Token)
+@app.post("/auth/token", response_model=schemas.Token)
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(), 
     db: Session = Depends(dependencies.get_db)
@@ -75,12 +79,12 @@ async def login_for_access_token(
         "app_user_id": str(user.app_user_id)
     }
 
-@app.get("/users/me/", response_model=schemas.UserResponse)
+@app.get("/auth/users/me/", response_model=schemas.UserResponse)
 async def read_users_me(current_user: schemas.User = Depends(auth.get_current_user)):
     """Retrieve the currently logged-in user."""
     return current_user
 
-@app.put("/users/update-password/", response_model=schemas.UserResponse)
+@app.put("/auth/users/update-password/", response_model=schemas.UserResponse)
 def update_user_password(
     user: schemas.UserUpdate, 
     db: Session = Depends(dependencies.get_db),

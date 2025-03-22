@@ -8,6 +8,7 @@ Authlib
 pymysql
 httpx
 sse_starlette
+geoalchemy2
 pytest
 pytest-asyncio
 # prometheus-fastapi-instrumentator

@@ -24,7 +24,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # ----------- App initialisation -------------------------------------
 
-app = FastAPI()
+app = FastAPI(
+    openapi_url="/api/openapi.json",  # Move OpenAPI to `/api/openapi.json`
+    docs_url="/api/docs",  # Keep Swagger UI at `/docs`
+    redoc_url="/api/redoc"  # Keep ReDoc at `/redoc`
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,18 +38,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # # Enable Prometheus monitoring
 # Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 
-
-app.include_router(auth_router)
-app.include_router(supplier_router) # , dependencies=[Depends(verify_token)]
-app.include_router(product_router) # , dependencies=[Depends(verify_token)]
-app.include_router(recipe_router) # , dependencies=[Depends(verify_token)]
-app.include_router(health_router) # , dependencies=[Depends(verify_token)]
-app.include_router(app_user_router)
-app.include_router(business_router)
+app.include_router(auth_router,prefix="/api")
+app.include_router(supplier_router,prefix="/api") # , dependencies=[Depends(verify_token)]
+app.include_router(product_router,prefix="/api") # , dependencies=[Depends(verify_token)]
+app.include_router(recipe_router,prefix="/api") # , dependencies=[Depends(verify_token)]
+app.include_router(health_router,prefix="/api") # , dependencies=[Depends(verify_token)]
+app.include_router(app_user_router,prefix="/api")
+app.include_router(business_router,prefix="/api")
 
 
 # @app.middleware("http")
@@ -61,6 +63,6 @@ app.include_router(business_router)
 #     return Response(generate_latest(REGISTRY), media_type="text/plain")
 # ------------- Standard endpoints -----------------------------------------------
 
-@app.get("/")
+@app.get("/api")
 def home():
     return {'data': 'Hello from the other side'}

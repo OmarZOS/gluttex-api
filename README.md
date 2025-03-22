@@ -51,10 +51,12 @@ To generate the `models.py` file, you can execute the following instruction:
 
     sudo docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' gluttex-db
 
-    sqlacodegen --outfile=server/core/models.py   mysql+pymysql://dev_user:dev_password@[$MYSQL_HOST]/gluttex
+    sqlacodegen --outfile=api_server/core/models.py   mysql+pymysql://dev_user:dev_password@[$MYSQL_HOST]/gluttex
 
+For the spatial data: 
 
-
+    from geoalchemy2 import Geometry
+    location_position = Column(Geometry('POINT'))  # ✅ Correct way
 ### Progress
     
 - Serving feature. ![x](https://us-central1-progress-markdown.cloudfunctions.net/progress/90)
