@@ -39,9 +39,9 @@ def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
 
     recipe.recipe_category_id = recipe_category.id_recipe_category    
 
-    if (image.recipe_image_data):
+    if (image.recipe_image_url):
         # if (image.id_recipe_image==0):
-        recipe_image = RecipeImage(recipe_image_data  = image.recipe_image_data)
+        recipe_image = RecipeImage(recipe_image_url  = image.recipe_image_url)
         recipe.recipe_image = [recipe_image]
 
 

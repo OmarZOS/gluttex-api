@@ -1,22 +1,23 @@
 version: '3.8'
 services:
   # mysql:
-    # image: mysql
-    # container_name: gluttex-db
-    # restart: always
-    # command: --max_allowed_packet=256M --init-file /data/application/init.sql
-    # environment:
-    #   MYSQL_DATABASE: ${MYSQL_DATABASE}
-    #   MYSQL_USER: ${MYSQL_USER}
-    #   MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    #   MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    # ports:
-    #   - ${MYSQL_PORT}:3306
-    # volumes:
-    #   - ./mysql/model.sql:/data/application/init.sql
-    #   - ./data:/var/lib/mysql
-    # networks:
-    #   - gluttex-net
+  #   image: mysql
+  #   container_name: gluttex-db
+  #   restart: always
+  #   command: --max_allowed_packet=256M --init-file /data/application/init.sql
+
+  #   environment:
+  #     MYSQL_DATABASE: ${MYSQL_DATABASE}
+  #     MYSQL_USER: ${MYSQL_USER}
+  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+  #   expose:
+  #     - 3306
+  #   volumes:
+  #     - ./mysql/model.sql:/data/application/init.sql
+  #     - ./data:/var/lib/mysql
+  #   networks:
+  #     - gluttex-net
 
   gluttex-api:
     container_name: gluttex-api
@@ -32,19 +33,19 @@ services:
       - SQL_USER=${SQL_USER}
       - SQL_PASSWORD=${SQL_ROOT_PASSWORD}
       - SQL_PORT=${SQL_PORT}
+
+      - AUTH_PORT=${AUTH_PORT}
+      - AUTH_SERVER_NAME=${AUTH_SERVER_NAME}
+      - AUTH_REGISTRATION_ENDPOINT=${AUTH_REGISTRATION_ENDPOINT}
+      - ALGORITHM=${ALGORITHM}
+      - API_SECRET_KEY=${SECRET_KEY}
+      
       - API_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - API_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - API_FACEBOOK_CLIENT_ID=${FACEBOOK_CLIENT_ID}
       - API_FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}
       - API_INSTAGRAM_CLIENT_ID=${INSTAGRAM_CLIENT_ID}
       - API_INSTAGRAM_CLIENT_SECRET=${INSTAGRAM_CLIENT_SECRET}
-      - API_SECRET_KEY=${SECRET_KEY}
-      - ALGORITHM=${ALGORITHM}
-      - AUTH_SERVER_NAME=${AUTH_SERVER_NAME}
-      - AUTH_PORT=${AUTH_PORT}
-      - AUTH_REGISTRATION_ENDPOINT=${AUTH_REGISTRATION_ENDPOINT}
-      - AUTH_LOGIN_ENDPOINT=${AUTH_LOGIN_ENDPOINT}
-      - AUTH_CHANGE_ENDPOINT=${AUTH_CHANGE_ENDPOINT}
     networks:
       - gluttex-net
     ports:
@@ -53,7 +54,7 @@ services:
       - ./api_server/:/code
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-api.rule=Host(`localhost`) && PathPrefix(`/`) || Host(`134.199.240.34`) "
+      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/api`) || Host(`134.199.240.34`) "
       - "traefik.http.services.gluttex-api.loadbalancer.server.port=9000"
     # expose:
     #   - 8000  # Exposes the API to Traefik internally
@@ -79,8 +80,28 @@ services:
       - ./auth_db/:/auth_db/
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-auth.rule=Host(`localhost`) && PathPrefix(`/`) || Host(`134.199.240.34`) "
+      - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/auth`) || Host(`134.199.240.34`) "
       - "traefik.http.services.gluttex-auth.loadbalancer.server.port=9090"
+
+  gluttex-fs:
+    container_name: gluttex-fs
+    hostname: gluttex-fs
+    restart: always
+    build: file_server/.
+    image: omarzos/gluttex-fs
+    environment:
+      - FS_PORT=${FS_PORT}
+    ports:
+      - ${FS_PORT}
+    networks:
+      - gluttex-net
+    volumes:
+      - ./file_server/:/code
+      - ./fs/:/fs/
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gluttex-fs.rule=Host(`gluttex.com`) && PathPrefix(`/fs`) || Host(`134.199.240.34`) "
+      - "traefik.http.services.gluttex-fs.loadbalancer.server.port=9099"
 
   traefik:
     image: traefik:v2.10
@@ -114,6 +135,7 @@ services:
 volumes:
   data:
   auth_db:
+  fs:
 
 networks:
   gluttex-net:

@@ -4,6 +4,9 @@
 from core.api_models import Location_API
 from core.models import Address, Location
 from features.insertion import insert_or_complete_or_raise
+from geoalchemy2.shape import from_shape
+from shapely.geometry import Point
+
 
 def build_location(location: Location_API):
     address = Address(
@@ -13,8 +16,7 @@ def build_location(location: Location_API):
                         address_country=location.address_country,)
 
     loc = Location(
-        location_latitude=location.location_latitude,
-        location_longitude=location.location_longitude,
+        location_position= from_shape(Point(location.location_longitude, location.location_latitude)) ,
         location_name=location.location_name,
         location_address=address)
     

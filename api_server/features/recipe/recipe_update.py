@@ -38,8 +38,8 @@ def update_recipe(recipe_id: int,recipe_api: Recipe_API, image: RecipeImage_API)
     
     recipe = update_record_in_api(recipe_old)
     if (image.id_recipe_image==0):
-        if (image.recipe_image_data):
-            recipe_image = RecipeImage(recipe_image_data = image.recipe_image_data)
+        if (image.recipe_image_url):
+            recipe_image = RecipeImage(recipe_image_url = image.recipe_image_url)
             recipe_image.recipe_ref_id = recipe_old.id_recipe
             code,new_image,msg = insert_or_complete_or_raise(recipe_image)
     

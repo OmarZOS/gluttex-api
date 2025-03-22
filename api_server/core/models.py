@@ -1,6 +1,7 @@
-from sqlalchemy import Column, DECIMAL, Date, DateTime, Float, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
+from sqlalchemy import Column, Date, DateTime, Float, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
 from sqlalchemy.dialects.mysql import LONGTEXT
-
+from sqlalchemy.sql.sqltypes import NullType
+from geoalchemy2 import Geometry
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -141,12 +142,12 @@ class Location(Base):
     __tablename__ = 'location'
     __table_args__ = (
         ForeignKeyConstraint(['location_address_id'], ['address.id_address'], name='fk_location_1'),
-        Index('fk_location_1_idx', 'location_address_id')
+        Index('fk_location_1_idx', 'location_address_id'),
+        Index('spatial', 'location_position')
     )
 
     id_location = Column(Integer, primary_key=True)
-    location_latitude = Column(DECIMAL(10, 8))
-    location_longitude = Column(DECIMAL(11, 8))
+    location_position = Column(Geometry('POINT'), nullable=False)
     location_name = Column(String(45))
     location_address_id = Column(Integer)
 
@@ -423,7 +424,7 @@ class RecipeImage(Base):
     )
 
     id_recipe_image = Column(Integer, primary_key=True)
-    recipe_image_data = Column(LONGTEXT)
+    recipe_image_url = Column(String(255))
     recipe_ref_id = Column(Integer)
 
     recipe_ref = relationship('Recipe', back_populates='recipe_image')
@@ -458,7 +459,7 @@ class ProductImage(Base):
     )
 
     id_product_image = Column(Integer, primary_key=True)
-    product_image_data = Column(LONGTEXT)
+    product_image_url = Column(String(255))
     product_ref_id = Column(Integer)
 
     product_ref = relationship('Product', back_populates='product_image')

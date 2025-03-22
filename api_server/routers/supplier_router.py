@@ -35,13 +35,13 @@ def get_supplier_by_id(supplier_id: int):
             detail=f"Couldn't get supplier: {str(e)}"
         )
 
-@supplier_router.get("/supplier/all")
-def get_all_suppliers():
+@supplier_router.get("/supplier/all/{offset}/{limit}")
+def get_all_suppliers(offset,limit):
     """
     Retrieve all suppliers.
     """
     try:
-        return fetch_suppliers()
+        return fetch_suppliers(offset,limit)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

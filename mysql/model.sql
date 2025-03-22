@@ -80,12 +80,12 @@ DROP TABLE IF EXISTS `gluttex`.`location` ;
 
 CREATE TABLE IF NOT EXISTS `gluttex`.`location` (
   `id_location` INT NOT NULL AUTO_INCREMENT,
-  `location_latitude` DECIMAL(10,8) NULL,
-  `location_longitude` DECIMAL(11,8) NULL,
+  `location_position` POINT NOT NULL,
   `location_name` VARCHAR(45) NULL,
   `location_address_id` INT NULL,
   PRIMARY KEY (`id_location`),
   INDEX `fk_location_1_idx` (`location_address_id` ASC) VISIBLE,
+  INDEX `spatial` (`location_position` ) VISIBLE,
   CONSTRAINT `fk_location_1`
     FOREIGN KEY (`location_address_id`)
     REFERENCES `gluttex`.`address` (`id_address`)
@@ -463,7 +463,7 @@ DROP TABLE IF EXISTS `gluttex`.`product_image` ;
 
 CREATE TABLE IF NOT EXISTS `gluttex`.`product_image` (
   `id_product_image` INT NOT NULL AUTO_INCREMENT,
-  `product_image_data` LONGTEXT NULL,
+  `product_image_url` varchar(255) NULL,
   `product_ref_id` INT NULL,
   PRIMARY KEY (`id_product_image`),
   INDEX `fk_product_image_1_idx` (`product_ref_id` ASC) VISIBLE,
@@ -482,7 +482,7 @@ DROP TABLE IF EXISTS `gluttex`.`recipe_image` ;
 
 CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_image` (
   `id_recipe_image` INT NOT NULL AUTO_INCREMENT,
-  `recipe_image_data` LONGTEXT NULL,
+  `recipe_image_url` VARCHAR(255) NULL,
   `recipe_ref_id` INT NULL,
   PRIMARY KEY (`id_recipe_image`),
   INDEX `fk_recipe_image_1_idx` (`recipe_ref_id` ASC) VISIBLE,
@@ -719,7 +719,7 @@ INSERT INTO `gluttex`.`recipe_category` ( `recipe_category_desc`) VALUES
 
 
 
--- INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`) VALUES
+-- INSERT INTO `gluttex`.`location` (`location_position`, `location_name`) VALUES
 -- ('31.4704', '10.5995','Algiers'),
 -- ('21.9235', '6.6383','Oran'),
 -- ('33.3383', '-0.7512','Constantine'),
@@ -765,48 +765,48 @@ VALUES
 -- Insertions for Amissan -gluten free-
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Amissan -gluten free-', 'Facebook: https://www.facebook.com/profile.php?id=100063573159141, Phone number: 0781 56 64 26');
-INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
-('36.79664864280521', '3.00456923564612', 'Rue Lamameri Ali', 1);
+INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+(ST_GeomFromText('POINT(36.79664864280521 3.00456923564612)'), 'Rue Lamameri Ali', 1);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (1,1,2);
 
 -- Insertions for Magasin habibou sans gluten
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Magasin habibou sans gluten', 'Facebook: https://www.facebook.com/profile.php?id=100063549909208');
-INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
-('36.79104995021719', '3.244388200045344', 'Avenue Houari Boumedien', 2);
+INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+(ST_GeomFromText('POINT(36.79104995021719 3.244388200045344)'), 'Avenue Houari Boumedien', 2);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (2,2,2);
 
 -- Insertions for Uno
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Uno', 'Facebook: https://www.facebook.com/UNO.Hypermarche/, Instagram: https://www.instagram.com/uno_hypermarche/');
-INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
-('36.71305045006746', '3.191942199815943', 'Route de Dar El Beida', 3);
+INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+(ST_GeomFromText('POINT(36.71305045006746 3.191942199815943)'), 'Route de Dar El Beida', 3);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (3,3,4);
 
 -- Insertions for Superette université
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Superette université', 'N/A');
-INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
-('36.68805559407475', '2.872905857188605', 'N63', 4);
+INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+(ST_GeomFromText('POINT(36.68805559407475 2.872905857188605)'), 'N63', 4);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (4,4,4);
 
 -- Insertions for Corridors Shopping
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Corridors Shopping', 'N/A');
-INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
-('36.6683827', '2.9833228', 'Khraicia', 5);
+INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+(ST_GeomFromText('POINT(36.6683827 2.9833228)'), 'Khraicia', 5);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (5,5,1);
 
 -- Insertions for Caramel sans gluten
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Caramel sans gluten', 'N/A');
-INSERT INTO `gluttex`.`location` (`location_latitude`,`location_longitude`, `location_name`, `location_address_id`) VALUES
-('36.75573869999999', '2.9514329', 'Cheraga', 6);
+INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
+(ST_GeomFromText('POINT(36.75573869999999 2.9514329)'), 'Cheraga', 6);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (6,6,4);
 

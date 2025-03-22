@@ -59,8 +59,8 @@ def update_product(product_id: int,product_api: Product_API, image: ProductImage
     
     product = update_record_in_api(product_old)
     if (image.id_product_image==0):
-        if (image.product_image_data):
-            product_image = ProductImage(product_image_data = image.product_image_data)
+        if (image.product_image_url):
+            product_image = ProductImage(product_image_url = image.product_image_url)
             product_image.product_ref_id = product_old.id_product
             code,new_image,msg = insert_or_complete_or_raise(product_image)
     

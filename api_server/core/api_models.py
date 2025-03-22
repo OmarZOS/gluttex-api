@@ -91,7 +91,7 @@ class Product_API(BaseModel):
 
 class ProductImage_API(BaseModel):
     id_product_image: int
-    product_image_data: Optional[str]
+    product_image_url: Optional[str]
     product_ref_id: Optional[int]
 
 class ProductProvider_API(BaseModel):
@@ -129,7 +129,7 @@ class Ingredient_API(BaseModel):
 
 class RecipeImage_API(BaseModel):
     id_recipe_image: int
-    recipe_image_data: Optional[str]
+    recipe_image_url: Optional[str]
     recipe_ref_id: Optional[int]
 
 class PlacedOrder_API(BaseModel):
