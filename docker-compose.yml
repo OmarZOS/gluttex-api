@@ -59,7 +59,7 @@ services:
       - ./api_server/:/code
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/api`) || Host(`134.199.240.34`) "
+      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/api`) || Host(`134.199.240.34`) && PathPrefix(`/api`) "
       - "traefik.http.services.gluttex-api.loadbalancer.server.port=9000"
     # expose:
     #   - 8000  # Exposes the API to Traefik internally
@@ -85,7 +85,7 @@ services:
       - ./auth_db/:/auth_db/
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/auth`) || Host(`134.199.240.34`) "
+      - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/auth`) || Host(`134.199.240.34`) && PathPrefix(`/auth`)  "
       - "traefik.http.services.gluttex-auth.loadbalancer.server.port=9090"
 
   gluttex-fs:
@@ -105,7 +105,7 @@ services:
       - ./fs/:/fs/
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-fs.rule=Host(`gluttex.com`) && PathPrefix(`/fs`) || Host(`134.199.240.34`) "
+      - "traefik.http.routers.gluttex-fs.rule=Host(`gluttex.com`) && PathPrefix(`/fs`) || Host(`134.199.240.34`) && PathPrefix(`/fs`)  "
       - "traefik.http.services.gluttex-fs.loadbalancer.server.port=9099"
 
   traefik:

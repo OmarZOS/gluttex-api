@@ -766,7 +766,7 @@ VALUES
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Amissan -gluten free-', 'Facebook: https://www.facebook.com/profile.php?id=100063573159141, Phone number: 0781 56 64 26');
 INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
-(ST_GeomFromText('POINT(36.79664864280521 3.00456923564612)'), 'Rue Lamameri Ali', 1);
+(ST_GeomFromText('POINT(3.00456923564612 36.79664864280521)'), 'Rue Lamameri Ali', 1);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (1,1,2);
 
@@ -774,7 +774,7 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `produ
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Magasin habibou sans gluten', 'Facebook: https://www.facebook.com/profile.php?id=100063549909208');
 INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
-(ST_GeomFromText('POINT(36.79104995021719 3.244388200045344)'), 'Avenue Houari Boumedien', 2);
+(ST_GeomFromText('POINT(3.244388200045344 36.79104995021719)'), 'Avenue Houari Boumedien', 2);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (2,2,2);
 
@@ -782,7 +782,7 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `produ
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Uno', 'Facebook: https://www.facebook.com/UNO.Hypermarche/, Instagram: https://www.instagram.com/uno_hypermarche/');
 INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
-(ST_GeomFromText('POINT(36.71305045006746 3.191942199815943)'), 'Route de Dar El Beida', 3);
+(ST_GeomFromText('POINT(3.191942199815943 36.71305045006746)'), 'Route de Dar El Beida', 3);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (3,3,4);
 
@@ -790,7 +790,7 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `produ
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Superette université', 'N/A');
 INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
-(ST_GeomFromText('POINT(36.68805559407475 2.872905857188605)'), 'N63', 4);
+(ST_GeomFromText('POINT(2.872905857188605 36.68805559407475)'), 'N63', 4);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (4,4,4);
 
@@ -798,7 +798,7 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `produ
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Corridors Shopping', 'N/A');
 INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
-(ST_GeomFromText('POINT(36.6683827 2.9833228)'), 'Khraicia', 5);
+(ST_GeomFromText('POINT(2.9833228 36.6683827)'), 'Khraicia', 5);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (5,5,1);
 
@@ -806,7 +806,7 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `produ
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Caramel sans gluten', 'N/A');
 INSERT INTO `gluttex`.`location` (`location_position`, `location_name`, `location_address_id`) VALUES
-(ST_GeomFromText('POINT(36.75573869999999 2.9514329)'), 'Cheraga', 6);
+(ST_GeomFromText('POINT(2.9514329 36.75573869999999)'), 'Cheraga', 6);
 INSERT INTO `gluttex`.`product_provider` (`product_provider_location_id`, `product_provider_details_id`,`product_provider_type_id`) VALUES
 (6,6,4);
 
