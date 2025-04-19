@@ -24,7 +24,7 @@ def fetch_product_object_by_id(product_id: str):
 #     return storage_broker.get(Category,{Category.categoryId:Category_id},[])
 
 def get_products_by_category_id(category_id: int,offset: int,limit: int):
-    return storage_broker.get(Product,{Product.product_category_id:category_id},[ProductCategory,ProductProvider],[Product.product_category,Product.product_provider],None,offset,limit)
+    return storage_broker.get(Product,{Product.product_category_id:category_id},[ProductCategory,ProductProvider],[Product.product_image,Product.product_category,Product.product_provider],None,offset,limit)
 
 def get_product_image_by_id(image_id: int):
     return storage_broker.get(ProductImage,{ProductImage.id_product_image:image_id},[],None,[])

@@ -16,7 +16,7 @@ def get_all_users():
         return fetch_all_users()
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_408_REQUEST_TIMEOUT,
             detail=f"Error fetching users: {str(e)}"
         )
 
@@ -32,7 +32,7 @@ def get_user_by_id(user_id: int):
         return user
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Error fetching user: {str(e)}"
         )
 

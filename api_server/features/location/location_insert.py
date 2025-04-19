@@ -4,9 +4,9 @@
 from core.api_models import Location_API
 from core.models import Address, Location
 from features.insertion import insert_or_complete_or_raise
+from geoalchemy2.elements import WKTElement
 # from geoalchemy2.shape import from_shape
 # from shapely.geometry import Point
-from geoalchemy2.elements import WKTElement
 
 
 def build_location(location: Location_API):

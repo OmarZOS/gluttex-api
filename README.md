@@ -33,8 +33,6 @@ You can use docker-compose to build and deploy the containers:
 
     sudo docker compose up -d
 
-
-
 #### Development
 Connect to the container 
 

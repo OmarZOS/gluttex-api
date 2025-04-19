@@ -38,13 +38,13 @@ def get_recipe_by_id(recipe_id: int):
             detail=f"Couldn't fetch recipe: {str(e)}"
         )
 
-@recipe_router.get("/recipe/category/{category_id}")
-def get_recipes_by_category(category_id: int):
+@recipe_router.get("/recipe/category/{category_id}/{offset}/{limit}")
+def get_recipes_by_category(category_id: int,offset: int,limit: int):
     """
     Retrieve recipes by category.
     """
     try:
-        return get_recipes_by_category_id(category_id)
+        return get_recipes_by_category_id(category_id,offset,limit)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

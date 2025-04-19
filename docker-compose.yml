@@ -1,23 +1,23 @@
 version: '3.8'
 services:
-  # mysql:
-  #   image: mysql
-  #   container_name: gluttex-db
-  #   restart: always
-  #   command: --max_allowed_packet=256M --init-file /data/application/init.sql
+  mysql:
+    image: mysql
+    container_name: gluttex-db
+    restart: always
+    command: --max_allowed_packet=256M --init-file /data/application/init.sql
 
-  #   environment:
-  #     MYSQL_DATABASE: ${MYSQL_DATABASE}
-  #     MYSQL_USER: ${MYSQL_USER}
-  #     MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-  #     MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-  #   expose:
-  #     - 3306
-  #   volumes:
-  #     - ./mysql/model.sql:/data/application/init.sql
-  #     - ./data:/var/lib/mysql
-  #   networks:
-  #     - gluttex-net
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - ${MYSQL_PORT}:3306
+    volumes:
+      - ./mysql/model.sql:/data/application/init.sql
+      - ./data:/var/lib/mysql
+    networks:
+      - gluttex-net
 
   gluttex-api:
     container_name: gluttex-api
@@ -28,11 +28,11 @@ services:
     environment:
       - API_PORT=${API_PORT}
       - SQL_SCHEMA=${SQL_SCHEMA}
-      - SQL_HOST=${SQL_HOST}
-      - SQL_DATABASE=${SQL_DATABASE}
-      - SQL_USER=${SQL_USER}
-      - SQL_PASSWORD=${SQL_ROOT_PASSWORD}
-      - SQL_PORT=${SQL_PORT}
+      - SQL_HOST=${MYSQL_HOST}
+      - SQL_DATABASE=${MYSQL_DATABASE}
+      - SQL_USER=${MYSQL_USER}
+      - SQL_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - SQL_PORT=${MYSQL_PORT}
 
       - AUTH_PORT=${AUTH_PORT}
       - AUTH_SERVER_NAME=${AUTH_SERVER_NAME}
@@ -126,16 +126,6 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"  # 🔥 Important! 
 
-  # prometheus:
-  #   image: prom/prometheus
-  #   container_name: prometheus
-  #   restart: always
-  #   ports:
-  #     - ${MONITOR_PORT}:9090
-  #   volumes:
-  #     - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-  #   networks:
-  #     - gluttex-net
 
 volumes:
   data:
