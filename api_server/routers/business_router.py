@@ -26,20 +26,14 @@ def insert_placed_order(
     Returns:
         dict: Success message with order details.
     """
-    try:
-        quantities, res = insert_order(ordered_items, submitted_order)
-        for index, item in enumerate(ordered_items): 
-            background_tasks.add_task(
-                notify_subscribers, 
-                item.ordered_product_id, 
-                {"product_quantity": quantities[index]}
-            )
-        return res
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Couldn't place order: {str(e)}"
+    quantities, res = insert_order(ordered_items, submitted_order)
+    for index, item in enumerate(ordered_items): 
+        background_tasks.add_task(
+            notify_subscribers, 
+            item.ordered_product_id, 
+            {"product_quantity": quantities[index]}
         )
+    return res
 
 
 @business_router.get("/business/user/orders/all/{user_id}")
@@ -53,10 +47,4 @@ def fetch_every_placed_order_by_user(user_id: int):
     Returns:
         list: List of placed orders.
     """
-    try:
-        return fetch_placed_orders_by_user(user_id)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Couldn't fetch orders: {str(e)}"
-        )
+    return fetch_placed_orders_by_user(user_id)

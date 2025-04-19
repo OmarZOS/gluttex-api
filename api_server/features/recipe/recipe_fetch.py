@@ -42,8 +42,8 @@ def fetch_recipe_category_object_by_id(category_id: str):
 # def fetch_recipes_by_category(Category_id: int):
 #     return storage_broker.get(Category,{Category.categoryId:Category_id},[])
 
-def get_recipes_by_category_id(category_id: int):
-    return storage_broker.get(Recipe,{Recipe.recipe_category_id:category_id},[RecipeCategory],[Recipe.recipe_category,Recipe.recipe_owner])
+def get_recipes_by_category_id(category_id: int,offset: int,limit: int):
+    return storage_broker.get(Recipe,{Recipe.recipe_category_id:category_id},[RecipeCategory],[Recipe.recipe_category,Recipe.recipe_owner,Recipe.recipe_image],offset=offset,limit=limit)
 
 def get_recipe_categories():
     return storage_broker.get(RecipeCategory)
