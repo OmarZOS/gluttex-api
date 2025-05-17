@@ -1,0 +1,67 @@
+/* RTL Overrides */
+body[dir="rtl"] {
+  direction: rtl;
+  text-align: right;
+  font-family: 'Poppins', 'Tahoma', sans-serif;
+}
+
+body[dir="rtl"] .language-cards {
+  flex-direction: row-reverse;
+}
+
+body[dir="rtl"] .language-card {
+  animation-name: fadeInUpRTL;
+}
+
+@keyframes fadeInUpRTL {
+  from {
+    opacity: 0;
+    transform: translateY(20px) translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+}
+
+/* Arabic/RTL Specific Styles */
+body {
+  font-family: 'Tajawal', sans-serif;
+  text-align: right;
+}
+
+.hero-content {
+  padding-left: 0;
+  padding-right: 2rem;
+}
+
+.features {
+  flex-direction: row-reverse;
+}
+
+.testimonial-card {
+  direction: rtl;
+}
+
+.language-switcher {
+  text-align: left;
+}
+
+/* UI Adjustments */
+.cta-button {
+  padding: 12px 30px;
+}
+
+.feature-card {
+  text-align: right;
+}
+
+/* Animations RTL Fix */
+@keyframes slideIn {
+  from {
+    transform: translateX(50px);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
