@@ -23,13 +23,13 @@ def insert_person_details(person: Person_API):
 
 def generate_person_object(person: Person_API,location: Location_API=None):
 
-    blood_type = fetch_person_blood_type_object(person.id_blood_type)
+    # blood_type = fetch_person_blood_type_object(person.id_blood_type)
     
-    if blood_type is None:
-        raise Exception(BLOOD_TYPE_NOT_EXISTS)
+    # if blood_type is None:
+    #     raise Exception(BLOOD_TYPE_NOT_EXISTS)
     mensch = Person(
                     # person_details_id=person.person_details_id, 
-                    person_blood_type_id=blood_type.id_blood_type, 
+                    # person_blood_type_id=blood_type.id_blood_type, 
                     # person_location_id=location.id_location
                     )
 
