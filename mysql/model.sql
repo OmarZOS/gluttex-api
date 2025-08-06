@@ -628,7 +628,8 @@ ENGINE = InnoDB;
 INSERT INTO `gluttex`.`app_user_type` ( `app_user_type_desc`) VALUES
 ( 'Client'),
 ( 'Admin'),
-( 'Cooking chef');
+( 'Cooking chef'),
+( 'Supplier');
 
 INSERT INTO `gluttex`.`blood_type` ( `blood_type_desc`) VALUES
 ('O+'),

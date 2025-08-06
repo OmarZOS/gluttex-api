@@ -19,7 +19,7 @@ def fetch_user_by_id(user_id: str):
         person_list =  storage_broker.get(Person
                                 ,{Person.id_person :user.app_user_person_id}
                                 ,[PersonDetails,BloodType]
-                                ,[Person.person_blood_type,Person.person_location,Person.person_details]
+                                ,[Person.person_blood_type,Person.person_details]
                                 ,None
                                 )
         if len(person_list)>0:

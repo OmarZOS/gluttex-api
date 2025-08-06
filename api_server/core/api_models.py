@@ -44,7 +44,7 @@ class AppUser_API(BaseModel):
     app_user_password: Optional[str]
     app_user_person_id: Optional[int]
     app_user_preferences: Optional[str]
-    app_user_image: Optional[str]
+    app_user_image_url: Optional[str]
     #  AppUserType
     app_user_type_id: Optional[int]
 
