@@ -23,7 +23,7 @@ def build_recipe(recipe: Recipe_API):
         recipe_creation  = datetime.now(),
         recipe_last_updated  = datetime.now())
 
-async def  insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
+async def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
     
     recipe_old = fetch_recipe_by_name(recipe_api.recipe_name)
     if recipe_old != None : 
@@ -41,11 +41,9 @@ async def  insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
 
     recipe.recipe_category_id = recipe_category.id_recipe_category    
 
-
-        
     if (image.recipe_image_data):
-        inserted_image_url = await upload_image("recipe",recipe_api.recipe_owner_id,uuid.uuid4(),image.recipe_image_data)
-        recipe_image = RecipeImage(recipe_image_url  = inserted_image_url["path"])
+        # inserted_image_url = await upload_image("recipe",recipe_api.recipe_owner_id,uuid.uuid4(),image.recipe_image_data)
+        recipe_image = RecipeImage(recipe_image_url  = image.recipe_image_data)
         recipe.recipe_image = [recipe_image]
 
 

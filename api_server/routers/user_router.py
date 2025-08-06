@@ -4,9 +4,9 @@ from features.user.user_delete import delete_user
 from features.user.user_fetch import fetch_all_users, fetch_user_by_id
 from features.user.user_insert import insert_user
 from features.user.user_net import update_user_password
+from features.user.user_update import update_api_user_image_url
 
 app_user_router = APIRouter()
-
 @app_user_router.get("/app_user")
 def get_all_users():
     """
@@ -73,4 +73,17 @@ def update_user_password_endpoint(user: AppUser_API, token: str):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Couldn't update user password: {str(e)}"
+        )
+
+@app_user_router.post("/app_user/update_image_url")
+def update_user_image_url_endpoint(user: AppUser_API, image_url: str):
+    """
+        Update the user image url.
+    """
+    try:
+        return update_api_user_image_url(user, image_url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Couldn't update user image url: {str(e)}"
         )

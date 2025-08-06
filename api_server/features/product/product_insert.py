@@ -52,9 +52,9 @@ async def insert_product(product_api: Product_API, image: ProductImage_API):
     product.product_category_id = product_category.id_product_category
     
     if (image.product_image_data):
-        inserted_image_url = await upload_image("product",product_api.product_owner,f"{uuid.uuid4()}",image.product_image_data)
+        inserted_image_url = image.product_image_data
         # if (image.id_product_image==0):
-        product_image = ProductImage(product_image_url  = inserted_image_url["path"])
+        product_image = ProductImage(product_image_url  = inserted_image_url)
         product.product_image = [product_image]
     
     code,product,msg = insert_or_complete_or_raise(product)

@@ -12,7 +12,7 @@ import storage.storage_broker as storage_broker
 
 
 def fetch_supplier_by_id(provider_id: str):
-    records = storage_broker.get(ProductProvider,{ProductProvider.id_product_provider:provider_id},None,[ProductProvider.product_provider_location,ProductProvider.product_provider_type,ProductProvider.product_provider_details])
+    records = storage_broker.get(ProductProvider,{ProductProvider.id_product_provider:provider_id},None,[{ProductProvider.product_provider_location:[Location.position_wkt,Location.location_name]},ProductProvider.product_provider_type,ProductProvider.product_provider_details])
     # if records == []: return None
     return records
 

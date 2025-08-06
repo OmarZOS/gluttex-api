@@ -2,10 +2,10 @@
 
 from core.messages import RECIPE_NOT_EXISTS
 from features.insertion import delete_record_from_api
-from features.recipe.recipe_fetch import fetch_recipe_by_id
+from features.recipe.recipe_fetch import fetch_recipe_record_by_id
 
 def delete_recipe(recipe_id: int):
-    recipes = fetch_recipe_by_id(recipe_id)
+    recipes = fetch_recipe_record_by_id(recipe_id)
     if recipes == []:
         raise Exception(RECIPE_NOT_EXISTS)
     # for now, just delete the recipe, since we don't want to delete person records

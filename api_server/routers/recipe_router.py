@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
 from core.api_models import Recipe_API, RecipeImage_API
 from features.recipe.recipe_fetch import (
-    fetch_all_recipe, fetch_recipe_by_id, get_ingredients, 
+    fetch_all_recipe, fetch_recipe_record_by_id, get_ingredients, 
     get_recipe_categories, get_recipe_image_by_id, get_recipes_by_category_id
 )
 from features.recipe.recipe_insert import insert_recipe
@@ -31,7 +31,7 @@ def get_recipe_by_id(recipe_id: int):
     Retrieve a recipe by its ID.
     """
     try:
-        return fetch_recipe_by_id(recipe_id)
+        return fetch_recipe_record_by_id(recipe_id)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -108,12 +108,12 @@ def update_recipe_details(recipe_id: int, recipe: Recipe_API, image: RecipeImage
         )
 
 @recipe_router.put("/recipe/add")
-def insert_new_recipe(recipe: Recipe_API, image: RecipeImage_API):
+async def insert_new_recipe(recipe: Recipe_API, image: RecipeImage_API):
     """
     Insert a new recipe.
     """
     try:
-        return insert_recipe(recipe, image)
+        return await insert_recipe(recipe, image)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

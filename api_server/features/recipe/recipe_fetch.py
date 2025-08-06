@@ -23,6 +23,9 @@ def fetch_recipe_by_id(prod_id: int):
                               )
 
 
+def fetch_recipe_record_by_id(recipe: int):
+    return storage_broker.get(Recipe,{Recipe.id_recipe:recipe},[],[])
+
 def fetch_recipe_by_name(recipe_name: str):
     records = storage_broker.get(Recipe,{Recipe.recipe_name:recipe_name},[])
     if records == []:
@@ -52,4 +55,4 @@ def get_ingredients():
     return storage_broker.get(Ingredient)
 
 def fetch_all_recipe(offset: int,limit: int):
-    return storage_broker.get(Recipe,None,[RecipeCategory],[Recipe.recipe_category,Recipe.recipe_contains_ingredient,{Recipe.recipe_image: [RecipeImage.id_recipe_image,RecipeImage.recipe_image_url]}],None,offset,limit)
+    return storage_broker.get(Recipe,None,[RecipeCategory],[Recipe.recipe_category,Recipe.recipe_contains_ingredient,{Recipe.recipe_image: [RecipeImage.id_recipe_image,RecipeImage.recipe_image_url]}],offset,limit)
