@@ -51,8 +51,8 @@ def get_recipes_by_category_id(category_id: int,offset: int,limit: int):
 def get_recipe_categories():
     return storage_broker.get(RecipeCategory)
 
-def get_ingredients():
-    return storage_broker.get(Ingredient)
+def get_ingredients(offset: int, limit: int):
+    return storage_broker.get(Ingredient, None, [], [], offset=offset, limit=limit)
 
 def fetch_all_recipe(offset: int,limit: int):
     return storage_broker.get(Recipe,None,[RecipeCategory],[Recipe.recipe_category,Recipe.recipe_contains_ingredient,{Recipe.recipe_image: [RecipeImage.id_recipe_image,RecipeImage.recipe_image_url]}],offset,limit)
