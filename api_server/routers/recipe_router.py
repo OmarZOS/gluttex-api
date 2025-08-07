@@ -64,13 +64,15 @@ def get_recipe_categories():
             detail=f"Couldn't fetch recipe categories: {str(e)}"
         )
 
-@recipe_router.get("/recipe/ingredients/all")
-def get_ingredients_list():
+
+
+@recipe_router.get("/recipe/ingredients/all/{offset}/{limit}")
+def get_ingredients_list(offset: int, limit: int):
     """
     Retrieve all available ingredients.
     """
     try:
-        return get_ingredients()
+        return get_ingredients(offset, limit)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
