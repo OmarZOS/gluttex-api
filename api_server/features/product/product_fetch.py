@@ -32,9 +32,17 @@ def get_product_image_by_id(image_id: int):
 def get_product_categories():
     return storage_broker.get(ProductCategory)
 
-def fetch_all_product(offset, limit):
+def fetch_all_product(user_id=0, provider_id=0,category_id=0,offset=0, limit=10):
     
-    return storage_broker.get(Product,conditions=None,join_tables=[ProductCategory],eager_load_depth= 
+    conditions = {}
+    if user_id != 0:
+        conditions[Product.product_owner] = user_id
+    if category_id != 0:
+        conditions[Product.product_category_id] = category_id
+    if provider_id != 0:
+        conditions[Product.product_provider_id] = provider_id
+
+    return storage_broker.get(Product,conditions=conditions,join_tables=[ProductCategory],eager_load_depth=
                               [
         Product.product_category, 
         Product.product_provider, 

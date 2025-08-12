@@ -5,6 +5,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import joinedload,contains_eager
 from sqlalchemy.orm import object_session
 from contextlib import contextmanager
+from sqlalchemy import desc
+
 
 @contextmanager
 def session_scope(engine):
@@ -70,12 +72,6 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
     with session_scope(engine) as session:
         query = session.query(model_class)
 
-        # Specify columns to select
-        # if fields!= []:
-        #     if len(fields)>0:
-        #         columns = [getattr(model_class, str(field).split(".")[1]) for field in fields]
-        #         query = query.with_entities(*columns)
-
         # Join tables if specified
         if join_tables:
             for join_table in join_tables:
@@ -90,7 +86,6 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
         if eager_load_depth is not None:
             for attr in eager_load_depth:
                 if isinstance(attr, dict):
-                    # Handle nested eager loading with specific fields
                     for relationship, nested_fields in attr.items():
                         nested_loader = joinedload(getattr(model_class, str(relationship).split(".")[1]))
                         for nested_field in nested_fields:
@@ -98,12 +93,15 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
                         query = query.options(nested_loader)
                 else:
                     query = query.options(joinedload(getattr(model_class, str(attr).split(".")[1])))
+
+        # Order by primary key in descending order (newest first)
+        pk_column = list(model_class.__table__.primary_key.columns)[0]
+        query = query.order_by(desc(pk_column))
+
         # Fetch all records
         records = query.offset(offset).limit(limit).all()
 
-        # Expunge the results
         session.expunge_all()
-
         return records
 
 # Function to update an record in a table

@@ -23,6 +23,7 @@ def build_provider_object(provider: ProductProvider_API,location:Location_API):
     new_supplier = ProductProvider()
 
     new_supplier.product_provider_type_id = supplier_type.id_product_provider_type
+    new_supplier.product_provider_owner = provider.id_provider_owner
     new_supplier.product_provider_location = build_location(location)
     new_supplier.product_provider_details = build_supplier_details(provider)
 
