@@ -36,13 +36,13 @@ async def product_updates(product_id: int):
 
 # ----------------- Product Endpoints -----------------
 
-@product_router.get("/product/all/{offset}/{limit}")
-def get_all_products(offset: int, limit: int):
+@product_router.get("/product/{user_id}/{provider_id}/{category_id}/{offset}/{limit}")
+def get_all_products(user_id: int, provider_id: int, category_id: int, offset: int, limit: int):
     """
     Fetch all products with pagination.
     """
     try:
-        return fetch_all_product(offset, limit)
+        return fetch_all_product(user_id, provider_id, category_id, offset, limit)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

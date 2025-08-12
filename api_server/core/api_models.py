@@ -96,6 +96,7 @@ class ProductImage_API(BaseModel):
 
 class ProductProvider_API(BaseModel):
     id_product_provider: int
+    id_provider_owner: int
     product_provider_details_id: Optional[int]
     # provider type
     id_product_provider_type: int
