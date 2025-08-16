@@ -1,12 +1,12 @@
-name: Build and Push to Docker Hub
+name: Deploy Gluttex Stack
 
 on:
   push:
     branches:
-      - main  # Runs the workflow when pushing to the main branch
+      - main  # Only deploy on main branch
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -22,18 +22,39 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      # Build & push API
       - name: Build and Push API Image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./api_server/Dockerfile  # Path to your Dockerfile
+          context: ./api_server
           push: true
           tags: omarzos/gluttex-api:latest
 
+      # Build & push Auth
       - name: Build and Push Auth Image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: ./auth_server/Dockerfile  # Path to your Dockerfile
+          context: ./auth_server
           push: true
           tags: omarzos/gluttex-auth:latest
+
+      # Build & push File Server
+      - name: Build and Push FS Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./file_server
+          push: true
+          tags: omarzos/gluttex-fs:latest
+
+      # # Deploy to your Droplet
+      # - name: SSH and Deploy on Droplet
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.DROPLET_HOST }}
+      #     username: ${{ secrets.DROPLET_USER }}
+      #     key: ${{ secrets.DROPLET_SSH_KEY }}
+      #     script: |
+      #       cd ~/gluttex   # path where docker-compose.yml is stored
+      #       docker-compose pull
+      #       docker-compose up -d
+      #       docker system prune -af --volumes

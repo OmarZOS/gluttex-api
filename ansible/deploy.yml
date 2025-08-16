@@ -1,112 +1,60 @@
----
-- name: Deploy Gluttex Stack
-  hosts: all
-  become: yes
-  vars:
-    API_PORT: "{{ lookup('env', 'API_PORT') }}"
-    SQL_SCHEMA: "{{ lookup('env', 'SQL_SCHEMA') }}"
-    SQL_HOST: "{{ lookup('env', 'SQL_HOST') }}"
-    SQL_DATABASE: "{{ lookup('env', 'SQL_DATABASE') }}"
-    SQL_USER: "{{ lookup('env', 'SQL_USER') }}"
-    SQL_ROOT_PASSWORD: "{{ lookup('env', 'SQL_ROOT_PASSWORD') }}"
-    SQL_PORT: "{{ lookup('env', 'SQL_PORT') }}"
-    GOOGLE_CLIENT_ID: "{{ lookup('env', 'GOOGLE_CLIENT_ID') }}"
-    GOOGLE_CLIENT_SECRET: "{{ lookup('env', 'GOOGLE_CLIENT_SECRET') }}"
-    FACEBOOK_CLIENT_ID: "{{ lookup('env', 'FACEBOOK_CLIENT_ID') }}"
-    FACEBOOK_CLIENT_SECRET: "{{ lookup('env', 'FACEBOOK_CLIENT_SECRET') }}"
-    INSTAGRAM_CLIENT_ID: "{{ lookup('env', 'INSTAGRAM_CLIENT_ID') }}"
-    INSTAGRAM_CLIENT_SECRET: "{{ lookup('env', 'INSTAGRAM_CLIENT_SECRET') }}"
-    SECRET_KEY: "{{ lookup('env', 'SECRET_KEY') }}"
-    ALGORITHM: "{{ lookup('env', 'ALGORITHM') }}"
-    AUTH_SERVER_NAME: "{{ lookup('env', 'AUTH_SERVER_NAME') }}"
-    AUTH_PORT: "{{ lookup('env', 'AUTH_PORT') }}"
-    AUTH_REGISTRATION_ENDPOINT: "{{ lookup('env', 'AUTH_REGISTRATION_ENDPOINT') }}"
-    AUTH_LOGIN_ENDPOINT: "{{ lookup('env', 'AUTH_LOGIN_ENDPOINT') }}"
-    AUTH_CHANGE_ENDPOINT: "{{ lookup('env', 'AUTH_CHANGE_ENDPOINT') }}"
-    ACCESS_TOKEN_EXPIRE_MINUTES: "{{ lookup('env', 'ACCESS_TOKEN_EXPIRE_MINUTES') }}"
+name: Deploy Gluttex Stack
 
-  tasks:
-    - name: Ensure gluttex-net network exists
-      docker_network:
-        name: gluttex-net
-        driver: bridge
+on:
+  push:
+    branches:
+      - main  # Only deploy on main branch
 
-    - name: Deploy gluttex-api container
-      docker_container:
-        name: gluttex-api
-        hostname: gluttex-api
-        image: omarzos/gluttex-api
-        restart_policy: always
-        env:
-          API_PORT: "{{ API_PORT }}"
-          SQL_SCHEMA: "{{ SQL_SCHEMA }}"
-          SQL_HOST: "{{ SQL_HOST }}"
-          SQL_DATABASE: "{{ SQL_DATABASE }}"
-          SQL_USER: "{{ SQL_USER }}"
-          SQL_PASSWORD: "{{ SQL_ROOT_PASSWORD }}"
-          SQL_PORT: "{{ SQL_PORT }}"
-          API_GOOGLE_CLIENT_ID: "{{ GOOGLE_CLIENT_ID }}"
-          API_GOOGLE_CLIENT_SECRET: "{{ GOOGLE_CLIENT_SECRET }}"
-          API_FACEBOOK_CLIENT_ID: "{{ FACEBOOK_CLIENT_ID }}"
-          API_FACEBOOK_CLIENT_SECRET: "{{ FACEBOOK_CLIENT_SECRET }}"
-          API_INSTAGRAM_CLIENT_ID: "{{ INSTAGRAM_CLIENT_ID }}"
-          API_INSTAGRAM_CLIENT_SECRET: "{{ INSTAGRAM_CLIENT_SECRET }}"
-          API_SECRET_KEY: "{{ SECRET_KEY }}"
-          ALGORITHM: "{{ ALGORITHM }}"
-          AUTH_SERVER_NAME: "{{ AUTH_SERVER_NAME }}"
-          AUTH_PORT: "{{ AUTH_PORT }}"
-          AUTH_REGISTRATION_ENDPOINT: "{{ AUTH_REGISTRATION_ENDPOINT }}"
-          AUTH_LOGIN_ENDPOINT: "{{ AUTH_LOGIN_ENDPOINT }}"
-          AUTH_CHANGE_ENDPOINT: "{{ AUTH_CHANGE_ENDPOINT }}"
-        ports:
-          - "{{ API_PORT }}:{{ API_PORT }}"
-        volumes:
-          - ./server/:/code
-        networks:
-          - name: gluttex-net
-        labels:
-          traefik.enable: "true"
-          traefik.http.routers.gluttex-api.rule: "Host(`gluttex.com`) && PathPrefix(`/`)"
-          traefik.http.services.gluttex-api.loadbalancer.server.port: "9000"
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
 
-    - name: Deploy gluttex-auth container
-      docker_container:
-        name: gluttex-auth
-        hostname: gluttex-auth
-        image: omarzos/gluttex-auth
-        restart_policy: always
-        env:
-          ACCESS_TOKEN_EXPIRE_MINUTES: "{{ ACCESS_TOKEN_EXPIRE_MINUTES }}"
-          AUTH_PORT: "{{ AUTH_PORT }}"
-          API_SECRET_KEY: "{{ SECRET_KEY }}"
-          API_ALGORITHM: "{{ ALGORITHM }}"
-        ports:
-          - "{{ AUTH_PORT }}:{{ AUTH_PORT }}"
-        volumes:
-          - ./auth_server/:/code
-          - ./auth_server/auth_db/auth_db.db:/auth_db_data.db
-        networks:
-          - name: gluttex-net
-        labels:
-          traefik.enable: "true"
-          traefik.http.routers.gluttex-auth.rule: "Host(`gluttex.com`) && PathPrefix(`/`)"
-          traefik.http.services.gluttex-auth.loadbalancer.server.port: "9090"
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Deploy Traefik container
-      docker_container:
-        name: traefik
-        image: traefik:v2.10
-        restart_policy: always
-        command:
-          - "--api.insecure=true"
-          - "--providers.docker=true"
-          - "--entrypoints.web.address=:80"
-        ports:
-          - "80:80"
-          - "8080:8080"
-        networks:
-          - name: gluttex-net
-        volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
-        labels:
-          traefik.enable: "true"
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Build & push API
+      - name: Build and Push API Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api_server
+          push: true
+          tags: omarzos/gluttex-api:latest
+
+      # Build & push Auth
+      - name: Build and Push Auth Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./auth_server
+          push: true
+          tags: omarzos/gluttex-auth:latest
+
+      # Build & push File Server
+      - name: Build and Push FS Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./file_server
+          push: true
+          tags: omarzos/gluttex-fs:latest
+
+      # # Deploy to your Droplet
+      # - name: SSH and Deploy on Droplet
+      #   uses: appleboy/ssh-action@v1.0.3
+      #   with:
+      #     host: ${{ secrets.DROPLET_HOST }}
+      #     username: ${{ secrets.DROPLET_USER }}
+      #     key: ${{ secrets.DROPLET_SSH_KEY }}
+      #     script: |
+      #       cd ~/gluttex   # path where docker-compose.yml is stored
+      #       docker-compose pull
+      #       docker-compose up -d
+      #       docker system prune -af --volumes
