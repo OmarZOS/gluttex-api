@@ -2,177 +2,177 @@
 
 services:
 
-  # mysql:
-  #   image: mysql
-  #   container_name: gluttex-db
-  #   restart: always
-  #   command: --max_allowed_packet=256M --init-file /data/application/init.sql
+  mysql:
+    image: mysql
+    container_name: gluttex-db
+    restart: always
+    command: --max_allowed_packet=256M --init-file /data/application/init.sql
 
+    environment:
+      MYSQL_DATABASE: ${SQL_DATABASE}
+      MYSQL_USER: ${SQL_USER}
+      MYSQL_ROOT_PASSWORD: ${SQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${SQL_PASSWORD}
+    expose:
+      - 3306
+    volumes:
+      - ./mysql/model.sql:/data/application/init.sql
+      - ./data:/var/lib/mysql
+    networks:
+      - gluttex-net
+  # gluttex-api:
+  #   container_name: gluttex-api
+  #   hostname: gluttex-api
+  #   restart: unless-stopped
+  #   build:
+  #     context: api_server/
+  #     args:
+  #       - API_PORT=9000
+  #   image: omarzos/gluttex-api
   #   environment:
-  #     MYSQL_DATABASE: ${SQL_DATABASE}
-  #     MYSQL_USER: ${SQL_USER}
-  #     MYSQL_ROOT_PASSWORD: ${SQL_ROOT_PASSWORD}
-  #     MYSQL_PASSWORD: ${SQL_PASSWORD}
-  #   expose:
-  #     - 3306
-  #   volumes:
-  #     - ./mysql/model.sql:/data/application/init.sql
-  #     - ./data:/var/lib/mysql
+  #     - API_PORT=9000
+  #     - SQL_SCHEMA=${SQL_SCHEMA}
+  #     - SQL_HOST=${SQL_HOST}
+  #     - SQL_DATABASE=${SQL_DATABASE}
+  #     - SQL_USER=${SQL_USER}
+  #     - SQL_PASSWORD=${SQL_ROOT_PASSWORD}
+  #     - SQL_PORT=${SQL_PORT}
+  #     - AUTH_PORT=${AUTH_PORT}
+  #     - AUTH_SERVER_NAME=${AUTH_SERVER_NAME}
+  #     - AUTH_REGISTRATION_ENDPOINT=${AUTH_REGISTRATION_ENDPOINT}
+  #     - AUTH_LOGIN_ENDPOINT=${AUTH_LOGIN_ENDPOINT}
+  #     - ALGORITHM=${ALGORITHM}
+  #     - API_SECRET_KEY=${SECRET_KEY}
+  #     - FILE_UPLOAD_ENDPOINT=${FILE_UPLOAD_ENDPOINT}
+  #     - FS_HOST=${FS_HOST}
+  #     - FS_PORT=${FS_PORT}
+  #     - API_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+  #     - API_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+  #     - API_FACEBOOK_CLIENT_ID=${FACEBOOK_CLIENT_ID}
+  #     - API_FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}
+  #     - API_INSTAGRAM_CLIENT_ID=${INSTAGRAM_CLIENT_ID}
+  #     - API_INSTAGRAM_CLIENT_SECRET=${INSTAGRAM_CLIENT_SECRET}
   #   networks:
   #     - gluttex-net
-  gluttex-api:
-    container_name: gluttex-api
-    hostname: gluttex-api
-    restart: unless-stopped
-    build:
-      context: api_server/
-      args:
-        - API_PORT=9000
-    image: omarzos/gluttex-api
-    environment:
-      - API_PORT=9000
-      - SQL_SCHEMA=${SQL_SCHEMA}
-      - SQL_HOST=${SQL_HOST}
-      - SQL_DATABASE=${SQL_DATABASE}
-      - SQL_USER=${SQL_USER}
-      - SQL_PASSWORD=${SQL_ROOT_PASSWORD}
-      - SQL_PORT=${SQL_PORT}
-      - AUTH_PORT=${AUTH_PORT}
-      - AUTH_SERVER_NAME=${AUTH_SERVER_NAME}
-      - AUTH_REGISTRATION_ENDPOINT=${AUTH_REGISTRATION_ENDPOINT}
-      - AUTH_LOGIN_ENDPOINT=${AUTH_LOGIN_ENDPOINT}
-      - ALGORITHM=${ALGORITHM}
-      - API_SECRET_KEY=${SECRET_KEY}
-      - FILE_UPLOAD_ENDPOINT=${FILE_UPLOAD_ENDPOINT}
-      - FS_HOST=${FS_HOST}
-      - FS_PORT=${FS_PORT}
-      - API_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - API_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - API_FACEBOOK_CLIENT_ID=${FACEBOOK_CLIENT_ID}
-      - API_FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}
-      - API_INSTAGRAM_CLIENT_ID=${INSTAGRAM_CLIENT_ID}
-      - API_INSTAGRAM_CLIENT_SECRET=${INSTAGRAM_CLIENT_SECRET}
-    networks:
-      - gluttex-net
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-    labels:
-      - "traefik.enable=true"
-      # - "traefik.docker.network=gluttex-net"  # Critical fix
-      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.gluttex-api.entrypoints=websecure"
-      - "traefik.http.routers.gluttex-api.tls=true"
-      - "traefik.http.routers.gluttex-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.gluttex-api.loadbalancer.server.port=9000"
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '1'
+  #         memory: 512M
+  #   labels:
+  #     - "traefik.enable=true"
+  #     # - "traefik.docker.network=gluttex-net"  # Critical fix
+  #     - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/api`)"
+  #     - "traefik.http.routers.gluttex-api.entrypoints=websecure"
+  #     - "traefik.http.routers.gluttex-api.tls=true"
+  #     - "traefik.http.routers.gluttex-api.tls.certresolver=letsencrypt"
+  #     - "traefik.http.services.gluttex-api.loadbalancer.server.port=9000"
 
-  gluttex-auth:
-    container_name: gluttex-auth
-    hostname: gluttex-auth
-    restart: unless-stopped
-    build:
-      context: auth_server/
-      args:
-        - AUTH_PORT=9090
-    image: omarzos/gluttex-auth
-    environment:
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
-      - AUTH_PORT=9090
-      - API_SECRET_KEY=${SECRET_KEY}
-      - API_ALGORITHM=${ALGORITHM}
-      - AUTH_DATABASE_URL=${AUTH_DATABASE_URL}
-    networks:
-      - gluttex-net
-    volumes:
-      - ./auth_server/:/code
-      - ./auth_db/:/auth_db/
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/auth`)"
-      - "traefik.http.routers.gluttex-auth.entrypoints=websecure"
-      - "traefik.http.routers.gluttex-auth.tls=true"
-      - "traefik.http.routers.gluttex-auth.tls.certresolver=letsencrypt"
-      - "traefik.http.services.gluttex-auth.loadbalancer.server.port=9090"
+  # gluttex-auth:
+  #   container_name: gluttex-auth
+  #   hostname: gluttex-auth
+  #   restart: unless-stopped
+  #   build:
+  #     context: auth_server/
+  #     args:
+  #       - AUTH_PORT=9090
+  #   image: omarzos/gluttex-auth
+  #   environment:
+  #     - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+  #     - AUTH_PORT=9090
+  #     - API_SECRET_KEY=${SECRET_KEY}
+  #     - API_ALGORITHM=${ALGORITHM}
+  #     - AUTH_DATABASE_URL=${AUTH_DATABASE_URL}
+  #   networks:
+  #     - gluttex-net
+  #   volumes:
+  #     - ./auth_server/:/code
+  #     - ./auth_db/:/auth_db/
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.5'
+  #         memory: 256M
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/auth`)"
+  #     - "traefik.http.routers.gluttex-auth.entrypoints=websecure"
+  #     - "traefik.http.routers.gluttex-auth.tls=true"
+  #     - "traefik.http.routers.gluttex-auth.tls.certresolver=letsencrypt"
+  #     - "traefik.http.services.gluttex-auth.loadbalancer.server.port=9090"
 
-  gluttex-fs:
-    container_name: gluttex-fs
-    hostname: gluttex-fs
-    restart: unless-stopped
-    build:
-      context: file_server/
-      args:
-        - FS_PORT=9099
-    image: omarzos/gluttex-fs
-    environment:
-      - FS_PORT=9099
-    networks:
-      - gluttex-net
-    volumes:
-      - ./file_server/:/code
-      - ./fs/:/fs/
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-fs.rule=Host(`gluttex.com`) && PathPrefix(`/fs`)"
-      - "traefik.http.routers.gluttex-fs.entrypoints=websecure"
-      - "traefik.http.routers.gluttex-fs.tls=true"
-      - "traefik.http.routers.gluttex-fs.tls.certresolver=letsencrypt"
-      - "traefik.http.services.gluttex-fs.loadbalancer.server.port=9099"
+  # gluttex-fs:
+  #   container_name: gluttex-fs
+  #   hostname: gluttex-fs
+  #   restart: unless-stopped
+  #   build:
+  #     context: file_server/
+  #     args:
+  #       - FS_PORT=9099
+  #   image: omarzos/gluttex-fs
+  #   environment:
+  #     - FS_PORT=9099
+  #   networks:
+  #     - gluttex-net
+  #   volumes:
+  #     - ./file_server/:/code
+  #     - ./fs/:/fs/
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '0.5'
+  #         memory: 512M
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.gluttex-fs.rule=Host(`gluttex.com`) && PathPrefix(`/fs`)"
+  #     - "traefik.http.routers.gluttex-fs.entrypoints=websecure"
+  #     - "traefik.http.routers.gluttex-fs.tls=true"
+  #     - "traefik.http.routers.gluttex-fs.tls.certresolver=letsencrypt"
+  #     - "traefik.http.services.gluttex-fs.loadbalancer.server.port=9099"
 
-  traefik:
-    image: traefik:v2.10
-    container_name: traefik
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=true"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
-      - "--certificatesresolvers.letsencrypt.acme.email=osjfvhng16@gmail.com"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+  # traefik:
+  #   image: traefik:v2.10
+  #   container_name: traefik
+  #   restart: unless-stopped
+  #   security_opt:
+  #     - no-new-privileges:true
+  #   command:
+  #     - "--api.insecure=true"
+  #     - "--providers.docker=true"
+  #     - "--providers.docker.exposedbydefault=true"
+  #     - "--entrypoints.web.address=:80"
+  #     - "--entrypoints.websecure.address=:443"
+  #     - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+  #     - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+  #     - "--certificatesresolvers.letsencrypt.acme.email=osjfvhng16@gmail.com"
+  #     - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+  #     - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+  #     - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
       
-      # - "--providers.docker.network=gluttex-net"  # Explicit network
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=digitalocean"
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.delaybeforecheck=30"
-    environment:
-      - "DO_AUTH_TOKEN=${DO_API_TOKEN}"  # DigitalOcean API token
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-    networks:
-      - gluttex-net
-    volumes:
-      - "./letsencrypt:/letsencrypt"
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    labels:
-      - "traefik.enable=true"
-      # - "traefik.http.routers.traefik.rule=Host(`traefik.gluttex.com`)"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      # - "traefik.http.routers.traefik.tls=true"
-      # - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
-      # - "traefik.http.routers.traefik.middlewares=traefik-auth"
-      # - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_AUTH_CREDENTIALS}"
+  #     # - "--providers.docker.network=gluttex-net"  # Explicit network
+  #     - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+  #     - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=digitalocean"
+  #     - "--certificatesresolvers.letsencrypt.acme.dnschallenge.delaybeforecheck=30"
+  #   environment:
+  #     - "DO_AUTH_TOKEN=${DO_API_TOKEN}"  # DigitalOcean API token
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #     - "8080:8080"
+  #   networks:
+  #     - gluttex-net
+  #   volumes:
+  #     - "./letsencrypt:/letsencrypt"
+  #     - "/var/run/docker.sock:/var/run/docker.sock:ro"
+  #   labels:
+  #     - "traefik.enable=true"
+  #     # - "traefik.http.routers.traefik.rule=Host(`traefik.gluttex.com`)"
+  #     - "traefik.http.routers.traefik.service=api@internal"
+  #     - "traefik.http.routers.traefik.entrypoints=websecure"
+  #     # - "traefik.http.routers.traefik.tls=true"
+  #     # - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+  #     # - "traefik.http.routers.traefik.middlewares=traefik-auth"
+  #     # - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_AUTH_CREDENTIALS}"
 
 networks:
   gluttex-net:

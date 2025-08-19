@@ -1,16 +1,10 @@
 from sqlalchemy import Column, Date, DateTime, Float, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
 from sqlalchemy.sql.sqltypes import NullType
 
+from sqlalchemy.orm import declarative_base, relationship
 from geoalchemy2 import Geometry
 from sqlalchemy.orm import column_property
 from sqlalchemy.sql import func
-
-from sqlalchemy import Column, Date, DateTime, Float, ForeignKeyConstraint, Index, Integer, String, Text
-from sqlalchemy.dialects.mysql import TINYINT
-from sqlalchemy.sql.sqltypes import NullType
-
-from sqlalchemy.orm import declarative_base, relationship
-
 Base = declarative_base()
 
 
@@ -112,20 +106,7 @@ class ProviderOrganisation(Base):
     provider_organisation_name = Column(String(45))
     provider_organisation_desc = Column(String(300))
 
-    organisation_image = relationship('OrganisationImage', back_populates='org_ref')
     product_provider = relationship('ProductProvider', back_populates='product_provider_org')
-    management_rule = relationship('ManagementRule', back_populates='provider_organisation')
-
-
-class Reaction(Base):
-    __tablename__ = 'reaction'
-
-    id_reaction = Column(Integer, primary_key=True)
-    reaction_type = Column(String(45))
-
-    comment_reaction = relationship('CommentReaction', back_populates='reaction')
-    recipe_reaction = relationship('RecipeReaction', back_populates='reaction')
-    product_reaction = relationship('ProductReaction', back_populates='reaction')
 
 
 class RecipeCategory(Base):
@@ -175,35 +156,6 @@ class Location(Base):
     location_address = relationship('Address', back_populates='location')
     person = relationship('Person', back_populates='person_location')
     product_provider = relationship('ProductProvider', back_populates='product_provider_location')
-    location_image = relationship('LocationImage', back_populates='location')
-
-
-class OrganisationImage(Base):
-    __tablename__ = 'organisation_image'
-    __table_args__ = (
-        ForeignKeyConstraint(['org_ref_id'], ['provider_organisation.idprovider_organisation'], name='fk_organisation_image_1'),
-        Index('fk_organisation_image_1_idx', 'org_ref_id')
-    )
-
-    id_org_image = Column(Integer, primary_key=True)
-    org_image_url = Column(String(255))
-    org_ref_id = Column(Integer)
-
-    org_ref = relationship('ProviderOrganisation', back_populates='organisation_image')
-
-
-class LocationImage(Base):
-    __tablename__ = 'location_image'
-    __table_args__ = (
-        ForeignKeyConstraint(['image_location_ref'], ['location.id_location'], name='fk_location_image_1'),
-        Index('fk_location_image_1_idx', 'image_location_ref')
-    )
-
-    id_location_image = Column(Integer, primary_key=True)
-    location_image_url = Column(String(255))
-    image_location_ref = Column(Integer)
-
-    location = relationship('Location', back_populates='location_image')
 
 
 class Person(Base):
@@ -244,24 +196,18 @@ class AppUser(Base):
     app_user_person_id = Column(Integer)
     app_user_type_id = Column(Integer)
     app_user_preferences = Column(Text)
+    app_user_image_url = Column(String(256))
     app_user_last_active = Column(DateTime)
     app_user_last_updated = Column(DateTime)
     app_user_creation = Column(DateTime)
-    app_user_image_url = Column(String(255))
 
     app_user_person = relationship('Person', back_populates='app_user')
     app_user_type = relationship('AppUserType', back_populates='app_user')
-    comment = relationship('Comment', back_populates='app_user')
-    notification = relationship('Notification', back_populates='app_user')
     placed_order = relationship('PlacedOrder', back_populates='ordering_user')
     product_provider = relationship('ProductProvider', back_populates='app_user')
     recipe = relationship('Recipe', back_populates='recipe_owner')
     report = relationship('Report', back_populates='app_user')
-    comment_reaction = relationship('CommentReaction', back_populates='app_user')
-    management_rule = relationship('ManagementRule', back_populates='app_user')
     product = relationship('Product', back_populates='app_user')
-    recipe_reaction = relationship('RecipeReaction', back_populates='app_user')
-    product_reaction = relationship('ProductReaction', back_populates='app_user')
 
 
 class Patient(Base):
@@ -281,45 +227,6 @@ class Patient(Base):
     patient_person = relationship('Person', back_populates='patient')
     serology = relationship('Serology', back_populates='patient')
     symptoms_occurence = relationship('SymptomsOccurence', back_populates='patient')
-
-
-class Comment(Base):
-    __tablename__ = 'comment'
-    __table_args__ = (
-        ForeignKeyConstraint(['comment_owner'], ['app_user.id_app_user'], name='fk_comment_2'),
-        ForeignKeyConstraint(['replying_to'], ['comment.idcomment'], name='fk_comment_1'),
-        Index('fk_comment_1_idx', 'replying_to'),
-        Index('fk_comment_2_idx', 'comment_owner')
-    )
-
-    idcomment = Column(Integer, primary_key=True)
-    comment_owner = Column(Integer)
-    comment_content = Column(Text)
-    replying_to = Column(Integer)
-    comment_timestamp = Column(DateTime)
-    comment_visibility = Column(TINYINT)
-
-    app_user = relationship('AppUser', back_populates='comment')
-    comment = relationship('Comment', remote_side=[idcomment], back_populates='comment_reverse')
-    comment_reverse = relationship('Comment', remote_side=[replying_to], back_populates='comment')
-    comment_reaction = relationship('CommentReaction', back_populates='comment')
-
-
-class Notification(Base):
-    __tablename__ = 'notification'
-    __table_args__ = (
-        ForeignKeyConstraint(['notification_user_ref'], ['app_user.id_app_user'], name='fk_notification_1'),
-        Index('fk_notification_1_idx', 'notification_user_ref')
-    )
-
-    id_notification = Column(Integer, primary_key=True)
-    notification_code = Column(String(255))
-    notification_params = Column(Text)
-    notification_user_ref = Column(Integer)
-    notification_created_at = Column(DateTime)
-    notification_read_at = Column(DateTime)
-
-    app_user = relationship('AppUser', back_populates='notification')
 
 
 class PlacedOrder(Base):
@@ -366,9 +273,7 @@ class ProductProvider(Base):
     product_provider_org = relationship('ProviderOrganisation', back_populates='product_provider')
     app_user = relationship('AppUser', back_populates='product_provider')
     product_provider_type = relationship('ProductProviderType', back_populates='product_provider')
-    management_rule = relationship('ManagementRule', back_populates='product_provider')
     product = relationship('Product', back_populates='product_provider')
-    provider_image = relationship('ProviderImage', back_populates='provider_ref')
 
 
 class Recipe(Base):
@@ -394,7 +299,6 @@ class Recipe(Base):
     recipe_owner = relationship('AppUser', back_populates='recipe')
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='containing_recipe')
     recipe_image = relationship('RecipeImage', back_populates='recipe_ref')
-    recipe_reaction = relationship('RecipeReaction', back_populates='recipe')
 
 
 class Report(Base):
@@ -447,49 +351,6 @@ class SymptomsOccurence(Base):
     presented_symptom = relationship('PresentedSymptom', back_populates='symptoms_occurence')
 
 
-class CommentReaction(Base):
-    __tablename__ = 'comment_reaction'
-    __table_args__ = (
-        ForeignKeyConstraint(['comment_reacting_user'], ['app_user.id_app_user'], name='fk_product_reaction_11'),
-        ForeignKeyConstraint(['comment_reaction_ref'], ['reaction.id_reaction'], name='fk_product_reaction_21'),
-        ForeignKeyConstraint(['reacted_on_comment'], ['comment.idcomment'], name='fk_product_reaction_30'),
-        Index('fk_product_reaction_1_idx', 'comment_reacting_user'),
-        Index('fk_product_reaction_2_idx', 'comment_reaction_ref'),
-        Index('fk_product_reaction_30_idx', 'reacted_on_comment')
-    )
-
-    id_comment_reaction = Column(Integer, primary_key=True)
-    comment_reacting_user = Column(Integer)
-    comment_reaction_ref = Column(Integer)
-    reacted_on_comment = Column(Integer)
-
-    app_user = relationship('AppUser', back_populates='comment_reaction')
-    reaction = relationship('Reaction', back_populates='comment_reaction')
-    comment = relationship('Comment', back_populates='comment_reaction')
-
-
-class ManagementRule(Base):
-    __tablename__ = 'management_rule'
-    __table_args__ = (
-        ForeignKeyConstraint(['rule_ref_org'], ['provider_organisation.idprovider_organisation'], name='fk_management_rule_1'),
-        ForeignKeyConstraint(['rule_ref_provider'], ['product_provider.id_product_provider'], name='fk_management_rule_2'),
-        ForeignKeyConstraint(['rule_ref_user'], ['app_user.id_app_user'], name='fk_management_rule_3'),
-        Index('fk_management_rule_1_idx', 'rule_ref_org'),
-        Index('fk_management_rule_2_idx', 'rule_ref_provider'),
-        Index('fk_management_rule_3_idx', 'rule_ref_user')
-    )
-
-    id_management_rule = Column(Integer, primary_key=True)
-    rule_ref_org = Column(Integer)
-    rule_ref_provider = Column(Integer)
-    rule_ref_user = Column(Integer)
-    management_rule_code = Column(Integer)
-
-    provider_organisation = relationship('ProviderOrganisation', back_populates='management_rule')
-    product_provider = relationship('ProductProvider', back_populates='management_rule')
-    app_user = relationship('AppUser', back_populates='management_rule')
-
-
 class PresentedSymptom(Base):
     __tablename__ = 'presented_symptom'
     __table_args__ = (
@@ -537,21 +398,6 @@ class Product(Base):
     product_provider = relationship('ProductProvider', back_populates='product')
     ordered_item = relationship('OrderedItem', back_populates='ordered_product')
     product_image = relationship('ProductImage', back_populates='product_ref')
-    product_reaction = relationship('ProductReaction', back_populates='product')
-
-
-class ProviderImage(Base):
-    __tablename__ = 'provider_image'
-    __table_args__ = (
-        ForeignKeyConstraint(['provider_ref_id'], ['product_provider.id_product_provider'], name='fk_provider_image_1'),
-        Index('fk_provider_image_1_idx', 'provider_ref_id')
-    )
-
-    id_provider_image = Column(Integer, primary_key=True)
-    provider_image_url = Column(String(255))
-    provider_ref_id = Column(Integer)
-
-    provider_ref = relationship('ProductProvider', back_populates='provider_image')
 
 
 class RecipeContainsIngredient(Base):
@@ -584,27 +430,6 @@ class RecipeImage(Base):
     recipe_ref_id = Column(Integer)
 
     recipe_ref = relationship('Recipe', back_populates='recipe_image')
-
-
-class RecipeReaction(Base):
-    __tablename__ = 'recipe_reaction'
-    __table_args__ = (
-        ForeignKeyConstraint(['reacted_on_recipe'], ['recipe.id_recipe'], name='fk_recipe_reaction_1'),
-        ForeignKeyConstraint(['recipe_reacting_user'], ['app_user.id_app_user'], name='fk_product_reaction_10'),
-        ForeignKeyConstraint(['recipe_reaction_ref'], ['reaction.id_reaction'], name='fk_product_reaction_20'),
-        Index('fk_product_reaction_1_idx', 'recipe_reacting_user'),
-        Index('fk_product_reaction_2_idx', 'recipe_reaction_ref'),
-        Index('fk_recipe_reaction_1_idx', 'reacted_on_recipe')
-    )
-
-    id_recipe_reaction = Column(Integer, primary_key=True)
-    recipe_reacting_user = Column(Integer)
-    recipe_reaction_ref = Column(Integer)
-    reacted_on_recipe = Column(Integer)
-
-    recipe = relationship('Recipe', back_populates='recipe_reaction')
-    app_user = relationship('AppUser', back_populates='recipe_reaction')
-    reaction = relationship('Reaction', back_populates='recipe_reaction')
 
 
 class OrderedItem(Base):
@@ -640,24 +465,3 @@ class ProductImage(Base):
     product_ref_id = Column(Integer)
 
     product_ref = relationship('Product', back_populates='product_image')
-
-
-class ProductReaction(Base):
-    __tablename__ = 'product_reaction'
-    __table_args__ = (
-        ForeignKeyConstraint(['product_reacting_user'], ['app_user.id_app_user'], name='fk_product_reaction_1'),
-        ForeignKeyConstraint(['product_reaction_ref'], ['reaction.id_reaction'], name='fk_product_reaction_2'),
-        ForeignKeyConstraint(['reacted_on_product'], ['product.id_product'], name='fk_product_reaction_3'),
-        Index('fk_product_reaction_1_idx', 'product_reacting_user'),
-        Index('fk_product_reaction_2_idx', 'product_reaction_ref'),
-        Index('fk_product_reaction_3_idx', 'reacted_on_product')
-    )
-
-    id_product_reaction = Column(Integer, primary_key=True)
-    product_reacting_user = Column(Integer)
-    product_reaction_ref = Column(Integer)
-    reacted_on_product = Column(Integer)
-
-    app_user = relationship('AppUser', back_populates='product_reaction')
-    reaction = relationship('Reaction', back_populates='product_reaction')
-    product = relationship('Product', back_populates='product_reaction')

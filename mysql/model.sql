@@ -1,670 +1,805 @@
-CREATE DATABASE  IF NOT EXISTS "gluttex" /*!40100 DEFAULT CHARACTER SET utf8mb3 */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `gluttex`;
--- MySQL dump 10.13  Distrib 8.0.36, for Linux (x86_64)
---
--- Host: dbaas-db-10408380-do-user-13698920-0.e.db.ondigitalocean.com    Database: gluttex
--- ------------------------------------------------------
--- Server version	8.0.35
+-- MySQL Workbench Forward Engineering
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!50503 SET NAMES utf8 */;
-/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
-/*!40103 SET TIME_ZONE='+00:00' */;
-/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
-/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
-/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
-/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
-SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
-SET @@SESSION.SQL_LOG_BIN= 0;
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
---
--- GTID state at the beginning of the backup 
---
+-- -----------------------------------------------------
+-- Schema gluttex
+-- -----------------------------------------------------
 
-SET @@GLOBAL.GTID_PURGED=/*!80000 '+'*/ 'aab6d081-fb37-11ef-a370-aebcaae0155a:1-702';
+-- -----------------------------------------------------
+-- Schema gluttex
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `gluttex` DEFAULT CHARACTER SET utf8 ;
+USE `gluttex` ;
 
---
--- Table structure for table `address`
---
+-- -----------------------------------------------------
+-- Table `gluttex`.`app_user_type`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`app_user_type` (
+  `id_app_user_type` INT NOT NULL AUTO_INCREMENT,
+  `app_user_type_desc` VARCHAR(45) NULL,
+  PRIMARY KEY (`id_app_user_type`))
+ENGINE = InnoDB;
 
-DROP TABLE IF EXISTS `address`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `address` (
-  `id_address` int NOT NULL AUTO_INCREMENT,
-  `address_street` varchar(45) DEFAULT NULL,
-  `address_city` varchar(45) DEFAULT NULL,
-  `address_postal_code` varchar(45) DEFAULT NULL,
-  `address_country` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`id_address`)
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Table structure for table `app_user`
---
+-- -----------------------------------------------------
+-- Table `gluttex`.`person_details`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`person_details` (
+  `id_person_details` INT NOT NULL AUTO_INCREMENT,
+  `person_first_name` VARCHAR(45) NULL,
+  `person_last_name` VARCHAR(45) NULL,
+  `person_birth_date` DATE NULL,
+  `person_gender` VARCHAR(45) NULL,
+  `person_nationality` VARCHAR(45) NULL,
+  PRIMARY KEY (`id_person_details`))
+ENGINE = InnoDB;
 
-DROP TABLE IF EXISTS `app_user`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `app_user` (
-  `id_app_user` int NOT NULL AUTO_INCREMENT,
-  `app_user_name` varchar(100) DEFAULT NULL,
-  `app_user_password` varchar(256) DEFAULT NULL,
-  `app_user_person_id` int DEFAULT NULL,
-  `app_user_type_id` int DEFAULT NULL,
-  `app_user_preferences` text,
-  `app_user_last_active` datetime DEFAULT NULL,
-  `app_user_last_updated` datetime DEFAULT NULL,
-  `app_user_creation` datetime DEFAULT NULL,
-  `app_user_image_url` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id_app_user`),
-  KEY `fk_app_user_3_idx` (`app_user_person_id`),
-  KEY `fk_app_user_1_idx` (`app_user_type_id`),
-  CONSTRAINT `fk_app_user_1` FOREIGN KEY (`app_user_type_id`) REFERENCES `app_user_type` (`id_app_user_type`),
-  CONSTRAINT `fk_app_user_3` FOREIGN KEY (`app_user_person_id`) REFERENCES `person` (`id_person`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Table structure for table `app_user_type`
---
+-- -----------------------------------------------------
+-- Table `gluttex`.`blood_type`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`blood_type` (
+  `id_blood_type` INT NOT NULL AUTO_INCREMENT,
+  `blood_type_desc` VARCHAR(45) NULL,
+  PRIMARY KEY (`id_blood_type`))
+ENGINE = InnoDB;
 
-DROP TABLE IF EXISTS `app_user_type`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `app_user_type` (
-  `id_app_user_type` int NOT NULL AUTO_INCREMENT,
-  `app_user_type_desc` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`id_app_user_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Table structure for table `blood_type`
---
+-- -----------------------------------------------------
+-- Table `gluttex`.`address`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`address` (
+  `id_address` INT NOT NULL AUTO_INCREMENT,
+  `address_street` VARCHAR(45) NULL,
+  `address_city` VARCHAR(45) NULL,
+  `address_postal_code` VARCHAR(45) NULL,
+  `address_country` VARCHAR(45) NULL,
+  PRIMARY KEY (`id_address`))
+ENGINE = InnoDB;
 
-DROP TABLE IF EXISTS `blood_type`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `blood_type` (
-  `id_blood_type` int NOT NULL AUTO_INCREMENT,
-  `blood_type_desc` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`id_blood_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
 
---
--- Table structure for table `comment`
---
-
-DROP TABLE IF EXISTS `comment`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `comment` (
-  `idcomment` int NOT NULL AUTO_INCREMENT,
-  `comment_owner` int DEFAULT NULL,
-  `comment_content` text,
-  `replying_to` int DEFAULT NULL,
-  `comment_timestamp` datetime DEFAULT NULL,
-  `comment_visibility` tinyint DEFAULT NULL,
-  PRIMARY KEY (`idcomment`),
-  KEY `fk_comment_1_idx` (`replying_to`),
-  KEY `fk_comment_2_idx` (`comment_owner`),
-  CONSTRAINT `fk_comment_1` FOREIGN KEY (`replying_to`) REFERENCES `comment` (`idcomment`),
-  CONSTRAINT `fk_comment_2` FOREIGN KEY (`comment_owner`) REFERENCES `app_user` (`id_app_user`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `comment_reaction`
---
-
-DROP TABLE IF EXISTS `comment_reaction`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `comment_reaction` (
-  `id_comment_reaction` int NOT NULL AUTO_INCREMENT,
-  `comment_reacting_user` int DEFAULT NULL,
-  `comment_reaction_ref` int DEFAULT NULL,
-  `reacted_on_comment` int DEFAULT NULL,
-  PRIMARY KEY (`id_comment_reaction`),
-  KEY `fk_product_reaction_1_idx` (`comment_reacting_user`),
-  KEY `fk_product_reaction_2_idx` (`comment_reaction_ref`),
-  KEY `fk_product_reaction_30_idx` (`reacted_on_comment`),
-  CONSTRAINT `fk_product_reaction_11` FOREIGN KEY (`comment_reacting_user`) REFERENCES `app_user` (`id_app_user`),
-  CONSTRAINT `fk_product_reaction_21` FOREIGN KEY (`comment_reaction_ref`) REFERENCES `reaction` (`id_reaction`),
-  CONSTRAINT `fk_product_reaction_30` FOREIGN KEY (`reacted_on_comment`) REFERENCES `comment` (`idcomment`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `disease_severity`
---
-
-DROP TABLE IF EXISTS `disease_severity`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `disease_severity` (
-  `id_disease_severity` int NOT NULL AUTO_INCREMENT,
-  `disease_severity_desc` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`id_disease_severity`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `ingredient`
---
-
-DROP TABLE IF EXISTS `ingredient`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ingredient` (
-  `id_ingredient` int NOT NULL AUTO_INCREMENT,
-  `ingredient_name` varchar(45) DEFAULT NULL,
-  `ingredient_icon` text,
-  PRIMARY KEY (`id_ingredient`)
-) ENGINE=InnoDB AUTO_INCREMENT=63 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `location`
---
-
-DROP TABLE IF EXISTS `location`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `location` (
-  `id_location` int NOT NULL AUTO_INCREMENT,
-  `location_position` point NOT NULL,
-  `location_name` varchar(45) DEFAULT NULL,
-  `location_address_id` int DEFAULT NULL,
+-- -----------------------------------------------------
+-- Table `gluttex`.`location`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`location` (
+  `id_location` INT NOT NULL AUTO_INCREMENT,
+  `location_position` POINT NULL,
+  `location_name` VARCHAR(45) NULL,
+  `location_address_id` INT NULL,
   PRIMARY KEY (`id_location`),
-  KEY `fk_location_1_idx` (`location_address_id`),
-  SPATIAL KEY `spatial` (`location_position`),
-  CONSTRAINT `fk_location_1` FOREIGN KEY (`location_address_id`) REFERENCES `address` (`id_address`)
-) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  INDEX `fk_location_1_idx` (`location_address_id` ASC) VISIBLE,
+  SPATIAL INDEX `spatial` (`location_position`) VISIBLE,
+  CONSTRAINT `fk_location_1`
+    FOREIGN KEY (`location_address_id`)
+    REFERENCES `gluttex`.`address` (`id_address`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
---
--- Table structure for table `ordered_item`
---
 
-DROP TABLE IF EXISTS `ordered_item`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ordered_item` (
-  `id_ordered_item` int NOT NULL AUTO_INCREMENT,
-  `ordered_product_id` int DEFAULT NULL,
-  `ordered_quantity` varchar(100) DEFAULT NULL,
-  `applied_vat` double DEFAULT NULL,
-  `order_ref` int DEFAULT NULL,
-  `unit_price` double DEFAULT NULL,
-  `product_discount` double DEFAULT NULL,
-  PRIMARY KEY (`id_ordered_item`),
-  KEY `fk_ordered_item_1_idx` (`ordered_product_id`),
-  KEY `fk_ordered_item_3_idx` (`order_ref`),
-  CONSTRAINT `fk_ordered_item_1` FOREIGN KEY (`ordered_product_id`) REFERENCES `product` (`id_product`),
-  CONSTRAINT `fk_ordered_item_3` FOREIGN KEY (`order_ref`) REFERENCES `placed_order` (`id_placed_order`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `patient`
---
-
-DROP TABLE IF EXISTS `patient`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `patient` (
-  `id_patient` int NOT NULL AUTO_INCREMENT,
-  `patient_person_id` int DEFAULT NULL,
-  `patient_disease_severity_id` int DEFAULT NULL,
-  PRIMARY KEY (`id_patient`),
-  KEY `fk_patient_1_idx` (`patient_person_id`),
-  KEY `fk_patient_2_idx` (`patient_disease_severity_id`),
-  CONSTRAINT `fk_patient_1` FOREIGN KEY (`patient_person_id`) REFERENCES `person` (`id_person`),
-  CONSTRAINT `fk_patient_2` FOREIGN KEY (`patient_disease_severity_id`) REFERENCES `disease_severity` (`id_disease_severity`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `person`
---
-
-DROP TABLE IF EXISTS `person`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `person` (
-  `id_person` int NOT NULL AUTO_INCREMENT,
-  `person_details_id` int DEFAULT NULL,
-  `person_blood_type_id` int DEFAULT NULL,
-  `person_location_id` int DEFAULT NULL,
+-- -----------------------------------------------------
+-- Table `gluttex`.`person`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`person` (
+  `id_person` INT NOT NULL AUTO_INCREMENT,
+  `person_details_id` INT NULL,
+  `person_blood_type_id` INT NULL,
+  `person_location_id` INT NULL,
   PRIMARY KEY (`id_person`),
-  KEY `fk_person_1_idx` (`person_details_id`),
-  KEY `fk_person_2_idx` (`person_blood_type_id`),
-  KEY `fk_person_3_idx` (`person_location_id`),
-  CONSTRAINT `fk_person_1` FOREIGN KEY (`person_details_id`) REFERENCES `person_details` (`id_person_details`),
-  CONSTRAINT `fk_person_2` FOREIGN KEY (`person_blood_type_id`) REFERENCES `blood_type` (`id_blood_type`),
-  CONSTRAINT `fk_person_3` FOREIGN KEY (`person_location_id`) REFERENCES `location` (`id_location`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  INDEX `fk_person_1_idx` (`person_details_id` ASC) VISIBLE,
+  INDEX `fk_person_2_idx` (`person_blood_type_id` ASC) VISIBLE,
+  INDEX `fk_person_3_idx` (`person_location_id` ASC) VISIBLE,
+  CONSTRAINT `fk_person_1`
+    FOREIGN KEY (`person_details_id`)
+    REFERENCES `gluttex`.`person_details` (`id_person_details`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_person_2`
+    FOREIGN KEY (`person_blood_type_id`)
+    REFERENCES `gluttex`.`blood_type` (`id_blood_type`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_person_3`
+    FOREIGN KEY (`person_location_id`)
+    REFERENCES `gluttex`.`location` (`id_location`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
---
--- Table structure for table `person_details`
---
 
-DROP TABLE IF EXISTS `person_details`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `person_details` (
-  `id_person_details` int NOT NULL AUTO_INCREMENT,
-  `person_first_name` varchar(45) DEFAULT NULL,
-  `person_last_name` varchar(45) DEFAULT NULL,
-  `person_birth_date` date DEFAULT NULL,
-  `person_gender` varchar(45) DEFAULT NULL,
-  `person_nationality` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`id_person_details`)
-) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`app_user`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`app_user` (
+  `id_app_user` INT NOT NULL AUTO_INCREMENT,
+  `app_user_name` VARCHAR(100) NULL,
+  `app_user_password` VARCHAR(256) NULL,
+  `app_user_person_id` INT NULL,
+  `app_user_type_id` INT NULL,
+  `app_user_preferences` TEXT NULL,
+  `app_user_image_url` VARCHAR(255) NULL,
+  `app_user_last_active` DATETIME NULL,
+  `app_user_last_updated` DATETIME NULL,
+  `app_user_creation` DATETIME NULL,
+  PRIMARY KEY (`id_app_user`),
+  INDEX `fk_app_user_3_idx` (`app_user_person_id` ASC) VISIBLE,
+  INDEX `fk_app_user_1_idx` (`app_user_type_id` ASC) VISIBLE,
+  CONSTRAINT `fk_app_user_1`
+    FOREIGN KEY (`app_user_type_id`)
+    REFERENCES `gluttex`.`app_user_type` (`id_app_user_type`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_app_user_3`
+    FOREIGN KEY (`app_user_person_id`)
+    REFERENCES `gluttex`.`person` (`id_person`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
---
--- Table structure for table `placed_order`
---
 
-DROP TABLE IF EXISTS `placed_order`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `placed_order` (
-  `id_placed_order` int NOT NULL AUTO_INCREMENT,
-  `ordered_timestamp` datetime DEFAULT NULL,
-  `order_discount` double DEFAULT NULL,
-  `total_price` double DEFAULT NULL,
-  `ordering_user_id` int DEFAULT NULL,
-  PRIMARY KEY (`id_placed_order`),
-  KEY `fk_placed_order_1_idx` (`ordering_user_id`),
-  CONSTRAINT `fk_placed_order_1` FOREIGN KEY (`ordering_user_id`) REFERENCES `app_user` (`id_app_user`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`provider_details`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`provider_details` (
+  `idprovider_details_id` INT NOT NULL AUTO_INCREMENT,
+  `provider_name` VARCHAR(45) NULL,
+  `provider_contact_info` TEXT NULL,
+  PRIMARY KEY (`idprovider_details_id`))
+ENGINE = InnoDB;
 
---
--- Table structure for table `presented_symptom`
---
 
-DROP TABLE IF EXISTS `presented_symptom`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `presented_symptom` (
-  `id_presented_symptom` int NOT NULL AUTO_INCREMENT,
-  `presented_symptom_ref_symptoms_occurence` int DEFAULT NULL,
-  `presented_symptom_ref_symptom` int DEFAULT NULL,
-  PRIMARY KEY (`id_presented_symptom`),
-  KEY `fk_presented_symptom_1_idx` (`presented_symptom_ref_symptom`),
-  KEY `fk_presented_symptom_2_idx` (`presented_symptom_ref_symptoms_occurence`),
-  CONSTRAINT `fk_presented_symptom_1` FOREIGN KEY (`presented_symptom_ref_symptom`) REFERENCES `symptom` (`id_symptom`),
-  CONSTRAINT `fk_presented_symptom_2` FOREIGN KEY (`presented_symptom_ref_symptoms_occurence`) REFERENCES `symptoms_occurence` (`id_symptoms_occurence`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`provider_organisation`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`provider_organisation` (
+  `idprovider_organisation` INT NOT NULL AUTO_INCREMENT,
+  `provider_organisation_name` VARCHAR(45) NULL,
+  `provider_organisation_desc` VARCHAR(300) NULL,
+  PRIMARY KEY (`idprovider_organisation`))
+ENGINE = InnoDB;
 
---
--- Table structure for table `product`
---
 
-DROP TABLE IF EXISTS `product`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `product` (
-  `id_product` int NOT NULL AUTO_INCREMENT,
-  `product_name` varchar(45) DEFAULT NULL,
-  `product_brand` varchar(45) DEFAULT NULL,
-  `product_provider_id` int DEFAULT NULL,
-  `product_category_id` int DEFAULT NULL,
-  `product_barcode` varchar(45) DEFAULT NULL,
-  `last_updated` datetime DEFAULT NULL,
-  `created` datetime DEFAULT NULL,
-  `product_description` varchar(300) DEFAULT NULL,
-  `product_price` double DEFAULT NULL,
-  `product_quantity` int DEFAULT NULL,
-  `product_quantifier` varchar(45) DEFAULT NULL,
-  `product_owner` int DEFAULT NULL,
-  PRIMARY KEY (`id_product`),
-  KEY `fk_product_1_idx` (`product_provider_id`),
-  KEY `fk_product_2_idx` (`product_category_id`),
-  KEY `fk_product_3_idx` (`product_owner`),
-  CONSTRAINT `fk_product_1` FOREIGN KEY (`product_provider_id`) REFERENCES `product_provider` (`id_product_provider`),
-  CONSTRAINT `fk_product_2` FOREIGN KEY (`product_category_id`) REFERENCES `product_category` (`id_product_category`),
-  CONSTRAINT `fk_product_3` FOREIGN KEY (`product_owner`) REFERENCES `app_user` (`id_app_user`)
-) ENGINE=InnoDB AUTO_INCREMENT=69 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`product_provider_type`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product_provider_type` (
+  `id_product_provider_type` INT NOT NULL AUTO_INCREMENT,
+  `product_provider_type_desc` VARCHAR(45) NULL,
+  `product_provider_ref` INT NULL,
+  PRIMARY KEY (`id_product_provider_type`))
+ENGINE = InnoDB;
 
---
--- Table structure for table `product_category`
---
 
-DROP TABLE IF EXISTS `product_category`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `product_category` (
-  `id_product_category` int NOT NULL AUTO_INCREMENT,
-  `product_category_desc` varchar(45) DEFAULT NULL,
-  `product_category_icon` text,
-  PRIMARY KEY (`id_product_category`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `product_image`
---
-
-DROP TABLE IF EXISTS `product_image`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `product_image` (
-  `id_product_image` int NOT NULL AUTO_INCREMENT,
-  `product_image_url` varchar(255) DEFAULT NULL,
-  `product_ref_id` int DEFAULT NULL,
-  PRIMARY KEY (`id_product_image`),
-  KEY `fk_product_image_1_idx` (`product_ref_id`),
-  CONSTRAINT `fk_product_image_1` FOREIGN KEY (`product_ref_id`) REFERENCES `product` (`id_product`)
-) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `product_provider`
---
-
-DROP TABLE IF EXISTS `product_provider`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `product_provider` (
-  `id_product_provider` int NOT NULL AUTO_INCREMENT,
-  `product_provider_details_id` int DEFAULT NULL,
-  `product_provider_type_id` int DEFAULT NULL,
-  `product_provider_location_id` int DEFAULT NULL,
-  `product_provider_org_id` int DEFAULT NULL,
-  `product_provider_owner` int DEFAULT NULL,
+-- -----------------------------------------------------
+-- Table `gluttex`.`product_provider`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product_provider` (
+  `id_product_provider` INT NOT NULL AUTO_INCREMENT,
+  `product_provider_details_id` INT NULL,
+  `product_provider_type_id` INT NULL,
+  `product_provider_location_id` INT NULL,
+  `product_provider_org_id` INT NULL,
+  `product_provider_owner` INT NULL,
   PRIMARY KEY (`id_product_provider`),
-  KEY `fk_product_provider_3_idx` (`product_provider_details_id`),
-  KEY `fk_product_provider_1_idx` (`product_provider_type_id`),
-  KEY `fk_product_provider_4_idx` (`product_provider_location_id`),
-  KEY `fk_product_provider_2_idx` (`product_provider_org_id`),
-  KEY `fk_product_provider_5_idx` (`product_provider_owner`),
-  CONSTRAINT `fk_product_provider_1` FOREIGN KEY (`product_provider_type_id`) REFERENCES `product_provider_type` (`id_product_provider_type`),
-  CONSTRAINT `fk_product_provider_2` FOREIGN KEY (`product_provider_org_id`) REFERENCES `provider_organisation` (`idprovider_organisation`),
-  CONSTRAINT `fk_product_provider_3` FOREIGN KEY (`product_provider_details_id`) REFERENCES `provider_details` (`idprovider_details_id`),
-  CONSTRAINT `fk_product_provider_4` FOREIGN KEY (`product_provider_location_id`) REFERENCES `location` (`id_location`),
-  CONSTRAINT `fk_product_provider_5` FOREIGN KEY (`product_provider_owner`) REFERENCES `app_user` (`id_app_user`)
-) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  INDEX `fk_product_provider_3_idx` (`product_provider_details_id` ASC) VISIBLE,
+  INDEX `fk_product_provider_4_idx` (`product_provider_location_id` ASC) VISIBLE,
+  INDEX `fk_product_provider_2_idx` (`product_provider_org_id` ASC) VISIBLE,
+  INDEX `fk_product_provider_5_idx` (`product_provider_owner` ASC) VISIBLE,
+  INDEX `fk_product_provider_1_idx` (`product_provider_type_id` ASC) VISIBLE,
+  CONSTRAINT `fk_product_provider_3`
+    FOREIGN KEY (`product_provider_details_id`)
+    REFERENCES `gluttex`.`provider_details` (`idprovider_details_id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_provider_4`
+    FOREIGN KEY (`product_provider_location_id`)
+    REFERENCES `gluttex`.`location` (`id_location`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_provider_2`
+    FOREIGN KEY (`product_provider_org_id`)
+    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_provider_5`
+    FOREIGN KEY (`product_provider_owner`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_provider_1`
+    FOREIGN KEY (`product_provider_type_id`)
+    REFERENCES `gluttex`.`product_provider_type` (`id_product_provider_type`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
---
--- Table structure for table `product_provider_type`
---
 
-DROP TABLE IF EXISTS `product_provider_type`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `product_provider_type` (
-  `id_product_provider_type` int NOT NULL AUTO_INCREMENT,
-  `product_provider_type_desc` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`id_product_provider_type`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`product_category`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product_category` (
+  `id_product_category` INT NOT NULL AUTO_INCREMENT,
+  `product_category_desc` VARCHAR(45) NULL,
+  `product_category_icon` TEXT NULL,
+  PRIMARY KEY (`id_product_category`))
+ENGINE = InnoDB;
 
---
--- Table structure for table `product_reaction`
---
 
-DROP TABLE IF EXISTS `product_reaction`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `product_reaction` (
-  `id_product_reaction` int NOT NULL AUTO_INCREMENT,
-  `product_reacting_user` int DEFAULT NULL,
-  `product_reaction_ref` int DEFAULT NULL,
-  `reacted_on_product` int DEFAULT NULL,
-  PRIMARY KEY (`id_product_reaction`),
-  KEY `fk_product_reaction_1_idx` (`product_reacting_user`),
-  KEY `fk_product_reaction_2_idx` (`product_reaction_ref`),
-  KEY `fk_product_reaction_3_idx` (`reacted_on_product`),
-  CONSTRAINT `fk_product_reaction_1` FOREIGN KEY (`product_reacting_user`) REFERENCES `app_user` (`id_app_user`),
-  CONSTRAINT `fk_product_reaction_2` FOREIGN KEY (`product_reaction_ref`) REFERENCES `reaction` (`id_reaction`),
-  CONSTRAINT `fk_product_reaction_3` FOREIGN KEY (`reacted_on_product`) REFERENCES `product` (`id_product`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`product`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product` (
+  `id_product` INT NOT NULL AUTO_INCREMENT,
+  `product_name` VARCHAR(45) NULL,
+  `product_brand` VARCHAR(45) NULL,
+  `product_provider_id` INT NULL,
+  `product_category_id` INT NULL,
+  `product_barcode` VARCHAR(45) NULL,
+  `last_updated` DATETIME NULL,
+  `created` DATETIME NULL,
+  `product_description` VARCHAR(300) NULL,
+  `product_price` DOUBLE NULL,
+  `product_quantity` INT NULL,
+  `product_quantifier` VARCHAR(45) NULL,
+  `product_owner` INT NULL,
+  PRIMARY KEY (`id_product`),
+  INDEX `fk_product_1_idx` (`product_provider_id` ASC) VISIBLE,
+  INDEX `fk_product_2_idx` (`product_category_id` ASC) VISIBLE,
+  INDEX `fk_product_3_idx` (`product_owner` ASC) VISIBLE,
+  CONSTRAINT `fk_product_1`
+    FOREIGN KEY (`product_provider_id`)
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_2`
+    FOREIGN KEY (`product_category_id`)
+    REFERENCES `gluttex`.`product_category` (`id_product_category`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_3`
+    FOREIGN KEY (`product_owner`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
---
--- Table structure for table `provider_details`
---
 
-DROP TABLE IF EXISTS `provider_details`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `provider_details` (
-  `idprovider_details_id` int NOT NULL AUTO_INCREMENT,
-  `provider_name` varchar(45) DEFAULT NULL,
-  `provider_contact_info` text,
-  PRIMARY KEY (`idprovider_details_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=37 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`disease_severity`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`disease_severity` (
+  `id_disease_severity` INT NOT NULL AUTO_INCREMENT,
+  `disease_severity_desc` VARCHAR(45) NULL,
+  PRIMARY KEY (`id_disease_severity`))
+ENGINE = InnoDB;
 
---
--- Table structure for table `provider_organisation`
---
 
-DROP TABLE IF EXISTS `provider_organisation`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `provider_organisation` (
-  `idprovider_organisation` int NOT NULL AUTO_INCREMENT,
-  `provider_organisation_name` varchar(45) DEFAULT NULL,
-  `provider_organisation_desc` varchar(300) DEFAULT NULL,
-  PRIMARY KEY (`idprovider_organisation`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`patient`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`patient` (
+  `id_patient` INT NOT NULL AUTO_INCREMENT,
+  `patient_person_id` INT NULL,
+  `patient_disease_severity_id` INT NULL,
+  PRIMARY KEY (`id_patient`),
+  INDEX `fk_patient_1_idx` (`patient_person_id` ASC) VISIBLE,
+  INDEX `fk_patient_2_idx` (`patient_disease_severity_id` ASC) VISIBLE,
+  CONSTRAINT `fk_patient_1`
+    FOREIGN KEY (`patient_person_id`)
+    REFERENCES `gluttex`.`person` (`id_person`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_patient_2`
+    FOREIGN KEY (`patient_disease_severity_id`)
+    REFERENCES `gluttex`.`disease_severity` (`id_disease_severity`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
---
--- Table structure for table `reaction`
---
 
-DROP TABLE IF EXISTS `reaction`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `reaction` (
-  `id_reaction` int NOT NULL AUTO_INCREMENT,
-  `reaction_type` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`id_reaction`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`serology_indicator`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`serology_indicator` (
+  `id_serology_indicator` INT NOT NULL AUTO_INCREMENT,
+  `serology_indicator_name` VARCHAR(45) NULL,
+  `serology_indicator_desc` VARCHAR(300) NULL,
+  PRIMARY KEY (`id_serology_indicator`))
+ENGINE = InnoDB;
 
---
--- Table structure for table `recipe`
---
 
-DROP TABLE IF EXISTS `recipe`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `recipe` (
-  `id_recipe` int NOT NULL AUTO_INCREMENT,
-  `recipe_owner_id` int DEFAULT NULL,
-  `recipe_category_id` int DEFAULT NULL,
-  `recipe_preparation_time` varchar(45) DEFAULT NULL,
-  `recipe_instructions` text,
-  `recipe_name` varchar(45) DEFAULT NULL,
-  `recipe_description` varchar(300) DEFAULT NULL,
-  `recipe_creation` datetime DEFAULT NULL,
-  `recipe_last_updated` datetime DEFAULT NULL,
-  PRIMARY KEY (`id_recipe`),
-  KEY `fk_recipe_1_idx` (`recipe_owner_id`),
-  KEY `fk_recipe_2_idx` (`recipe_category_id`),
-  CONSTRAINT `fk_recipe_1` FOREIGN KEY (`recipe_owner_id`) REFERENCES `app_user` (`id_app_user`),
-  CONSTRAINT `fk_recipe_2` FOREIGN KEY (`recipe_category_id`) REFERENCES `recipe_category` (`id_recipe_category`)
-) ENGINE=InnoDB AUTO_INCREMENT=20 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `recipe_category`
---
-
-DROP TABLE IF EXISTS `recipe_category`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `recipe_category` (
-  `id_recipe_category` int NOT NULL AUTO_INCREMENT,
-  `recipe_category_desc` varchar(45) DEFAULT NULL,
-  `recipe_category_icon` text,
-  PRIMARY KEY (`id_recipe_category`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `recipe_contains_ingredient`
---
-
-DROP TABLE IF EXISTS `recipe_contains_ingredient`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `recipe_contains_ingredient` (
-  `idrecipe_contains_ingredient_id` int NOT NULL AUTO_INCREMENT,
-  `containing_recipe_id` int DEFAULT NULL,
-  `contained_ingredient_id` int DEFAULT NULL,
-  `contained_quantity` varchar(45) DEFAULT NULL,
-  PRIMARY KEY (`idrecipe_contains_ingredient_id`),
-  KEY `fk_recipe_contains_ingredient_1_idx` (`containing_recipe_id`),
-  KEY `fk_recipe_contains_ingredient_2_idx` (`contained_ingredient_id`),
-  CONSTRAINT `fk_recipe_contains_ingredient_1` FOREIGN KEY (`containing_recipe_id`) REFERENCES `recipe` (`id_recipe`),
-  CONSTRAINT `fk_recipe_contains_ingredient_2` FOREIGN KEY (`contained_ingredient_id`) REFERENCES `ingredient` (`id_ingredient`)
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `recipe_image`
---
-
-DROP TABLE IF EXISTS `recipe_image`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `recipe_image` (
-  `id_recipe_image` int NOT NULL AUTO_INCREMENT,
-  `recipe_image_url` varchar(255) DEFAULT NULL,
-  `recipe_ref_id` int DEFAULT NULL,
-  PRIMARY KEY (`id_recipe_image`),
-  KEY `fk_recipe_image_1_idx` (`recipe_ref_id`),
-  CONSTRAINT `fk_recipe_image_1` FOREIGN KEY (`recipe_ref_id`) REFERENCES `recipe` (`id_recipe`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `recipe_reaction`
---
-
-DROP TABLE IF EXISTS `recipe_reaction`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `recipe_reaction` (
-  `id_recipe_reaction` int NOT NULL AUTO_INCREMENT,
-  `recipe_reacting_user` int DEFAULT NULL,
-  `recipe_reaction_ref` int DEFAULT NULL,
-  `reacted_on_recipe` int DEFAULT NULL,
-  PRIMARY KEY (`id_recipe_reaction`),
-  KEY `fk_product_reaction_1_idx` (`recipe_reacting_user`),
-  KEY `fk_product_reaction_2_idx` (`recipe_reaction_ref`),
-  KEY `fk_recipe_reaction_1_idx` (`reacted_on_recipe`),
-  CONSTRAINT `fk_product_reaction_10` FOREIGN KEY (`recipe_reacting_user`) REFERENCES `app_user` (`id_app_user`),
-  CONSTRAINT `fk_product_reaction_20` FOREIGN KEY (`recipe_reaction_ref`) REFERENCES `reaction` (`id_reaction`),
-  CONSTRAINT `fk_recipe_reaction_1` FOREIGN KEY (`reacted_on_recipe`) REFERENCES `recipe` (`id_recipe`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `report`
---
-
-DROP TABLE IF EXISTS `report`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `report` (
-  `id_report` int NOT NULL AUTO_INCREMENT,
-  `report_text` text,
-  `report_owner` int DEFAULT NULL,
-  PRIMARY KEY (`id_report`),
-  KEY `fk_report_1_idx` (`report_owner`),
-  CONSTRAINT `fk_report_1` FOREIGN KEY (`report_owner`) REFERENCES `app_user` (`id_app_user`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `serology`
---
-
-DROP TABLE IF EXISTS `serology`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `serology` (
-  `id_serology` int NOT NULL AUTO_INCREMENT,
-  `indicator_id` int DEFAULT NULL,
-  `serology_date` date DEFAULT NULL,
-  `patient_id` int DEFAULT NULL,
-  `indicator_value` varchar(45) DEFAULT NULL,
+-- -----------------------------------------------------
+-- Table `gluttex`.`serology`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`serology` (
+  `id_serology` INT NOT NULL AUTO_INCREMENT,
+  `indicator_id` INT NULL,
+  `serology_date` DATE NULL,
+  `patient_id` INT NULL,
+  `indicator_value` VARCHAR(45) NULL,
   PRIMARY KEY (`id_serology`),
-  KEY `fk_diagnosis_1_idx` (`patient_id`),
-  KEY `fk_serology_1_idx` (`indicator_id`),
-  CONSTRAINT `fk_diagnosis_1` FOREIGN KEY (`patient_id`) REFERENCES `patient` (`id_patient`),
-  CONSTRAINT `fk_serology_1` FOREIGN KEY (`indicator_id`) REFERENCES `serology_indicator` (`id_serology_indicator`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+  INDEX `fk_diagnosis_1_idx` (`patient_id` ASC) VISIBLE,
+  INDEX `fk_serology_1_idx` (`indicator_id` ASC) VISIBLE,
+  CONSTRAINT `fk_diagnosis_1`
+    FOREIGN KEY (`patient_id`)
+    REFERENCES `gluttex`.`patient` (`id_patient`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_serology_1`
+    FOREIGN KEY (`indicator_id`)
+    REFERENCES `gluttex`.`serology_indicator` (`id_serology_indicator`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
---
--- Table structure for table `serology_indicator`
---
 
-DROP TABLE IF EXISTS `serology_indicator`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `serology_indicator` (
-  `id_serology_indicator` int NOT NULL AUTO_INCREMENT,
-  `serology_indicator_name` varchar(45) DEFAULT NULL,
-  `serology_indicator_desc` varchar(300) DEFAULT NULL,
-  PRIMARY KEY (`id_serology_indicator`)
-) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe_category`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_category` (
+  `id_recipe_category` INT NOT NULL AUTO_INCREMENT,
+  `recipe_category_desc` VARCHAR(45) NULL,
+  `recipe_category_icon` TEXT NULL,
+  PRIMARY KEY (`id_recipe_category`))
+ENGINE = InnoDB;
 
---
--- Table structure for table `symptom`
---
 
-DROP TABLE IF EXISTS `symptom`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `symptom` (
-  `id_symptom` int NOT NULL AUTO_INCREMENT,
-  `symptom_name` varchar(45) DEFAULT NULL,
-  `symptom_desc` varchar(300) DEFAULT NULL,
-  PRIMARY KEY (`id_symptom`)
-) ENGINE=InnoDB AUTO_INCREMENT=106 DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe` (
+  `id_recipe` INT NOT NULL AUTO_INCREMENT,
+  `recipe_owner_id` INT NULL,
+  `recipe_category_id` INT NULL,
+  `recipe_preparation_time` VARCHAR(45) NULL,
+  `recipe_instructions` TEXT NULL,
+  `recipe_name` VARCHAR(45) NULL,
+  `recipe_description` VARCHAR(300) NULL,
+  `recipe_creation` DATETIME NULL,
+  `recipe_last_updated` DATETIME NULL,
+  PRIMARY KEY (`id_recipe`),
+  INDEX `fk_recipe_1_idx` (`recipe_owner_id` ASC) VISIBLE,
+  INDEX `fk_recipe_2_idx` (`recipe_category_id` ASC) VISIBLE,
+  CONSTRAINT `fk_recipe_1`
+    FOREIGN KEY (`recipe_owner_id`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_recipe_2`
+    FOREIGN KEY (`recipe_category_id`)
+    REFERENCES `gluttex`.`recipe_category` (`id_recipe_category`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
 
---
--- Table structure for table `symptoms_occurence`
---
 
-DROP TABLE IF EXISTS `symptoms_occurence`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `symptoms_occurence` (
-  `id_symptoms_occurence` int NOT NULL AUTO_INCREMENT,
-  `symptoms_occurence_submission_time` datetime DEFAULT NULL,
-  `symptoms_occurence_reason` varchar(300) DEFAULT NULL,
-  `reason_date` datetime DEFAULT NULL,
-  `symptoms_occurence_ref_patient` int DEFAULT NULL,
+-- -----------------------------------------------------
+-- Table `gluttex`.`ingredient`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`ingredient` (
+  `id_ingredient` INT NOT NULL AUTO_INCREMENT,
+  `ingredient_name` VARCHAR(45) NULL,
+  `ingredient_icon_url` VARCHAR(255) NULL,
+  PRIMARY KEY (`id_ingredient`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe_contains_ingredient`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_contains_ingredient` (
+  `idrecipe_contains_ingredient_id` INT NOT NULL AUTO_INCREMENT,
+  `containing_recipe_id` INT NULL,
+  `contained_ingredient_id` INT NULL,
+  `contained_quantity` VARCHAR(45) NULL,
+  PRIMARY KEY (`idrecipe_contains_ingredient_id`),
+  INDEX `fk_recipe_contains_ingredient_1_idx` (`containing_recipe_id` ASC) VISIBLE,
+  INDEX `fk_recipe_contains_ingredient_2_idx` (`contained_ingredient_id` ASC) VISIBLE,
+  CONSTRAINT `fk_recipe_contains_ingredient_1`
+    FOREIGN KEY (`containing_recipe_id`)
+    REFERENCES `gluttex`.`recipe` (`id_recipe`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_recipe_contains_ingredient_2`
+    FOREIGN KEY (`contained_ingredient_id`)
+    REFERENCES `gluttex`.`ingredient` (`id_ingredient`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`product_image`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product_image` (
+  `id_product_image` INT NOT NULL AUTO_INCREMENT,
+  `product_image_url` VARCHAR(255) NULL,
+  `product_ref_id` INT NULL,
+  PRIMARY KEY (`id_product_image`),
+  INDEX `fk_product_image_1_idx` (`product_ref_id` ASC) VISIBLE,
+  CONSTRAINT `fk_product_image_1`
+    FOREIGN KEY (`product_ref_id`)
+    REFERENCES `gluttex`.`product` (`id_product`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe_image`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_image` (
+  `id_recipe_image` INT NOT NULL AUTO_INCREMENT,
+  `recipe_image_url` VARCHAR(255) NULL,
+  `recipe_ref_id` INT NULL,
+  PRIMARY KEY (`id_recipe_image`),
+  INDEX `fk_recipe_image_1_idx` (`recipe_ref_id` ASC) VISIBLE,
+  CONSTRAINT `fk_recipe_image_1`
+    FOREIGN KEY (`recipe_ref_id`)
+    REFERENCES `gluttex`.`recipe` (`id_recipe`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`symptoms_occurence`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`symptoms_occurence` (
+  `id_symptoms_occurence` INT NOT NULL AUTO_INCREMENT,
+  `symptoms_occurence_submission_time` DATETIME NULL,
+  `symptoms_occurence_reason` VARCHAR(300) NULL,
+  `reason_date` DATETIME NULL,
+  `symptoms_occurence_ref_patient` INT NULL,
   PRIMARY KEY (`id_symptoms_occurence`),
-  KEY `fk_symptoms_causality_1_idx` (`symptoms_occurence_ref_patient`),
-  CONSTRAINT `fk_symptoms_causality_1` FOREIGN KEY (`symptoms_occurence_ref_patient`) REFERENCES `patient` (`id_patient`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3;
-/*!40101 SET character_set_client = @saved_cs_client */;
-SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
+  INDEX `fk_symptoms_causality_1_idx` (`symptoms_occurence_ref_patient` ASC) VISIBLE,
+  CONSTRAINT `fk_symptoms_causality_1`
+    FOREIGN KEY (`symptoms_occurence_ref_patient`)
+    REFERENCES `gluttex`.`patient` (`id_patient`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`symptom`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`symptom` (
+  `id_symptom` INT NOT NULL AUTO_INCREMENT,
+  `symptom_name` VARCHAR(45) NULL,
+  `symptom_desc` VARCHAR(300) NULL,
+  PRIMARY KEY (`id_symptom`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`presented_symptom`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`presented_symptom` (
+  `id_presented_symptom` INT NOT NULL AUTO_INCREMENT,
+  `presented_symptom_ref_symptoms_occurence` INT NULL,
+  `presented_symptom_ref_symptom` INT NULL,
+  PRIMARY KEY (`id_presented_symptom`),
+  INDEX `fk_presented_symptom_1_idx` (`presented_symptom_ref_symptom` ASC) VISIBLE,
+  INDEX `fk_presented_symptom_2_idx` (`presented_symptom_ref_symptoms_occurence` ASC) VISIBLE,
+  CONSTRAINT `fk_presented_symptom_1`
+    FOREIGN KEY (`presented_symptom_ref_symptom`)
+    REFERENCES `gluttex`.`symptom` (`id_symptom`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_presented_symptom_2`
+    FOREIGN KEY (`presented_symptom_ref_symptoms_occurence`)
+    REFERENCES `gluttex`.`symptoms_occurence` (`id_symptoms_occurence`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`report`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`report` (
+  `id_report` INT NOT NULL AUTO_INCREMENT,
+  `report_text` TEXT NULL,
+  `report_owner` INT NULL,
+  PRIMARY KEY (`id_report`),
+  INDEX `fk_report_1_idx` (`report_owner` ASC) VISIBLE,
+  CONSTRAINT `fk_report_1`
+    FOREIGN KEY (`report_owner`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`placed_order`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`placed_order` (
+  `id_placed_order` INT NOT NULL AUTO_INCREMENT,
+  `ordered_timestamp` DATETIME NULL,
+  `order_discount` DOUBLE NULL,
+  `total_price` DOUBLE NULL,
+  `ordering_user_id` INT NULL,
+  `placed_order_location_ref` INT NULL,
+  PRIMARY KEY (`id_placed_order`),
+  INDEX `fk_placed_order_1_idx` (`ordering_user_id` ASC) VISIBLE,
+  INDEX `fk_placed_order_2_idx` (`placed_order_location_ref` ASC) VISIBLE,
+  CONSTRAINT `fk_placed_order_1`
+    FOREIGN KEY (`ordering_user_id`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_placed_order_2`
+    FOREIGN KEY (`placed_order_location_ref`)
+    REFERENCES `gluttex`.`location` (`id_location`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`ordered_item`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_item` (
+  `id_ordered_item` INT NOT NULL AUTO_INCREMENT,
+  `ordered_product_id` INT NULL,
+  `ordered_quantity` VARCHAR(100) NULL,
+  `applied_vat` DOUBLE NULL,
+  `order_ref` INT NULL,
+  `unit_price` DOUBLE NULL,
+  `product_discount` DOUBLE NULL,
+  PRIMARY KEY (`id_ordered_item`),
+  INDEX `fk_ordered_item_1_idx` (`ordered_product_id` ASC) VISIBLE,
+  INDEX `fk_ordered_item_3_idx` (`order_ref` ASC) VISIBLE,
+  CONSTRAINT `fk_ordered_item_1`
+    FOREIGN KEY (`ordered_product_id`)
+    REFERENCES `gluttex`.`product` (`id_product`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_ordered_item_3`
+    FOREIGN KEY (`order_ref`)
+    REFERENCES `gluttex`.`placed_order` (`id_placed_order`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`reaction`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`reaction` (
+  `id_reaction` INT NOT NULL AUTO_INCREMENT,
+  `reaction_type` VARCHAR(45) NULL,
+  PRIMARY KEY (`id_reaction`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`comment`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`comment` (
+  `idcomment` INT NOT NULL AUTO_INCREMENT,
+  `comment_owner` INT NULL,
+  `comment_content` TEXT NULL,
+  `replying_to` INT NULL,
+  `comment_timestamp` DATETIME NULL,
+  `comment_visibility` TINYINT NULL,
+  PRIMARY KEY (`idcomment`),
+  INDEX `fk_comment_1_idx` (`replying_to` ASC) VISIBLE,
+  INDEX `fk_comment_2_idx` (`comment_owner` ASC) VISIBLE,
+  CONSTRAINT `fk_comment_1`
+    FOREIGN KEY (`replying_to`)
+    REFERENCES `gluttex`.`comment` (`idcomment`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_comment_2`
+    FOREIGN KEY (`comment_owner`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`product_reaction`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product_reaction` (
+  `id_product_reaction` INT NOT NULL AUTO_INCREMENT,
+  `product_reacting_user` INT NULL,
+  `product_reaction_ref` INT NULL,
+  `reacted_on_product` INT NULL,
+  PRIMARY KEY (`id_product_reaction`),
+  INDEX `fk_product_reaction_1_idx` (`product_reacting_user` ASC) VISIBLE,
+  INDEX `fk_product_reaction_2_idx` (`product_reaction_ref` ASC) VISIBLE,
+  INDEX `fk_product_reaction_3_idx` (`reacted_on_product` ASC) VISIBLE,
+  CONSTRAINT `fk_product_reaction_1`
+    FOREIGN KEY (`product_reacting_user`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_reaction_2`
+    FOREIGN KEY (`product_reaction_ref`)
+    REFERENCES `gluttex`.`reaction` (`id_reaction`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_reaction_3`
+    FOREIGN KEY (`reacted_on_product`)
+    REFERENCES `gluttex`.`product` (`id_product`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe_reaction`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_reaction` (
+  `id_recipe_reaction` INT NOT NULL AUTO_INCREMENT,
+  `recipe_reacting_user` INT NULL,
+  `recipe_reaction_ref` INT NULL,
+  `reacted_on_recipe` INT NULL,
+  PRIMARY KEY (`id_recipe_reaction`),
+  INDEX `fk_product_reaction_1_idx` (`recipe_reacting_user` ASC) VISIBLE,
+  INDEX `fk_product_reaction_2_idx` (`recipe_reaction_ref` ASC) VISIBLE,
+  INDEX `fk_recipe_reaction_1_idx` (`reacted_on_recipe` ASC) VISIBLE,
+  CONSTRAINT `fk_product_reaction_10`
+    FOREIGN KEY (`recipe_reacting_user`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_reaction_20`
+    FOREIGN KEY (`recipe_reaction_ref`)
+    REFERENCES `gluttex`.`reaction` (`id_reaction`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_recipe_reaction_1`
+    FOREIGN KEY (`reacted_on_recipe`)
+    REFERENCES `gluttex`.`recipe` (`id_recipe`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`comment_reaction`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`comment_reaction` (
+  `id_comment_reaction` INT NOT NULL AUTO_INCREMENT,
+  `comment_reacting_user` INT NULL,
+  `comment_reaction_ref` INT NULL,
+  `reacted_on_comment` INT NULL,
+  PRIMARY KEY (`id_comment_reaction`),
+  INDEX `fk_product_reaction_1_idx` (`comment_reacting_user` ASC) VISIBLE,
+  INDEX `fk_product_reaction_2_idx` (`comment_reaction_ref` ASC) VISIBLE,
+  INDEX `fk_product_reaction_30_idx` (`reacted_on_comment` ASC) VISIBLE,
+  CONSTRAINT `fk_product_reaction_11`
+    FOREIGN KEY (`comment_reacting_user`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_reaction_21`
+    FOREIGN KEY (`comment_reaction_ref`)
+    REFERENCES `gluttex`.`reaction` (`id_reaction`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_reaction_30`
+    FOREIGN KEY (`reacted_on_comment`)
+    REFERENCES `gluttex`.`comment` (`idcomment`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`provider_image`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`provider_image` (
+  `id_provider_image` INT NOT NULL AUTO_INCREMENT,
+  `provider_image_url` VARCHAR(255) NULL,
+  `provider_ref_id` INT NULL,
+  PRIMARY KEY (`id_provider_image`),
+  INDEX `fk_provider_image_1_idx` (`provider_ref_id` ASC) VISIBLE,
+  CONSTRAINT `fk_provider_image_1`
+    FOREIGN KEY (`provider_ref_id`)
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`organisation_image`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`organisation_image` (
+  `id_org_image` INT NOT NULL AUTO_INCREMENT,
+  `org_image_url` VARCHAR(255) NULL,
+  `org_ref_id` INT NULL,
+  PRIMARY KEY (`id_org_image`),
+  INDEX `fk_organisation_image_1_idx` (`org_ref_id` ASC) VISIBLE,
+  CONSTRAINT `fk_organisation_image_1`
+    FOREIGN KEY (`org_ref_id`)
+    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`location_image`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`location_image` (
+  `id_location_image` INT NOT NULL AUTO_INCREMENT,
+  `location_image_url` VARCHAR(255) NULL,
+  `image_location_ref` INT NULL,
+  PRIMARY KEY (`id_location_image`),
+  INDEX `fk_location_image_1_idx` (`image_location_ref` ASC) VISIBLE,
+  CONSTRAINT `fk_location_image_1`
+    FOREIGN KEY (`image_location_ref`)
+    REFERENCES `gluttex`.`location` (`id_location`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`management_rule`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`management_rule` (
+  `id_management_rule` INT NOT NULL AUTO_INCREMENT,
+  `rule_ref_org` INT NULL,
+  `rule_ref_provider` INT NULL,
+  `rule_ref_user` INT NULL,
+  `management_rule_code` INT NULL,
+  PRIMARY KEY (`id_management_rule`),
+  INDEX `fk_management_rule_1_idx` (`rule_ref_org` ASC) VISIBLE,
+  INDEX `fk_management_rule_2_idx` (`rule_ref_provider` ASC) VISIBLE,
+  INDEX `fk_management_rule_3_idx` (`rule_ref_user` ASC) VISIBLE,
+  CONSTRAINT `fk_management_rule_1`
+    FOREIGN KEY (`rule_ref_org`)
+    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_management_rule_2`
+    FOREIGN KEY (`rule_ref_provider`)
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_management_rule_3`
+    FOREIGN KEY (`rule_ref_user`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`notification`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`notification` (
+  `id_notification` INT NOT NULL AUTO_INCREMENT,
+  `notification_code` VARCHAR(255) NULL,
+  `notification_params` TEXT NULL,
+  `notification_user_ref` INT NULL,
+  `notification_created_at` DATETIME NULL,
+  `notification_read_at` DATETIME NULL,
+  PRIMARY KEY (`id_notification`),
+  INDEX `fk_notification_1_idx` (`notification_user_ref` ASC) VISIBLE,
+  CONSTRAINT `fk_notification_1`
+    FOREIGN KEY (`notification_user_ref`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
