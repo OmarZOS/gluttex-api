@@ -24,14 +24,13 @@ async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Loca
 
 
     user_type = fetch_user_type_object_by_id(user.app_user_type_id)
-    if isinstance(user.app_user_image, str):
-        user.app_user_image = user.app_user_image.encode('utf-8')
+    
     app_user = AppUser(
                         # id_app_user= user.id_app_user,
                         app_user_name= user.app_user_name,
                         app_user_password= "", # intentionally empty
                         app_user_preferences= user.app_user_preferences,
-                        app_user_image = user.app_user_image,
+                        app_user_image_url = user.app_user_image_url,
                         # app_user_person_id= person.id_person,
                         app_user_type_id= user_type.id_app_user_type,
                         app_user_last_active= str(datetime.datetime.now()),

@@ -66,10 +66,10 @@ For the spatial data:
 
     id_location = Column(Integer, primary_key=True)
     location_position = Column(Geometry('POINT', srid=4326), nullable=False)
+    position_wkt = column_property(func.ST_AsText(location_position)) 
     location_name = Column(String(45))
     location_address_id = Column(Integer)
     # Computed column to always get the WKT representation
-    position_wkt = column_property(func.ST_AsText(location_position)) 
     location_address = relationship('Address', back_populates='location')
     person = relationship('Person', back_populates='person_location')
     product_provider = relationship('ProductProvider', back_populates='product_provider_location')
