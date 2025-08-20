@@ -37,7 +37,7 @@ jobs:
       # Start containers with docker-compose (auth, fs, api)
       - name: Start containers
         run: |
-          docker compose -f docker-compose.test.yml up -d
+          docker compose --env-file .deploy.env -f docker-compose.prod.yml up -d
           sleep 30  # give services time to start
       
       - name: Log in to Docker Hub

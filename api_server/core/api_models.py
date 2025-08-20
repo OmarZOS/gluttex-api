@@ -97,14 +97,24 @@ class ProductImage_API(BaseModel):
 class ProductProvider_API(BaseModel):
     id_product_provider: int
     id_provider_owner: int
-    product_provider_details_id: Optional[int]
-    # provider type
-    id_product_provider_type: int
-    product_provider_type_desc: Optional[str]
-    # provider details
     idprovider_details_id: int
+    id_product_provider_type: int
+    id_provider_organisation : int
+    # provider type
+    product_provider_type_desc: Optional[str]
+    provider_organisation_name : Optional[str]
+    provider_organisation_desc : Optional[str]
+    # provider details
     provider_name: Optional[str]
     provider_contact_info: Optional[str]
+
+class ProviderOrganisation_API(BaseModel):
+    id_provider_organisation : int
+    provider_organisation_name : Optional[str]
+    provider_organisation_desc : Optional[str]
+
+
+
 
 # -------------------------------------------------------------------------------------
 
@@ -132,6 +142,11 @@ class RecipeImage_API(BaseModel):
     id_recipe_image: int
     recipe_image_data: Optional[str]
     recipe_ref_id: Optional[int]
+
+class ProviderImage_API(BaseModel):
+    id_provider_image: int
+    provider_image_url: Optional[str]
+    provider_ref_id: Optional[int]
 
 class PlacedOrder_API(BaseModel):
     id_placed_order : Optional[int]
