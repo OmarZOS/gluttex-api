@@ -66,7 +66,7 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`location` (
   `id_location` INT NOT NULL AUTO_INCREMENT,
-  `location_position` POINT NULL,
+  `location_position` POINT NOT NULL,
   `location_name` VARCHAR(45) NULL,
   `location_address_id` INT NULL,
   PRIMARY KEY (`id_location`),
@@ -800,79 +800,74 @@ SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
-/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
-/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
-/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
-/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
-/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+CREATE USER 'dev_user'@'%' IDENTIFIED BY 'dev_password';
+GRANT ALL PRIVILEGES ON *.* TO 'dev_user'@'%';
+FLUSH PRIVILEGES;
 
 -- Dump completed on 2025-08-16 19:54:35
 
 
 
 
--- INSERT INTO `gluttex`.`app_user_type` ( `app_user_type_desc`) VALUES
--- ( 'Client'),
--- ( 'Admin'),
--- ( 'Cooking chef'),
--- ( 'Supplier');
+INSERT INTO `gluttex`.`app_user_type` ( `app_user_type_desc`) VALUES
+( 'Client'),
+( 'Admin'),
+( 'Cooking chef'),
+( 'Supplier');
 
--- INSERT INTO `gluttex`.`blood_type` ( `blood_type_desc`) VALUES
--- ('O+'),
--- ('A+'),
--- ('B+'),
--- ('AB+'),
--- ('O-'),
--- ('A-'),
--- ('B-'),
--- ('AB-');
+INSERT INTO `gluttex`.`blood_type` ( `blood_type_desc`) VALUES
+('O+'),
+('A+'),
+('B+'),
+('AB+'),
+('O-'),
+('A-'),
+('B-'),
+('AB-');
 
--- INSERT INTO `gluttex`.`product_category` ( `product_category_desc`) VALUES
--- ('Baked Goods'),
--- ('Spreads'),
--- ('Cereals'),
--- ('Pasta'),
--- ('Snacks'),
--- ('Beverages'),
--- ('Desserts'),
--- ('Frozen Foods'),
--- ('Flours & Baking Ingredients'),
--- ('Canned & Packaged Goods ');
+INSERT INTO `gluttex`.`product_category` ( `product_category_desc`) VALUES
+('Baked Goods'),
+('Spreads'),
+('Cereals'),
+('Pasta'),
+('Snacks'),
+('Beverages'),
+('Desserts'),
+('Frozen Foods'),
+('Flours & Baking Ingredients'),
+('Canned & Packaged Goods ');
 
--- INSERT INTO `gluttex`.`product_provider_type` ( `product_provider_type_desc`) VALUES
--- ('Restaurant'),
--- ('Bakery'),
--- ('Factory'),
--- ('Supermarket'),
--- ("Grocery Store"),
--- ("Distributor");
+INSERT INTO `gluttex`.`product_provider_type` ( `product_provider_type_desc`) VALUES
+('Restaurant'),
+('Bakery'),
+('Factory'),
+('Supermarket'),
+("Grocery Store"),
+("Distributor");
 
 
--- INSERT INTO `gluttex`.`recipe_category` ( `recipe_category_desc`) VALUES
--- ("Appetizers & Snacks"),
--- ("Soups & Stews"),
--- ("Salads"),
--- ("Main Courses"),
--- ("Side Dishes"),
--- ("Pasta & Noodles"),
--- ("Casseroles"),
--- ("Breakfast & Brunch"),
--- ("Breads & Baking"),
--- ("Desserts"),
--- ("Drinks & Beverages"),
--- ("Sauces & Condiments"),
--- ("International Cuisine"),
--- ("Healthy & Special Diets"),
--- ("Holiday & Seasonal"),
--- ("Kids & Family"),
--- ("Slow Cooker & Instant Pot"),
--- ("Quick & Easy"),
--- ("One-Pan Recipes"),
--- ("Grilling & BBQ");
+INSERT INTO `gluttex`.`recipe_category` ( `recipe_category_desc`) VALUES
+("Appetizers & Snacks"),
+("Soups & Stews"),
+("Salads"),
+("Main Courses"),
+("Side Dishes"),
+("Pasta & Noodles"),
+("Casseroles"),
+("Breakfast & Brunch"),
+("Breads & Baking"),
+("Desserts"),
+("Drinks & Beverages"),
+("Sauces & Condiments"),
+("International Cuisine"),
+("Healthy & Special Diets"),
+("Holiday & Seasonal"),
+("Kids & Family"),
+("Slow Cooker & Instant Pot"),
+("Quick & Easy"),
+("One-Pan Recipes"),
+("Grilling & BBQ");
 
 
 
