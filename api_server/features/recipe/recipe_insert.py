@@ -2,16 +2,15 @@
 # here, we make schema translations
 
 import uuid
+from core.exception_handler import APIException
 from features.media_net import upload_image
-from core.api_models import Recipe_API, RecipeImage_API
-from core.messages import APPUSER_NOT_EXISTS, RECIPE_ALREADY_EXISTS, RECIPE_CATEGORY_NOT_EXISTS, RECIPE_NOT_EXISTS
+from core.api_models import Ingredient_API, Recipe_API, RecipeImage_API
+from core.messages import *
 from core.models import *
-from features.insertion import insert_or_complete_or_raise
-from features.recipe.recipe_fetch import  fetch_recipe_by_name, fetch_recipe_category_object_by_id
+from features.insertion import insert_or_complete_or_raise, update_record_in_api
+from features.recipe.recipe_fetch import  fetch_recipe_by_name, fetch_recipe_category_object_by_id, get_ingredient_by_id, get_ingredient_by_name
 from features.user.user_fetch import fetch_user_by_id
 from datetime import datetime;
-
-
 
 def build_recipe(recipe: Recipe_API):
     return Recipe(
@@ -27,27 +26,25 @@ async def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
     
     recipe_old = fetch_recipe_by_name(recipe_api.recipe_name)
     if recipe_old != None : 
-        raise Exception(RECIPE_ALREADY_EXISTS)
+        raise APIException(status= HTTP_409_CONFLICT,details=f"{str(e)}",code=RECIPE_ALREADY_EXISTS)
 
     recipe_category = fetch_recipe_category_object_by_id(recipe_api.recipe_category_id)
     if recipe_category == None : 
-        raise Exception(RECIPE_CATEGORY_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,details=f"{str(e)}",code=RECIPE_CATEGORY_NOT_EXISTS)
 
     recipe_owners = fetch_user_by_id(recipe_api.recipe_owner_id)
     if recipe_owners == [] : 
-        raise Exception(APPUSER_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,details=f"{str(e)}",code=APPUSER_NOT_EXISTS)
 
     recipe = build_recipe(recipe_api)
 
     recipe.recipe_category_id = recipe_category.id_recipe_category    
 
-    if (image.recipe_image_data):
-        # inserted_image_url = await upload_image("recipe",recipe_api.recipe_owner_id,uuid.uuid4(),image.recipe_image_data)
-        recipe_image = RecipeImage(recipe_image_url  = image.recipe_image_data)
+    if (image.recipe_image_url):
+        # inserted_image_url = await upload_image("recipe",recipe_api.recipe_owner_id,uuid.uuid4(),image.recipe_image_url)
+        recipe_image = RecipeImage(recipe_image_url  = image.recipe_image_url)
         recipe.recipe_image = [recipe_image]
 
-
-    
     if (recipe_api.recipe_ingredients):
         # id_recipe = recipe.id_recipe
         ingredient_list = []
@@ -57,8 +54,23 @@ async def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
             # code,containment,msg = insert_or_complete_or_raise(containment)
         recipe.recipe_contains_ingredient = ingredient_list
 
-    
-    code,recipe,msg = insert_or_complete_or_raise(recipe)
-    if (code == 1): return msg
+    try:
+        recipe = insert_or_complete_or_raise(recipe)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,details=f"{str(e)}",code=RECIPE_INSERT_FAILED)
+
+
     return recipe
 
+
+async def insert_ingredient(ingredient: Ingredient_API):
+    
+    ingredients = get_ingredient_by_name(ingredient.ingredient_name)
+    if ingredients != [] : 
+        raise Exception(status= HTTP_409_CONFLICT,code=INGREDIENT_ALREADY_EXISTS)
+    ingredient_model = Ingredient(ingredient_name=ingredient.ingredient_name,ingredient_icon_url=ingredient.ingredient_icon_url)
+    try:
+        new_ingredient = insert_or_complete_or_raise(ingredient_model)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=INGREDIENT_INSERT_FAILED,details=f"{str(e)}")
+    return new_ingredient

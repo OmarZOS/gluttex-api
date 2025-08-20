@@ -1,6 +1,4 @@
 
-
-
 from core.api_models import Location_API, ProductProvider_API, ProviderOrganisation_API
 from core.messages import PRODUCT_SUPPLIER_ALREADY_EXISTS
 from core.models import ProductProvider, ProductProviderType, ProviderDetails, ProviderOrganisation
@@ -45,7 +43,6 @@ def insert_supplier(provider: ProductProvider_API,location:Location_API):
     code,end_supplier,msg = insert_or_complete_or_raise(new_supplier)
     if (code == 1): raise Exception(msg) 
     return end_supplier
-
 
 def insert_org(org: ProviderOrganisation_API):
 

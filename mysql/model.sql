@@ -223,7 +223,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `gluttex`.`product_category` (
   `id_product_category` INT NOT NULL AUTO_INCREMENT,
   `product_category_desc` VARCHAR(45) NULL,
-  `product_category_icon` TEXT NULL,
+  `product_category_icon` VARCHAR(255) NULL,
   PRIMARY KEY (`id_product_category`))
 ENGINE = InnoDB;
 
@@ -342,7 +342,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_category` (
   `id_recipe_category` INT NOT NULL AUTO_INCREMENT,
   `recipe_category_desc` VARCHAR(45) NULL,
-  `recipe_category_icon` TEXT NULL,
+  `recipe_category_icon` VARCHAR(255) NULL,
   PRIMARY KEY (`id_recipe_category`))
 ENGINE = InnoDB;
 

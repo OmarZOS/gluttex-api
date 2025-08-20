@@ -3,8 +3,9 @@
 
 from asyncio.log import logger
 import logging
+from core.exception_handler import APIException
 from core.api_models import AppUser_API, Location_API, Person_API
-from core.messages import APPUSER_ALREADY_EXISTS
+from core.messages import *
 from core.models import  AppUser
 from features.insertion import delete_record_from_api, insert_or_complete_or_raise
 from features.person.person_fetch import  fetch_person_object
@@ -20,11 +21,12 @@ import datetime
 async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Location_API=None):
     
     if fetch_user_by_name(user.app_user_name) != []:
-        raise Exception(APPUSER_ALREADY_EXISTS)
+        raise APIException(status= HTTP_409_CONFLICT,code=APPUSER_ALREADY_EXISTS)
 
 
     user_type = fetch_user_type_object_by_id(user.app_user_type_id)
     
+
     app_user = AppUser(
                         # id_app_user= user.id_app_user,
                         app_user_name= user.app_user_name,
@@ -44,9 +46,14 @@ async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Loca
         else:
             person = generate_person_object(mensch,location)
             app_user.app_user_person = person
-    logger.info("Creating auth record for user in database")
-    code,nutzer,msg = insert_or_complete_or_raise(app_user)
-    if (code == 1): raise Exception(msg)
+    # logger.info("Creating auth record for user in database")
+    
+    try:
+        nutzer = insert_or_complete_or_raise(app_user)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=USER_INSERT_FAILED,details=f"{str(e)}")
+
+
         
     # try:
     # create auth record for user
@@ -57,7 +64,7 @@ async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Loca
     }
 
     # create auth record for user
-    logger.info("Creating auth record for user")
+    # logger.info("Creating auth record for user")
     user_auth_record = await create_user(user_auth_data)
     logger.info(user_auth_record)
     logger.info("Updating auth record for user")
