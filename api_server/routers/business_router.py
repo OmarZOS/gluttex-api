@@ -1,4 +1,4 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks,  status
 from fastapi.encoders import jsonable_encoder
 from typing import List
 from core.api_models import OrderedItem_API, PlacedOrder_API
@@ -33,6 +33,7 @@ def insert_placed_order(
             item.ordered_product_id, 
             {"product_quantity": quantities[index]}
         )
+    
     return res
 
 

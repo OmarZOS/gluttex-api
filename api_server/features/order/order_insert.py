@@ -1,8 +1,9 @@
-
 # here, we make schema translations
 
+from typing import List, Tuple
+from core.exception_handler import APIException
 from core.api_models import OrderedItem_API, PlacedOrder_API
-from core.messages import APPUSER_NOT_EXISTS, PRODUCT_NOT_EXISTS, PRODUCT_QUANTITY_NOT_ENOUGH
+from core.messages import *
 from core.models import *
 from features.insertion import insert_or_complete_or_raise, update_record_in_api
 from features.product.product_fetch import fetch_product_by_id
@@ -11,54 +12,92 @@ from datetime import datetime;
 
 
 
-def build_ordered_item(api_ordered_item: OrderedItem_API):
-    ordered_item = OrderedItem(
-        ordered_product_id = api_ordered_item.ordered_product_id,
-        # ordering_user_id = api_ordered_item.ordering_user_id,
-        order_ref = api_ordered_item.order_ref,
-        ordered_quantity = api_ordered_item.ordered_quantity,
-        applied_vat = api_ordered_item.applied_vat,
-        unit_price = api_ordered_item.unit_price)
-    return ordered_item
+def build_ordered_item(api_ordered_item: OrderedItem_API) -> OrderedItem:
+    """
+    Convert API ordered item into internal OrderedItem model.
+    """
+    return OrderedItem(
+        ordered_product_id=api_ordered_item.ordered_product_id,
+        order_ref=api_ordered_item.order_ref,
+        ordered_quantity=api_ordered_item.ordered_quantity,
+        applied_vat=api_ordered_item.applied_vat,
+        unit_price=api_ordered_item.unit_price
+    )
 
-def insert_order(api_ordered_items: list[OrderedItem_API],placed_order: PlacedOrder_API):
-    ordered_items = []
-    ordered_products = []
+
+def insert_order(api_ordered_items: List[OrderedItem_API], placed_order_api: PlacedOrder_API) -> Tuple[List[int], PlacedOrder]:
+    """
+    Insert a new order into the system.
+
+    Args:
+        api_ordered_items (List[OrderedItem_API]): Items from the API request.
+        placed_order_api (PlacedOrder_API): The placed order metadata.
+
+    Returns:
+        Tuple[List[int], PlacedOrder]: Updated product quantities and final placed order.
+
+    Raises:
+        Exception: If product/user does not exist or stock is insufficient.
+    """
+
+    # --- Validate user ---
+    ordering_user = fetch_user_by_id(placed_order_api.ordering_user_id)
+    if ordering_user is None:
+        raise APIException(status= HTTP_404_NOT_FOUND,code = APPUSER_NOT_EXISTS)
+
+    ordered_items: List[OrderedItem] = []
+    ordered_products: List[Product] = []
+
+
+    # --- Validate products & build ordered items ---
     for api_ordered_item in api_ordered_items:
         ordered_item = build_ordered_item(api_ordered_item)
-        
-        ordered_product = fetch_product_by_id(ordered_item.ordered_product_id)
-        if ordered_product == None : 
-            raise Exception(PRODUCT_NOT_EXISTS)
-        
-        if ordered_product.product_quantity < ordered_item.ordered_quantity : 
-            raise Exception(ordered_product.product_name+" " +PRODUCT_QUANTITY_NOT_ENOUGH)
 
-        ordering_user = fetch_user_by_id(placed_order.ordering_user_id)
-        if ordering_user == []: 
-            raise Exception(APPUSER_NOT_EXISTS)
-        
+        # Fetch product
+        ordered_product = fetch_product_by_id(ordered_item.ordered_product_id)
+        if ordered_product is None:
+            raise APIException(status= HTTP_404_NOT_FOUND,code=PRODUCT_NOT_EXISTS)
+
+        # Validate stock
+        if ordered_product.product_quantity < ordered_item.ordered_quantity:
+            raise APIException(status= HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,code=PRODUCT_QUANTITY_NOT_ENOUGH,details=PRODUCT_QUANTITY_NOT_ENOUGH)
+
         ordered_items.append(ordered_item)
         ordered_products.append(ordered_product)
 
-    order_total_price = 0
-    quantities = []
-    for ordered_item,ordered_product in zip(ordered_items,ordered_products):
-        
-        ordered_product.product_quantity = ordered_product.product_quantity - ordered_item.ordered_quantity
-        quantities.append(ordered_product.product_quantity)
-        update_record_in_api(ordered_product)
-        order_total_price += ordered_item.ordered_quantity*(float(ordered_product.product_price))*(1+ordered_item.applied_vat)
-        
-    placed_order = PlacedOrder(
-        ordering_user_id = ordering_user.id_app_user,
-        ordered_timestamp = datetime.now(), 
-                    order_discount = placed_order.order_discount,total_price = order_total_price)
+    
 
+    # --- Update product stock & calculate total price ---
+    order_total_price: float = 0
+    updated_quantities: List[int] = []
+
+    for ordered_item, ordered_product in zip(ordered_items, ordered_products):
+        ordered_product.product_quantity -= ordered_item.ordered_quantity
+        updated_quantities.append(ordered_product.product_quantity)
+
+        # Update product stock in API
+        try:
+            update_record_in_api(ordered_product)
+        except Exception as e:
+            raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=PRODUCT_QUANTITY_NOT_ENOUGH,message=IMAGE_INSERT_FAILED,details=f"{str(e)}")
+
+        # Add to total price
+        order_total_price += ordered_item.ordered_quantity * float(ordered_product.product_price) * (1 + ordered_item.applied_vat)
+
+    # --- Create final order object ---
+    placed_order = PlacedOrder(
+        ordering_user_id=ordering_user.id_app_user,
+        ordered_timestamp=datetime.now(),
+        order_discount=placed_order_api.order_discount,
+        total_price=order_total_price
+    )
     placed_order.ordered_item = ordered_items
 
-    code,final_order,msg = insert_or_complete_or_raise(placed_order)
-    if (code == 1): return msg
+    # --- Persist order ---
+    try:
+        final_order = insert_or_complete_or_raise(placed_order)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=ORDER_INSERT_CONFLICT,details=f"{str(e)}")
 
-    return quantities,final_order
 
+    return updated_quantities, final_order

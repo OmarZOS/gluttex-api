@@ -3,47 +3,33 @@
 # store, it can support multiple
 # storage engines, the insertion/fetch logic is in here
 
+from core.messages import *
+from core.exception_handler import APIException
 from constants import DB_URI
 import storage.wrappers.sql_wrapper as medicom_store
 
 
 def insert_record(item):
-    try:
-        engine = medicom_store.get_engine(DB_URI)
-    except:
-        raise Exception('An exception occurred while connecting to the database.')
+    
+    engine = medicom_store.get_engine(DB_URI)
     res = medicom_store.add_record(engine,item)
     return res
 
 def get(table,conditions=None, join_tables=None,eager_load_depth=None,offset=0, limit=10):
-    try:
-        engine = medicom_store.get_engine(DB_URI)
-    except:
-        raise Exception('An exception occurred while connecting to the database.')
+    engine = medicom_store.get_engine(DB_URI)
     res = medicom_store.get_records(engine,table,conditions,join_tables,eager_load_depth,offset,limit)
     return res
 
-
 def delete_record(item):
-    try:
-        engine = medicom_store.get_engine(DB_URI)
-    except:
-        raise Exception('An exception occurred while connecting to the database.')
+    engine = medicom_store.get_engine(DB_URI)
     medicom_store.delete_record(engine,item)
 
 def update_record(item):
-    try:
-        engine = medicom_store.get_engine(DB_URI)
-    except:
-        raise Exception('An exception occurred while connecting to the database.')
+    engine = medicom_store.get_engine(DB_URI)
     return medicom_store.update_record(engine,item)
 
-
 def delete_record_by_id(table,id):
-    try:
-        engine = medicom_store.get_engine(DB_URI)
-    except:
-        raise Exception('An exception occurred while connecting to the database.')
+    engine = medicom_store.get_engine(DB_URI)
     res = medicom_store.delete_record_by_id(engine,table,id)
     return res
 # for meta search engines like elasticsearch

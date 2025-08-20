@@ -24,10 +24,10 @@ services:
     container_name: gluttex-api
     hostname: gluttex-api
     restart: unless-stopped
-    build:
-      context: api_server/
-      args:
-        - API_PORT=9000
+    # build:
+      # context: api_server/
+      # args:
+        # - API_PORT=9000
     image: omarzos/gluttex-api
     environment:
       - API_PORT=9000
@@ -72,10 +72,10 @@ services:
     container_name: gluttex-auth
     hostname: gluttex-auth
     restart: unless-stopped
-    build:
-      context: auth_server/
-      args:
-        - AUTH_PORT=9090
+    # build:
+      # context: auth_server/
+      # args:
+        # - AUTH_PORT=9090
     image: omarzos/gluttex-auth
     environment:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
@@ -105,10 +105,10 @@ services:
     container_name: gluttex-fs
     hostname: gluttex-fs
     restart: unless-stopped
-    build:
-      context: file_server/
-      args:
-        - FS_PORT=9099
+    # build:
+      # context: file_server/
+      # args:
+        # - FS_PORT=9099
     image: omarzos/gluttex-fs
     environment:
       - FS_PORT=9099

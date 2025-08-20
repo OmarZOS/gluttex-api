@@ -1,7 +1,9 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from core.exception_handler import API_Resolution
+# from core.exception_handler import API_Resolution
+from core.api_models import API_Resolution
+from core.exception_handler import APIException
 from routers.product_router import product_router
 from routers.supplier_router import supplier_router
 from routers.user_router import app_user_router
@@ -10,17 +12,6 @@ from routers.health_router import health_router
 from routers.auth_router import auth_router
 from routers.business_router import business_router
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.exc import (
-    IntegrityError,
-    DataError,
-    OperationalError,
-    ProgrammingError,
-    DatabaseError,
-    InternalError,
-    InterfaceError,
-    StatementError,
-    SQLAlchemyError
-)
 # ----------- App initialisation -------------------------------------
 
 app = FastAPI(
@@ -30,64 +21,28 @@ app = FastAPI(
 )
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request,  exc: Exception):
-    # Default error response
-    resolution = API_Resolution()
-    
-    resolution.status_code = 500
-    resolution.error_code = "INTERNAL_SERVER_ERROR"
-    resolution.message = "An unexpected error occurred."
+async def global_exception_handler(request: Request, exc: Exception):
+    # If it's a known APIException
+    if isinstance(exc, APIException):
+        resolution = API_Resolution(
+            status=exc.status,
+            error_code=exc.code,
+            message=str(exc.details),
+        )
+        return JSONResponse(
+            status_code=exc.status,
+            content=resolution.dict(),
+        )
 
-    # Special handling for known exceptions
-    # Inside your exception handler
-    if isinstance(exc, HTTPException):
-        resolution.status_code = exc.resolution.status_code
-        resolution.error_code = "HTTP_EXCEPTION"
-        resolution.message = exc.detaresolution.il
-    elif isinstance(exc, IntegrityError):
-        resolution.status_code = 409
-        resolution.error_code = "INTEGRITY_ERROR"
-        resolution.message = str(exc.orig)
-    elif isinstance(exc, DataError):
-        resolution.status_code = 400
-        resolution.error_code = "DATA_ERROR"
-        resolution.message = str(exc.orig)
-    elif isinstance(exc, OperationalError):
-        resolution.status_code = 500
-        resolution.error_code = "OPERATIONAL_ERROR"
-        resolution.message = str(exc.orig)
-    elif isinstance(exc, ProgrammingError):
-        resolution.status_code = 500
-        resolution.error_code = "PROGRAMMING_ERROR"
-        resolution.message = str(exc.orig)
-    elif isinstance(exc, DatabaseError):
-        resolution.status_code = 500
-        resolution.error_code = "DATABASE_ERROR"
-        resolution.message = str(exc.orig)
-    elif isinstance(exc, InternalError):
-        resolution.status_code = 500
-        resolution.error_code = "INTERNAL_ERROR"
-        resolution.message = str(exc.orig)
-    elif isinstance(exc, InterfaceError):
-        resolution.status_code = 500
-        resolution.error_code = "INTERFACE_ERROR"
-        resolution.message = str(exc.orig)
-    elif isinstance(exc, StatementError):
-        resolution.status_code = 400
-        resolution.error_code = "STATEMENT_ERROR"
-        resolution.message = str(exc.orig)
-    elif isinstance(exc, SQLAlchemyError):
-        resolution.status_code = 500
-        resolution.error_code = "SQLALCHEMY_ERROR"
-        resolution.message = str(exc)
-
+    # If it's an unexpected internal error
+    resolution = API_Resolution(
+        status=500,
+        error_code="INTERNAL_SERVER_ERROR",
+        message=str(exc),
+    )
     return JSONResponse(
-        status_code=resolution.status_code,
-        content={
-            "error_code": resolution.error_code,
-            "message": resolution.message,
-            "path": request.url.path,
-        },
+        status_code=500,
+        content=resolution.dict(),
     )
 
 

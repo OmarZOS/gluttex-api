@@ -8,6 +8,17 @@ def fetch_product_by_id(prod_id: int):
         return None
     return records[0]
 
+def fetch_product_image_by_id(image_id: str):
+    records = storage_broker.get(
+        ProductImage
+        ,{
+            ProductImage.id_product_image:image_id
+        }
+        ,None
+        ,None)
+    # if records == []: return None
+    return records
+
 def fetch_product_object_by_id(product_id: str):
     
     record = storage_broker.get(Product,{Product.id_product:product_id},None,[])

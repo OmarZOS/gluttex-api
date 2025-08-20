@@ -2,7 +2,7 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from typing import Optional
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends,  status
 from sqlalchemy.orm import Session
 from database.crypt import verify_password
 from constants import ALGORITHM, SECRET_KEY

@@ -2,24 +2,6 @@
 
 services:
 
-  # mysql:
-  #   image: mysql
-  #   container_name: gluttex-db
-  #   restart: always
-  #   command: --max_allowed_packet=256M --init-file /data/application/init.sql
-
-  #   environment:
-  #     MYSQL_DATABASE: ${SQL_DATABASE}
-  #     MYSQL_USER: ${SQL_USER}
-  #     MYSQL_ROOT_PASSWORD: ${SQL_ROOT_PASSWORD}
-  #     MYSQL_PASSWORD: ${SQL_PASSWORD}
-  #   expose:
-  #     - 3306
-  #   volumes:
-  #     - ./mysql/model.sql:/data/application/init.sql
-  #     - ./data:/var/lib/mysql
-  #   networks:
-  #     - gluttex-net
   gluttex-api:
     container_name: gluttex-api
     hostname: gluttex-api

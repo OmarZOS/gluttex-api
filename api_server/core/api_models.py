@@ -5,6 +5,13 @@ from pydantic import BaseModel
 Base = declarative_base()
 metadata = Base.metadata    
 
+
+class API_Resolution(BaseModel):
+    status: int
+    error_code: str
+    message: str
+
+
 class Person_API(BaseModel):
     id_person: int
     person_details_id: Optional[int]
@@ -91,7 +98,7 @@ class Product_API(BaseModel):
 
 class ProductImage_API(BaseModel):
     id_product_image: int
-    product_image_data: Optional[str]
+    product_image_url: Optional[str]
     product_ref_id: Optional[int]
 
 class ProductProvider_API(BaseModel):
@@ -113,10 +120,12 @@ class ProviderOrganisation_API(BaseModel):
     provider_organisation_name : Optional[str]
     provider_organisation_desc : Optional[str]
 
-
-
-
 # -------------------------------------------------------------------------------------
+
+class Ingredient_API(BaseModel):
+    id_ingredient : int
+    ingredient_name : Optional[str]
+    ingredient_icon_url : Optional[str]
 
 class Recipe_API(BaseModel):
     id_recipe: int
@@ -134,13 +143,10 @@ class RecipeContainsIngredient_API(BaseModel):
     contained_ingredient_id: Optional[int]
     contained_quantity: Optional[str]
 
-class Ingredient_API(BaseModel):
-    id_ingredient: int
-    ingredient_name: Optional[str]
 
 class RecipeImage_API(BaseModel):
     id_recipe_image: int
-    recipe_image_data: Optional[str]
+    recipe_image_url: Optional[str]
     recipe_ref_id: Optional[int]
 
 class ProviderImage_API(BaseModel):

@@ -1,3 +1,5 @@
+from core.exception_handler import APIException
+from core.messages import *
 from constants import *
 from storage.storage_service.StorageService import *
 from sqlalchemy import create_engine 
@@ -22,8 +24,13 @@ def session_scope(engine):
 
 # engine = create_engine(DB_URI)
 def get_engine(db_uri):
-    engine = create_engine(db_uri)
-    return engine
+    try:
+        engine = create_engine(db_uri)
+        return engine
+    except Exception as e:
+        raise APIException(status=HTTP_511_NETWORK_AUTHENTICATION_REQUIRED
+                           ,code=DATABASE_ERROR
+                           ,details=f'{str(e)}')
 
 def get_session(engine, obj=None):
     Session = sessionmaker(bind=engine)

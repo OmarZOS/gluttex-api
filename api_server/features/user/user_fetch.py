@@ -1,5 +1,6 @@
 
-from core.messages import APPUSER_NOT_EXISTS, APPUSERTYPE_NOT_EXISTS
+from core.exception_handler import APIException
+from core.messages import *
 from core.models import *
 import storage.storage_broker as storage_broker
 
@@ -39,7 +40,7 @@ def fetch_user_by_name(user_name: str):
 def fetch_user_type_object_by_id(type_id: str):
     record = storage_broker.get(AppUserType,{AppUserType.id_app_user_type:type_id},None,[])
     if record == []:
-        raise Exception(APPUSERTYPE_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,code=APPUSERTYPE_NOT_EXISTS)
     
     user_type = AppUserType(id_app_user_type=record[0].id_app_user_type)
     return user_type
@@ -47,7 +48,7 @@ def fetch_user_type_object_by_id(type_id: str):
 def fetch_user_object_by_id(user_id: int):
     record = storage_broker.get(AppUser,{AppUser.id_app_user:user_id},None,[])
     if record == []:
-        raise Exception(APPUSER_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,code=APPUSER_NOT_EXISTS)
     
     user_obj = AppUser(id_app_user=record[0].id_app_user
                                         ,app_user_person_id = record[0].app_user_person_id)

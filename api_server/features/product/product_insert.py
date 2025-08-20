@@ -51,8 +51,8 @@ async def insert_product(product_api: Product_API, image: ProductImage_API):
     product.product_provider_id = product_suppliers[0].id_product_provider
     product.product_category_id = product_category.id_product_category
     
-    if (image.product_image_data):
-        inserted_image_url = image.product_image_data
+    if (image.product_image_url):
+        inserted_image_url = image.product_image_url
         # if (image.id_product_image==0):
         product_image = ProductImage(product_image_url  = inserted_image_url)
         product.product_image = [product_image]

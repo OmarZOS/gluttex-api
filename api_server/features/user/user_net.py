@@ -1,9 +1,8 @@
 import json
+from core.exception_handler import APIException
 from communication.communication_broker import send_post_request, send_put_request
-from constants import (
-    AUTH_SERVER_NAME, AUTH_PORT, AUTH_REGISTRATION_ENDPOINT, 
-    AUTH_LOGIN_ENDPOINT, AUTH_CHANGE_ENDPOINT
-)
+from constants import     *
+from core.messages import *
 from core.api_models import AppUser_API, AuthData_API
 from features.user.user_update import update_api_user_password
 
@@ -18,7 +17,7 @@ async def create_user(user_data: dict):
         response.raise_for_status()  # Raises an error for 4xx/5xx responses
         return response.json()
     except Exception as e:
-        raise Exception(f"User registration failed: {e}")
+        raise APIException(f"User registration failed: {str(e)}")
 
 async def login_for_access_token(app_user: AuthData_API):
     """
@@ -37,7 +36,7 @@ async def login_for_access_token(app_user: AuthData_API):
         response.raise_for_status()
         return response.json()
     except Exception as e:
-        raise Exception(f"Login failed: {e}")
+        raise Exception(f"Login failed: {str(e)}")
 
 async def update_user_password(existing_user: AppUser_API, token: str):
     """
@@ -52,13 +51,18 @@ async def update_user_password(existing_user: AppUser_API, token: str):
 
     try:
         response = await send_put_request(url, payload_data=user_update, flags=headers)
-        response.raise_for_status()
-
+        # response.raise_for_status()
+    except Exception as e:
+        raise APIException(status=HTTP_502_BAD_GATEWAY,code=USER_NET_FAILED,details=str(e))
+    try:
         # Parse response and extract new password hash
         user_data = response.json()
         new_password_hash = user_data.get("hashed_password")
-
+    except Exception as e:
+            raise APIException(status=HTTP_401_UNAUTHORIZED,code=INCORRECT_CREDENTIALS,details=str(e))
         # Update password in local database
+    try:
         return update_api_user_password(existing_user, new_password_hash)
     except Exception as e:
-        raise Exception(f"Password update failed: {e}")
+        raise APIException(status=HTTP_417_EXPECTATION_FAILED,code=USER_UPDATE_FAILED,details=str(e))
+        

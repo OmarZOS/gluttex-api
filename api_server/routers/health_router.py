@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter,  status
 from fastapi.encoders import jsonable_encoder
+from core.exception_handler import APIException
 from core.api_models import Serology_API, Symptoms_API
 
 from features.health.fetch_serology import get_serology_history
@@ -27,9 +28,9 @@ def get_serology_history_by_patient(patient_id: int, indicator_id: int):
     try:
         return get_serology_history(patient_id, indicator_id)
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Couldn't fetch serology history: {str(e)}"
+        raise APIException(
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            details=f"Couldn't fetch serology history: {str(e)}"
         )
 
 
@@ -44,13 +45,7 @@ def add_serology_record(serology_record: Serology_API):
     Returns:
         dict: Success message with inserted data.
     """
-    try:
-        return insert_serology(serology_record)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Couldn't insert serology record: {str(e)}"
-        )
+    return insert_serology(serology_record)
 
 
 @health_router.post("/patient/serology/update/{serology_id}")
@@ -65,13 +60,7 @@ def update_serology_record(serology_id: int, serology_record: Serology_API):
     Returns:
         dict: Success message with updated data.
     """
-    try:
-        return update_serology(serology_id, serology_record)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Couldn't update serology record: {str(e)}"
-        )
+    return update_serology(serology_id, serology_record)
 
 
 @health_router.delete("/patient/serology/delete/{serology_id}")
@@ -85,13 +74,7 @@ def delete_serology_record(serology_id: int):
     Returns:
         dict: Success message.
     """
-    try:
-        return delete_serology(serology_id)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Couldn't delete serology record: {str(e)}"
-        )
+    return delete_serology(serology_id)
 
 
 # -------------------------------------------------------------------------
@@ -104,13 +87,7 @@ def get_all_symptoms():
     Returns:
         list: List of symptoms.
     """
-    try:
-        return get_symptoms()
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Couldn't fetch symptoms: {str(e)}"
-        )
+    return get_symptoms()
 
 
 @health_router.put("/patient/symptoms/add/")
@@ -124,13 +101,7 @@ def add_symptom_occurrence(symptoms: Symptoms_API):
     Returns:
         dict: Success message with inserted data.
     """
-    try:
-        return insert_symptoms(symptoms)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Couldn't insert symptom occurrence: {str(e)}"
-        )
+    return insert_symptoms(symptoms)
 
 
 @health_router.get("/patient/symptoms/get/{patient_id}")
@@ -144,10 +115,4 @@ def get_symptom_occurrence(patient_id: int):
     Returns:
         list: Symptom history records.
     """
-    try:
-        return get_symptoms_history(patient_id)
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Couldn't fetch symptom occurrence history: {str(e)}"
-        )
+    return get_symptoms_history(patient_id)

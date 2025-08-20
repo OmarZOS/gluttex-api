@@ -1,5 +1,6 @@
+from core.exception_handler import APIException
 from core.api_models import Location_API, ProductProvider_API, ProviderImage_API
-from core.messages import SUPPLIER_NOT_EXISTS
+from core.messages import *
 from core.models import ProductProvider, ProviderDetails, ProviderImage
 from features.insertion import insert_or_complete_or_raise, update_record_in_api
 # from features.location.location_insert import build_location
@@ -47,32 +48,38 @@ def update_supplier(provider: ProductProvider_API, image: ProviderImage_API):
     """
     # Validate supplier type
     if fetch_supplier_type_object_by_id(provider.id_product_provider_type) is None:
-        raise Exception("SUPPLIER_CATEGORY_NOT_EXISTS")
+        raise APIException(status= HTTP_404_NOT_FOUND,code=PRODUCT_CATEGORY_NOT_EXISTS,message=PRODUCT_CATEGORY_NOT_EXISTS,details=PRODUCT_CATEGORY_NOT_EXISTS)
 
     # Fetch old supplier
     suppliers_old = fetch_supplier_by_id(provider.id_product_provider)
     if not suppliers_old:
-        raise Exception(SUPPLIER_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,code=SUPPLIER_NOT_EXISTS,message=SUPPLIER_NOT_EXISTS,details=SUPPLIER_NOT_EXISTS)
 
     supplier_old = suppliers_old[0]
     supplier_old.product_provider_type_id = provider.id_product_provider_type
-
+    supplier_old.product_provider_org_id = provider.id_provider_organisation
     # Update provider image if needed
     code, msg = 0, None
     if image.provider_image_url:
         if image.id_provider_image == 0:
             _image = ProviderImage(provider_image_url=image.provider_image_url)
             _image.provider_ref = supplier_old
-            code, _, msg = insert_or_complete_or_raise(_image)
+            try:
+                insert_or_complete_or_raise(_image)
+            except Exception as e:
+                raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=IMAGE_INSERT_FAILED,message=IMAGE_INSERT_FAILED,details=f"{str(e)}")
         else:
             same_image = fetch_supplier_image_by_id(image.id_provider_image)[0]
             same_image.provider_image_url = image.provider_image_url
-            update_record_in_api(same_image)
+            try:
+                update_record_in_api(same_image)
+            except Exception as e:
+                raise APIException(status= HTTP_409_CONFLICT,code=IMAGE_UPDATE_FAILED,details=f"{str(e)}")
 
     # Update supplier record
-    updated_supplier = update_record_in_api(supplier_old)
 
-    if code == 1:
-        raise Exception(msg)
 
-    return updated_supplier
+    try:
+        return update_record_in_api(supplier_old)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=USER_UPDATE_FAILED,message=f"{USER_UPDATE_FAILED}: {user.id_app_user}",details=f"{str(e)}")
