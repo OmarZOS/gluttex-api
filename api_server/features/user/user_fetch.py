@@ -3,9 +3,56 @@ from core.exception_handler import APIException
 from core.messages import *
 from core.models import *
 import storage.storage_broker as storage_broker
+from sqlalchemy import func
+
 
 def fetch_all_users():
     return storage_broker.get(AppUser)
+
+def fetch_full_user_by_id(user_id: str):
+    """
+    Fetch a user by ID along with related AppUserType and Person details.
+    """
+    # Fetch user with AppUserType joined
+    users = storage_broker.get(
+        table=AppUser,
+        conditions={AppUser.id_app_user: int(user_id)},
+        # join_tables=[Person],
+        eager_load_depth=[AppUser.app_user_type,AppUser.app_user_person],
+        offset=0,
+        limit=1
+    )
+
+    if users == []:
+        return None
+
+    user = users[0]
+    if (user.app_user_person):
+        # Fetch related Person with details and blood type
+        person = storage_broker.get(
+            table=Person,
+            conditions={Person.id_person: user.app_user_person.id_person},
+            join_tables=[],
+            eager_load_depth=[Person.person_blood_type,Person.person_details,Person.patient,{Person.person_location:[Location.location_name,Location.position_wkt,Location.location_address_id]}],
+            offset=0,
+            limit=1
+        )[0]
+        if person.person_location:
+            addresses = storage_broker.get(
+                table=Address,
+                conditions={Address.id_address: person.person_location.location_address_id},
+                # join_tables=[],
+                # eager_load_depth=[Person.person_blood_type,Person.person_details,Person.patient,{Person.person_location:[Location.location_name,Location.position_wkt]}],
+                offset=0,
+                limit=1
+            )
+            if( addresses != []):
+                person.person_location.location_address = addresses[0]
+
+
+        user.app_user_person = person
+
+    return user
 
 def fetch_user_by_id(user_id: str):
     user_list = storage_broker.get(AppUser

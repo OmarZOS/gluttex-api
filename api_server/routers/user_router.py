@@ -3,10 +3,10 @@ from core.exception_handler import APIException
 from core.messages import *
 from core.api_models import AppUser_API, AppUserUpdate_API, Location_API, Person_API
 from features.user.user_delete import delete_user
-from features.user.user_fetch import fetch_all_users, fetch_user_by_id
+from features.user.user_fetch import fetch_all_users, fetch_full_user_by_id, fetch_user_by_id
 from features.user.user_insert import insert_user
 from features.user.user_net import update_user_password
-from features.user.user_update import update_api_user_image_url
+from features.user.user_update import update_api_user, update_api_user_image_url
 
 app_user_router = APIRouter()
 @app_user_router.get("/app_user")
@@ -21,7 +21,7 @@ def get_user_by_id(user_id: int):
     """
     Retrieve a user by ID.
     """
-    user = fetch_user_by_id(user_id)
+    user = fetch_full_user_by_id(user_id)
     if not user:
         raise APIException(status=HTTP_404_NOT_FOUND,code=APPUSER_NOT_EXISTS, details=f"{APPUSER_NOT_EXISTS}: {user_id}")
     return user
@@ -53,3 +53,10 @@ def update_user_image_url_endpoint(user: AppUser_API, image_url: str):
         Update the user image url.
     """
     return update_api_user_image_url(user, image_url)
+
+@app_user_router.post("/app_user/update")
+def update_user_record_endpoint(user: AppUser_API, person_record: Person_API,location_record:Location_API):
+    """
+        Update the user image url.
+    """
+    return update_api_user(user, person_record,location_record)

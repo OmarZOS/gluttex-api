@@ -53,9 +53,16 @@ def fetch_all_product(user_id=0, provider_id=0,category_id=0,offset=0, limit=10)
     if provider_id != 0:
         conditions[Product.product_provider_id] = provider_id
 
-    return storage_broker.get(Product,conditions=conditions,join_tables=[ProductCategory],eager_load_depth=
-                              [
-        Product.product_category, 
-        Product.product_provider, 
-        {Product.product_image: [ProductImage.id_product_image,ProductImage.product_image_url],}  # Nested eager load for specific fields
-    ],offset=offset, limit=limit)
+    return storage_broker.get(Product,conditions=conditions
+            ,join_tables=[ProductCategory]
+            ,eager_load_depth=
+                        [
+                            Product.product_category, 
+                            Product.product_provider, 
+                            {Product.product_image: 
+                                [ProductImage.id_product_image
+                                ,ProductImage.product_image_url
+                                ],}  # Nested eager load for specific fields
+                        ]
+                        ,offset=offset
+                        ,limit=limit)
