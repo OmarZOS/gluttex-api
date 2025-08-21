@@ -1,7 +1,7 @@
 from fastapi import APIRouter,  status
 from core.exception_handler import APIException
 from core.messages import *
-from core.api_models import AppUser_API, Location_API, Person_API
+from core.api_models import AppUser_API, AppUserUpdate_API, Location_API, Person_API
 from features.user.user_delete import delete_user
 from features.user.user_fetch import fetch_all_users, fetch_user_by_id
 from features.user.user_insert import insert_user
@@ -41,11 +41,11 @@ def delete_user_endpoint(user: AppUser_API):
     return delete_user(user)
 
 @app_user_router.post("/app_user/update_password")
-def update_user_password_endpoint(user: AppUser_API, token: str):
+async def update_user_password_endpoint(user: AppUserUpdate_API, token: str):
     """
     Update the user password.
     """
-    return update_user_password(user, token)
+    return await update_user_password(user, token)
 
 @app_user_router.post("/app_user/update_image_url")
 def update_user_image_url_endpoint(user: AppUser_API, image_url: str):

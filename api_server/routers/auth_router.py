@@ -1,3 +1,4 @@
+from core.messages import *
 from fastapi import APIRouter, Request, Depends, status
 from authlib.integrations.starlette_client import OAuth
 from fastapi.responses import RedirectResponse
@@ -49,20 +50,20 @@ SUPPORTED_PROVIDERS = {"google", "facebook", "instagram"}
 async def login(provider: str, request: Request):
     """Redirects user to the OAuth provider's login page."""
     if provider not in SUPPORTED_PROVIDERS:
-        raise APIException(status=status.HTTP_400_BAD_REQUEST, details="Unsupported provider")
+        raise APIException(status=HTTP_400_BAD_REQUEST,code=INTERFACE_ERROR, details="Unsupported provider")
 
     try:
         redirect_uri = f"http://localhost:8000/auth/{provider}"
         return await oauth[provider].authorize_redirect(request, redirect_uri)
     except Exception as e:
-        raise APIException(status=status.HTTP_500_INTERNAL_SERVER_ERROR, details=f"OAuth error: {str(e)}")
+        raise APIException(status=HTTP_500_INTERNAL_SERVER_ERROR,code=INTERFACE_ERROR, details=f"OAuth error: {str(e)}")
 
 
 @auth_router.get("/auth/{provider}")
 async def auth(provider: str, request: Request):
     """Handles the OAuth provider's callback and retrieves user info."""
     if provider not in SUPPORTED_PROVIDERS:
-        raise APIException(status=status.HTTP_400_BAD_REQUEST, details="Unsupported provider")
+        raise APIException(status=HTTP_400_BAD_REQUEST,code=INTERFACE_ERROR, details="Unsupported provider")
 
     try:
         token = await oauth[provider].authorize_access_token(request)
@@ -70,13 +71,10 @@ async def auth(provider: str, request: Request):
         request.session["user"] = dict(user)
         return {"token": token, "user": user}
     except Exception as e:
-        raise APIException(status=status.HTTP_401_UNAUTHORIZED, details=f"OAuth authentication failed: {str(e)}")
+        raise APIException(status=HTTP_401_UNAUTHORIZED,code=AUTH_UNAUTHORIZED, details=f"OAuth authentication failed: {str(e)}")
 
 
 @auth_router.post("/authentication/token")
 async def login_user(user: AuthData_API):
     """Authenticates the user and returns an access token."""
-    try:
-        return await login_for_access_token(user)
-    except Exception as e:
-        raise APIException(status=status.HTTP_401_UNAUTHORIZED, details=f"Couldn't log in: {str(e)}")
+    return await login_for_access_token(user)

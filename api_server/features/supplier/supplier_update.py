@@ -30,7 +30,7 @@ def build_provider_object(provider: ProductProvider_API) -> ProductProvider:
     """
     supplier_type = fetch_supplier_type_object_by_id(provider.id_product_provider_type)
     if supplier_type is None:
-        raise Exception("SUPPLIER_CATEGORY_NOT_EXISTS")
+        raise APIException(status= HTTP_404_NOT_FOUND,code=SUPPLIER_TYPE_NOT_EXISTS,message=f"{SUPPLIER_TYPE_NOT_EXISTS}: {provider.id_product_provider_type}")
 
     new_supplier = ProductProvider()
     new_supplier.product_provider_type_id = supplier_type.id_product_provider_type

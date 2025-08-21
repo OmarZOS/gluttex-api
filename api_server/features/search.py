@@ -1,7 +1,4 @@
 
-# using insert_or_complete_or_raise imposes these lines:
-# # code,obj,msg = insert_or_complete_or_raise(obj)
-# #     if (code == 1): return msg
 
 import storage.storage_broker as storage_broker
 

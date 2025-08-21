@@ -1,34 +1,40 @@
-
+from typing import Optional
+from core.api_models import Location_API
 from core.models import Address, AppUser, AppUserType, BloodType, Location, Person, PersonDetails
 import storage.storage_broker as storage_broker
 from features.person.person_fetch import fetch_person_blood_type_object, fetch_person_details_object
+from geoalchemy2.elements import WKTElement
 
-def fetch_location_object(location_id: str):
-    record = storage_broker.get(Location,{Location.id_location:location_id},None,[])
-    if record == []:
-        return None
-    
-    location = Location(
-                    id_location=record[0].id_location,
-                    location_latitude = record[0].location_latitude,
-                    location_longitude = record[0].location_longitude,
-                    location_name = record[0].location_name,
-                    location_address_id = record[0].location_address_id,)
-    return location
-def fetch_address_object(address_id: str):
-    record = storage_broker.get(Address,{Address.id_address:address_id},None,[])
-    if record == []:
-        return None
-    
-    address = Address(
-                    id_address=record[0].id_address,
-                    address_street = record[0].address_street,
-                    address_city = record[0].address_city,
-                    address_postal_code = record[0].address_postal_code,
-                    address_country = record[0].address_country,)
-    return address
+def build_location(location: Location_API) -> Location:
+    """Helper to build a Location from Location_API."""
+    return Location(
+        location_position=WKTElement(
+            f"POINT({location.location_longitude} {location.location_latitude})",
+            srid=4326,
+        ),
+        location_name=location.location_name,
+        location_address_id=location.location_address_id,
+    )
 
 
+def fetch_location_object(location_id: str) -> Optional[Location]:
+    """Fetch a Location object by its ID."""
+    records = storage_broker.get(Location, {Location.id_location: location_id}, None, [])
+    return records[0] if records else None
 
-def fetch_location(location_id: str):
-    return storage_broker.get(Location,{Location.id_location:location_id},None,[Location.location_address])
+
+def fetch_address_object(address_id: str) -> Optional[Address]:
+    """Fetch an Address object by its ID."""
+    records = storage_broker.get(Address, {Address.id_address: address_id}, None, [])
+    return records[0] if records else None
+
+
+def fetch_location(location_id: str) -> Optional[Location]:
+    """Fetch a Location with its related Address."""
+    records = storage_broker.get(
+        Location,
+        {Location.id_location: location_id},
+        None,
+        [Location.location_address],
+    )
+    return records[0] if records else None

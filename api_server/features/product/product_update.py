@@ -75,7 +75,7 @@ def update_product(product_id: int,product_api: Product_API, image: ProductImage
     try:
         product = update_record_in_api(product_old)
     except Exception as e:
-        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=PRODUCT_UPDATE_FAILED,message=PRODUCT_UPDATE_FAILED,details=f"{str(e)}")
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=PRODUCT_UPDATE_FAILED,details=f"{str(e)}")
     return product
 
 

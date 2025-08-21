@@ -3,7 +3,7 @@ from core.exception_handler import APIException
 from communication.communication_broker import send_post_request, send_put_request
 from constants import     *
 from core.messages import *
-from core.api_models import AppUser_API, AuthData_API
+from core.api_models import AppUser_API, AppUserUpdate_API, AuthData_API
 from features.user.user_update import update_api_user_password
 
 async def create_user(user_data: dict):
@@ -33,25 +33,27 @@ async def login_for_access_token(app_user: AuthData_API):
 
     try:
         response = await send_post_request(url, payload_data=form_data, flags=headers)
-        response.raise_for_status()
+        # response.raise_for_status()
         return response.json()
-    except Exception as e:
-        raise Exception(f"Login failed: {str(e)}")
+    except APIException as e:
+        raise APIException(status= e.status,code=e.code,message=e.message)
 
-async def update_user_password(existing_user: AppUser_API, token: str):
+async def update_user_password(existing_user: AppUserUpdate_API, token: str):
     """
     Update a user's password through the authentication server.
     """
     user_update = {
-        "username": existing_user.app_user_name,
-        "new_password": existing_user.app_user_password
+        "app_user_id": existing_user.id_app_user,
+        "username": existing_user.username,
+        "new_password": existing_user.new_password
     }
-    headers = {"Authorization": f"Bearer {token}"}
+
+    flags = {"headers": {"Authorization": f"Bearer {token}"}}
     url = f"https://{AUTH_SERVER_NAME}:{AUTH_PORT}{AUTH_CHANGE_ENDPOINT}"
 
     try:
-        response = await send_put_request(url, payload_data=user_update, flags=headers)
-        # response.raise_for_status()
+        response = await send_put_request(url, input_data=user_update, flags=flags)
+        response.raise_for_status()
     except Exception as e:
         raise APIException(status=HTTP_502_BAD_GATEWAY,code=USER_NET_FAILED,details=str(e))
     try:

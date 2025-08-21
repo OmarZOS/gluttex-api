@@ -1,6 +1,7 @@
 
+from core.exception_handler import APIException
 from core.api_models import Location_API, ProductProvider_API, ProviderOrganisation_API
-from core.messages import PRODUCT_SUPPLIER_ALREADY_EXISTS
+from core.messages import *
 from core.models import ProductProvider, ProductProviderType, ProviderDetails, ProviderOrganisation
 from features.insertion import insert_or_complete_or_raise
 from features.location.location_insert import build_location
@@ -20,7 +21,7 @@ def build_provider_object(provider: ProductProvider_API,location:Location_API):
 
     supplier_type = fetch_supplier_type_object_by_id(provider.id_product_provider_type)
     if supplier_type == None:
-        raise Exception("SUPPLIER_TYPE_NOT_EXISTS")
+        raise APIException(status=HTTP_404_NOT_FOUND,code=SUPPLIER_TYPE_NOT_EXISTS,message=f"{SUPPLIER_TYPE_NOT_EXISTS}: {provider.id_product_provider_type}")
 
     new_supplier = ProductProvider()
 
@@ -36,18 +37,22 @@ def build_provider_object(provider: ProductProvider_API,location:Location_API):
 def insert_supplier(provider: ProductProvider_API,location:Location_API):
 
     if fetch_supplier_by_id(provider.id_product_provider) != []:
-        raise Exception(PRODUCT_SUPPLIER_ALREADY_EXISTS)
+        raise APIException(status=HTTP_409_CONFLICT,code=SUPPLIER_INSERT_FAILED,message=f"{SUPPLIER_INSERT_FAILED}: {provider.id_product_provider}")
     
     new_supplier = build_provider_object(provider,location)
 
-    code,end_supplier,msg = insert_or_complete_or_raise(new_supplier)
-    if (code == 1): raise Exception(msg) 
+    try:
+        end_supplier = insert_or_complete_or_raise(new_supplier)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=SUPPLIER_INSERT_FAILED,message=SUPPLIER_INSERT_FAILED,details=f"{str(e)}")
+    
     return end_supplier
 
 def insert_org(org: ProviderOrganisation_API):
 
     if fetch_org_by_name(org.provider_organisation_name) != []:
-        raise Exception("ORG_ALREADY_EXISTS")
+        raise APIException(status= HTTP_409_CONFLICT,code=ORG_ALREADY_EXISTS,message=f"{ORG_ALREADY_EXISTS}: {org.provider_organisation_name}")
+    
 
     model_org = ProviderOrganisation(
         # idprovider_organisation = org.id_provider_organisation,
@@ -55,6 +60,10 @@ def insert_org(org: ProviderOrganisation_API):
         provider_organisation_desc = org.provider_organisation_desc
     )
 
-    code,end_org,msg = insert_or_complete_or_raise(model_org)
-    if (code == 1): raise Exception(msg) 
+    try:
+        end_org = insert_or_complete_or_raise(model_org)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=PRODUCT_UPDATE_FAILED,message=PRODUCT_UPDATE_FAILED,details=f"{str(e)}")
+
+
     return end_org

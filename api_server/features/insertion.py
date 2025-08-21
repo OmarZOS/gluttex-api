@@ -1,7 +1,4 @@
 
-# using insert_or_complete_or_raise imposes these lines:
-# # code,obj,msg = insert_or_complete_or_raise(obj)
-# #     if (code == 1): return msg
 
 from core.exception_handler import APIException
 from core.messages import *

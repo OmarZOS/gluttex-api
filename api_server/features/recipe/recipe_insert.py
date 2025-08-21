@@ -51,7 +51,6 @@ async def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
         for id,value in recipe_api.recipe_ingredients.items():
             containment = RecipeContainsIngredient(contained_ingredient_id =id,contained_quantity=value)
             ingredient_list.append(containment)
-            # code,containment,msg = insert_or_complete_or_raise(containment)
         recipe.recipe_contains_ingredient = ingredient_list
 
     try:
@@ -67,7 +66,7 @@ async def insert_ingredient(ingredient: Ingredient_API):
     
     ingredients = get_ingredient_by_name(ingredient.ingredient_name)
     if ingredients != [] : 
-        raise Exception(status= HTTP_409_CONFLICT,code=INGREDIENT_ALREADY_EXISTS)
+        raise APIException(status= HTTP_409_CONFLICT,code=INGREDIENT_ALREADY_EXISTS)
     ingredient_model = Ingredient(ingredient_name=ingredient.ingredient_name,ingredient_icon_url=ingredient.ingredient_icon_url)
     try:
         new_ingredient = insert_or_complete_or_raise(ingredient_model)

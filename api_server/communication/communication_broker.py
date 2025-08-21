@@ -11,7 +11,7 @@ async def send_get_request(endpoint: str, params: dict = None,flags: dict = None
     response = await https_broker.send_get_request(endpoint, params=params,flags=flags)
     return response
 
-async def send_put_request(endpoint: str, input_data: dict,flags: dict = None) :
+async def send_put_request(endpoint, input_data,flags) :
     response = await https_broker.send_put_request(endpoint, input_data,flags)
     return response
 

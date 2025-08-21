@@ -1,7 +1,8 @@
 # here, we make schema translations
 
+from core.exception_handler import APIException
 from core.api_models import Serology_API
-from core.messages import PATIENT_NOT_EXISTS
+from core.messages import *
 from core.models import *
 from features.insertion import insert_or_complete_or_raise
 from features.health.fetch_serology import get_patient_by_id
@@ -13,7 +14,7 @@ def insert_symptoms(symptoms_api: Serology_API):
     
     symptoms_owner = get_patient_by_id(symptoms_api.id_patient)
     if symptoms_owner == [] : 
-        raise Exception(PATIENT_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,code=PATIENT_NOT_EXISTS,message=PATIENT_NOT_EXISTS,meassage=f"{PATIENT_NOT_EXISTS}: {symptoms_api.id_patient}")
 
     symptoms_occurence = SymptomsOccurence(
         symptoms_occurence_reason = symptoms_api.symptoms_occurence_reason ,
@@ -30,8 +31,16 @@ def insert_symptoms(symptoms_api: Serology_API):
     if presented_symptoms != [] :
 
         symptoms_occurence.presented_symptom = presented_symptoms
-        code,symptoms_occurence,msg = insert_or_complete_or_raise(symptoms_occurence)
-        if (code == 1): return msg
+        
+        try:
+            symptoms_occurence = insert_or_complete_or_raise(symptoms_occurence)
+        except Exception as e:
+            raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=SYMPTOM_INSERT_FAILED,details=f"{str(e)}")
+        
+        
+        
+        
+        
         return symptoms_occurence
 
     return "Haven't inserted symptoms, none specified"

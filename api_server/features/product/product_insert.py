@@ -2,9 +2,10 @@
 # here, we make schema translations
 
 import uuid
+from core.exception_handler import APIException
 from features.media_net import upload_image
 from core.api_models import Product_API, ProductImage_API
-from core.messages import PRODUCT_ALREADY_EXISTS, PRODUCT_CATEGORY_NOT_EXISTS, PRODUCT_NOT_EXISTS, SUPPLIER_NOT_EXISTS
+from core.messages import *
 from core.models import *
 from features.insertion import insert_or_complete_or_raise
 from features.product.product_fetch import fetch_product_by_id
@@ -36,15 +37,15 @@ async def insert_product(product_api: Product_API, image: ProductImage_API):
     
     product_old = fetch_product_by_id(product_api.id_product)
     if product_old != None : 
-        raise Exception(PRODUCT_ALREADY_EXISTS)
+        raise APIException(status= HTTP_409_CONFLICT,code=PRODUCT_ALREADY_EXISTS,details="")
 
     product_category = fetch_product_category_object_by_id(product_api.id_product_category)
     if product_category == None : 
-        raise Exception(PRODUCT_CATEGORY_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,code=PRODUCT_CATEGORY_NOT_EXISTS,message=PRODUCT_CATEGORY_NOT_EXISTS,details="")
 
     product_suppliers = fetch_supplier_by_id(product_api.product_provider_id)
     if product_suppliers == [] : 
-        raise Exception(SUPPLIER_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,code=PRODUCT_SUPPLIER_NOT_EXISTS,message=PRODUCT_SUPPLIER_NOT_EXISTS,details="")
 
     product = build_product(product_api)
 
@@ -57,9 +58,9 @@ async def insert_product(product_api: Product_API, image: ProductImage_API):
         product_image = ProductImage(product_image_url  = inserted_image_url)
         product.product_image = [product_image]
     
-    code,product,msg = insert_or_complete_or_raise(product)
-
-    if (code == 1): return msg
-    
+    try:
+        product = insert_or_complete_or_raise(product)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=PRODUCT_INSERT_FAILED,details=f"{str(e)}")    
     return product
 

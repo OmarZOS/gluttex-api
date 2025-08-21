@@ -89,9 +89,10 @@ For the spatial data:
   - Logging in feature.
   - Changing password.
   - ssl certificate (locally generated).
-- [x] 3rd Party storage solutions. ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/70)
+- [x] 3rd Party storage solutions. ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/80)
   - [x] SQL based storage.
   - [x] SQLITE based authentication.
+- [x] File server. ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/95)
 - [x] Containerisation. ![](https://us-central1-progress-markdown.cloudfunctions.net/progress/90)
   - [x] Automation of deployment. (docker-compose)
   - [x] Smaller footprint.
