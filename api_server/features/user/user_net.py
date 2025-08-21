@@ -1,6 +1,6 @@
 import json
 from core.exception_handler import APIException
-from communication.communication_broker import send_post_request, send_put_request
+from communication.communication_broker import send_delete_request, send_post_request, send_put_request
 from constants import     *
 from core.messages import *
 from core.api_models import AppUser_API, AppUserUpdate_API, AuthData_API
@@ -17,7 +17,7 @@ async def create_user(user_data: dict):
         response.raise_for_status()  # Raises an error for 4xx/5xx responses
         return response.json()
     except Exception as e:
-        raise APIException(f"User registration failed: {str(e)}")
+        raise APIException(status=HTTP_410_GONE,code=USER_AUTH_CREATION_FAILED,details=str(e))
 
 async def login_for_access_token(app_user: AuthData_API):
     """
@@ -67,4 +67,24 @@ async def update_user_password(existing_user: AppUserUpdate_API, token: str):
         return update_api_user_password(existing_user, new_password_hash)
     except Exception as e:
         raise APIException(status=HTTP_417_EXPECTATION_FAILED,code=USER_UPDATE_FAILED,details=str(e))
+
+async def delete_user(existing_user: AppUserUpdate_API):
+    """
+    Delete a user through the authentication server.
+    """
+    user_update = {
+        "app_user_id": existing_user.id_app_user,
+        "username": existing_user.username,
+        "new_password": existing_user.new_password
+    }
+
+    # flags = {"headers": {"Authorization": f"Bearer {token}"}}
+    url = f"https://{AUTH_SERVER_NAME}:{AUTH_PORT}{AUTH_DELETE_ENDPOINT}"
+
+    try:
+        response = await send_delete_request(url, input_data=user_update)
+        response.raise_for_status()
+    except Exception as e:
+        raise APIException(status=HTTP_502_BAD_GATEWAY,code=USER_DELETE_FAILED,details=str(e))
         
+    

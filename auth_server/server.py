@@ -132,3 +132,14 @@ def update_user_password(
     """Update the password of the authenticated user."""
     logger.info(f"{user.username}; {user.new_password}")
     return crud.change_user_password(db=db, user=user)
+
+@app.delete("/auth/users/delete", response_model=schemas.UserResponse)
+def delete_user(
+        user: schemas.UserUpdate, 
+        db: Session = Depends(dependencies.get_db)
+    ):
+    """Deletion of the authenticated user."""
+    logger.info(f"{user.username}; {user.new_password}")
+    return crud.delete_user(db=db, user=user)
+
+

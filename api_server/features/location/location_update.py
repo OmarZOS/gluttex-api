@@ -15,7 +15,8 @@ def update_location(location_id: str, location: Location_API):
     # Fetch the existing location
     existing_location = storage_broker.get(Location, {Location.id_location: location_id}, None, [Location.location_address])
     if not existing_location:
-        raise APIException(status=HTTP_404_NOT_FOUND, code=LOCATION_NOT_FOUND, details=f"Location {location_id} not found")
+        return None
+        # raise APIException(status=HTTP_404_NOT_FOUND, code=LOCATION_NOT_FOUND, details=f"Location {location_id} not found")
     
     loc = existing_location[0]
 

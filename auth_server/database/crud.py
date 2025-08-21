@@ -55,6 +55,23 @@ def update_user_object(db: Session, user):
     db.refresh(user)
     return user
 
+
+def delete_user_object(db: Session, user):
+    data= db.delete(user)
+    db.commit()
+    return data
+
+def delete_user(db: Session, user:schemas.UserUpdate):
+    db_user = get_user(db, user.app_user_id)
+    if not db_user:
+        # print(db_user)
+        raise APIException(status=HTTP_401_UNAUTHORIZED,code=USER_DELETE_FAILED,message=f"{USER_DELETE_FAILED}: {user.username}")
+    try:
+        updated_user = delete_user_object(db,db_user)
+    except Exception as e:
+        raise APIException(status=HTTP_417_EXPECTATION_FAILED,code=USER_DELETE_FAILED,message=str(e))
+    return updated_user
+
 def change_user_password(db: Session, user:schemas.UserUpdate):
     db_user = get_user(db, user.app_user_id)
     if not db_user:

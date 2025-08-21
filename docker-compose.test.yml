@@ -40,8 +40,9 @@ services:
       - AUTH_PORT=9090
       - AUTH_SERVER_NAME=gluttex-auth
       - AUTH_REGISTRATION_ENDPOINT=/auth/users/
-      - AUTH_LOGIN_ENDPOINT=/auth/token
-      - ALGORITHM=HS256
+      - AUTH_LOGIN_ENDPOINT=${AUTH_LOGIN_ENDPOINT}
+      - AUTH_DELETE_ENDPOINT = ${AUTH_DELETE_ENDPOINT
+      - ALGORITHM=${ALGORITHM}
       - API_SECRET_KEY=${SECRET_KEY}
       - FILE_UPLOAD_ENDPOINT=/fs/upload
       - FS_HOST=gluttex-fs
@@ -82,7 +83,7 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - AUTH_PORT=9090
       - API_SECRET_KEY=${SECRET_KEY}
-      - API_ALGORITHM=HS256
+      - API_ALGORITHM=${ALGORITHM}
       - AUTH_DATABASE_URL=sqlite:///../auth_db/auth_db_data.db
     networks:
       - gluttex-net
