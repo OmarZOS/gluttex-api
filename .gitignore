@@ -4,7 +4,9 @@
 *.cpython
 *.pyc
 .env
+*.env
 /fs
+/volumes
 /letsencrypt
 auth_test.html
 auth_db_data.db

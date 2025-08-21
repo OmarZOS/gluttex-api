@@ -10,7 +10,7 @@ def get_user(user_id: int):
     """
     user = fetch_user_by_id(user_id)
     if not user:
-        raise APIException(status= HTTP_404_NOT_FOUND,code=USER_FETCH_NOT_FOUND,message=f"{USER_FETCH_NOT_FOUND}: {user_id}",details=f"{str(e)}")
+        raise APIException(status= HTTP_404_NOT_FOUND,code=APPUSER_NOT_EXISTS,message=f"{USER_FETCH_NOT_FOUND}: {user_id}")
     return user
 
 def update_api_user_password(user_record , hashed_password):

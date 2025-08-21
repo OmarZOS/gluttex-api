@@ -1,5 +1,6 @@
+from core.exception_handler import APIException
 from core.api_models import Location_API, Person_API
-from core.messages import BLOOD_TYPE_NOT_EXISTS
+from core.messages import *
 from core.models import Address, BloodType, Location, Person, PersonDetails
 from features.insertion import insert_or_complete_or_raise
 from features.location.location_fetch import fetch_address_object, fetch_location, fetch_location_object
@@ -8,17 +9,23 @@ from geoalchemy2.elements import WKTElement
 
 
 def insert_person_details(person: Person_API):
+    
     person_detail = PersonDetails(
-        id_person_details=person.id_person_details,
+        # id_person_details=person.id_person_details,
         person_first_name=person.person_first_name,
         person_last_name=person.person_last_name,
         person_birth_date=person.person_birth_date,
         person_gender=person.person_gender,
         person_nationality=person.person_nationality,
     )
-    code,person_detail,msg = insert_or_complete_or_raise(person_detail)
-    if (code == 1): 
-        raise Exception(msg)
+
+    try:
+        person_detail = insert_or_complete_or_raise(person_detail)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=PERSON_INSERT_FAILED,details=f"{str(e)}")
+
+    
+    
     return person_detail
 
 def generate_person_object(person: Person_API,location: Location_API=None):
@@ -72,21 +79,25 @@ def generate_person_object(person: Person_API,location: Location_API=None):
 
 
 def insert_person(person: Person_API, location_id:str,person_details_id: str,id_blood_type:str):
-    try:
-        blood_type = fetch_person_blood_type_object(id_blood_type)
-        person_detail = fetch_person_details_object(person_details_id)
-        person_location = fetch_location_object(location_id)
-    except Exception as e:
-        raise e
+    blood_type = fetch_person_blood_type_object(id_blood_type)
+    person_detail = fetch_person_details_object(person_details_id)
+    person_location = fetch_location_object(location_id)
+
+    
     mensch = Person(
             id_person= person.id_person,
-            person_details_id=person_detail.id_person_details,
+            
             person_blood_type_id=blood_type.id_blood_type,
-            person_location_id=person_location.id_location,
         )
-    
-    code,mensch,msg = insert_or_complete_or_raise(mensch)
-    if (code == 1): raise Exception(msg)
+    if person_detail:
+        mensch.person_details_id=person_detail.id_person_details
+    if person_location:
+        mensch.person_location_id=person_location.id_location
+    try:
+        mensch = insert_or_complete_or_raise(mensch)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=PERSON_INSERT_FAILED,details=f"{str(e)}")
+
     return mensch
 
 

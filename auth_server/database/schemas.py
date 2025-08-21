@@ -3,8 +3,14 @@ from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
 
+
+
+class API_Resolution(BaseModel):
+    status: int
+    error_code: str
+    message: str
+
 class UserBase(BaseModel):
-    
     username: str
     email: Optional[str] = None
     first_name: Optional[str] = None
@@ -52,4 +58,5 @@ class User(BaseModel):
 
 class UserUpdate(UserBase):
     new_username: Optional[str] 
+    app_user_id: int
     new_password: str

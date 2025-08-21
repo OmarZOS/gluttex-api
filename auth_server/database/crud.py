@@ -1,4 +1,6 @@
 # app/crud.py
+from core.exception_handler import APIException
+from core.messages import *
 from sqlalchemy.orm import Session
 from database.crypt import generate_salt, hash_with_salt
 import database.models as models 
@@ -54,15 +56,34 @@ def update_user_object(db: Session, user):
     return user
 
 def change_user_password(db: Session, user:schemas.UserUpdate):
-    db_user = get_user_by_username(db, user.username)
+    db_user = get_user(db, user.app_user_id)
+    if not db_user:
+        # print(db_user)
+        raise APIException(status=HTTP_401_UNAUTHORIZED,code=USER_NOT_FOUND,message=f"{USER_NOT_FOUND}: {user.username}")
     db_user.password_salt = generate_salt()
     db_user.hashed_password = hash_with_salt(user.new_password, db_user.password_salt)
-    return update_user_object(db,user)
+    try:
+        updated_user = update_user_object(db,db_user)
+    except Exception as e:
+        raise APIException(status=HTTP_417_EXPECTATION_FAILED,code=DATABASE_ERROR,message=str(e))
+    return updated_user
 
 def change_username(db: Session, user:schemas.UserUpdate):
+    
+    
+    
     db_user = get_user_by_username(db, user.username)
+    if not db_user:
+        raise APIException(status=HTTP_404_NOT_FOUND,code=USER_NOT_FOUND,message=str(e))
+    
     db_user.username = user.new_username
-    return update_user_object(db,user)
+    
+    try:
+        updated_user = update_user_object(db,user)
+    except Exception as e:
+        raise APIException(status=HTTP_409_CONFLICT,code=DATABASE_ERROR,message=str(e))
+    
+    return updated_user
 
 
 

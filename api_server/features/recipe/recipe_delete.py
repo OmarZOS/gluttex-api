@@ -1,13 +1,14 @@
 # here, we make schema translations
 
-from core.messages import RECIPE_NOT_EXISTS
+from core.exception_handler import APIException
+from core.messages import *
 from features.insertion import delete_record_from_api
 from features.recipe.recipe_fetch import fetch_recipe_containments, fetch_recipe_record_by_id
 
 def delete_recipe(recipe_id: int):
     recipes = fetch_recipe_record_by_id(recipe_id)
     if recipes == []:
-        raise Exception(RECIPE_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,code=RECIPE_NOT_EXISTS,message=f"{RECIPE_DELETE_FAILED}: {recipe_id}")
     
     containments = fetch_recipe_containments(recipe_id)
 

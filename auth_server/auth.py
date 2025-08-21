@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from typing import Optional
+from core.messages import *
+from core.exception_handler import APIException
 from fastapi import Depends,  status
 from sqlalchemy.orm import Session
 from database.crypt import verify_password
@@ -30,17 +32,19 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 async def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+    credentials_exception = APIException(
+        status=HTTP_401_UNAUTHORIZED,
+        code=AUTH_REQUIRED,
+        details=AUTH_UNAUTHORIZED,
+        # headers={"WWW-Authenticate": "Bearer"},
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         app_user_id: str = payload.get("sub")
         if app_user_id is None:
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        credentials_exception.details = str(e)
         raise credentials_exception
     user = crud.get_user(db, user_id=app_user_id)
     if user is None:

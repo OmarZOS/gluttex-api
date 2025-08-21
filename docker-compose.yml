@@ -20,7 +20,7 @@ services:
       - ${SQL_PORT}:3306
     volumes:
       - ./mysql/model.sql:/data/application/init.sql
-      - ./data:/var/lib/mysql
+      - ./volumes/data:/var/lib/mysql
     networks:
       - gluttex-net
   gluttex-api:
@@ -50,6 +50,7 @@ services:
       - AUTH_LOGIN_ENDPOINT=${AUTH_LOGIN_ENDPOINT}
       - ALGORITHM=${ALGORITHM}
       - API_SECRET_KEY=${SECRET_KEY}
+      - AUTH_CHANGE_ENDPOINT=${AUTH_CHANGE_ENDPOINT}
       - FILE_UPLOAD_ENDPOINT=${FILE_UPLOAD_ENDPOINT}
       - FS_HOST=${FS_HOST}
       - FS_PORT=${FS_PORT}
@@ -62,6 +63,69 @@ services:
       resources:
         limits:
           cpus: '1'
+          memory: 512M
+  
+  gluttex-auth:
+    container_name: gluttex-auth
+    hostname: gluttex-auth
+    restart: unless-stopped
+    build:
+      context: ./auth_server
+      dockerfile: ./Dockerfile.dev
+      args:
+        - AUTH_PORT=9090
+    command: uvicorn server:app --host 0.0.0.0  --ssl-keyfile /etc/ssl/private/key.pem --ssl-certfile /etc/ssl/certs/cert.pem --port 9090 --reload
+    image: omarzos/gluttex-auth
+    environment:
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - AUTH_PORT=9090
+      - API_SECRET_KEY=${SECRET_KEY}
+      - API_ALGORITHM=HS256
+      - AUTH_DATABASE_URL=sqlite:///../auth_db/auth_db_data.db
+    ports:
+      - 9090:9090
+    networks:
+      - gluttex-net
+    volumes:
+      - ./auth_server/:/code
+      - ./volumes/auth_db/:/auth_db/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/auth`)"
+    #   - "traefik.http.routers.gluttex-auth.entrypoints=websecure"
+    #   - "traefik.http.routers.gluttex-auth.tls=true"
+    #   - "traefik.http.routers.gluttex-auth.tls.certresolver=letsencrypt"
+    #   - "traefik.http.services.gluttex-auth.loadbalancer.server.port=9090"
+
+  gluttex-fs:
+    container_name: gluttex-fs
+    hostname: gluttex-fs
+    restart: unless-stopped
+    build:
+      context: ./file_server
+      dockerfile: ./Dockerfile.dev
+      args:
+        - FS_PORT=9099
+    command: uvicorn server:app --host 0.0.0.0 --port 9099 --reload
+    image: omarzos/gluttex-fs
+    ports:
+      - 9099:9099
+    environment:
+      - FS_PORT=9099
+    networks:
+      - gluttex-net
+    volumes:
+      - ./file_server/:/code
+      - ./volumes/fs/:/fs/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
           memory: 512M
 
 

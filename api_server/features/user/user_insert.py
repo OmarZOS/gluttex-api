@@ -69,11 +69,7 @@ async def insert_user  (user: AppUser_API,mensch: Person_API=None,location: Loca
     logger.info(user_auth_record)
     logger.info("Updating auth record for user")
     update_api_user_password(nutzer,user_auth_record["hashed_password"])
-
     return nutzer
-    # except Exception as e:
-    #     delete_record_from_api(nutzer)
-    #     raise Exception("Error on creating auth record")
 
 
 

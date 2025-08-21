@@ -30,7 +30,7 @@ def get_serology_history_by_patient(patient_id: int, indicator_id: int):
     except Exception as e:
         raise APIException(
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            details=f"Couldn't fetch serology history: {str(e)}"
+            detail=f"Couldn't fetch serology history: {str(e)}"
         )
 
 

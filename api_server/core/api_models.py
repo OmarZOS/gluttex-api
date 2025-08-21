@@ -55,6 +55,10 @@ class AppUser_API(BaseModel):
     #  AppUserType
     app_user_type_id: Optional[int]
 
+class AppUserUpdate_API(AppUser_API):
+    username: str
+    new_password: str
+
 class AuthData_API(BaseModel):
     id_app_user: int
     app_user_name: Optional[str]
