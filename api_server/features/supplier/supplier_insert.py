@@ -1,8 +1,8 @@
 
 from core.exception_handler import APIException
-from core.api_models import Location_API, ProductProvider_API, ProviderOrganisation_API
+from core.api_models import Location_API, OrganisationImage_API, ProductProvider_API, ProviderImage_API, ProviderOrganisation_API
 from core.messages import *
-from core.models import ProductProvider, ProductProviderType, ProviderDetails, ProviderOrganisation
+from core.models import OrganisationImage, ProductProvider, ProductProviderType, ProviderDetails, ProviderOrganisation
 from features.insertion import insert_or_complete_or_raise
 from features.location.location_insert import build_location
 from features.supplier.supplier_fetch import fetch_org_by_id, fetch_org_by_name, fetch_supplier_by_id, fetch_supplier_type_object_by_id
@@ -48,7 +48,7 @@ def insert_supplier(provider: ProductProvider_API,location:Location_API):
     
     return end_supplier
 
-def insert_org(org: ProviderOrganisation_API):
+def insert_org(org: ProviderOrganisation_API,org_image: OrganisationImage_API):
 
     if fetch_org_by_name(org.provider_organisation_name) != []:
         raise APIException(status= HTTP_409_CONFLICT,code=ORG_ALREADY_EXISTS,message=f"{ORG_ALREADY_EXISTS}: {org.provider_organisation_name}")
@@ -59,6 +59,11 @@ def insert_org(org: ProviderOrganisation_API):
         provider_organisation_name = org.provider_organisation_name,
         provider_organisation_desc = org.provider_organisation_desc
     )
+
+    if (org_image.org_image_url):
+            # inserted_image_url = await upload_image("recipe",recipe_api.recipe_owner_id,uuid.uuid4(),image.recipe_image_url)
+            _image = OrganisationImage(org_image_url  = org_image.org_image_url)
+            model_org.organisation_image = [_image]
 
     try:
         end_org = insert_or_complete_or_raise(model_org)

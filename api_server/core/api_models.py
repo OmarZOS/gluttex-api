@@ -124,6 +124,12 @@ class ProviderOrganisation_API(BaseModel):
     provider_organisation_name : Optional[str]
     provider_organisation_desc : Optional[str]
 
+class OrganisationImage_API(BaseModel):
+    id_org_image : int
+    org_image_url : Optional[str]
+    org_ref_id : Optional[int]
+
+
 # -------------------------------------------------------------------------------------
 
 class Ingredient_API(BaseModel):
@@ -157,6 +163,7 @@ class ProviderImage_API(BaseModel):
     id_provider_image: int
     provider_image_url: Optional[str]
     provider_ref_id: Optional[int]
+
 
 class PlacedOrder_API(BaseModel):
     id_placed_order : Optional[int]

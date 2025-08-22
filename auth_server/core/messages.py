@@ -23,6 +23,8 @@ USER_NOT_FOUND = "USER_NOT_FOUND"
 USER_DELETE_FAILED = "USER_DELETE_FAILED"
 
 
+
+
 # ---------------------------------------------------------------
 
 AUTH_DECODE_FAILED = "AUTH_DECODE_FAILED"
