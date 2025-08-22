@@ -6,7 +6,7 @@
 
 
 from core.api_models import Location_API, ProductProvider_API
-from core.models import Location, ProductProvider, ProductProviderType, ProviderDetails, ProviderImage, ProviderOrganisation
+from core.models import Location, OrganisationImage, ProductProvider, ProductProviderType, ProviderDetails, ProviderImage, ProviderOrganisation
 import storage.storage_broker as storage_broker
 
 
@@ -56,6 +56,17 @@ def fetch_supplier_image_by_id(image_id: str):
     # if records == []: return None
     return records
 
+def fetch_organisation_image_by_id(image_id: str):
+    records = storage_broker.get(
+        OrganisationImage
+        ,{
+            OrganisationImage.id_org_image:image_id
+        }
+        ,None
+        ,None)
+    # if records == []: return None
+    return records
+
 def fetch_suppliers(owner_id=0,org_id=0,offset=0,limit=10):
     conditions = {}
     if int(owner_id) != 0:
@@ -91,7 +102,11 @@ def fetch_suppliers(owner_id=0,org_id=0,offset=0,limit=10):
     return records
 
 def fetch_orgs(offset,limit):
-    records = storage_broker.get(ProviderOrganisation,{},None,None,offset=offset,limit=limit)
+    records = storage_broker.get(ProviderOrganisation,{},None,eager_load_depth=[
+                
+                ProviderOrganisation.organisation_image
+                
+            ],offset=offset,limit=limit)
     # if records == []: return None
     return records
 

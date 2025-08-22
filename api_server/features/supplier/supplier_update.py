@@ -1,10 +1,13 @@
 from core.exception_handler import APIException
-from core.api_models import Location_API, ProductProvider_API, ProviderImage_API
+from core.api_models import Location_API, OrganisationImage_API, ProductProvider_API, ProviderImage_API
 from core.messages import *
-from core.models import ProductProvider, ProviderDetails, ProviderImage
+from core.models import OrganisationImage, ProductProvider, ProviderDetails, ProviderImage, ProviderOrganisation
 from features.insertion import insert_or_complete_or_raise, update_record_in_api
 # from features.location.location_insert import build_location
 from features.supplier.supplier_fetch import (
+    fetch_org_by_id,
+    fetch_org_by_name,
+    fetch_organisation_image_by_id,
     fetch_supplier_by_id,
     fetch_supplier_image_by_id,
     fetch_supplier_type_object_by_id,
@@ -75,11 +78,50 @@ def update_supplier(provider: ProductProvider_API, image: ProviderImage_API):
                 update_record_in_api(same_image)
             except Exception as e:
                 raise APIException(status= HTTP_409_CONFLICT,code=IMAGE_UPDATE_FAILED,details=f"{str(e)}")
-
     # Update supplier record
-
-
     try:
         return update_record_in_api(supplier_old)
     except Exception as e:
         raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=USER_UPDATE_FAILED,message=f"{USER_UPDATE_FAILED}: {user.id_app_user}",details=f"{str(e)}")
+
+
+def update_organisation(org: ProviderOrganisation, image: OrganisationImage_API):
+    """
+    Update an existing organisation and optionally handle organisation image.
+    """
+
+    # Fetch old supplier
+    orgs_old = fetch_org_by_id(org.id_provider_organisation)
+    # Validate supplier type
+    if  orgs_old == []:
+        raise APIException(status= HTTP_404_NOT_FOUND,code=ORGANISAION_NOT_FOUND)
+
+    org_old = orgs_old[0]
+    if (org_old.provider_organisation_name != org.provider_organisation_name):
+        if fetch_org_by_name(org.provider_organisation_name) !=[]:
+            raise APIException(status= HTTP_409_CONFLICT,code=ORGANISAION_NAME_USED)
+
+    org_old.provider_organisation_name = org.provider_organisation_name
+    org_old.provider_organisation_desc = org.provider_organisation_desc
+    # Update provider image if needed
+    code, msg = 0, None
+    if image.org_image_url:
+        if image.id_org_image == 0:
+            _image = OrganisationImage(org_image_url=image.org_image_url)
+            _image.org_ref_id = org_old.idprovider_organisation
+            try:
+                insert_or_complete_or_raise(_image)
+            except Exception as e:
+                raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=IMAGE_INSERT_FAILED,message=IMAGE_INSERT_FAILED,details=f"{str(e)}")
+        else:
+            same_image = fetch_organisation_image_by_id(image.id_org_image)[0]
+            same_image.org_image_url = image.org_image_url
+            try:
+                update_record_in_api(same_image)
+            except Exception as e:
+                raise APIException(status= HTTP_409_CONFLICT,code=IMAGE_UPDATE_FAILED,details=f"{str(e)}")
+    # Update supplier record
+    try:
+        return update_record_in_api(org_old)
+    except Exception as e:
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=ORG_UPDATE_FAILED,message=f"{ORG_UPDATE_FAILED}: {org.idprovider_organisation}",details=f"{str(e)}")

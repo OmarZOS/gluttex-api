@@ -89,8 +89,8 @@ def update_recipe(recipe_id: int, recipe_api: Recipe_API, image: RecipeImage_API
     if image.recipe_image_url:
         if image.id_recipe_image == 0:
             _image = RecipeImage(recipe_image_url=image.recipe_image_url)
-            _image.recipe_ref = recipe_old
-            code, _, msg = insert_or_complete_or_raise(_image)
+            _image.recipe_ref_id = recipe_old.id_recipe
+            insert_or_complete_or_raise(_image)
         else:
             same_image = fetch_recipe_image_by_id(image.id_recipe_image)[0]
             same_image.recipe_image_url = image.recipe_image_url
@@ -98,7 +98,7 @@ def update_recipe(recipe_id: int, recipe_api: Recipe_API, image: RecipeImage_API
 
     for k,v in  old_containments.items():
         delete_containment(v)
-
+    print("Mom i'm home")
     final_recipes = fetch_recipe_record_by_id(recipe_id)[0]
     
     return final_recipes

@@ -33,12 +33,10 @@ def get_recipe_category_list():
     Fetch all recipe categories.
     """
     return get_recipe_categories()
-    
 
 
 
-
-@recipe_router.get("/recipe/ingredients/all/{offset}/{limit}")
+@recipe_router.get("/ingredient/{offset}/{limit}")
 def get_ingredients_list(offset: int, limit: int):
     """
     Retrieve all available ingredients.

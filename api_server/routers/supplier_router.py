@@ -1,6 +1,6 @@
 from fastapi import APIRouter,  status
-from features.supplier.supplier_update import update_supplier
-from core.api_models import Location_API, ProductProvider_API, ProviderImage_API, ProviderOrganisation_API
+from features.supplier.supplier_update import update_organisation, update_supplier
+from core.api_models import Location_API, OrganisationImage_API, ProductProvider_API, ProviderImage_API, ProviderOrganisation_API
 from features.supplier.supplier_fetch import (
     fetch_org_by_id, fetch_orgs, fetch_supplier_by_id, fetch_supplier_categories, fetch_suppliers
 )
@@ -18,11 +18,11 @@ def insert_supplier_record(supplier: ProductProvider_API, location: Location_API
     return insert_supplier(supplier, location)
 
 @supplier_router.put("/org/add")
-def insert_org_record(org: ProviderOrganisation_API):
+def insert_org_record(org: ProviderOrganisation_API,org_image: OrganisationImage_API):
     """
     Insert a new org.
     """
-    return insert_org(org)
+    return insert_org(org,org_image)
 
 @supplier_router.get("/supplier/{supplier_id}")
 def get_supplier_by_id(supplier_id: int):
@@ -72,4 +72,18 @@ def update_supplier_details(
     Update supplier details.
     """
     return  update_supplier(supplier, image)
+
+
+
+@supplier_router.post("/org/{org_id}")
+def update_org_details(
+    org_id: int, 
+    org: ProviderOrganisation_API, 
+    image: OrganisationImage_API, 
+    # background_tasks: BackgroundTasks
+):
+    """
+    Update org details.
+    """
+    return  update_organisation(org, image)
 
