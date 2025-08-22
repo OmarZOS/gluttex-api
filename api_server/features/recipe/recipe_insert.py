@@ -26,15 +26,15 @@ async def insert_recipe(recipe_api: Recipe_API, image: RecipeImage_API):
     
     recipe_old = fetch_recipe_by_name(recipe_api.recipe_name)
     if recipe_old != None : 
-        raise APIException(status= HTTP_409_CONFLICT,details=f"{str(e)}",code=RECIPE_ALREADY_EXISTS)
+        raise APIException(status= HTTP_409_CONFLICT,code=RECIPE_ALREADY_EXISTS)
 
     recipe_category = fetch_recipe_category_object_by_id(recipe_api.recipe_category_id)
     if recipe_category == None : 
-        raise APIException(status= HTTP_404_NOT_FOUND,details=f"{str(e)}",code=RECIPE_CATEGORY_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,code=RECIPE_CATEGORY_NOT_EXISTS)
 
     recipe_owners = fetch_user_by_id(recipe_api.recipe_owner_id)
     if recipe_owners == [] : 
-        raise APIException(status= HTTP_404_NOT_FOUND,details=f"{str(e)}",code=APPUSER_NOT_EXISTS)
+        raise APIException(status= HTTP_404_NOT_FOUND,code=APPUSER_NOT_EXISTS)
 
     recipe = build_recipe(recipe_api)
 
@@ -70,6 +70,6 @@ async def insert_ingredient(ingredient: Ingredient_API):
     ingredient_model = Ingredient(ingredient_name=ingredient.ingredient_name,ingredient_icon_url=ingredient.ingredient_icon_url)
     try:
         new_ingredient = insert_or_complete_or_raise(ingredient_model)
-    except Exception as e:
+    except APIException as e:
         raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=INGREDIENT_INSERT_FAILED,details=f"{str(e)}")
     return new_ingredient
