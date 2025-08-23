@@ -1,4 +1,5 @@
 from fastapi import APIRouter,  status
+from features.supplier.supplier_delete import delete_supplier
 from features.supplier.supplier_update import update_organisation, update_supplier
 from core.api_models import Location_API, OrganisationImage_API, ProductProvider_API, ProviderImage_API, ProviderOrganisation_API
 from features.supplier.supplier_fetch import (
@@ -88,3 +89,9 @@ def update_org_details(
     """
     return  update_organisation(org, image)
 
+@supplier_router.delete("/supplier/delete/{supplier_id}")
+def delete_supplier_by_id(supplier_id: int):
+    """
+    Delete a supplier by ID.
+    """
+    return delete_supplier(supplier_id)

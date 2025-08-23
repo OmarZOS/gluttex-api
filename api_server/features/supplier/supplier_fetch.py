@@ -6,7 +6,7 @@
 
 
 from core.api_models import Location_API, ProductProvider_API
-from core.models import Location, OrganisationImage, ProductProvider, ProductProviderType, ProviderDetails, ProviderImage, ProviderOrganisation
+from core.models import Address, Location, OrganisationImage, ProductProvider, ProductProviderType, ProviderDetails, ProviderImage, ProviderOrganisation
 import storage.storage_broker as storage_broker
 
 
@@ -17,11 +17,36 @@ def fetch_supplier_by_id(provider_id: str):
                                  ,None
                                  ,[
                                      {ProductProvider.product_provider_location:
-                                        [Location.position_wkt,Location.location_name]
+                                        [Location.position_wkt,Location.location_name,Location.id_location,Location.location_address_id]
                                       }
                                     ,ProductProvider.product_provider_type
                                     ,ProductProvider.product_provider_details
                                     ,ProductProvider.product_provider_org
+                                    ,ProductProvider.provider_image
+                                    ,ProductProvider.management_rule
+                                ])
+    
+    if(records != []):
+        if(records[0].product_provider_location.location_address_id!=None):
+            addresses = storage_broker.get(Address
+                                    ,{Address.id_address:records[0].product_provider_location.location_address_id}
+                                    ,None
+                                    ,[
+                                        ])
+            if (addresses!=[]):
+                records[0].product_provider_location.location_address = addresses[0]
+        
+
+    # if records == []: return None
+    return records
+
+def fetch_only_supplier_by_id(provider_id: str):
+    records = storage_broker.get(ProductProvider
+                                 ,{ProductProvider.id_product_provider:provider_id}
+                                 ,None
+                                 ,[
+                                     ProductProvider.product_provider_location
+                                    ,ProductProvider.product_provider_details
                                     ,ProductProvider.provider_image
                                     ,ProductProvider.management_rule
                                 ])
@@ -56,6 +81,7 @@ def fetch_supplier_image_by_id(image_id: str):
     # if records == []: return None
     return records
 
+
 def fetch_organisation_image_by_id(image_id: str):
     records = storage_broker.get(
         OrganisationImage
@@ -86,8 +112,11 @@ def fetch_suppliers(owner_id=0,org_id=0,offset=0,limit=10):
                 {
                     ProductProvider.product_provider_location:
                     [
+
+                        Location.id_location,
+                        Location.location_address_id,
                         Location.position_wkt
-                        ,Location.location_name
+                        ,Location.location_name,
                     ]
                 }
                 ,ProductProvider.product_provider_type

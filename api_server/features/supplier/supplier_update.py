@@ -60,6 +60,8 @@ def update_supplier(provider: ProductProvider_API, image: ProviderImage_API, loc
         raise APIException(status= HTTP_404_NOT_FOUND,code=SUPPLIER_NOT_EXISTS,message=SUPPLIER_NOT_EXISTS,details=SUPPLIER_NOT_EXISTS)
 
     supplier_old = suppliers_old[0]
+    supplier_old.product_provider_details.provider_name  = provider.provider_name
+    supplier_old.product_provider_details.provider_contact_info  = provider.provider_contact_info
     supplier_old.product_provider_type_id = provider.id_product_provider_type
     supplier_old.product_provider_org_id = provider.id_provider_organisation
     # Update provider image if needed
