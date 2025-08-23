@@ -32,8 +32,8 @@ def build_location(location: Location_API) -> Location:
             srid=4326
         ),
         location_name=location.location_name,
-        location_address=address,
     )
+    loc.location_address=address
 
     return loc
 
