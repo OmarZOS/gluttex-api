@@ -27,11 +27,17 @@ def build_provider_object(provider: ProductProvider_API,location:Location_API):
 
     new_supplier.product_provider_type_id = supplier_type.id_product_provider_type
     new_supplier.product_provider_owner = provider.id_provider_owner
-    new_supplier.product_provider_org = provider.id_provider_organisation
+    
     new_supplier.product_provider_location = build_location(location)
     new_supplier.product_provider_details = build_supplier_details(provider)
-
+    
+    if (provider.id_provider_organisation == 0):
+        new_supplier.product_provider_org = ProviderOrganisation(provider_organisation_name=provider.provider_organisation_name
+                                                                 ,provider_organisation_desc = provider.provider_organisation_desc)
+    else:
+        new_supplier.product_provider_org_id= provider.id_provider_organisation
     return new_supplier
+
 
 
 def insert_supplier(provider: ProductProvider_API,location:Location_API):
