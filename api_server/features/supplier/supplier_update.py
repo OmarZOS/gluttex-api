@@ -1,3 +1,4 @@
+from features.location.location_update import update_location
 from core.exception_handler import APIException
 from core.api_models import Location_API, OrganisationImage_API, ProductProvider_API, ProviderImage_API
 from core.messages import *
@@ -45,7 +46,7 @@ def build_provider_object(provider: ProductProvider_API) -> ProductProvider:
     return new_supplier
 
 
-def update_supplier(provider: ProductProvider_API, image: ProviderImage_API):
+def update_supplier(provider: ProductProvider_API, image: ProviderImage_API, location: Location_API):
     """
     Update an existing supplier and optionally handle provider image.
     """
@@ -78,12 +79,15 @@ def update_supplier(provider: ProductProvider_API, image: ProviderImage_API):
                 update_record_in_api(same_image)
             except Exception as e:
                 raise APIException(status= HTTP_409_CONFLICT,code=IMAGE_UPDATE_FAILED,details=f"{str(e)}")
+    
+    # if location.id_location != 0:
+    supplier_old.product_provider_location_id = update_location(location.id_location, location).id_location
+
     # Update supplier record
     try:
         return update_record_in_api(supplier_old)
     except Exception as e:
-        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=USER_UPDATE_FAILED,message=f"{USER_UPDATE_FAILED}: {user.id_app_user}",details=f"{str(e)}")
-
+        raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=SUPPLIER_UPDATE_FAILED,message=f"{SUPPLIER_UPDATE_FAILED}: {provider.id_product_provider}",details=f"{str(e)}")
 
 def update_organisation(org: ProviderOrganisation, image: OrganisationImage_API):
     """

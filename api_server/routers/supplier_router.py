@@ -65,13 +65,14 @@ def get_all_supplier_categories():
 def update_supplier_details(
     supplier_id: int, 
     supplier: ProductProvider_API, 
-    image: ProviderImage_API, 
+    image: ProviderImage_API,
+    location: Location_API, 
     # background_tasks: BackgroundTasks
 ):
     """
     Update supplier details.
     """
-    return  update_supplier(supplier, image)
+    return  update_supplier(supplier, image,location)
 
 
 
