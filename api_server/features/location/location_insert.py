@@ -1,9 +1,10 @@
 # schema translations for Location
 
+from storage import storage_broker
 from core.exception_handler import APIException
 from core.messages import HTTP_417_EXPECTATION_FAILED, LOCATION_INSERT_FAILED
 from core.api_models import Location_API
-from core.models import Address, Location
+from core.models import Address, Location, Person
 from features.insertion import insert_or_complete_or_raise
 from geoalchemy2.elements import WKTElement
 
@@ -36,6 +37,7 @@ def build_location(location: Location_API) -> Location:
     loc.location_address=address
 
     return loc
+
 
 
 def insert_location(location: Location_API) -> Location:

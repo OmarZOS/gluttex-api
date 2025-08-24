@@ -18,7 +18,7 @@ def build_location(location: Location_API) -> Location:
 
 def fetch_location_object(location_id: str) -> Optional[Location]:
     """Fetch a Location object by its ID."""
-    records = storage_broker.get(Location, {Location.id_location: location_id}, None, [])
+    records = storage_broker.get(Location, {Location.id_location: location_id}, None, [Location.location_address])
     return records[0] if records else None
 
 

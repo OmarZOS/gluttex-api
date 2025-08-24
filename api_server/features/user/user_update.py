@@ -29,38 +29,39 @@ def update_api_user(user_record: AppUser_API,person_record: Person_API,location_
     """
     Update user fields except password and image.
     """
-    _person_details_record =_blood_type_record =_location =_person = None
 
     _user = get_user(user_record.id_app_user)  # Ensure the user exists before updating
-    _person = fetch_person(person_record.id_person)
+    # people = fetch_person(person_record.id_person)
     
-    if _person == []:
-        _person = refresh_or_insert_person(person_record,location_record)
-    else:
-        _person_details_record = fetch_person_details_object
-        (person_record.person_details_id)
-        _blood_type_record = fetch_person_blood_type_object(str(person_record.id_blood_type))
-    _location = fetch_location_object(str(location_record.id_location))
+    people = refresh_or_insert_person(person_record,location_record)
+    # if people == []:
+    # else:
+    #     _person_details_record = fetch_person_details_object
+    #     (person_record.person_details_id)
+    #     _blood_type_record = fetch_person_blood_type_object(str(person_record.id_blood_type))
+    # _person = people
+    # _location = fetch_location_object(str(location_record.id_location))
 
-    if not (_location):
-        _location = insert_location(location_record)
-    else:
-        _location = update_location(location_record.id_location,location_record)
+    # if not (_location):
+    #     _location = insert_location(location_record)
+    # else:
+    #     _location = update_location(location_record.id_location,location_record)
     
-    _person.person_location.id_location = _location.id_location
+    # _person.person_location.id_location = _location.id_location
 
-    if (_person_details_record):
-        _person.person_details = _person_details_record
-    if (_blood_type_record):
-        _person.person_blood_type.id_blood_type = _blood_type_record.id_blood_type
-    if (_person):
-        _user.app_user_person_id = _person.id_person
+    # if (_person_details_record!=None):
+    #     _person.person_details = _person_details_record
+    # if (_blood_type_record):
+    #     _person.person_blood_type.id_blood_type = _blood_type_record.id_blood_type
+    # if (_person):
+    #     _user.app_user_person_id = _person.id_person
 
 
     # Define fields to update (exclude password & image_url)
     updatable_fields = [
         "app_user_preferences",
         "app_user_last_active",
+        "app_user_image_url",
         # "app_user_last_updated",
         "app_user_type_id",
         # Add any other fields you want to allow updating
@@ -82,6 +83,7 @@ def update_api_user(user_record: AppUser_API,person_record: Person_API,location_
             setattr(_user, field, getattr(user_record, field))
 
     try:
+        _user.app_user_person_id = people.id_person
         _user.app_user_last_updated = datetime.now()
         return update_record_in_api(_user)
     except Exception as e:

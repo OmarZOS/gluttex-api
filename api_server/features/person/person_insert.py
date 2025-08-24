@@ -5,7 +5,7 @@ from core.messages import *
 from core.models import Address, BloodType, Location, Person, PersonDetails
 from features.insertion import insert_or_complete_or_raise, update_record_in_api
 from features.location.location_fetch import build_location, fetch_address_object, fetch_location_object
-from features.person.person_fetch import fetch_person_blood_type_object, fetch_person_details_object
+from features.person.person_fetch import fetch_only_person_by_id, fetch_person_blood_type_object, fetch_person_details, fetch_person_details_object
 from geoalchemy2.elements import WKTElement
 
 
@@ -77,21 +77,33 @@ def refresh_or_insert_person(person: Person_API, location: Location_API) -> Pers
     """
     Insert a new person if not exists, or refresh (update) if already exists.
     """
+
+    mensch = fetch_only_person_by_id(person.id_person)
     blood_type = fetch_person_blood_type_object(person.id_blood_type)
-    person_detail = fetch_person_details_object(person.id_person_details)
+    person_detail = fetch_person_details(person.id_person_details)
     person_location = fetch_location_object(location.id_location)
 
-    mensch = Person(
-        person_blood_type_id=blood_type.id_blood_type if blood_type else None,
-    )
+    if(mensch==None):
+        mensch = Person(
+            person_blood_type_id=blood_type.id_blood_type if blood_type else None,
+        )
 
     
-    if person_detail:
-        mensch.person_details_id = person_detail.id_person_details
+    if person_detail !=[]:
+        person_detail[0].person_gender = person.person_gender
+        person_detail[0].person_first_name = person.person_first_name
+        person_detail[0].person_last_name = person.person_last_name
+        person_detail[0].person_nationality = person.person_nationality
+        mensch.person_details = person_detail[0]
     else:
         mensch.person_details_id = insert_person_details(person).id_person_details
     if person_location:
-        mensch.person_location_id = person_location.id_location
+        person_location.location_address.address_city = location.address_city
+        person_location.location_address.address_country = location.address_country
+        person_location.location_address.address_postal_code = location.address_postal_code
+        person_location.location_address.address_street = location.address_street
+        # loc = update_record_in_api(person_location)
+        mensch.person_location = person_location
     else:
         mensch.person_location_id = insert_location(location).id_location
     try:
