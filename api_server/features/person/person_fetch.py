@@ -51,3 +51,14 @@ def fetch_person_object(person_id: str):
 def fetch_person(person_id: str):
     return storage_broker.get(Person,{Person.id_person:person_id},None,[Person.person_blood_type,Person.person_location,Person.person_details])
 
+def fetch_only_person_by_id(person_id: str):
+    records = storage_broker.get(Person
+                                 ,{Person.id_person:person_id}
+                                 ,None
+                                 ,[
+                                     
+                                ])
+    if records == []: return None
+    return records[0] 
+    
+
