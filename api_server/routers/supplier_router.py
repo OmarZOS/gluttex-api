@@ -12,11 +12,11 @@ supplier_router = APIRouter()
 # ----------------- Supplier Endpoints -----------------
 
 @supplier_router.put("/supplier/add")
-def insert_supplier_record(supplier: ProductProvider_API, location: Location_API):
+def insert_supplier_record(supplier: ProductProvider_API, location: Location_API, image: ProviderImage_API):
     """
     Insert a new supplier.
     """
-    return insert_supplier(supplier, location)
+    return insert_supplier(supplier, location,image)
 
 @supplier_router.put("/org/add")
 def insert_org_record(org: ProviderOrganisation_API,org_image: OrganisationImage_API):

@@ -2,7 +2,7 @@
 from core.exception_handler import APIException
 from core.api_models import Location_API, OrganisationImage_API, ProductProvider_API, ProviderImage_API, ProviderOrganisation_API
 from core.messages import *
-from core.models import OrganisationImage, ProductProvider, ProductProviderType, ProviderDetails, ProviderOrganisation
+from core.models import OrganisationImage, ProductProvider, ProductProviderType, ProviderDetails, ProviderImage, ProviderOrganisation
 from features.insertion import insert_or_complete_or_raise
 from features.location.location_insert import build_location
 from features.supplier.supplier_fetch import fetch_org_by_id, fetch_org_by_name, fetch_supplier_by_id, fetch_supplier_type_object_by_id
@@ -40,12 +40,18 @@ def build_provider_object(provider: ProductProvider_API,location:Location_API):
 
 
 
-def insert_supplier(provider: ProductProvider_API,location:Location_API):
+def insert_supplier(provider: ProductProvider_API,location:Location_API, image: ProviderImage_API):
 
     if fetch_supplier_by_id(provider.id_product_provider) != []:
         raise APIException(status=HTTP_409_CONFLICT,code=SUPPLIER_INSERT_FAILED,message=f"{SUPPLIER_INSERT_FAILED}: {provider.id_product_provider}")
     
     new_supplier = build_provider_object(provider,location)
+
+    if (image.provider_image_url):
+        # inserted_image_url = await upload_image("recipe",recipe_api.recipe_owner_id,uuid.uuid4(),image.recipe_image_url)
+        _image = ProviderImage(provider_image_url  = image.provider_image_url)
+        new_supplier.provider_image = [_image]
+
 
     try:
         end_supplier = insert_or_complete_or_raise(new_supplier)
@@ -67,9 +73,9 @@ def insert_org(org: ProviderOrganisation_API,org_image: OrganisationImage_API):
     )
 
     if (org_image.org_image_url):
-            # inserted_image_url = await upload_image("recipe",recipe_api.recipe_owner_id,uuid.uuid4(),image.recipe_image_url)
-            _image = OrganisationImage(org_image_url  = org_image.org_image_url)
-            model_org.organisation_image = [_image]
+        # inserted_image_url = await upload_image("recipe",recipe_api.recipe_owner_id,uuid.uuid4(),image.recipe_image_url)
+        _image = OrganisationImage(org_image_url  = org_image.org_image_url)
+        model_org.organisation_image = [_image]
 
     try:
         end_org = insert_or_complete_or_raise(model_org)
