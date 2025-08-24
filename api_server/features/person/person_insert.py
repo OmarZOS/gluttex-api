@@ -98,6 +98,12 @@ def refresh_or_insert_person(person: Person_API, location: Location_API) -> Pers
     else:
         mensch.person_details_id = insert_person_details(person).id_person_details
     if person_location:
+        
+        person_location.location_name = location.location_name
+        person_location.location_position = WKTElement(
+            f"POINT({location.location_longitude} {location.location_latitude})",
+            srid=4326
+        ),
         person_location.location_address.address_city = location.address_city
         person_location.location_address.address_country = location.address_country
         person_location.location_address.address_postal_code = location.address_postal_code

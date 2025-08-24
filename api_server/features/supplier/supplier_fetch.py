@@ -47,9 +47,7 @@ def fetch_only_supplier_by_id(provider_id: str):
                                  ,[
                                      ProductProvider.product_provider_location
                                     ,ProductProvider.product_provider_details
-                                    ,ProductProvider.provider_image
-                                    ,ProductProvider.management_rule
-                                ])
+                                    ,ProductProvider.management_rule])
     # if records == []: return None
     return records
 
@@ -75,6 +73,17 @@ def fetch_supplier_image_by_id(image_id: str):
         ProviderImage
         ,{
             ProviderImage.id_provider_image:image_id
+        }
+        ,None
+        ,None)
+    # if records == []: return None
+    return records
+
+def fetch_image_by_supplier(provider_id: str):
+    records = storage_broker.get(
+        ProviderImage
+        ,{
+            ProviderImage.provider_ref_id:provider_id
         }
         ,None
         ,None)
