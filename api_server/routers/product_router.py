@@ -86,6 +86,7 @@ def update_product_details(
     Update product details and notify subscribers.
     """
     res = update_product(product_id, product, image)
+    return res
 
 @product_router.put("/product/add")
 async def insert_product_details(product: Product_API, image: ProductImage_API):
