@@ -11,7 +11,7 @@ def search_for_product(token:str,offset:int,limit:int):
     """
     Search products by token.
     """
-    return search_records( Product, token,[Product.product_brand,Product.product_name,Product.product_description],offset,limit )
+    return search_records( Product, search_query=token,search_fields=[Product.product_brand,Product.product_name,Product.product_description],offset=offset,limit=limit )
 
 
 @search_router.get("/search/recipe/{token}/{offset}/{limit}")
@@ -19,7 +19,7 @@ def search_for_recipe(token:str,offset:int,limit:int):
     """
     Search recipes by token.
     """
-    return search_records(Recipe, token,[Recipe.recipe_name,Recipe.recipe_description,Recipe.recipe_instructions],offset,limit)
+    return search_records(Recipe, search_query= token,search_fields= [Recipe.recipe_name,Recipe.recipe_description,Recipe.recipe_instructions],offset= offset,limit= limit)
 
 @search_router.get("/search/supplier/{token}/{offset}/{limit}")
 def search_supplier(token:str,offset:int,limit:int):
