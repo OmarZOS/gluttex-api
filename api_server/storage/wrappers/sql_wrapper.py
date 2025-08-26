@@ -4,10 +4,12 @@ from constants import *
 from storage.storage_service.StorageService import *
 from sqlalchemy import create_engine 
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import joinedload,contains_eager
+from sqlalchemy.orm import joinedload,contains_eager,Load
 from sqlalchemy.orm import object_session
 from contextlib import contextmanager
-from sqlalchemy import desc
+from sqlalchemy import desc, or_, and_
+from sqlalchemy.orm import joinedload, load_only
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 
 @contextmanager
@@ -74,6 +76,46 @@ def get_record_by_id(engine,model_class, id):
         # # # session.expunge(data)
         return data
 
+
+def build_eager_options(model_class, eager_load_depth):
+    """
+    Recursively build SQLAlchemy eager loading options.
+    Supports a mix of relationships, columns, and nested dicts.
+    """
+
+    options = []
+
+    def process(model, fields):
+        local_options = []
+        for field in fields:
+            if isinstance(field, dict):
+                # Nested dict: {relationship: [nested_fields...]}
+                for rel, nested_fields in field.items():
+                    rel_attr = getattr(model, rel.key if hasattr(rel, "key") else str(rel).split(".")[-1])
+                    nested_loader = joinedload(rel_attr)
+                    # Recurse into nested relationship
+                    nested_options = process(rel.mapper.class_, nested_fields)
+                    for opt in nested_options:
+                        nested_loader = nested_loader.options(opt)
+                    local_options.append(nested_loader)
+
+            else:
+                # Either a column or a relationship
+                rel_attr = getattr(model, field.key if hasattr(field, "key") else str(field).split(".")[-1])
+                prop = getattr(model, rel_attr.key).property
+
+                if hasattr(prop, "direction"):  
+                    # It's a relationship → load full relationship
+                    local_options.append(joinedload(rel_attr))
+                else:
+                    # It's a column → load only this column
+                    local_options.append(Load(model).load_only(rel_attr))
+
+        return local_options
+
+    options.extend(process(model_class, eager_load_depth))
+    return options
+
 # Function to get objects from a table based on conditions
 def get_records(engine, model_class, conditions=None, join_tables=None, eager_load_depth=None, offset=0, limit=10):
     with session_scope(engine) as session:
@@ -90,16 +132,17 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
                 query = query.filter(getattr(model_class, str(attr).split(".")[1]) == str(value))
 
         # Use joinedload to eager load relationships with specified depth
-        if eager_load_depth is not None:
-            for attr in eager_load_depth:
-                if isinstance(attr, dict):
-                    for relationship, nested_fields in attr.items():
-                        nested_loader = joinedload(getattr(model_class, str(relationship).split(".")[1]))
-                        for nested_field in nested_fields:
-                            nested_loader = nested_loader.load_only(nested_field)
-                        query = query.options(nested_loader)
-                else:
-                    query = query.options(joinedload(getattr(model_class, str(attr).split(".")[1])))
+        """
+    Recursively apply eager loading.
+    Example:
+        eager_load_depth = [
+            AppUser.app_user_type,
+            AppUser.app_user_person,
+            {AppUser.app_user_person: [Person.person_blood_type_id]}
+        ]
+    """
+        # Apply loaders to the query
+        query = query.options(*build_eager_options(model_class,eager_load_depth))
 
         # Order by primary key in descending order (newest first)
         pk_column = list(model_class.__table__.primary_key.columns)[0]
@@ -137,3 +180,118 @@ def delete_record_by_id(engine,model_class, id):
     data = session.delete()   #.query(model_class).filter(primary_key_name == str(id)).delete()
     # # # session.expunge(data)
     return data
+
+
+def search_records(
+    engine,
+    model_class,
+    join_tables,
+    eager_load_depth,
+    search_query=None,
+    search_fields=None,
+    offset= 0,
+    limit = 20
+):
+    with session_scope(engine) as session:
+        query = session.query(model_class)
+        # Generic search across multiple fields
+
+
+        if search_query and search_fields:
+            keywords = search_query.split()
+            for kw in keywords:
+                conditions = [
+                    getattr(model_class, str(field).split(".")[1]).ilike(f"%{kw}%")
+                    for field in search_fields
+                ]
+                query = query.filter(or_(*conditions))
+        
+        if join_tables:
+            for join_table in join_tables:
+                query = query.join(join_table)
+        # Apply loaders to the query
+        if eager_load_depth:
+            query = query.options(*build_eager_options(model_class,eager_load_depth))
+
+        # Order by primary key in descending order (newest first)
+        pk_column = list(model_class.__table__.primary_key.columns)[0]
+        query = query.order_by(desc(pk_column)).offset(offset).limit(limit)
+
+        # Fetch records
+        records = query.all()
+
+        session.expunge_all()
+        return records
+    
+
+
+def get_records_by_filter(
+    engine,
+    model_class,
+    conditions=None,
+    ordering_attr=None,
+    join_tables=None,
+    labeled_attrs=None,
+    selected_fields=None,
+    eager_load_depth= None,
+    offset=0,
+    limit=20
+):
+    with session_scope(engine) as session:
+        # Base query
+        query_elements = []
+
+        # If selected_fields provided, use them instead of full model
+        if selected_fields:
+            # query_elements.append(model_class)
+            query_elements.extend(selected_fields)
+
+        # Always include model if nothing is selected
+        elif not selected_fields:
+            query_elements.append(model_class)
+
+        # Add labeled attributes if any
+        if labeled_attrs:
+            query_elements.extend(labeled_attrs)
+
+        query = session.query(*query_elements)
+
+        # Join tables if specified
+        if join_tables:
+            for join_table in join_tables:
+                query = query.join(join_table)
+        # Apply loaders to the query
+        if eager_load_depth and (model_class in query_elements):
+            query = query.options(*build_eager_options(model_class,eager_load_depth))
+
+        # Apply filters
+        if conditions:
+            query = query.filter(and_(*conditions))
+        
+
+        # Apply ordering
+        if ordering_attr:
+            for attr in ordering_attr:
+                query = query.order_by(attr)
+
+        
+        # Apply offset and limit
+        query = query.offset(offset).limit(limit)
+
+        # Fetch results
+        records = query.all()
+        session.expunge_all()
+
+        # Convert rows to dicts when multiple entities are queried
+        results = []
+        try:
+            for row in records:
+                if hasattr(row, "_mapping"):  
+                    results.append(dict(row._mapping))  
+                else:
+                    results.append(row)
+        except:
+            pass
+
+        return results
+    
