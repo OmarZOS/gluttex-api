@@ -1,6 +1,8 @@
 from fastapi import APIRouter,  status, BackgroundTasks
 from fastapi.encoders import jsonable_encoder
 from sse_starlette.sse import EventSourceResponse
+from core.models import Product
+from storage.storage_broker import search_records
 from core.api_models import Product_API, ProductImage_API
 from features.product.product_fetch import (
     fetch_all_product, fetch_product_by_id, get_product_categories, 
@@ -101,3 +103,4 @@ def delete_product_by_id(product_id: int):
     Delete a product by ID.
     """
     return delete_product(product_id)
+

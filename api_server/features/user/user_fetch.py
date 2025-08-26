@@ -17,8 +17,8 @@ def fetch_full_user_by_id(user_id: str):
     users = storage_broker.get(
         table=AppUser,
         conditions={AppUser.id_app_user: int(user_id)},
-        # join_tables=[Person],
-        eager_load_depth=[AppUser.app_user_type,AppUser.app_user_person],
+        join_tables=[AppUser.app_user_person,AppUser.app_user_type],
+        eager_load_depth=[AppUser.app_user_type,{AppUser.app_user_person:[Person.person_details,Person.person_blood_type,{Person.person_location:[Location.location_address,Location.location_name,Location.position_wkt]}]}],
         offset=0,
         limit=1
     )
@@ -27,30 +27,6 @@ def fetch_full_user_by_id(user_id: str):
         return None
 
     user = users[0]
-    if (user.app_user_person):
-        # Fetch related Person with details and blood type
-        person = storage_broker.get(
-            table=Person,
-            conditions={Person.id_person: user.app_user_person.id_person},
-            join_tables=[],
-            eager_load_depth=[Person.person_blood_type,Person.person_details,Person.patient,{Person.person_location:[Location.location_name,Location.position_wkt,Location.location_address_id]}],
-            offset=0,
-            limit=1
-        )[0]
-        if person.person_location:
-            addresses = storage_broker.get(
-                table=Address,
-                conditions={Address.id_address: person.person_location.location_address_id},
-                # join_tables=[],
-                # eager_load_depth=[Person.person_blood_type,Person.person_details,Person.patient,{Person.person_location:[Location.location_name,Location.position_wkt]}],
-                offset=0,
-                limit=1
-            )
-            if( addresses != []):
-                person.person_location.location_address = addresses[0]
-
-
-        user.app_user_person = person
 
     return user
 
@@ -58,23 +34,13 @@ def fetch_user_by_id(user_id: str):
     user_list = storage_broker.get(AppUser
                               ,{AppUser.id_app_user :int(user_id)}
                               ,[AppUserType]
-                              ,[AppUser.app_user_type]
+                              ,[AppUser.app_user_type,{AppUser.app_user_person:[Person.person_details]}]
                               ,None
                               )
-    user = None
-    if len(user_list)>0:
-        user  = user_list[0]
-        person_list =  storage_broker.get(Person
-                                ,{Person.id_person :user.app_user_person_id}
-                                ,[PersonDetails,BloodType]
-                                ,[Person.person_blood_type,Person.person_details]
-                                ,None
-                                )
-        if len(person_list)>0:
-            person  = person_list[0]
-            user.app_user_person = person
-    
-    return user
+                            
+    if user_list == []:
+        return None 
+    return user_list[0]
 
 # def fetch_user_object_by_id(user_id: str):
 #     records = storage_broker.get(AppUser,{AppUser.id_app_user:user_id},None,[AppUser.app_user_type,AppUser.app_user_person,Person.person_details])

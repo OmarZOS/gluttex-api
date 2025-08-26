@@ -11,6 +11,8 @@ from routers.recipe_router import recipe_router
 from routers.health_router import health_router
 from routers.auth_router import auth_router
 from routers.business_router import business_router
+from routers.search_router import search_router
+
 from fastapi.middleware.cors import CORSMiddleware
 # ----------- App initialisation -------------------------------------
 
@@ -61,6 +63,7 @@ app.include_router(recipe_router,prefix="/api") # , dependencies=[Depends(verify
 app.include_router(health_router,prefix="/api") # , dependencies=[Depends(verify_token)]
 app.include_router(app_user_router,prefix="/api")
 app.include_router(business_router,prefix="/api")
+app.include_router(search_router,prefix="/api")
 
 # ------------- Standard endpoints -----------------------------------------------
 
