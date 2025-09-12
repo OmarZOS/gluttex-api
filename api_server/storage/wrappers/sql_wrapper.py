@@ -142,7 +142,8 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
         ]
     """
         # Apply loaders to the query
-        query = query.options(*build_eager_options(model_class,eager_load_depth))
+        if eager_load_depth :
+            query = query.options(*build_eager_options(model_class,eager_load_depth))
 
         # Order by primary key in descending order (newest first)
         pk_column = list(model_class.__table__.primary_key.columns)[0]
@@ -261,7 +262,7 @@ def get_records_by_filter(
             for join_table in join_tables:
                 query = query.join(join_table)
         # Apply loaders to the query
-        if eager_load_depth and (model_class in query_elements):
+        if (eager_load_depth is not None) and (model_class in query_elements):
             query = query.options(*build_eager_options(model_class,eager_load_depth))
 
         # Apply filters
