@@ -3,7 +3,7 @@ from core.models import  Product, ProductCategory, ProductImage, ProductProvider
 import storage.storage_broker as storage_broker
 
 def fetch_product_by_id(prod_id: int):
-    records = storage_broker.get(Product,{Product.id_product:prod_id},[])
+    records = storage_broker.get(Product,{Product.id_product:prod_id})
     if records == []:
         return None
     return records[0]
