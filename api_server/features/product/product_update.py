@@ -17,7 +17,7 @@ subscribers = {}
 async def notify_subscribers(product_id, data):
     if product_id in subscribers:
         for queue in subscribers[product_id]:
-            await queue.put(data)
+            await queue.post(data)
 
 
 
@@ -25,6 +25,7 @@ def build_product(product: Product_API):
     return Product(product_name=product.product_name,
                     product_brand=product.product_brand,
                     product_barcode=product.product_barcode,
+                    product_quantifier = product.product_quantifier,
                     product_price = product.product_price,
                     product_quantity = product.product_quantity,
                     last_updated = datetime.now(),

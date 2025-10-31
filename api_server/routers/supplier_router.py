@@ -11,14 +11,14 @@ supplier_router = APIRouter()
 
 # ----------------- Supplier Endpoints -----------------
 
-@supplier_router.put("/supplier/add")
+@supplier_router.post("/supplier/add")
 def insert_supplier_record(supplier: ProductProvider_API, location: Location_API, image: ProviderImage_API):
     """
     Insert a new supplier.
     """
     return insert_supplier(supplier, location,image)
 
-@supplier_router.put("/org/add")
+@supplier_router.post("/org/add")
 def insert_org_record(org: ProviderOrganisation_API,org_image: OrganisationImage_API):
     """
     Insert a new org.
@@ -62,7 +62,7 @@ def get_all_supplier_categories():
     """
     return fetch_supplier_categories()
 
-@supplier_router.post("/supplier/{supplier_id}")
+@supplier_router.put("/supplier/{supplier_id}")
 def update_supplier_details(
     supplier_id: int, 
     supplier: ProductProvider_API, 
@@ -77,7 +77,7 @@ def update_supplier_details(
 
 
 
-@supplier_router.post("/org/{org_id}")
+@supplier_router.put("/org/{org_id}")
 def update_org_details(
     org_id: int, 
     org: ProviderOrganisation_API, 

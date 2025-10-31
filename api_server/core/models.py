@@ -59,6 +59,7 @@ class Ingredient(Base):
     id_ingredient = Column(Integer, primary_key=True)
     ingredient_name = Column(String(45))
     ingredient_icon_url = Column(String(255))
+    ingredient_quantifier = Column(String(45))
 
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='contained_ingredient')
 
@@ -333,6 +334,11 @@ class PlacedOrder(Base):
     ordered_timestamp = Column(DateTime)
     order_discount = Column(Float(asdecimal=True))
     total_price = Column(Float(asdecimal=True))
+    placed_order_state = Column(String(45))
+    placed_order_last_mod = Column(DateTime)
+    payment_status =  Column(String(45))
+    payment_ref = Column(String(255))
+    payment_method = Column(String(45))
     ordering_user_id = Column(Integer)
 
     ordering_user = relationship('AppUser', back_populates='placed_order')

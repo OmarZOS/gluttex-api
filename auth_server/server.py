@@ -123,7 +123,7 @@ async def read_users_me(current_user: schemas.User = Depends(auth.get_current_us
     """Retrieve the currently logged-in user."""
     return current_user
 
-@app.put("/auth/users/update-password/", response_model=schemas.UserResponse)
+@app.post("/auth/users/update-password/", response_model=schemas.UserResponse)
 def update_user_password(
     user: schemas.UserUpdate, 
     db: Session = Depends(dependencies.get_db),

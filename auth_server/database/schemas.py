@@ -26,6 +26,11 @@ class UserBase(BaseModel):
     account_locked : Optional[bool] = False
     mfa_enabled : Optional[bool] = False
 
+class UserUpdate(UserBase):
+    new_username: Optional[str] 
+    app_user_id: int
+    new_password: str
+
 class UserCreate(UserBase):
     # this is the most important id to get the user from the database
     app_user_id: int
@@ -39,7 +44,6 @@ class UserResponse(UserBase):
 
     class Config:
         orm_mode = True
-
 
 class Token(BaseModel):
     access_token: str
@@ -55,8 +59,3 @@ class User(BaseModel):
     full_name: Optional[str] 
     disabled: Optional[bool] 
 
-
-class UserUpdate(UserBase):
-    new_username: Optional[str] 
-    app_user_id: int
-    new_password: str

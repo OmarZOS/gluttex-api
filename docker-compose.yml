@@ -4,6 +4,24 @@
 
 services:
 
+
+
+  # gluttex-web:
+  #   container_name: gluttex-web
+  #   hostname: gluttex-web
+  #   build:
+  #     context: ./landing
+  #   image: gluttex-web:latest
+  #   restart: unless-stopped
+  #   networks:
+  #     - gluttex-net
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '1'
+  #         memory: 512M
+
+
   mysql:
     image: mysql
     container_name: gluttex-db
@@ -75,7 +93,7 @@ services:
       dockerfile: ./Dockerfile.dev
       args:
         - AUTH_PORT=9090
-    command: uvicorn server:app --host 0.0.0.0  --ssl-keyfile /etc/ssl/private/key.pem --ssl-certfile /etc/ssl/certs/cert.pem --port 9090 --reload
+    command: uvicorn server:app --host 0.0.0.0 --ssl-keyfile /etc/ssl/private/key.pem --ssl-certfile /etc/ssl/certs/cert.pem --port 9090 --reload # 
     image: omarzos/gluttex-auth
     environment:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
@@ -95,13 +113,6 @@ services:
         limits:
           cpus: '0.5'
           memory: 256M
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.http.routers.gluttex-auth.rule=Host(`gluttex.com`) && PathPrefix(`/auth`)"
-    #   - "traefik.http.routers.gluttex-auth.entrypoints=websecure"
-    #   - "traefik.http.routers.gluttex-auth.tls=true"
-    #   - "traefik.http.routers.gluttex-auth.tls.certresolver=letsencrypt"
-    #   - "traefik.http.services.gluttex-auth.loadbalancer.server.port=9090"
 
   gluttex-fs:
     container_name: gluttex-fs

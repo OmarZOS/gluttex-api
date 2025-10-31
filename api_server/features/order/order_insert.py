@@ -48,7 +48,6 @@ def insert_order(api_ordered_items: List[OrderedItem_API], placed_order_api: Pla
     ordered_items: List[OrderedItem] = []
     ordered_products: List[Product] = []
 
-
     # --- Validate products & build ordered items ---
     for api_ordered_item in api_ordered_items:
         ordered_item = build_ordered_item(api_ordered_item)
@@ -63,9 +62,7 @@ def insert_order(api_ordered_items: List[OrderedItem_API], placed_order_api: Pla
             raise APIException(status= HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,code=PRODUCT_QUANTITY_NOT_ENOUGH,details=PRODUCT_QUANTITY_NOT_ENOUGH)
 
         ordered_items.append(ordered_item)
-        ordered_products.append(ordered_product)
-
-    
+        ordered_products.append(ordered_product)    
 
     # --- Update product stock & calculate total price ---
     order_total_price: float = 0
@@ -89,6 +86,11 @@ def insert_order(api_ordered_items: List[OrderedItem_API], placed_order_api: Pla
         ordering_user_id=ordering_user.id_app_user,
         ordered_timestamp=datetime.now(),
         order_discount=placed_order_api.order_discount,
+        payment_ref = placed_order_api.payment_ref,
+        placed_order_last_mod = datetime.now(),
+        placed_order_state = placed_order_api.placed_order_state,
+        payment_status = placed_order_api.payment_status,
+        payment_method = placed_order_api.payment_method,
         total_price=order_total_price
     )
     placed_order.ordered_item = ordered_items

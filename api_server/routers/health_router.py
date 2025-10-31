@@ -34,7 +34,7 @@ def get_serology_history_by_patient(patient_id: int, indicator_id: int):
         )
 
 
-@health_router.put("/patient/serology/add/")
+@health_router.post("/patient/serology/add/")
 def add_serology_record(serology_record: Serology_API):
     """
     Insert a new serology record.
@@ -48,7 +48,7 @@ def add_serology_record(serology_record: Serology_API):
     return insert_serology(serology_record)
 
 
-@health_router.post("/patient/serology/update/{serology_id}")
+@health_router.put("/patient/serology/update/{serology_id}")
 def update_serology_record(serology_id: int, serology_record: Serology_API):
     """
     Update an existing serology record.
@@ -90,7 +90,7 @@ def get_all_symptoms():
     return get_symptoms()
 
 
-@health_router.put("/patient/symptoms/add/")
+@health_router.post("/patient/symptoms/add/")
 def add_symptom_occurrence(symptoms: Symptoms_API):
     """
     Add a new symptom occurrence for a patient.
