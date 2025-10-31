@@ -96,6 +96,7 @@ class Product_API(BaseModel):
     product_brand: Optional[str]
     product_barcode: Optional[str]
     product_description : Optional[str]
+    product_quantifier: Optional[str]
     product_owner : Optional[int]
     # ProductCategory_API
 
@@ -136,6 +137,7 @@ class Ingredient_API(BaseModel):
     id_ingredient : int
     ingredient_name : Optional[str]
     ingredient_icon_url : Optional[str]
+    ingredient_quantifier : Optional[str]
 
 class Recipe_API(BaseModel):
     id_recipe: int
@@ -169,6 +171,11 @@ class PlacedOrder_API(BaseModel):
     id_placed_order : Optional[int]
     ordered_timestamp : Optional[str]
     order_discount : Optional[float]
+    placed_order_last_mod : Optional[str]
+    payment_status : Optional[str]
+    payment_ref : Optional[str]
+    placed_order_state : Optional[str]
+    payment_method : Optional[str]
     ordering_user_id : Optional[int]
 
 class OrderedItem_API(BaseModel):

@@ -50,7 +50,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.post("/fs/upload/{entity_type}/{owner_id}/{entity_id}/")
+@app.put("/fs/upload/{entity_type}/{owner_id}/{entity_id}/")
 async def upload_file(entity_type: str, owner_id: str, entity_id: str, file: UploadFile = File(...)):
     """
     Uploads a file and stores it in the designated folder.

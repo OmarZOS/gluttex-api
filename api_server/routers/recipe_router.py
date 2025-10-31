@@ -54,21 +54,21 @@ def get_recipe_image(image_id: int):
 
 # ----------------- Recipe Modification Endpoints -----------------
 
-@recipe_router.post("/recipe/{recipe_id}")
+@recipe_router.put("/recipe/{recipe_id}")
 def update_recipe_details(recipe_id: int, recipe: Recipe_API, image: RecipeImage_API):
     """
     Update recipe details.
     """
     return update_recipe(recipe_id, recipe, image)
 
-@recipe_router.put("/recipe/add")
+@recipe_router.post("/recipe/add")
 async def insert_new_recipe(recipe: Recipe_API, image: RecipeImage_API):
     """
     Insert a new recipe.
     """
     return await insert_recipe(recipe, image)
     
-@recipe_router.put("/ingredient/add")
+@recipe_router.post("/ingredient/add")
 async def insert_new_ingredient(ingredient: Ingredient_API):
     """
     Insert a new ingredient.

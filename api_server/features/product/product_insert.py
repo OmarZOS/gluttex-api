@@ -26,11 +26,12 @@ def build_product(product: Product_API):
                     product_brand=product.product_brand,
                     product_barcode=product.product_barcode,
                     product_price = product.product_price,
+                    product_quantifier = product.product_quantifier,
                     product_quantity = product.product_quantity,
                     product_description = product.product_description,
                     product_owner = product.product_owner,
+                    created = datetime.now(),
                     last_updated = datetime.now(),
-                    created = datetime.now()
                     )
 
 async def insert_product(product_api: Product_API, image: ProductImage_API):

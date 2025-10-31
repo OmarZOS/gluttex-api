@@ -67,7 +67,7 @@ async def insert_ingredient(ingredient: Ingredient_API):
     ingredients = get_ingredient_by_name(ingredient.ingredient_name)
     if ingredients != [] : 
         raise APIException(status= HTTP_409_CONFLICT,code=INGREDIENT_ALREADY_EXISTS)
-    ingredient_model = Ingredient(ingredient_name=ingredient.ingredient_name,ingredient_icon_url=ingredient.ingredient_icon_url)
+    ingredient_model = Ingredient(ingredient_name=ingredient.ingredient_name,ingredient_icon_url=ingredient.ingredient_icon_url,ingredient_quantifier= ingredient.ingredient_quantifier)
     try:
         new_ingredient = insert_or_complete_or_raise(ingredient_model)
     except APIException as e:

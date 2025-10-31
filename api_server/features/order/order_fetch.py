@@ -18,3 +18,10 @@ def fetch_placed_orders_by_user(user_id):
                               ,None
                               )
 
+def fetch_order_by_id(order_id):
+    return storage_broker.get(PlacedOrder
+                              ,{PlacedOrder.id_placed_order :order_id}
+                              ,[]
+                              ,None
+                              ,None
+                              )

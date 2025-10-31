@@ -26,7 +26,7 @@ def get_user_by_id(user_id: int):
         raise APIException(status=HTTP_404_NOT_FOUND,code=APPUSER_NOT_EXISTS, details=f"{APPUSER_NOT_EXISTS}: {user_id}")
     return user
 
-@app_user_router.put("/app_user/add")
+@app_user_router.post("/app_user/add")
 async def insert_user_endpoint(user: AppUser_API, person: Person_API = None, location: Location_API = None):
     """
     Insert a new user.
@@ -40,21 +40,21 @@ def delete_user_endpoint(user: AppUser_API):
     """
     return delete_user(user)
 
-@app_user_router.post("/app_user/update_password")
+@app_user_router.put("/app_user/update_password")
 async def update_user_password_endpoint(user: AppUserUpdate_API, token: str):
     """
     Update the user password.
     """
     return await update_user_password(user, token)
 
-@app_user_router.post("/app_user/update_image_url")
+@app_user_router.put("/app_user/update_image_url")
 def update_user_image_url_endpoint(user: AppUser_API, image_url: str):
     """
         Update the user image url.
     """
     return update_api_user_image_url(user, image_url)
 
-@app_user_router.post("/app_user/update")
+@app_user_router.put("/app_user/update")
 def update_user_record_endpoint(user: AppUser_API, person_record: Person_API,location_record:Location_API):
     """
         Update the user image url.

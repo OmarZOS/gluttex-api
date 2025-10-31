@@ -73,7 +73,6 @@ async def auth(provider: str, request: Request):
     except Exception as e:
         raise APIException(status=HTTP_401_UNAUTHORIZED,code=AUTH_UNAUTHORIZED, details=f"OAuth authentication failed: {str(e)}")
 
-
 @auth_router.post("/authentication/token")
 async def login_user(user: AuthData_API):
     """Authenticates the user and returns an access token."""

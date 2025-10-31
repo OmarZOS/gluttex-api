@@ -45,6 +45,7 @@ async def update_user_password(existing_user: AppUserUpdate_API, token: str):
     user_update = {
         "app_user_id": existing_user.id_app_user,
         "username": existing_user.username,
+        "new_username": existing_user.username,
         "new_password": existing_user.new_password
     }
 
@@ -52,7 +53,7 @@ async def update_user_password(existing_user: AppUserUpdate_API, token: str):
     url = f"https://{AUTH_SERVER_NAME}:{AUTH_PORT}{AUTH_CHANGE_ENDPOINT}"
 
     try:
-        response = await send_put_request(url, input_data=user_update, flags=flags)
+        response = await send_post_request(url, json_data=user_update, headers=flags)
         response.raise_for_status()
     except Exception as e:
         raise APIException(status=HTTP_502_BAD_GATEWAY,code=USER_NET_FAILED,details=str(e))

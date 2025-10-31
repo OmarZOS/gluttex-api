@@ -77,7 +77,7 @@ def get_product_image(image_id: int):
 
 # ----------------- Product Modification Endpoints -----------------
 
-@product_router.post("/product/{product_id}")
+@product_router.put("/product/{product_id}")
 def update_product_details(
     product_id: int, 
     product: Product_API, 
@@ -90,7 +90,7 @@ def update_product_details(
     res = update_product(product_id, product, image)
     return res
 
-@product_router.put("/product/add")
+@product_router.post("/product/add")
 async def insert_product_details(product: Product_API, image: ProductImage_API):
     """
     Insert a new product.

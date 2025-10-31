@@ -46,3 +46,4 @@ FS_PORT= os.getenv("FS_PORT",'')
 # COMPUTING_SERVER_BASE_URL = os.getenv("COMPUTING_SERVER_BASE_URL","gluttex") 
 
 
+ORDER_STATUSES = {"pending", "paid", "delivered", "cancelled"}
