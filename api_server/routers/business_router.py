@@ -6,7 +6,7 @@ from features.order.order_update import update_order
 from core.api_models import OrderedItem_API, PlacedOrder_API
 
 from features.order.order_insert import insert_order
-from features.order.order_fetch import fetch_placed_orders_by_user
+from features.order.order_fetch import fetch_placed_order_details, fetch_placed_orders_by_user
 from features.product.product_update import notify_subscribers
 
 business_router = APIRouter()
@@ -51,6 +51,20 @@ def fetch_every_placed_order_by_user(user_id: int):
         list: List of placed orders.
     """
     return fetch_placed_orders_by_user(user_id)
+
+@business_router.get("/business/user/orders/{order_id}")
+def fetch_every_item_in_order(order_id: int):
+    """
+    Fetches all items for a specific order_id.
+
+    Args:
+        order_id (int): The order's ID.
+
+    Returns:
+        list: List of ordered items.
+    """
+    return fetch_placed_order_details(order_id)
+
 
 @business_router.put("/business/order/update/{order_id}")
 def update_placed_order(

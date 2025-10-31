@@ -10,11 +10,19 @@ from storage import storage_broker;
 
 
 
-def fetch_placed_orders_by_user(user_id):
+def fetch_placed_orders_by_user(user_id,order_id = 0):
     return storage_broker.get(PlacedOrder
                               ,{PlacedOrder.ordering_user_id :user_id}
                               ,[OrderedItem]
                               ,None
+                              ,None
+                              )
+
+def fetch_placed_order_details(order_id ):
+    return storage_broker.get(OrderedItem
+                              ,{OrderedItem.order_ref :order_id}
+                              ,[]
+                              ,[OrderedItem.ordered_product]
                               ,None
                               )
 
