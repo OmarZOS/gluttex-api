@@ -1,25 +1,25 @@
-# Stage 1: Build Flutter web app (optional, if not prebuilt)
-# If you already have build/web inside landing/, skip to Stage 2.
+# Use nginx with Brotli support
+FROM fholzer/nginx-brotli:latest
 
-# FROM dart:stable AS build
-# WORKDIR /app
-# COPY . .
-# RUN flutter build web --release --web-renderer canvaskit -t lib/main.dart
+# Install wget for healthcheck
+RUN apk add --no-cache wget
 
-# Stage 2: Nginx serving Flutter web app
-FROM nginx:alpine
+# Remove default nginx config
+RUN rm -rf /etc/nginx/conf.d/default.conf
 
-# Remove default config
-RUN rm /etc/nginx/conf.d/default.conf
+# Copy custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/
 
-# Copy optimized nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy all app content (including Flutter web build)
+# Copy all content
 COPY . /usr/share/nginx/html/
 
-# Expose internal port
-EXPOSE 80
+# Set proper permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
 
-# Health check (optional)
-HEALTHCHECK CMD wget -q --spider http://localhost/ || exit 1
+EXPOSE 9070
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD wget -q --spider http://localhost:9070/ || exit 1
+
+CMD ["nginx", "-g", "daemon off;"]

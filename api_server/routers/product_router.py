@@ -87,7 +87,7 @@ def update_product_details(
     """
     Update product details and notify subscribers.
     """
-    res = update_product(product_id, product, image)
+    res = update_product(product_id, product, image,background_tasks)
     return res
 
 @product_router.post("/product/add")

@@ -2,6 +2,11 @@
 # here, we make schema translations
 
 from datetime import datetime
+
+import asyncio
+from typing import Dict, List
+
+from fastapi import BackgroundTasks
 from core.exception_handler import APIException
 from core.api_models import Product_API, ProductImage_API
 from core.messages import *
@@ -23,15 +28,15 @@ async def notify_subscribers(product_id, data):
 
 def build_product(product: Product_API):
     return Product(product_name=product.product_name,
-                    product_brand=product.product_brand,
-                    product_barcode=product.product_barcode,
-                    product_quantifier = product.product_quantifier,
-                    product_price = product.product_price,
-                    product_quantity = product.product_quantity,
-                    last_updated = datetime.now(),
+                        product_brand=product.product_brand,
+                        product_barcode=product.product_barcode,
+                        product_quantifier = product.product_quantifier,
+                        product_price = product.product_price,
+                        product_quantity = product.product_quantity,
+                        last_updated = datetime.now(),
                     )
 
-def update_product(product_id: int,product_api: Product_API, image: ProductImage_API):
+def update_product(product_id: int,product_api: Product_API, image: ProductImage_API, background_tasks: BackgroundTasks):
     
     product_category = fetch_product_category_object_by_id(product_api.id_product_category)
     if product_category == None : 
@@ -75,6 +80,21 @@ def update_product(product_id: int,product_api: Product_API, image: ProductImage
 
     try:
         product = update_record_in_api(product_old)
+
+            
+    # 🔥 Convert using __dict__ and filter out SQLAlchemy internal attributes
+        product_dict = {}
+        for key, value in product.__dict__.items():
+            if not key.startswith('_'):
+                # Handle datetime objects
+                if hasattr(value, 'isoformat'):
+                    product_dict[key] = value.isoformat()
+                else:
+                    product_dict[key] = value
+
+         # 🔥 ADDED: Notify subscribers via background task
+        background_tasks.add_task(notify_product_subscribers, product_id, product_dict)
+
     except Exception as e:
         raise APIException(status= HTTP_417_EXPECTATION_FAILED,code=PRODUCT_UPDATE_FAILED,details=f"{str(e)}")
     return product
@@ -83,3 +103,39 @@ def update_product(product_id: int,product_api: Product_API, image: ProductImage
 
 
 
+
+# Global subscribers storage (should be in your module)
+subscribers: Dict[int, List[asyncio.Queue]] = {}
+
+def notify_product_subscribers(product_id: int, data: dict):
+    """
+    Notify all SSE subscribers about product updates with comprehensive error handling.
+    """
+    if product_id not in subscribers:
+        return
+        
+    disconnected_subscribers = []
+    
+    for queue in subscribers[product_id]:
+        try:
+            # Non-blocking notification
+            queue.put_nowait(data)
+        except asyncio.QueueFull:
+            # Subscriber might be stuck or disconnected
+            print(f"Queue full for product {product_id}, removing subscriber")
+            disconnected_subscribers.append(queue)
+        except RuntimeError:
+            # Queue might be closed
+            disconnected_subscribers.append(queue)
+        except Exception as e:
+            print(f"Unexpected error notifying subscriber for product {product_id}: {e}")
+            disconnected_subscribers.append(queue)
+    
+    # Clean up disconnected subscribers
+    for queue in disconnected_subscribers:
+        if queue in subscribers[product_id]:
+            subscribers[product_id].remove(queue)
+    
+    # Remove empty subscriber lists
+    if product_id in subscribers and not subscribers[product_id]:
+        del subscribers[product_id]
