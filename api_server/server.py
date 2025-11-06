@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 # from core.exception_handler import API_Resolution
+from constants import SECRET_KEY
 from core.api_models import API_Resolution
 from core.exception_handler import APIException
 from routers.product_router import product_router
@@ -12,7 +13,7 @@ from routers.health_router import health_router
 from routers.auth_router import auth_router
 from routers.business_router import business_router
 from routers.search_router import search_router
-
+from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 # ----------- App initialisation -------------------------------------
 
@@ -47,6 +48,14 @@ async def global_exception_handler(request: Request, exc: Exception):
         content=resolution.dict(),
     )
 
+# 1. Add SessionMiddleware FIRST (before any other middleware or routers)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=SECRET_KEY,
+    max_age=3600,
+    same_site="lax",
+    https_only=False
+)
 
 app.add_middleware(
     CORSMiddleware,

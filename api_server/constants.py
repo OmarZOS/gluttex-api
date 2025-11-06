@@ -42,6 +42,10 @@ FS_HOST= os.getenv("FS_HOST",'')
 FS_PORT= os.getenv("FS_PORT",'')
 
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:9000/api")
+
 
 # COMPUTING_SERVER_BASE_URL = os.getenv("COMPUTING_SERVER_BASE_URL","gluttex") 
 

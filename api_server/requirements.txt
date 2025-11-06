@@ -8,6 +8,9 @@ Authlib
 pymysql
 httpx
 sse_starlette
+itsdangerous
+python-multipart
+starlette
 # shapely
 geoalchemy2
 # pytest
