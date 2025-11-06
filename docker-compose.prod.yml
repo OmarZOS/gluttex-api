@@ -10,7 +10,7 @@ services:
     image: gluttex-web:latest
     restart: unless-stopped
     ports:
-      - 80:9070
+      - 9070:9070
     networks:
       - gluttex-net
     deploy:
@@ -24,7 +24,7 @@ services:
       - "traefik.http.routers.gluttex-web.entrypoints=websecure"
       - "traefik.http.routers.gluttex-web.tls=true"
       - "traefik.http.routers.gluttex-web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.gluttex-web.loadbalancer.server.port=80"
+      - "traefik.http.services.gluttex-web.loadbalancer.server.port=9070"
 
   gluttex-api:
     container_name: gluttex-api
@@ -53,8 +53,8 @@ services:
       - FILE_UPLOAD_ENDPOINT=${FILE_UPLOAD_ENDPOINT}
       - FS_HOST=${FS_HOST}
       - FS_PORT=${FS_PORT}
-      - API_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-      - API_GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - API_FACEBOOK_CLIENT_ID=${FACEBOOK_CLIENT_ID}
       - API_FACEBOOK_CLIENT_SECRET=${FACEBOOK_CLIENT_SECRET}
       - API_INSTAGRAM_CLIENT_ID=${INSTAGRAM_CLIENT_ID}

@@ -75,6 +75,8 @@ services:
       - FILE_UPLOAD_ENDPOINT=${FILE_UPLOAD_ENDPOINT}
       - FS_HOST=${FS_HOST}
       - FS_PORT=${FS_PORT}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
     networks:
       - gluttex-net
     volumes:
