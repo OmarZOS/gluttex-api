@@ -1,4 +1,5 @@
 # app/main.py
+import datetime
 import logging
 from core.exception_handler import APIException
 from core.messages import *
@@ -12,7 +13,7 @@ import auth, dependencies
 from database import schemas, crud, models
 from database.models import engine
 from fastapi.middleware.cors import CORSMiddleware
-from datetime import timedelta
+from datetime import timedelta,timezone
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -111,9 +112,15 @@ async def login_for_access_token(
         },
         expires_delta=access_token_expires
     )
-    
+    iat = datetime.now(timezone.utc)
+
+    expire = iat + access_token_expires  # default expiry
+
     return {
-        "access_token": access_token, 
+        "access_token": access_token,
+        "iat": iat, 
+        "expires_at": expire,
+        "iss": "gluttex-auth-server",
         "token_type": "bearer",
         "app_user_id": str(user.app_user_id)
     }

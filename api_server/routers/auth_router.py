@@ -1,3 +1,5 @@
+from features.user.user_fetch import fetch_user_by_name
+from features.user.user_insert import insert_user
 from constants import *
 from core.messages import *
 from fastapi import APIRouter, Request, Depends, status
@@ -5,10 +7,13 @@ from authlib.integrations.starlette_client import OAuth
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import RedirectResponse
 from core.exception_handler import APIException
-from core.api_models import AuthData_API
+from core.api_models import AppUser_API, AuthData_API
 from features.user.user_net import login_for_access_token
 import os
 import httpx
+import secrets
+import string
+
 
 auth_router = APIRouter()
 
@@ -58,6 +63,11 @@ oauth.register(
 SUPPORTED_PROVIDERS = {"google", "facebook", "instagram"}
 
 
+def generate_random_password(length: int = 32) -> str:
+    """Generate a strong random password for OAuth users."""
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(secrets.choice(alphabet) for _ in range(length))
+
 def get_oauth_client(provider: str):
     """Get OAuth client by provider name."""
     return getattr(oauth, provider)
@@ -96,14 +106,14 @@ async def login(provider: str, request: Request):
 @auth_router.get("/auth/{provider}")
 async def auth(provider: str, request: Request):
     """Handles the OAuth provider's callback and retrieves user info."""
-    print(f"{provider}")
+    # print(f"{provider}")
     if provider not in SUPPORTED_PROVIDERS:
         raise APIException(
             status=status.HTTP_400_BAD_REQUEST,
             code=INTERFACE_ERROR,
             details=f"Unsupported provider: {provider}"
         )
-    print("In auth callback")
+    # print("In auth callback")
     try:
         # Get OAuth client for provider
         client = get_oauth_client(provider)
@@ -122,20 +132,29 @@ async def auth(provider: str, request: Request):
         # Store user in session
         request.session["user"] = user_info
         
-        # Create/get user in your database and generate your app's JWT token
-        # TODO: Implement your user creation/retrieval logic here
-        # app_token = await create_user_and_generate_token(user_info)
+        user_data = user_info
+
+        app_user = AppUser_API(
+            id_app_user=0,  # Will be assigned by DB
+            app_user_name=user_data["email"],  # use email as username
+            app_user_password=generate_random_password(),  # no password for OAuth
+            app_user_person_id=None,
+            app_user_preferences=None,
+            app_user_image_url=user_data.get("picture"),
+            app_user_type_id=2  # Example: 2 = Google user type
+        )
+
+        nutzern = fetch_user_by_name(user_data["email"])
         
-        # Redirect to frontend with token
-        # return RedirectResponse(
-        #     url=f"{FRONTEND_URL}/web?auth=success&email={user_info['email']}"
-        # )
-        
+        if nutzern == []:
+            nutzer = await insert_user(app_user,provider=provider)
+        else:
+            nutzer = nutzern[0]
         # OR return JSON if called directly from API
         return {
             "success": True,
-            "user": user_info,
-            # "token": app_token
+            "user": nutzer,
+            "token": token
         }
         
     except AttributeError:
@@ -144,7 +163,8 @@ async def auth(provider: str, request: Request):
         )
     except Exception as e:
         # Redirect to frontend with error
-        return RedirectResponse(
+        return str(e) 
+    RedirectResponse(
             url=f"{FRONTEND_URL}/web?auth=failed&error={str(e)}"
         )
 
@@ -157,13 +177,15 @@ async def get_user_info(provider: str, token: dict) -> dict:
         user_info = token.get("userinfo")
         # print(user_info)
         if user_info:
-            return {
-                "id": user_info.get("sub"),
-                "email": user_info.get("email"),
-                "name": user_info.get("name"),
-                "picture": user_info.get("picture"),
-                "provider": "google"
-            }
+            
+            return user_info
+            # {
+            #     "id": user_info.get("sub"),
+            #     "email": user_info.get("email"),
+            #     "name": user_info.get("name"),
+            #     "picture": user_info.get("picture"),
+            #     "provider": "google"
+            # }
         # Fallback: fetch from userinfo endpoint
         async with httpx.AsyncClient() as client:
             response = await client.get(
