@@ -14,10 +14,16 @@ from features.user.user_update import update_api_user_password
 logger = logging.getLogger("FastAPIApp")
 
 
-async def insert_user(user: AppUser_API, mensch: Person_API = None, location: Location_API = None):
+async def insert_user(
+    user: AppUser_API,
+    mensch: Person_API = None,
+    location: Location_API = None,
+    provider: str | None = None
+):
     """
-    Insert a new user into the system with optional person and location data.
-    Creates both the business object (AppUser) and the authentication record.
+    Insert a new user into the system.
+    - If `provider` is None: creates both the AppUser and an authentication record.
+    - If `provider` is 'google' (or another OAuth provider): creates only the AppUser.
     """
 
     # --- Step 1: Check if user already exists ---
@@ -34,13 +40,14 @@ async def insert_user(user: AppUser_API, mensch: Person_API = None, location: Lo
         raise APIException(
             status=HTTP_400_BAD_REQUEST,
             code=APPUSERTYPE_NOT_EXISTS,
-            details=f"Invalid user type ID: {user.app_user_type_id}")
+            details=f"Invalid user type ID: {user.app_user_type_id}"
+        )
 
     # --- Step 3: Build AppUser object ---
     now = datetime.datetime.now()
     app_user = AppUser(
         app_user_name=user.app_user_name,
-        app_user_password="",  # intentionally empty, password handled in auth system
+        app_user_password="",  # empty for OAuth users
         app_user_preferences=user.app_user_preferences,
         app_user_image_url=user.app_user_image_url,
         app_user_type_id=user_type.id_app_user_type,
@@ -61,18 +68,24 @@ async def insert_user(user: AppUser_API, mensch: Person_API = None, location: Lo
     try:
         nutzer = insert_or_complete_or_raise(app_user)
     except Exception as e:
-        logger.error(f"Failed to insert AppUser: {str(e)}")
+        logger.error(f"Failed to insert AppUser: {e}")
         raise APIException(
             status=HTTP_417_EXPECTATION_FAILED,
             code=USER_INSERT_FAILED,
-            details=f"Failed to insert AppUser: {str(e)}"
+            details=f"Failed to insert AppUser: {e}"
         )
 
-    # --- Step 6: Create authentication record ---
+    # --- Step 6: Handle authentication record ---
+    if provider and provider.lower() == "google":
+        # OAuth users don't need local auth data
+        logger.info(f"Skipping auth creation for OAuth provider '{provider}'")
+        return nutzer
+
+    # Only for regular username/password users:
     user_auth_data = {
         "username": nutzer.app_user_name,
         "app_user_id": nutzer.id_app_user,
-        "password": user.app_user_password,  # will be hashed by auth system
+        "password": user.app_user_password,
     }
 
     try:
@@ -83,13 +96,10 @@ async def insert_user(user: AppUser_API, mensch: Person_API = None, location: Lo
         update_api_user_password(nutzer, user_auth_record["hashed_password"])
 
     except APIException as e:
-        logger.error(f"Failed to create/update auth record: {str(e)}")
-        if(e.status==HTTP_417_EXPECTATION_FAILED):
-            
-            delete_record_from_api(nutzer)  # rollback inserted AppUser if auth fails
+        logger.error(f"Failed to create/update auth record: {e}")
+        if e.status == HTTP_417_EXPECTATION_FAILED:
+            delete_record_from_api(nutzer)
             delete_user(nutzer)
-        # if(e.status==HTTP_410_GONE):
-            
         raise APIException(
             status=HTTP_410_GONE,
             code=USER_AUTH_CREATION_FAILED,
@@ -97,3 +107,4 @@ async def insert_user(user: AppUser_API, mensch: Person_API = None, location: Lo
         )
 
     return nutzer
+
