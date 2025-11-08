@@ -155,7 +155,7 @@ async def auth(provider: str, request: Request):
         
         # Generate YOUR app's JWT token (not the OAuth token!)
         # You need to implement this function to create a JWT for your app
-        app_jwt_token = create_jwt_token(nutzer)  # TODO: Implement this
+        # app_jwt_token = create_jwt_token(nutzer)  # TODO: Implement this
         
         # Convert nutzer object to dictionary if it's not already
         # Adjust based on your actual user model
@@ -175,7 +175,7 @@ async def auth(provider: str, request: Request):
         response_data = {
             "success": True,
             "user": user_dict,
-            "token": app_jwt_token  # Use YOUR JWT token, not OAuth token
+            "token": token  # Use YOUR JWT token, not OAuth token
         }
         
         # Encode and redirect to deep link
