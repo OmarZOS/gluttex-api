@@ -27,38 +27,55 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Build your images (auth, fs, api, etc.)
+      - name: Build Docker images
+        run: |
+          docker build -t gluttex-auth ./auth_server
+          docker build -t gluttex-fs ./file_server
+          docker build -t gluttex-api ./api_server
+      
+      # Start containers with docker-compose (auth, fs, api)
+      - name: Start containers
+        run: |
+          docker compose --env-file .deploy.env -f docker-compose.prod.yml up -d
+          sleep 30  # give services time to start
+      
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Build and Push Docker Images
+      # Build & push API
+      - name: Build and Push API Image
         uses: docker/build-push-action@v5
         with:
+          context: ./api_server
           push: true
-          cache-from: type=registry,ref=omarzos/gluttex-api:latest
-          cache-to: type=inline
-          platforms: linux/amd64,linux/arm64
-          # Build multiple images in one step using matrix-style approach
-          build-args: |
-            AUTH_CONTEXT=./auth_server
-            API_CONTEXT=./api_server
-            FS_CONTEXT=./file_server
-          tags: |
-            omarzos/gluttex-auth:latest
-            omarzos/gluttex-api:latest
-            omarzos/gluttex-fs:latest
+          tags: omarzos/gluttex-api:latest
 
-      - name: Start containers
-        run: |
-          docker compose --env-file .deploy.env -f docker-compose.prod.yml up -d
-          sleep 30  # allow services to start
+      # Build & push Auth
+      - name: Build and Push Auth Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./auth_server
+          push: true
+          tags: omarzos/gluttex-auth:latest
 
-      # Optional: deploy to Droplet
+      # Build & push File Server
+      - name: Build and Push FS Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./file_server
+          push: true
+          tags: omarzos/gluttex-fs:latest
+
+        
+
+      # # Deploy to your Droplet
       # - name: SSH and Deploy on Droplet
       #   uses: appleboy/ssh-action@v1.0.3
       #   with:
@@ -66,7 +83,7 @@ jobs:
       #     username: ${{ secrets.DROPLET_USER }}
       #     key: ${{ secrets.DROPLET_SSH_KEY }}
       #     script: |
-      #       cd ~/gluttex
+      #       cd ~/gluttex   # path where docker-compose.yml is stored
       #       docker-compose pull
       #       docker-compose up -d
       #       docker system prune -af --volumes
