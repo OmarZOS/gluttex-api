@@ -1,3 +1,6 @@
+import json
+
+import urllib
 from features.user.user_fetch import fetch_user_by_name
 from features.user.user_insert import insert_user
 from constants import *
@@ -71,7 +74,6 @@ def generate_random_password(length: int = 32) -> str:
 def get_oauth_client(provider: str):
     """Get OAuth client by provider name."""
     return getattr(oauth, provider)
-
 @auth_router.get("/login/{provider}")
 async def login(provider: str, request: Request):
     """Redirects user to the OAuth provider's login page."""
@@ -106,17 +108,17 @@ async def login(provider: str, request: Request):
 @auth_router.get("/auth/{provider}")
 async def auth(provider: str, request: Request):
     """Handles the OAuth provider's callback and retrieves user info."""
-    # print(f"{provider}")
     if provider not in SUPPORTED_PROVIDERS:
         raise APIException(
             status=status.HTTP_400_BAD_REQUEST,
             code=INTERFACE_ERROR,
             details=f"Unsupported provider: {provider}"
         )
-    # print("In auth callback")
+    
     try:
         # Get OAuth client for provider
         client = get_oauth_client(provider)
+        
         # Get access token from provider
         token = await client.authorize_access_token(request)
         
@@ -135,38 +137,64 @@ async def auth(provider: str, request: Request):
         user_data = user_info
 
         app_user = AppUser_API(
-            id_app_user=0,  # Will be assigned by DB
-            app_user_name=user_data["email"],  # use email as username
-            app_user_password=generate_random_password(),  # no password for OAuth
+            id_app_user=0,
+            app_user_name=user_data["email"],
+            app_user_password=generate_random_password(),
             app_user_person_id=None,
             app_user_preferences=None,
             app_user_image_url=user_data.get("picture"),
-            app_user_type_id=2  # Example: 2 = Google user type
+            app_user_type_id=2
         )
 
         nutzern = fetch_user_by_name(user_data["email"])
         
         if nutzern == []:
-            nutzer = await insert_user(app_user,provider=provider)
+            nutzer = await insert_user(app_user, provider=provider)
         else:
             nutzer = nutzern[0]
-        # OR return JSON if called directly from API
-        return {
+        
+        # Generate YOUR app's JWT token (not the OAuth token!)
+        # You need to implement this function to create a JWT for your app
+        app_jwt_token = create_jwt_token(nutzer)  # TODO: Implement this
+        
+        # Convert nutzer object to dictionary if it's not already
+        # Adjust based on your actual user model
+        if hasattr(nutzer, '__dict__'):
+            user_dict = nutzer.__dict__
+            # Remove SQLAlchemy internal state if present
+            user_dict.pop('_sa_instance_state', None)
+        elif hasattr(nutzer, 'dict'):
+            user_dict = nutzer.dict()
+        else:
+            user_dict = dict(nutzer)
+        
+        # Remove sensitive data
+        user_dict.pop('app_user_password', None)
+        
+        # Prepare response data
+        response_data = {
             "success": True,
-            "user": nutzer,
-            "token": token
+            "user": user_dict,
+            "token": app_jwt_token  # Use YOUR JWT token, not OAuth token
         }
         
-    except AttributeError:
-        return RedirectResponse(
-            url=f"{FRONTEND_URL}"
-        )
+        # Encode and redirect to deep link
+        json_data = json.dumps(response_data, default=str)  # default=str handles datetime objects
+        encoded_data = urllib.parse.quote(json_data)
+        
+        deep_link = f"gluttex://auth/callback?data={encoded_data}"
+        
+        return RedirectResponse(url=deep_link)
+        
+    except AttributeError as e:
+        error_message = urllib.parse.quote(f"Configuration error: {str(e)}")
+        deep_link = f"gluttex://auth/callback?error={error_message}"
+        return RedirectResponse(url=deep_link)
+        
     except Exception as e:
-        # Redirect to frontend with error
-        return str(e) 
-    RedirectResponse(
-            url=f"{FRONTEND_URL}/web?auth=failed&error={str(e)}"
-        )
+        error_message = urllib.parse.quote(str(e))
+        deep_link = f"gluttex://auth/callback?error={error_message}"
+        return RedirectResponse(url=deep_link)
 
 
 async def get_user_info(provider: str, token: dict) -> dict:

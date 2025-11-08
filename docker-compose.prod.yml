@@ -60,6 +60,7 @@ services:
       - AUTH_CHANGE_ENDPOINT=${AUTH_CHANGE_ENDPOINT}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTEND_URL=${FRONTEND_URL}
     networks:
       - gluttex-net
     deploy:
