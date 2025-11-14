@@ -9,6 +9,11 @@ from sqlalchemy import func
 def fetch_all_users():
     return storage_broker.get(AppUser)
 
+def fetch_user_plan( userId: str):
+    return storage_broker.get(table=AppUser,
+        conditions={AppUser.id_app_user: int(userId)},eager_load_depth=[AppUser.plan])
+
+
 def fetch_full_user_by_id(user_id: str):
     """
     Fetch a user by ID along with related AppUserType and Person details.
