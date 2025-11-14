@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Date, DateTime, Float, ForeignKeyConstraint, Index, Integer, LargeBinary, String, Text
+from sqlalchemy import DECIMAL,  DateTime, Enum, Float, ForeignKeyConstraint, Index, Integer, String, Text, text,Column, Date, DateTime, Float, Index, Integer, LargeBinary, String, Text
 from sqlalchemy.sql.sqltypes import NullType
 
 from geoalchemy2 import Geometry
@@ -62,6 +62,25 @@ class Ingredient(Base):
     ingredient_quantifier = Column(String(45))
 
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='contained_ingredient')
+
+
+class Iproduct(Base):
+    __tablename__ = 'iproduct'
+
+    id_iproduct = Column(Integer, primary_key=True)
+    iproduct_barcode = Column(String(45))
+    iproduct_brand = Column(String(255))
+    iproduct_estimated_price = Column(DECIMAL(8, 2), server_default=text("'0.00'"))
+    iproduct_price_currency = Column(String(45), server_default=text("'DZD'"))
+    iproduct_gluten_status = Column(Enum('gluten_free', 'contains_gluten', 'may_contain_gluten', 'unknown'), server_default=text("'unknown'"))
+    iproduct_info_source = Column(String(255))
+    iproduct_last_price_update = Column(DateTime)
+    iproduct_created_at = Column(DateTime)
+    iproduct_last_update = Column(String(45))
+    iproduct_model_name = Column(String(255))
+    iproduct_image_url = Column(String(255))
+
+    product = relationship('Product', back_populates='product_origin')
 
 
 class PersonDetails(Base):
@@ -229,13 +248,28 @@ class Person(Base):
     app_user = relationship('AppUser', back_populates='app_user_person')
     patient = relationship('Patient', back_populates='patient_person')
 
+class Plan(Base):
+    __tablename__ = 'plan'
+
+    id_plan = Column(Integer, primary_key=True)
+    plan_name = Column(String(45))
+    plan_price = Column(DECIMAL(10, 2))
+    billing_cycle = Column(Enum('monthly', 'yearly'), server_default=text("'monthly'"))
+    plan_type = Column(Enum('individual', 'organization'), server_default=text("'individual'"))
+    plan_created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
+    plan_updated_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'))
+
+    app_user = relationship('AppUser', back_populates='plan')
+
 
 class AppUser(Base):
     __tablename__ = 'app_user'
     __table_args__ = (
         ForeignKeyConstraint(['app_user_person_id'], ['person.id_person'], name='fk_app_user_3'),
+        ForeignKeyConstraint(['app_user_subscription_ref'], ['plan.id_plan'], name='fk_app_user_2'),
         ForeignKeyConstraint(['app_user_type_id'], ['app_user_type.id_app_user_type'], name='fk_app_user_1'),
         Index('fk_app_user_1_idx', 'app_user_type_id'),
+        Index('fk_app_user_2_idx', 'app_user_subscription_ref'),
         Index('fk_app_user_3_idx', 'app_user_person_id')
     )
 
@@ -249,8 +283,10 @@ class AppUser(Base):
     app_user_last_updated = Column(DateTime)
     app_user_creation = Column(DateTime)
     app_user_image_url = Column(String(255))
+    app_user_subscription_ref = Column(Integer)
 
     app_user_person = relationship('Person', back_populates='app_user')
+    plan = relationship('Plan', back_populates='app_user')
     app_user_type = relationship('AppUserType', back_populates='app_user')
     comment = relationship('Comment', back_populates='app_user')
     notification = relationship('Notification', back_populates='app_user')
@@ -517,11 +553,13 @@ class Product(Base):
     __tablename__ = 'product'
     __table_args__ = (
         ForeignKeyConstraint(['product_category_id'], ['product_category.id_product_category'], name='fk_product_2'),
+        ForeignKeyConstraint(['product_origin_id'], ['iproduct.id_iproduct'], name='fk_product_4'),
         ForeignKeyConstraint(['product_owner'], ['app_user.id_app_user'], name='fk_product_3'),
         ForeignKeyConstraint(['product_provider_id'], ['product_provider.id_product_provider'], name='fk_product_1'),
         Index('fk_product_1_idx', 'product_provider_id'),
         Index('fk_product_2_idx', 'product_category_id'),
-        Index('fk_product_3_idx', 'product_owner')
+        Index('fk_product_3_idx', 'product_owner'),
+        Index('fk_product_4_idx', 'product_origin_id')
     )
 
     id_product = Column(Integer, primary_key=True)
@@ -537,8 +575,10 @@ class Product(Base):
     product_quantity = Column(Integer)
     product_quantifier = Column(String(45))
     product_owner = Column(Integer)
+    product_origin_id = Column(Integer)
 
     product_category = relationship('ProductCategory', back_populates='product')
+    product_origin = relationship('Iproduct', back_populates='product')
     app_user = relationship('AppUser', back_populates='product')
     product_provider = relationship('ProductProvider', back_populates='product')
     ordered_item = relationship('OrderedItem', back_populates='ordered_product')
