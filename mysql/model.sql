@@ -110,6 +110,23 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`person` (
 ENGINE = InnoDB;
 
 
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`plan`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`plan` (
+  `id_plan` INT NOT NULL AUTO_INCREMENT,
+  `plan_name` VARCHAR(45) NULL,
+  `plan_price` DECIMAL(10,2) NULL,
+  `billing_cycle` ENUM('monthly', 'yearly') NULL DEFAULT 'monthly',
+  `plan_type` ENUM('individual', 'organization') NULL DEFAULT 'individual',
+  `plan_created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+  `plan_updated_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_plan`))
+ENGINE = InnoDB;
+
+
+
 -- -----------------------------------------------------
 -- Table `gluttex`.`app_user`
 -- -----------------------------------------------------
@@ -124,12 +141,19 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`app_user` (
   `app_user_last_active` DATETIME NULL,
   `app_user_last_updated` DATETIME NULL,
   `app_user_creation` DATETIME NULL,
+  `app_user_subscription_ref` INT NULL,
   PRIMARY KEY (`id_app_user`),
   INDEX `fk_app_user_3_idx` (`app_user_person_id` ASC) VISIBLE,
   INDEX `fk_app_user_1_idx` (`app_user_type_id` ASC) VISIBLE,
+  INDEX `fk_app_user_2_idx` (`app_user_subscription_ref` ASC) VISIBLE,
   CONSTRAINT `fk_app_user_1`
     FOREIGN KEY (`app_user_type_id`)
     REFERENCES `gluttex`.`app_user_type` (`id_app_user_type`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_app_user_2`
+    FOREIGN KEY (`app_user_subscription_ref`)
+    REFERENCES `gluttex`.`plan` (`id_plan`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_app_user_3`
@@ -229,6 +253,26 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
+-- Table `gluttex`.`iproduct`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`iproduct` (
+  `id_iproduct` INT NOT NULL AUTO_INCREMENT,
+  `iproduct_barcode` VARCHAR(45) NULL,
+  `iproduct_brand` VARCHAR(255) NULL,
+  `iproduct_estimated_price` DECIMAL(8,2) NULL DEFAULT 0.0,
+  `iproduct_price_currency` VARCHAR(45) NULL DEFAULT 'DZD',
+  `iproduct_gluten_status` ENUM('gluten_free', 'contains_gluten', 'may_contain_gluten', 'unknown') NULL DEFAULT 'unknown',
+  `iproduct_info_source` VARCHAR(255) NULL,
+  `iproduct_last_price_update` DATETIME NULL,
+  `iproduct_created_at` DATETIME NULL,
+  `iproduct_last_update` VARCHAR(45) NULL,
+  `iproduct_model_name` VARCHAR(255) NULL,
+  `iproduct_image_url` VARCHAR(255) NULL,
+  PRIMARY KEY (`id_iproduct`))
+ENGINE = InnoDB;
+
+
+-- -----------------------------------------------------
 -- Table `gluttex`.`product`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`product` (
@@ -245,10 +289,12 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product` (
   `product_quantity` INT NULL,
   `product_quantifier` VARCHAR(45) NULL,
   `product_owner` INT NULL,
+  `product_origin_id` INT NULL,
   PRIMARY KEY (`id_product`),
   INDEX `fk_product_1_idx` (`product_provider_id` ASC) VISIBLE,
   INDEX `fk_product_2_idx` (`product_category_id` ASC) VISIBLE,
   INDEX `fk_product_3_idx` (`product_owner` ASC) VISIBLE,
+  INDEX `fk_product_4_idx` (`product_origin_id` ASC) VISIBLE,
   CONSTRAINT `fk_product_1`
     FOREIGN KEY (`product_provider_id`)
     REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
@@ -262,6 +308,11 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product` (
   CONSTRAINT `fk_product_3`
     FOREIGN KEY (`product_owner`)
     REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_4`
+    FOREIGN KEY (`product_origin_id`)
+    REFERENCES `gluttex`.`iproduct` (`id_iproduct`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
