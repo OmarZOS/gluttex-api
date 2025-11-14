@@ -258,6 +258,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `gluttex`.`iproduct` (
   `id_iproduct` INT NOT NULL AUTO_INCREMENT,
   `iproduct_barcode` VARCHAR(45) NULL,
+  `iproduct_name` VARCHAR(255) NULL,
   `iproduct_brand` VARCHAR(255) NULL,
   `iproduct_estimated_price` DECIMAL(8,2) NULL DEFAULT 0.0,
   `iproduct_price_currency` VARCHAR(45) NULL DEFAULT 'DZD',

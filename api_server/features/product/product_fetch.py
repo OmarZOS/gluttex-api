@@ -1,5 +1,5 @@
 
-from core.models import  Product, ProductCategory, ProductImage, ProductProvider, ProductProviderType
+from core.models import  Iproduct, Product, ProductCategory, ProductImage, ProductProvider, ProductProviderType
 import storage.storage_broker as storage_broker
 
 def fetch_product_by_id(prod_id: int):
@@ -7,6 +7,18 @@ def fetch_product_by_id(prod_id: int):
     if records == []:
         return None
     return records[0]
+
+def fetch_iproduct_by_barcode(barcode: str):
+    records = storage_broker.get(
+        Iproduct
+        ,{
+            Iproduct.iproduct_barcode:barcode
+        }
+        ,None
+        ,None)
+    if records == []: return None
+    return records
+
 
 def fetch_product_image_by_id(image_id: str):
     records = storage_broker.get(

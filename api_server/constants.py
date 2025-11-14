@@ -47,6 +47,17 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:9000/api")
 
 
+
+# ---------- OPENAI CONFIG ----------
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_TEXT_MODELS="gpt-4.1-mini,gpt-4o-mini,gpt-4o,gpt-4.1,o3-mini,o3"
+OPENAI_IMG_TEXT_MODELS="gpt-4o-mini,gpt-4o,gpt-4.1,o3"
+
+MAX_TOKENS = 4000                   # safe max for responses
+TEMPERATURE = 0.2                   # stable answers
+TOP_P = 1
+RETRIES = 3
+
 # COMPUTING_SERVER_BASE_URL = os.getenv("COMPUTING_SERVER_BASE_URL","gluttex") 
 
 

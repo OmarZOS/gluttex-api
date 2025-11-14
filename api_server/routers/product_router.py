@@ -1,11 +1,12 @@
-from fastapi import APIRouter,  status, BackgroundTasks
+from fastapi import APIRouter,  status, BackgroundTasks, File, UploadFile
 from fastapi.encoders import jsonable_encoder
 from sse_starlette.sse import EventSourceResponse
+from features.product.product_ai import ai_generate_product_info_by_barcode, ai_recognize_product_from_image
 from core.models import Product
 from storage.storage_broker import search_records
 from core.api_models import Product_API, ProductImage_API
 from features.product.product_fetch import (
-    fetch_all_product, fetch_product_by_id, get_product_categories, 
+    fetch_all_product, fetch_iproduct_by_barcode, fetch_product_by_id, get_product_categories, 
     get_product_image_by_id, get_products_by_category_id
 )
 from features.product.product_insert import insert_product
@@ -44,6 +45,34 @@ def get_all_products(user_id: int, provider_id: int, category_id: int, offset: i
     Fetch all products with pagination.
     """
     return fetch_all_product(user_id, provider_id, category_id, offset, limit)
+
+@product_router.get("/product/barcode/{barcode}")
+async def get_product_from_barcode(barcode: str):
+    """
+    Search for a product using a barcode.
+    DB first, fallback to AI if needed.
+    """
+    product = fetch_iproduct_by_barcode(barcode)
+
+    if product:
+        return {"source": "database", "data": product}
+
+    # AI fallback if not found in DB
+    ai_data = await ai_generate_product_info_by_barcode(barcode)
+    return {"source": "ai", "data": ai_data}
+
+
+@product_router.post("/product/search/image")
+async def search_product_by_image(file: UploadFile = File(...)):
+    """
+    Search for a product using an uploaded image.
+    Performs OCR/logo detection/AI parsing.
+    """
+    # Read image bytes
+    image_bytes = await file.read()
+
+    ai_result = await ai_recognize_product_from_image(image_bytes)
+    return {"source": "ai", "data": ai_result}
 
 @product_router.get("/product/{product_id}")
 def get_product_by_id(product_id: int):

@@ -68,6 +68,7 @@ class Iproduct(Base):
     __tablename__ = 'iproduct'
 
     id_iproduct = Column(Integer, primary_key=True)
+    iproduct_name = Column(String(255))
     iproduct_barcode = Column(String(45))
     iproduct_brand = Column(String(255))
     iproduct_estimated_price = Column(DECIMAL(8, 2), server_default=text("'0.00'"))
