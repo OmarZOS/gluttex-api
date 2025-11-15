@@ -75,6 +75,7 @@ class Iproduct(Base):
     iproduct_price_currency = Column(String(45), server_default=text("'DZD'"))
     iproduct_gluten_status = Column(Enum('gluten_free', 'contains_gluten', 'may_contain_gluten', 'unknown'), server_default=text("'unknown'"))
     iproduct_info_source = Column(String(255))
+    iproduct_info_confidence = Column(DECIMAL(5, 4), server_default=text("'0.00'"))
     iproduct_last_price_update = Column(DateTime)
     iproduct_created_at = Column(DateTime)
     iproduct_last_update = Column(String(45))

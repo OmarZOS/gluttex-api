@@ -1,10 +1,10 @@
 from fastapi import APIRouter,  status, BackgroundTasks, File, UploadFile
 from fastapi.encoders import jsonable_encoder
 from sse_starlette.sse import EventSourceResponse
-from features.product.product_ai import ai_generate_product_info_by_barcode, ai_recognize_product_from_image
+from features.product.product_ai import ai_generate_product_info_by_barcode, ai_recognize_product_from_image, format_ai_result_to_iproduct
 from core.models import Product
 from storage.storage_broker import search_records
-from core.api_models import Product_API, ProductImage_API
+from core.api_models import Iproduct_API, Product_API, ProductImage_API
 from features.product.product_fetch import (
     fetch_all_product, fetch_iproduct_by_barcode, fetch_product_by_id, get_product_categories, 
     get_product_image_by_id, get_products_by_category_id
@@ -58,8 +58,12 @@ async def get_product_from_barcode(barcode: str):
         return {"source": "database", "data": product}
 
     # AI fallback if not found in DB
-    ai_data = await ai_generate_product_info_by_barcode(barcode)
-    return {"source": "ai", "data": ai_data}
+    ai_data,model_name = await ai_generate_product_info_by_barcode(barcode)
+    
+    # Format as Iproduct_API
+    iproduct_data = format_ai_result_to_iproduct(ai_data, model_name)
+
+    return {"source": "ai", "data": iproduct_data}
 
 
 @product_router.post("/product/search/image")
@@ -71,8 +75,12 @@ async def search_product_by_image(file: UploadFile = File(...)):
     # Read image bytes
     image_bytes = await file.read()
 
-    ai_result = await ai_recognize_product_from_image(image_bytes)
-    return {"source": "ai", "data": ai_result}
+    ai_result,model_name = await ai_recognize_product_from_image(image_bytes)
+
+    # Format as Iproduct_API
+    iproduct_data = format_ai_result_to_iproduct(ai_result, model_name)
+
+    return {"source": "ai", "data": iproduct_data}
 
 @product_router.get("/product/{product_id}")
 def get_product_by_id(product_id: int):
@@ -120,11 +128,11 @@ def update_product_details(
     return res
 
 @product_router.post("/product/add")
-async def insert_product_details(product: Product_API, image: ProductImage_API):
+async def insert_product_details(product: Product_API, image: ProductImage_API = None, iproduct: Iproduct_API = None):
     """
     Insert a new product.
     """
-    return await  insert_product(product, image)
+    return await  insert_product(product, image,iproduct)
 
 @product_router.delete("/product/delete/{product_id}")
 def delete_product_by_id(product_id: int):

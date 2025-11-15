@@ -19,6 +19,18 @@ def fetch_iproduct_by_barcode(barcode: str):
     if records == []: return None
     return records
 
+# Helper function to fetch iproduct
+def fetch_iproduct_by_id(iproduct_id: int) :
+    records = storage_broker.get(
+        Iproduct
+        ,{
+            Iproduct.id_iproduct:iproduct_id
+        }
+        ,None
+        ,None)
+    if records == []: return None
+    return records[0]
+
 
 def fetch_product_image_by_id(image_id: str):
     records = storage_broker.get(

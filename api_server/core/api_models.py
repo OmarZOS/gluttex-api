@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.orm import declarative_base
 from typing import Optional,Dict
 from pydantic import BaseModel
@@ -84,6 +85,23 @@ class Symptoms_API(BaseModel):
     reason_date : Optional[str]
     
 # -------------------------------------------------------------------------------------
+
+class Iproduct_API(BaseModel):
+
+    id_iproduct : Optional[int] = 0
+    iproduct_name : Optional[str] = ''
+    iproduct_barcode : Optional[str] = ''
+    iproduct_brand : Optional[str]  = ''
+    iproduct_estimated_price : Optional[float] = 0.0
+    iproduct_price_currency : Optional[str] = 'DZD'
+    iproduct_gluten_status : Optional[str] = 'unknown'
+    iproduct_info_source : Optional[str] = 'openai'
+    iproduct_info_confidence : Optional[float] = 0.0
+    iproduct_last_price_update :  Optional[str] = datetime.now()
+    iproduct_created_at : Optional[str]= datetime.now()
+    iproduct_last_update : Optional[str]= datetime.now()
+    iproduct_model_name : Optional[str] = 'None'
+    iproduct_image_url : Optional[str] = ''
 
 class Product_API(BaseModel):
     id_product: Optional[int]
