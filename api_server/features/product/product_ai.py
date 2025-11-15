@@ -22,7 +22,7 @@ async def ai_recognize_product_from_image(image_bytes: bytes, language="fr") -> 
         },
         {
             "role": "user",
-            "content": "Analyze this product and return ONLY the JSON."
+            "content": "Analyze and search for this product and return ONLY the JSON {name, brand, barcode, confidence, gluten_status,info_source}."
         }
     ]
 
@@ -65,7 +65,7 @@ async def ai_generate_product_info_by_barcode(barcode: str, language="fr") -> Di
         },
         {
             "role": "user",
-            "content": f"Barcode {barcode}. Return ONLY JSON."
+            "content": f"Barcode {barcode}. Return ONLY JSON (name, brand, barcode, confidence, gluten_status,info_source)."
         }
     ]
 
