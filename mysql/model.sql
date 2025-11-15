@@ -264,6 +264,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`iproduct` (
   `iproduct_price_currency` VARCHAR(45) NULL DEFAULT 'DZD',
   `iproduct_gluten_status` ENUM('gluten_free', 'contains_gluten', 'may_contain_gluten', 'unknown') NULL DEFAULT 'unknown',
   `iproduct_info_source` VARCHAR(255) NULL,
+  `iproduct_info_confidence` DECIMAL(5, 4) NULL,
   `iproduct_last_price_update` DATETIME NULL,
   `iproduct_created_at` DATETIME NULL,
   `iproduct_last_update` VARCHAR(45) NULL,
