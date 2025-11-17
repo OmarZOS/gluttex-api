@@ -63,7 +63,7 @@ async def get_product_from_barcode(barcode: str):
     # Format as Iproduct_API
     iproduct_data = format_ai_result_to_iproduct(ai_data, model_name)
 
-    return {"source": "ai", "data": iproduct_data}
+    return {"source": "ai", "data": [iproduct_data]}
 
 
 @product_router.post("/product/search/image")
@@ -80,7 +80,7 @@ async def search_product_by_image(file: UploadFile = File(...)):
     # Format as Iproduct_API
     iproduct_data = format_ai_result_to_iproduct(ai_result, model_name)
 
-    return {"source": "ai", "data": iproduct_data}
+    return {"source": "ai", "data": [iproduct_data]}
 
 @product_router.get("/product/{product_id}")
 def get_product_by_id(product_id: int):

@@ -48,7 +48,7 @@ async def ai_recognize_product_from_image(image_bytes: bytes, language="fr") -> 
             "confidence": 0,
             "gluten_status": "unknown"
         }]
-    return [json_result],model
+    return json_result,model
 
 async def ai_generate_product_info_by_barcode(barcode: str, language="fr") -> Dict[str, Any]:
 
@@ -93,7 +93,7 @@ async def ai_generate_product_info_by_barcode(barcode: str, language="fr") -> Di
             "price_DA": None,
             "gluten_status": "unknown"
         }],model
-    return [json_result],model
+    return json_result,model
 
 def format_ai_result_to_iproduct(ai_result: Dict[str, Any], model_name: str) -> Iproduct_API:
     """Convert AI recognition result to Iproduct_API format"""
@@ -107,7 +107,7 @@ def format_ai_result_to_iproduct(ai_result: Dict[str, Any], model_name: str) -> 
         iproduct_estimated_price=ai_result.get('price_DA'),
         iproduct_price_currency="DZD",
         iproduct_gluten_status=ai_result.get('gluten_status', 'unknown'),
-        iproduct_info_source="ai_image_recognition",
+        iproduct_info_source=model_name,
         iproduct_info_confidence=ai_result.get('confidence', 0.0),
         iproduct_last_price_update=now,
         iproduct_created_at=now,
