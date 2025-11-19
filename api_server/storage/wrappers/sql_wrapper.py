@@ -1,3 +1,4 @@
+from sqlalchemy.inspection import inspect
 from core.exception_handler import APIException
 from core.messages import *
 from constants import *
@@ -10,7 +11,7 @@ from contextlib import contextmanager
 from sqlalchemy import desc, or_, and_
 from sqlalchemy.orm import joinedload, load_only
 from sqlalchemy.orm.attributes import InstrumentedAttribute
-
+from typing import Any, List
 
 @contextmanager
 def session_scope(engine):
@@ -77,41 +78,108 @@ def get_record_by_id(engine,model_class, id):
         return data
 
 
-def build_eager_options(model_class, eager_load_depth):
-    """
-    Recursively build SQLAlchemy eager loading options.
-    Supports a mix of relationships, columns, and nested dicts.
-    """
 
-    options = []
+def _get_attr_key(field: Any) -> str:
+    """
+    Return a canonical attribute key name for a field that can be:
+      - a string (attribute name)
+      - an InstrumentedAttribute (has .key)
+      - a column or descriptor where str(...) ends with '.<name>'
+    """
+    if isinstance(field, str):
+        return field
+
+    # typical InstrumentedAttribute / ColumnElement have .key
+    key = getattr(field, "key", None)
+    if isinstance(key, str):
+        return key
+
+    # fallback: try to parse string representation
+    s = str(field)
+    if "." in s:
+        return s.split(".")[-1]
+    return s
+
+
+def _resolve_attr(model, key: str):
+    """Return getattr(model, key) or raise ValueError."""
+    try:
+        return getattr(model, key)
+    except AttributeError as e:
+        raise ValueError(f"Model {model} has no attribute '{key}'") from e
+
+
+def build_eager_options(model_class, eager_load_depth: List[Any]):
+    """
+    Build SQLAlchemy eager loading options.
+
+    `eager_load_depth` can contain:
+      - model_attr (e.g. ManagementRule.product_provider)
+      - column attr (e.g. ManagementRule.management_rule_code)
+      - string attr name "product_provider"
+      - nested dicts { relationship_attr_or_name: [ nested_fields... ] }
+
+    Returns a list of loader options suitable for `.options(*...)`.
+    """
+    options: List[Any] = []
 
     def process(model, fields):
-        local_options = []
+        local_opts: List[Any] = []
+        inspected = inspect(model)
+
         for field in fields:
+            # nested dict: { relationship: [ nested_fields ] }
             if isinstance(field, dict):
-                # Nested dict: {relationship: [nested_fields...]}
-                for rel, nested_fields in field.items():
-                    rel_attr = getattr(model, rel.key if hasattr(rel, "key") else str(rel).split(".")[-1])
-                    nested_loader = joinedload(rel_attr)
-                    # Recurse into nested relationship
-                    nested_options = process(rel.mapper.class_, nested_fields)
-                    for opt in nested_options:
-                        nested_loader = nested_loader.options(opt)
-                    local_options.append(nested_loader)
+                for outer, nested_fields in field.items():
+                    outer_key = _get_attr_key(outer)
+                    rel_attr = _resolve_attr(model, outer_key)
+
+                    # ensure it's a relationship
+                    if outer_key not in inspected.relationships:
+                        raise ValueError(
+                            f"Requested nested load '{outer_key}' is not a relationship on {model}"
+                        )
+
+                    # start joinedload on that relationship attribute
+                    loader = joinedload(rel_attr)
+
+                    # get target model for nested recursion
+                    rel_prop = inspected.relationships[outer_key]
+                    target_model = rel_prop.mapper.class_
+
+                    # recurse to build nested options for the target model
+                    nested_opts = process(target_model, nested_fields)
+                    for nopt in nested_opts:
+                        loader = loader.options(nopt)
+
+                    local_opts.append(loader)
 
             else:
-                # Either a column or a relationship
-                rel_attr = getattr(model, field.key if hasattr(field, "key") else str(field).split(".")[-1])
-                prop = getattr(model, rel_attr.key).property
+                # single field (could be column or relationship)
+                key = _get_attr_key(field)
+                attr = _resolve_attr(model, key)
 
-                if hasattr(prop, "direction"):  
-                    # It's a relationship → load full relationship
-                    local_options.append(joinedload(rel_attr))
+                # re-check after resolution
+                inspected = inspect(model)
+                if key in inspected.relationships:
+                    # relationship -> eager load the whole relationship
+                    local_opts.append(joinedload(attr))
+                elif key in inspected.columns:
+                    # column -> load only this column
+                    local_opts.append(Load(model).load_only(attr))
                 else:
-                    # It's a column → load only this column
-                    local_options.append(Load(model).load_only(rel_attr))
+                    # not found in relationships or columns, try to be permissive:
+                    # sometimes hybrid properties or column_property names appear only in mapper.attrs
+                    if key in inspected.attrs:
+                        # If it's not a relationship, loading the attribute may be skipped (no loader)
+                        # But we attempt load_only for safety if it's a column-like attr
+                        local_opts.append(Load(model).load_only(attr))
+                    else:
+                        raise ValueError(
+                            f"Field '{key}' is not a recognized relationship/column on {model}"
+                        )
 
-        return local_options
+        return local_opts
 
     options.extend(process(model_class, eager_load_depth))
     return options

@@ -528,6 +528,8 @@ class ManagementRule(Base):
     rule_ref_provider = Column(Integer)
     rule_ref_user = Column(Integer)
     management_rule_code = Column(Integer)
+    management_rule_status = Column(Enum('PENDING', 'REJECTED', 'SUSPENDED', 'OBSOLETE', 'ACTIVE'), server_default=text("'PENDING'"))
+    management_rule_expiry = Column(DateTime)
 
     provider_organisation = relationship('ProviderOrganisation', back_populates='management_rule')
     product_provider = relationship('ProductProvider', back_populates='management_rule')
