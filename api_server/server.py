@@ -5,15 +5,16 @@ from fastapi.responses import JSONResponse
 from constants import SECRET_KEY
 from core.api_models import API_Resolution
 from core.exception_handler import APIException
-from routers.product_router import product_router
-from routers.supplier_router import supplier_router
-from routers.user_router import app_user_router
-from routers.recipe_router import recipe_router
-from routers.health_router import health_router
-from routers.auth_router import auth_router
-from routers.staff_router import staff_router
+from routers.business_routers.product_router import product_router
+from routers.business_routers.supplier_router import supplier_router
+from routers.app_routers.user_router import app_user_router
+from routers.health_routers.recipe_router import recipe_router
+from routers.health_routers.health_router import health_router
+from routers.app_routers.auth_router import auth_router
+from routers.app_routers.notification_router import notification_router
+from routers.business_routers.staff_router import staff_router
 
-from routers.business_router import business_router
+from routers.business_routers.business_router import business_router
 from routers.search_router import search_router
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
@@ -76,6 +77,7 @@ app.include_router(app_user_router,prefix="/api")
 app.include_router(business_router,prefix="/api")
 app.include_router(search_router,prefix="/api")
 app.include_router(staff_router,prefix="/api")
+app.include_router(notification_router,prefix="/api")
 
 # ------------- Standard endpoints -----------------------------------------------
 

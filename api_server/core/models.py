@@ -66,22 +66,28 @@ class Ingredient(Base):
 
 class Iproduct(Base):
     __tablename__ = 'iproduct'
+    __table_args__ = (
+        ForeignKeyConstraint(['iproduct_category_id'], ['product_category.id_product_category'], name='fk_iproduct_1'),
+        Index('fk_iproduct_1_idx', 'iproduct_category_id')
+    )
 
     id_iproduct = Column(Integer, primary_key=True)
-    iproduct_name = Column(String(255))
     iproduct_barcode = Column(String(45))
     iproduct_brand = Column(String(255))
     iproduct_estimated_price = Column(DECIMAL(8, 2), server_default=text("'0.00'"))
     iproduct_price_currency = Column(String(45), server_default=text("'DZD'"))
     iproduct_gluten_status = Column(Enum('gluten_free', 'contains_gluten', 'may_contain_gluten', 'unknown'), server_default=text("'unknown'"))
     iproduct_info_source = Column(String(255))
-    iproduct_info_confidence = Column(DECIMAL(5, 4), server_default=text("'0.00'"))
     iproduct_last_price_update = Column(DateTime)
     iproduct_created_at = Column(DateTime)
     iproduct_last_update = Column(String(45))
     iproduct_model_name = Column(String(255))
     iproduct_image_url = Column(String(255))
+    iproduct_name = Column(String(255))
+    iproduct_info_confidence = Column(DECIMAL(5, 4))
+    iproduct_category_id = Column(Integer)
 
+    iproduct_category = relationship('ProductCategory', back_populates='iproduct')
     product = relationship('Product', back_populates='product_origin')
 
 
@@ -105,6 +111,7 @@ class ProductCategory(Base):
     product_category_desc = Column(String(45))
     product_category_icon = Column(Text)
 
+    iproduct = relationship('Iproduct', back_populates='iproduct_category')
     product = relationship('Product', back_populates='product_category')
 
 

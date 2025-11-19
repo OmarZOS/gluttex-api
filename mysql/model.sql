@@ -258,19 +258,25 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `gluttex`.`iproduct` (
   `id_iproduct` INT NOT NULL AUTO_INCREMENT,
   `iproduct_barcode` VARCHAR(45) NULL,
-  `iproduct_name` VARCHAR(255) NULL,
   `iproduct_brand` VARCHAR(255) NULL,
   `iproduct_estimated_price` DECIMAL(8,2) NULL DEFAULT 0.0,
   `iproduct_price_currency` VARCHAR(45) NULL DEFAULT 'DZD',
   `iproduct_gluten_status` ENUM('gluten_free', 'contains_gluten', 'may_contain_gluten', 'unknown') NULL DEFAULT 'unknown',
   `iproduct_info_source` VARCHAR(255) NULL,
-  `iproduct_info_confidence` DECIMAL(5, 4) NULL,
   `iproduct_last_price_update` DATETIME NULL,
   `iproduct_created_at` DATETIME NULL,
   `iproduct_last_update` VARCHAR(45) NULL,
   `iproduct_model_name` VARCHAR(255) NULL,
   `iproduct_image_url` VARCHAR(255) NULL,
-  PRIMARY KEY (`id_iproduct`))
+  `iproduct_name` VARCHAR(255) NULL,
+  `iproduct_category_id` INT NULL,
+  PRIMARY KEY (`id_iproduct`),
+  INDEX `fk_iproduct_1_idx` (`iproduct_category_id` ASC) VISIBLE,
+  CONSTRAINT `fk_iproduct_1`
+    FOREIGN KEY (`iproduct_category_id`)
+    REFERENCES `gluttex`.`product_category` (`id_product_category`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
