@@ -149,6 +149,16 @@ class OrganisationImage_API(BaseModel):
     org_ref_id : Optional[int]
 
 
+class ManagementRule_API(BaseModel):
+    id_management_rule: Optional[int]
+    rule_ref_org : Optional[int]
+    rule_ref_provider : Optional[int]
+    rule_ref_user : Optional[int]
+    management_rule_code : Optional[int]
+    management_rule_status : Optional[str]
+    management_rule_expiry : Optional[str]
+
+
 # -------------------------------------------------------------------------------------
 
 class Ingredient_API(BaseModel):

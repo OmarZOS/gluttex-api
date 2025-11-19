@@ -60,5 +60,16 @@ RETRIES = 3
 
 # COMPUTING_SERVER_BASE_URL = os.getenv("COMPUTING_SERVER_BASE_URL","gluttex") 
 
-
 ORDER_STATUSES = {"pending", "paid", "delivered", "cancelled"}
+
+
+class RuleFlags:
+    CAN_VIEW = 1 << 0          # 1
+    CAN_EDIT = 1 << 1          # 2
+    CAN_DELETE = 1 << 2        # 4
+    CAN_APPROVE = 1 << 3       # 8
+    CAN_EXPORT = 1 << 4        # 16
+
+
+
+

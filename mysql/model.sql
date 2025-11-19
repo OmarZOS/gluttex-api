@@ -807,10 +807,13 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`management_rule` (
   `rule_ref_provider` INT NULL,
   `rule_ref_user` INT NULL,
   `management_rule_code` INT NULL,
+  `management_rule_status` ENUM('PENDING', 'REJECTED', 'SUSPENDED', 'OBSOLETE', 'ACTIVE') NULL DEFAULT 'PENDING',
+  `management_rule_expiry` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`id_management_rule`),
   INDEX `fk_management_rule_1_idx` (`rule_ref_org` ASC) VISIBLE,
   INDEX `fk_management_rule_2_idx` (`rule_ref_provider` ASC) VISIBLE,
   INDEX `fk_management_rule_3_idx` (`rule_ref_user` ASC) VISIBLE,
+  
   CONSTRAINT `fk_management_rule_1`
     FOREIGN KEY (`rule_ref_org`)
     REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
