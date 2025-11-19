@@ -158,7 +158,6 @@ class ManagementRule_API(BaseModel):
     management_rule_status : Optional[str]
     management_rule_expiry : Optional[str]
 
-
 # -------------------------------------------------------------------------------------
 
 class Ingredient_API(BaseModel):

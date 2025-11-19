@@ -4,5 +4,8 @@
     "docker.composeCommand": "/usr/libexec/docker/cli-plugins/docker-compose",
     "containers.imageBuildContextPath": "/usr/libexec/docker/cli-plugins/docker-buildx",
     "containers.containerCommand": "/snap/bin/docker",
-    "containers.composeCommand": "/usr/libexec/docker/cli-plugins/docker-compose"
+    "containers.composeCommand": "/usr/libexec/docker/cli-plugins/docker-compose",
+    "python.analysis.extraPaths": [
+        "./api_server/features/notification/builders"
+    ]
 }
