@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from features.supplier.supplier_search import search_supplier_by_location
+from features.business.supplier.supplier_search import search_supplier_by_location
 from core.models import Location, Product, ProductProvider, ProviderDetails, Recipe
 from storage.storage_broker import search_records
 

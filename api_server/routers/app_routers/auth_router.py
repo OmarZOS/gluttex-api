@@ -1,8 +1,8 @@
 import json
 
 import urllib
-from features.user.user_fetch import fetch_user_by_name
-from features.user.user_insert import insert_user
+from features.app.user.user_fetch import fetch_user_by_name
+from features.app.user.user_insert import insert_user
 from constants import *
 from core.messages import *
 from fastapi import APIRouter, Request, Depends, status
@@ -11,7 +11,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from fastapi.responses import RedirectResponse
 from core.exception_handler import APIException
 from core.api_models import AppUser_API, AuthData_API
-from features.user.user_net import login_for_access_token
+from features.app.user.user_net import login_for_access_token
 import os
 import httpx
 import secrets

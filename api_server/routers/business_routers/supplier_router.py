@@ -1,11 +1,11 @@
 from fastapi import APIRouter,  status
-from features.supplier.supplier_delete import delete_supplier
-from features.supplier.supplier_update import update_organisation, update_supplier
+from features.business.supplier.supplier_delete import delete_supplier
+from features.business.supplier.supplier_update import update_organisation, update_supplier
 from core.api_models import Location_API, OrganisationImage_API, ProductProvider_API, ProviderImage_API, ProviderOrganisation_API
-from features.supplier.supplier_fetch import (
+from features.business.supplier.supplier_fetch import (
     fetch_org_by_id, fetch_orgs, fetch_supplier_by_id, fetch_supplier_categories, fetch_suppliers
 )
-from features.supplier.supplier_insert import insert_org, insert_supplier
+from features.business.supplier.supplier_insert import insert_org, insert_supplier
 
 supplier_router = APIRouter()
 

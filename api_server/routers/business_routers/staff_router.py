@@ -8,12 +8,12 @@
 from fastapi import APIRouter,  status, BackgroundTasks, File, UploadFile
 from fastapi.encoders import jsonable_encoder
 from sse_starlette.sse import EventSourceResponse
-from features.staff.staff_delete import delete_rule
-from features.staff.staff_update import update_staff
+from features.business.staff.staff_delete import delete_rule
+from features.business.staff.staff_update import update_staff
 from core.api_models import ManagementRule_API
-from features.staff.staff_add import insert_rule
+from features.business.staff.staff_add import insert_rule
 from storage.storage_broker import search_records
-from features.staff.staff_fetch import *
+from features.business.staff.staff_fetch import *
 import asyncio
 import logging
 

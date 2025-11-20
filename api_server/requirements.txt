@@ -18,6 +18,7 @@ starlette
 geoalchemy2
 
 openai
+pika
 # shapely
 # pytest
 # pytest-asyncio

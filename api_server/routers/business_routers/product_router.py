@@ -1,17 +1,17 @@
 from fastapi import APIRouter,  status, BackgroundTasks, File, UploadFile
 from fastapi.encoders import jsonable_encoder
 from sse_starlette.sse import EventSourceResponse
-from features.product.product_ai import ai_generate_product_info_by_barcode, ai_recognize_product_from_image, format_ai_result_to_iproduct
+from features.business.product.product_ai import ai_generate_product_info_by_barcode, ai_recognize_product_from_image, format_ai_result_to_iproduct
 from core.models import Product
 from storage.storage_broker import search_records
 from core.api_models import Iproduct_API, Product_API, ProductImage_API
-from features.product.product_fetch import (
+from features.business.product.product_fetch import (
     fetch_all_product, fetch_iproduct_by_barcode, fetch_product_by_id, get_product_categories, 
     get_product_image_by_id, get_products_by_category_id
 )
-from features.product.product_insert import insert_product
-from features.product.product_update import notify_subscribers, update_product, subscribers
-from features.product.product_delete import delete_product
+from features.business.product.product_insert import insert_product
+from features.business.product.product_update import notify_subscribers, update_product, subscribers
+from features.business.product.product_delete import delete_product
 import asyncio
 import logging
 

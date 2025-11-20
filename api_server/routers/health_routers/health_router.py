@@ -3,12 +3,12 @@ from fastapi.encoders import jsonable_encoder
 from core.exception_handler import APIException
 from core.api_models import Serology_API, Symptoms_API
 
-from features.health.fetch_serology import get_serology_history
-from features.health.insert_serology import insert_serology
-from features.health.update_serology import update_serology
-from features.health.delete_serology import delete_serology
-from features.health.symptoms_fetch import get_symptoms, get_symptoms_history
-from features.health.symptoms_insert import insert_symptoms
+from features.medical.health.fetch_serology import get_serology_history
+from features.medical.health.insert_serology import insert_serology
+from features.medical.health.update_serology import update_serology
+from features.medical.health.delete_serology import delete_serology
+from features.medical.health.symptoms_fetch import get_symptoms, get_symptoms_history
+from features.medical.health.symptoms_insert import insert_symptoms
 
 health_router = APIRouter()
 
