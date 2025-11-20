@@ -1,12 +1,12 @@
 from fastapi import APIRouter, status
 from core.api_models import Ingredient_API, Recipe_API, RecipeImage_API
-from features.recipe.recipe_fetch import (
+from features.medical.recipe.recipe_fetch import (
     fetch_recipe_record_by_id, get_ingredients, 
     get_recipe_categories, get_recipe_image_by_id, get_recipes_by
 )
-from features.recipe.recipe_insert import insert_ingredient, insert_recipe
-from features.recipe.recipe_update import update_recipe
-from features.recipe.recipe_delete import delete_recipe
+from features.medical.recipe.recipe_insert import insert_ingredient, insert_recipe
+from features.medical.recipe.recipe_update import update_recipe
+from features.medical.recipe.recipe_delete import delete_recipe
 
 recipe_router = APIRouter()
 

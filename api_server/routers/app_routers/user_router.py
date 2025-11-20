@@ -2,11 +2,11 @@ from fastapi import APIRouter,  status
 from core.exception_handler import APIException
 from core.messages import *
 from core.api_models import AppUser_API, AppUserUpdate_API, Location_API, Person_API
-from features.user.user_delete import delete_user
-from features.user.user_fetch import fetch_all_users, fetch_full_user_by_id, fetch_user_by_id
-from features.user.user_insert import insert_user
-from features.user.user_net import update_user_password
-from features.user.user_update import update_api_user, update_api_user_image_url
+from features.app.user.user_delete import delete_user
+from features.app.user.user_fetch import fetch_all_users, fetch_full_user_by_id, fetch_user_by_id
+from features.app.user.user_insert import insert_user
+from features.app.user.user_net import update_user_password
+from features.app.user.user_update import update_api_user, update_api_user_image_url
 
 app_user_router = APIRouter()
 @app_user_router.get("/app_user")

@@ -1,13 +1,13 @@
 from fastapi import APIRouter, BackgroundTasks,  status
 from fastapi.encoders import jsonable_encoder
 from typing import List
-from features.order.order_delete import delete_order
-from features.order.order_update import update_order
+from features.business.order.order_delete import delete_order
+from features.business.order.order_update import update_order
 from core.api_models import OrderedItem_API, PlacedOrder_API
 
-from features.order.order_insert import insert_order
-from features.order.order_fetch import fetch_placed_order_details, fetch_placed_orders_by_user
-from features.product.product_update import notify_subscribers
+from features.business.order.order_insert import insert_order
+from features.business.order.order_fetch import fetch_placed_order_details, fetch_placed_orders_by_user
+from features.business.product.product_update import notify_subscribers
 
 business_router = APIRouter()
 

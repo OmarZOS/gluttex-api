@@ -68,3 +68,12 @@ class RuleFlags:
     CAN_DELETE = 1 << 2        # 4
     CAN_APPROVE = 1 << 3       # 8
     CAN_EXPORT = 1 << 4        # 16
+
+
+AMQP_HOST=os.getenv("RABBITMQ_HOST",'localhost')
+AMQP_PORT=os.getenv("RABBITMQ_PORT",5672)
+AMQP_VIRTUAL_HOST=os.getenv("RABBITMQ_VHOST",'/gluttex')
+AMQP_USER=os.getenv("RABBITMQ_USER","dev_user")
+AMQP_PASS=os.getenv("RABBITMQ_PASS","dev_pass")
+
+
