@@ -1,8 +1,11 @@
 
 
 
+from features.app.notification.notification_add import build_notification, insert_notification
+from communication.publisher import notify_invitation_to_role_received
+from features.app.notification.builders.notification_builder import *
 from features.insertion import insert_or_complete_or_raise
-from core.api_models import ManagementRule_API
+from core.api_models import ManagementRule_API, Notification_API
 from features.business.staff.staff_fetch import touch_rule_by_id
 from core.exception_handler import APIException
 from core.messages import *
@@ -68,8 +71,20 @@ def insert_rule(rule: ManagementRule_API):
 
     try:
         final_rule = insert_or_complete_or_raise(new_rule)
+        notification = NotificationFactory.rule.new_rule_added(rule_id=final_rule.id_management_rule
+                                                               ,rule_name=final_rule.management_rule_code
+                                                               ,rule_type=final_rule.management_rule_status
+                                                               ,user_id=final_rule.rule_ref_user
+                                                               ,added_by=final_rule.rule_ref_user)
 
-        
+        insert_notification(build_notification(Notification_API(
+            #  id_notification = 0,
+             notification_code="role_invitation",
+             notification_params= NotificationFactory.dump_dict(notification),
+             notification_user_ref= rule.rule_ref_user
+        )))
+
+        notify_invitation_to_role_received(notification,final_rule.rule_ref_user)
 
         return final_rule
     except Exception as e:

@@ -76,7 +76,7 @@ class FlutterNotificationProducer:
                 }
             )
         )
-        print(f" [→] Sent {notification_code} to user_{user_id}")
+        print(f" [→] Sent {notification_code} to user.{user_id}.")
     
     def send_to_supplier(self, supplier_id: int, notification_code: str, **params):
         """Send notification to all users of a supplier"""

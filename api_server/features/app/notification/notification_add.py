@@ -1,9 +1,10 @@
 
 
 
+from features.app.notification.notification_fetch import touch_notification_by_id
 from features.insertion import insert_or_complete_or_raise
-from core.api_models import ManagementRule_API
-from features.business.staff.staff_fetch import touch_rule_by_id
+from core.api_models import  Notification_API
+# from features.business.staff.staff_fetch import touch_notification_by_id
 from core.exception_handler import APIException
 from core.messages import *
 from core.models import *
@@ -17,7 +18,7 @@ from datetime import datetime
 
 def parse_expiry(value: str | None):
     """
-    Parse management_rule_expiry without external libraries.
+    Parse management_notification_expiry without external libraries.
     Returns datetime or None.
     """
     if not value or str(value).lower() == "null":
@@ -40,39 +41,41 @@ def parse_expiry(value: str | None):
             continue
 
     return None
-def build_rule(rule: ManagementRule_API):
-    new_rule = ManagementRule(
-        rule_ref_org  = rule.rule_ref_org,
-        rule_ref_provider  = rule.rule_ref_provider,
-        rule_ref_user  = rule.rule_ref_user,
-        management_rule_code  = rule.management_rule_code,
-        management_rule_status = rule.management_rule_status,
-        management_rule_expiry = parse_expiry(rule.management_rule_expiry),
+def build_notification(notification: Notification_API):
+    new_notification = Notification(
+        # id_notification = notification.id_notification,
+        notification_code  = notification.notification_code,
+        notification_params  = notification.notification_params,
+        notification_user_ref  = notification.notification_user_ref,
+        
     )
+    if notification.notification_created_at == None:
+        new_notification.notification_created_at  = datetime.now(), 
+    if notification.notification_read_at  :
+        new_notification.notification_read_at  = notification.notification_read_at
+    return new_notification
 
-    if int(rule.id_management_rule) !=0 :
-        new_rule.id_management_rule  = rule.id_management_rule
-    return new_rule
 
 
-def insert_rule(rule: ManagementRule_API):
+
+def insert_notification(notification: Notification_API):
     # Build conditions dynamically
-    if int(rule.id_management_rule) != 0:
-        if touch_rule_by_id(rule.id_management_rule):
+    if notification.id_notification :
+        if touch_notification_by_id(notification.id_notification):
                     raise APIException(
             status=HTTP_409_CONFLICT,
-            code=RULE_ALREADY_EXISTS,
-            details=f"Rule number '{rule.id_management_rule}' already exists."
+            code=NOTIFICATION_ALREADY_EXISTS,
+            details=f"notification number '{notification.id_notification}' already exists."
         )
-    new_rule = build_rule(rule)
+    new_notification = build_notification(notification)
 
     try:
-        final_rule = insert_or_complete_or_raise(new_rule)
-        return final_rule
+        final_notification = insert_or_complete_or_raise(new_notification)
+        return final_notification
     except Exception as e:
         raise APIException(
             status=HTTP_417_EXPECTATION_FAILED,
-            code=RULE_INSERT_FAILED,
+            code=NOTIFICATION_INSERT_FAILED,
             details=f"{str(e)}"
         )
 
