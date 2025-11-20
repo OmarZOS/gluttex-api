@@ -150,13 +150,22 @@ class OrganisationImage_API(BaseModel):
 
 
 class ManagementRule_API(BaseModel):
-    id_management_rule: Optional[int]
+    id_management_rule: Optional[int] = 0
     rule_ref_org : Optional[int]
     rule_ref_provider : Optional[int]
     rule_ref_user : Optional[int]
     management_rule_code : Optional[int]
-    management_rule_status : Optional[str]
-    management_rule_expiry : Optional[str]
+    management_rule_status : Optional[str] = None
+    management_rule_expiry : Optional[str] = None
+
+class Notification_API(BaseModel):
+    id_notification: Optional[int] = 0
+    notification_code: Optional[str]
+    notification_params : Optional[str]
+    notification_user_ref : Optional[int] 
+    notification_created_at : Optional[str] = None
+    notification_read_at : Optional[str] = None
+
 
 # -------------------------------------------------------------------------------------
 

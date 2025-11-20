@@ -63,9 +63,9 @@ def listen_local_connection():
 
     # 3. Bind queue to exchange
     channel.queue_bind(
-        exchange='restrained_notifications',
+        exchange='user_notifications',
         queue=queue_name,
-        routing_key="product.1.*"
+        routing_key="user.1."
     )
 
     # 4. Callback
@@ -76,7 +76,7 @@ def listen_local_connection():
     # 5. Consume
     channel.basic_consume(queue=queue_name, on_message_callback=callback)
 
-    print("[*] Listening...")
+    print(f"[*] Listening on {queue_name}...")
     channel.start_consuming()
 
 

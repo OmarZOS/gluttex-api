@@ -9,7 +9,9 @@ class NotificationBuilder:
     @staticmethod
     def build_params(**kwargs) -> str:
         """Convert parameters to JSON string"""
-        return json.dumps(kwargs, ensure_ascii=False)
+        # return json.dumps(kwargs, ensure_ascii=False)
+        return kwargs
+    
     
     @staticmethod
     def get_current_timestamp() -> str:
@@ -200,7 +202,7 @@ class RuleNotificationBuilder(NotificationBuilder):
     
     @staticmethod
     def new_rule_added(rule_id: int, rule_name: str, rule_type: str, 
-                      added_by: str, supplier_name: Optional[str] = None) -> str:
+                      user_id: str, added_by: Optional[int] = None) -> str:
         """
         New rule added notification
         """
@@ -208,12 +210,12 @@ class RuleNotificationBuilder(NotificationBuilder):
             "rule_id": rule_id,
             "rule_name": rule_name,
             "rule_type": rule_type,
-            "added_by": added_by,
+            "user_id": user_id,
             "timestamp": NotificationBuilder.get_current_timestamp()
         }
         
-        if supplier_name:
-            params["supplier_name"] = supplier_name
+        if added_by:
+            params["added_by"] = added_by
             
         return NotificationBuilder.build_params(**params)
     
@@ -394,6 +396,11 @@ class SystemNotificationBuilder(NotificationBuilder):
 # Main facade class for easy access
 class NotificationFactory:
     """Facade class to provide easy access to all notification builders"""
+    
+    @staticmethod
+    def dump_dict(kwargs:dict) -> str:
+        """Convert parameters to JSON string"""
+        return json.dumps(kwargs, ensure_ascii=False)
     
     # Order notifications
     order = OrderNotificationBuilder

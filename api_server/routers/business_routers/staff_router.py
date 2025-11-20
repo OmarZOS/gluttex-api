@@ -107,11 +107,11 @@ def update_staff_details(
     return res
 
 @staff_router.post("/staff/add")
-async def insert_staff_details(rule: ManagementRule_API):
+def insert_staff_details(rule: ManagementRule_API):
     """
     Insert a new staff.
     """
-    return await  insert_rule(rule)
+    return  insert_rule(rule)
 
 @staff_router.delete("/staff/delete/{staff_id}")
 def delete_staff_by_id(staff_id: int):

@@ -18,8 +18,8 @@ def update_staff(rule: ManagementRule_API):
         if not old_rule :
                     raise APIException(
             status=HTTP_409_CONFLICT,
-            code=RULE_ALREADY_EXISTS,
-            details=f"Rule number '{rule.id_management_rule}' already exists."
+            code=RULE_NOT_EXISTS,
+            details=f"Rule number '{rule.id_management_rule}' not exists."
         )
 
     new_rule = build_rule(rule)
