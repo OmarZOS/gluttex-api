@@ -153,6 +153,7 @@ class Reaction(Base):
     reaction_type = Column(String(45))
 
     comment_reaction = relationship('CommentReaction', back_populates='reaction')
+    provider_reaction = relationship('ProviderReaction', back_populates='reaction')
     recipe_reaction = relationship('RecipeReaction', back_populates='reaction')
     product_reaction = relationship('ProductReaction', back_populates='reaction')
 
@@ -306,6 +307,7 @@ class AppUser(Base):
     comment_reaction = relationship('CommentReaction', back_populates='app_user')
     management_rule = relationship('ManagementRule', back_populates='app_user')
     product = relationship('Product', back_populates='app_user')
+    provider_reaction = relationship('ProviderReaction', back_populates='app_user')
     recipe_reaction = relationship('RecipeReaction', back_populates='app_user')
     product_reaction = relationship('ProductReaction', back_populates='app_user')
 
@@ -420,6 +422,7 @@ class ProductProvider(Base):
     management_rule = relationship('ManagementRule', back_populates='product_provider')
     product = relationship('Product', back_populates='product_provider')
     provider_image = relationship('ProviderImage', back_populates='provider_ref')
+    provider_reaction = relationship('ProviderReaction', back_populates='product_provider')
 
 
 class Recipe(Base):
@@ -609,6 +612,27 @@ class ProviderImage(Base):
     provider_ref_id = Column(Integer)
 
     provider_ref = relationship('ProductProvider', back_populates='provider_image')
+
+class ProviderReaction(Base):
+    __tablename__ = 'provider_reaction'
+    __table_args__ = (
+        ForeignKeyConstraint(['product_reacting_user'], ['app_user.id_app_user'], name='fk_product_reaction_12'),
+        ForeignKeyConstraint(['product_reaction_ref'], ['reaction.id_reaction'], name='fk_product_reaction_22'),
+        ForeignKeyConstraint(['reacted_on_provider'], ['product_provider.id_product_provider'], name='fk_product_reaction_31'),
+        Index('fk_product_reaction_1_idx', 'product_reacting_user'),
+        Index('fk_product_reaction_2_idx', 'product_reaction_ref'),
+        Index('fk_product_reaction_31_idx', 'reacted_on_provider')
+    )
+
+    id_product_reaction = Column(Integer, primary_key=True)
+    product_reacting_user = Column(Integer)
+    product_reaction_ref = Column(Integer)
+    reacted_on_provider = Column(Integer)
+
+    app_user = relationship('AppUser', back_populates='provider_reaction')
+    reaction = relationship('Reaction', back_populates='provider_reaction')
+    product_provider = relationship('ProductProvider', back_populates='provider_reaction')
+
 
 
 class RecipeContainsIngredient(Base):
