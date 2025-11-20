@@ -858,6 +858,35 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`notification` (
 ENGINE = InnoDB;
 
 
+
+CREATE TABLE IF NOT EXISTS `gluttex`.`provider_reaction` (
+  `id_product_reaction` INT NOT NULL AUTO_INCREMENT,
+  `product_reacting_user` INT NULL,
+  `product_reaction_ref` INT NULL,
+  `reacted_on_provider` INT NULL,
+  PRIMARY KEY (`id_product_reaction`),
+  INDEX `fk_product_reaction_1_idx` (`product_reacting_user` ASC) VISIBLE,
+  INDEX `fk_product_reaction_2_idx` (`product_reaction_ref` ASC) VISIBLE,
+  INDEX `fk_product_reaction_31_idx` (`reacted_on_provider` ASC) VISIBLE,
+  CONSTRAINT `fk_product_reaction_12`
+    FOREIGN KEY (`product_reacting_user`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_reaction_22`
+    FOREIGN KEY (`product_reaction_ref`)
+    REFERENCES `gluttex`.`reaction` (`id_reaction`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_product_reaction_31`
+    FOREIGN KEY (`reacted_on_provider`)
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
