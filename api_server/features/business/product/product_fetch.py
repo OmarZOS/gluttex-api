@@ -1,12 +1,15 @@
 
-from core.models import  Iproduct, Product, ProductCategory, ProductImage, ProductProvider, ProductProviderType
+from core.models import  Iproduct, Product, ProductCategory, ProductImage, ProductProvider, ProductProviderType, ProductReaction, Reaction
 import storage.storage_broker as storage_broker
 
 def fetch_product_by_id(prod_id: int):
-    records = storage_broker.get(Product,{Product.id_product:prod_id})
+    records = storage_broker.get(Product,{Product.id_product:prod_id},[],[Product.product_reaction])
     if records == []:
         return None
-    return records[0]
+
+    product = records[0]
+
+    return product
 
 def fetch_iproduct_by_barcode(barcode: str):
     records = storage_broker.get(

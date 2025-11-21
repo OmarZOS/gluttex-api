@@ -1,4 +1,6 @@
-from sqlalchemy import DECIMAL,  DateTime, Enum, Float, ForeignKeyConstraint, Index, Integer, String, Text, text,Column, Date, DateTime, Float, Index, Integer, LargeBinary, String, Text
+from sqlalchemy import DECIMAL,  DateTime, Enum, Float, ForeignKeyConstraint, Index, Integer, String, Text, text,Column, Date, DateTime, Float, Index, Integer, LargeBinary, String, Text,  select, func
+from sqlalchemy.orm import column_property
+
 from sqlalchemy.sql.sqltypes import NullType
 
 from geoalchemy2 import Geometry
@@ -562,9 +564,31 @@ class PresentedSymptom(Base):
     symptom = relationship('Symptom', back_populates='presented_symptom')
     symptoms_occurence = relationship('SymptomsOccurence', back_populates='presented_symptom')
 
+class ProductReaction(Base):
+    __tablename__ = 'product_reaction'
+    __table_args__ = (
+        ForeignKeyConstraint(['product_reacting_user'], ['app_user.id_app_user'], name='fk_product_reaction_1'),
+        ForeignKeyConstraint(['product_reaction_ref'], ['reaction.id_reaction'], name='fk_product_reaction_2'),
+        ForeignKeyConstraint(['reacted_on_product'], ['product.id_product'], name='fk_product_reaction_3'),
+        Index('fk_product_reaction_1_idx', 'product_reacting_user'),
+        Index('fk_product_reaction_2_idx', 'product_reaction_ref'),
+        Index('fk_product_reaction_3_idx', 'reacted_on_product')
+    )
+
+    id_product_reaction = Column(Integer, primary_key=True)
+    product_reacting_user = Column(Integer)
+    product_reaction_ref = Column(Integer)
+    reacted_on_product = Column(Integer)
+    product_reaction_value = Column(Float, server_default=text("'0'"))
+
+    app_user = relationship('AppUser', back_populates='product_reaction')
+    reaction = relationship('Reaction', back_populates='product_reaction')
+    product = relationship('Product', back_populates='product_reaction')
+
 
 class Product(Base):
     __tablename__ = 'product'
+    __allow_unmapped__ = True  # Allow unmapped annotations
     __table_args__ = (
         ForeignKeyConstraint(['product_category_id'], ['product_category.id_product_category'], name='fk_product_2'),
         ForeignKeyConstraint(['product_origin_id'], ['iproduct.id_iproduct'], name='fk_product_4'),
@@ -576,7 +600,13 @@ class Product(Base):
         Index('fk_product_4_idx', 'product_origin_id')
     )
 
+
     id_product = Column(Integer, primary_key=True)
+    # Define the correlated subquery properly
+
+    # Simple Python attribute (not a database column)
+    # reaction_count = None
+
     product_name = Column(String(45))
     product_brand = Column(String(45))
     product_provider_id = Column(Integer)
@@ -598,6 +628,8 @@ class Product(Base):
     ordered_item = relationship('OrderedItem', back_populates='ordered_product')
     product_image = relationship('ProductImage', back_populates='product_ref')
     product_reaction = relationship('ProductReaction', back_populates='product')
+    
+
 
 
 class ProviderImage(Base):
@@ -724,23 +756,3 @@ class ProductImage(Base):
     product_ref = relationship('Product', back_populates='product_image')
 
 
-class ProductReaction(Base):
-    __tablename__ = 'product_reaction'
-    __table_args__ = (
-        ForeignKeyConstraint(['product_reacting_user'], ['app_user.id_app_user'], name='fk_product_reaction_1'),
-        ForeignKeyConstraint(['product_reaction_ref'], ['reaction.id_reaction'], name='fk_product_reaction_2'),
-        ForeignKeyConstraint(['reacted_on_product'], ['product.id_product'], name='fk_product_reaction_3'),
-        Index('fk_product_reaction_1_idx', 'product_reacting_user'),
-        Index('fk_product_reaction_2_idx', 'product_reaction_ref'),
-        Index('fk_product_reaction_3_idx', 'reacted_on_product')
-    )
-
-    id_product_reaction = Column(Integer, primary_key=True)
-    product_reacting_user = Column(Integer)
-    product_reaction_ref = Column(Integer)
-    reacted_on_product = Column(Integer)
-    product_reaction_value = Column(Float, server_default=text("'0'"))
-
-    app_user = relationship('AppUser', back_populates='product_reaction')
-    reaction = relationship('Reaction', back_populates='product_reaction')
-    product = relationship('Product', back_populates='product_reaction')

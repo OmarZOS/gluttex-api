@@ -12,6 +12,7 @@ from sqlalchemy import desc, or_, and_
 from sqlalchemy.orm import joinedload, load_only
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from typing import Any, List
+from sqlalchemy.sql import func
 
 @contextmanager
 def session_scope(engine):
@@ -224,24 +225,52 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
         return records
 
 
-def count_records(engine, model_class, conditions=None, join_tables=None):
-    with session_scope(engine) as session:
-        query = session.query(model_class)
 
-        # Join tables if specified
+
+def count_records(engine, model_class, conditions=None, join_tables=None, group_by=None):
+    with session_scope(engine) as session:
+
+        # Extract primary key column
+        pk_col = list(model_class.__table__.primary_key.columns)[0]
+
+        # Validate group_by
+        if group_by is not None and not isinstance(group_by, InstrumentedAttribute):
+            raise ValueError(f"group_by must be a model column, got: {group_by}")
+
+        # Build SELECT
+        if group_by is not None:
+            query = session.query(group_by, func.count(pk_col))
+        else:
+            query = session.query(func.count(pk_col))
+
+        # Base table
+        query = query.select_from(model_class)
+
+        # JOINs
         if join_tables:
             for join_table in join_tables:
-                query = query.join(join_table)
+                if isinstance(join_table, InstrumentedAttribute):
+                    query = query.join(join_table)
+                else:
+                    raise ValueError(f"join_tables must contain relationship attributes, got: {join_table}")
 
-        # Apply conditions if specified
+        # WHERE
         if conditions:
             for attr, value in conditions.items():
-                # Same parsing logic you used: model.column
-                column_name = str(attr).split(".")[1]
-                query = query.filter(getattr(model_class, column_name) == str(value))
+                if not isinstance(attr, InstrumentedAttribute):
+                    raise ValueError(f"Condition key must be a column, got: {attr}")
+                query = query.filter(attr == value)
 
-        # Return count
-        return query.count()
+        # GROUP BY
+        if group_by is not None:
+            query = query.group_by(group_by)
+            return query.all()  # list of tuples (group, count)
+
+        # Simple count
+        return query.scalar()
+
+
+
 
 # Function to update an record in a table
 def update_record(engine,obj):

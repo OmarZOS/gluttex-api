@@ -18,9 +18,9 @@ def get(table,conditions=None, join_tables=None,eager_load_depth=None,offset=0, 
     res = medicom_store.get_records(engine,table,conditions,join_tables,eager_load_depth,offset,limit)
     return res
 
-def count(table,conditions=None, join_tables=None):
+def count(table,conditions=None, join_tables=None,group_by=None):
     engine = medicom_store.get_engine(DB_URI)
-    res = medicom_store.count_records(engine,table,conditions,join_tables)
+    res = medicom_store.count_records(engine,table,conditions,join_tables,group_by)
     return res
 
 def delete_record(item):

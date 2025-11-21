@@ -1,7 +1,7 @@
 
 
 import os
-
+from enum import Enum
 
 # # getting a list of scylla node names ["node1","node2"]
 # SCYLLA_NODES = os.getenv("SCYLLA_NODES").split(",")
@@ -69,6 +69,17 @@ class RuleFlags:
     CAN_APPROVE = 1 << 3       # 8
     CAN_EXPORT = 1 << 4        # 16
 
+
+class ReactionType(str, Enum):
+    product = "product"
+    recipe = "recipe"
+    provider = "provider"
+    comment = "comment"
+
+PRODUCT_REACTION_IDS = {1,2,3,4,5}
+RECIPE_REACTION_IDS = {1,6,7,8,4}
+PROVIDER_REACTION_IDS = {3,9,10,5,8}
+COMMENT_REACTION_IDS = {1,3,8}
 
 AMQP_HOST=os.getenv("RABBITMQ_HOST",'localhost')
 AMQP_PORT=os.getenv("RABBITMQ_PORT",5672)

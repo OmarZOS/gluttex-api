@@ -1,7 +1,9 @@
 from fastapi import APIRouter,  status
+from constants import ReactionType
+from features.app.social.social_add import handle_reaction
 from core.exception_handler import APIException
 from core.messages import *
-from core.api_models import AppUser_API, AppUserUpdate_API, Location_API, Person_API
+from core.api_models import AppUser_API, AppUserUpdate_API, Location_API, Person_API, ReactionBase
 from features.app.user.user_delete import delete_user
 from features.app.user.user_fetch import fetch_all_users, fetch_full_user_by_id, fetch_user_by_id
 from features.app.user.user_insert import insert_user
@@ -60,3 +62,15 @@ def update_user_record_endpoint(user: AppUser_API, person_record: Person_API,loc
         Update the user image url.
     """
     return update_api_user(user, person_record,location_record)
+
+@app_user_router.post("/reaction")
+def reaction_endpoint(reaction : ReactionBase):
+    """
+        insert reactions or update them.
+    """
+    return handle_reaction(reaction)
+
+
+
+
+
