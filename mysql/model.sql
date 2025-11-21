@@ -898,7 +898,11 @@ FLUSH PRIVILEGES;
 
 -- Dump completed on 2025-08-16 19:54:35
 
+ALTER TABLE `product_reaction`
+ADD COLUMN `product_reaction_value` FLOAT DEFAULT 0.0;
 
+ALTER TABLE `provider_reaction`
+ADD COLUMN `provider_reaction_value` FLOAT DEFAULT 0.0;
 
 
 INSERT INTO `gluttex`.`app_user_type` ( `app_user_type_desc`) VALUES

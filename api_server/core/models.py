@@ -628,6 +628,7 @@ class ProviderReaction(Base):
     product_reacting_user = Column(Integer)
     product_reaction_ref = Column(Integer)
     reacted_on_provider = Column(Integer)
+    provider_reaction_value = Column(Float, server_default=text("'0'"))
 
     app_user = relationship('AppUser', back_populates='provider_reaction')
     reaction = relationship('Reaction', back_populates='provider_reaction')
@@ -738,6 +739,7 @@ class ProductReaction(Base):
     product_reacting_user = Column(Integer)
     product_reaction_ref = Column(Integer)
     reacted_on_product = Column(Integer)
+    product_reaction_value = Column(Float, server_default=text("'0'"))
 
     app_user = relationship('AppUser', back_populates='product_reaction')
     reaction = relationship('Reaction', back_populates='product_reaction')
