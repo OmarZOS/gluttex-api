@@ -904,6 +904,7 @@ ADD COLUMN `product_reaction_value` FLOAT DEFAULT 0.0;
 ALTER TABLE `provider_reaction`
 ADD COLUMN `provider_reaction_value` FLOAT DEFAULT 0.0;
 
+insert into reaction (reaction_type) values ('love'),('tasty'),('like'),('sick'),('danger'),('easy'),('long'),('unlike'),('safe'),('savy');
 
 INSERT INTO `gluttex`.`app_user_type` ( `app_user_type_desc`) VALUES
 ( 'Client'),

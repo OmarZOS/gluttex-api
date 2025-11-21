@@ -3,6 +3,8 @@ from sqlalchemy.orm import declarative_base
 from typing import Optional,Dict
 from pydantic import BaseModel
 
+from constants import ReactionType
+
 Base = declarative_base()
 metadata = Base.metadata    
 
@@ -166,29 +168,38 @@ class Notification_API(BaseModel):
     notification_created_at : Optional[str] = None
     notification_read_at : Optional[str] = None
 
+class ReactionBase(BaseModel):
+    user_id: int
+    reaction_id: int
+    value: Optional[float] = None
+    type: ReactionType
+    target_id: int   # product_id, recipe_id, provider_id, comment_id
+
 
 class Reaction_API(BaseModel):
-    id_reaction: Optional[int] = 0
-    reaction_type: Optional[str] = "LIKE"
 
-    id_product_reaction : Optional[int] = 0
-    reacted_on_product : Optional[int] = 0
+    id_reaction: Optional[int] = 3
+
+    recipe_reaction_ref: Optional[int] = 3
+    product_reaction_ref: Optional[int] = 3
+    comment_reaction_ref: Optional[int] = 3
     
-
+    id_product_reaction : Optional[int] = 0
     id_recipe_reaction: Optional[int] = 0
-    recipe_reacting_user: Optional[int] = 0
-    recipe_reaction_ref: Optional[int] = 0
-    reacted_on_recipe: Optional[int] = 0
-
-    product_reacting_user: Optional[int] = 0
-    product_reaction_ref: Optional[int] = 0
-    reacted_on_provider: Optional[int] = 0
-    provider_reaction_value: Optional[float] = 0.0
-
     id_comment_reaction: Optional[int] = 0
-    comment_reacting_user: Optional[int] = 0
-    comment_reaction_ref: Optional[int] = 0
+    
+    reacted_on_product : Optional[int] = 0
+    reacted_on_provider: Optional[int] = 0
+    reacted_on_recipe: Optional[int] = 0
     reacted_on_comment: Optional[int] = 0
+
+    recipe_reacting_user: Optional[int] = 0
+    product_reacting_user: Optional[int] = 0
+    comment_reacting_user: Optional[int] = 0
+
+    provider_reaction_value: Optional[float] = 0.0
+    product_reaction_value: Optional[float] = 0.0
+
 
 # -------------------------------------------------------------------------------------
 

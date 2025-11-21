@@ -23,7 +23,8 @@ def fetch_recipe_by_id(prod_id: int):
                                         [RecipeContainsIngredient.contained_quantity
                                             ,RecipeContainsIngredient.contained_ingredient_id
                                         ]
-                                  }
+                                  },
+                                  Recipe.recipe_reaction
                               ]
                               )
 

@@ -22,7 +22,8 @@ def fetch_supplier_by_id(provider_id: str):
                                     ,ProductProvider.product_provider_type
                                     ,ProductProvider.product_provider_details
                                     ,ProductProvider.product_provider_org
-                                    ,ProductProvider.provider_image
+                                    ,ProductProvider.provider_reaction,
+                                    ProductProvider.management_rule
                                     ,ProductProvider.management_rule
                                 ])
     
