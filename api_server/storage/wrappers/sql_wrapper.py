@@ -223,6 +223,26 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
         session.expunge_all()
         return records
 
+
+def count_records(engine, model_class, conditions=None, join_tables=None):
+    with session_scope(engine) as session:
+        query = session.query(model_class)
+
+        # Join tables if specified
+        if join_tables:
+            for join_table in join_tables:
+                query = query.join(join_table)
+
+        # Apply conditions if specified
+        if conditions:
+            for attr, value in conditions.items():
+                # Same parsing logic you used: model.column
+                column_name = str(attr).split(".")[1]
+                query = query.filter(getattr(model_class, column_name) == str(value))
+
+        # Return count
+        return query.count()
+
 # Function to update an record in a table
 def update_record(engine,obj):
     session = get_session(engine, obj)

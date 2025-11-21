@@ -167,6 +167,29 @@ class Notification_API(BaseModel):
     notification_read_at : Optional[str] = None
 
 
+class Reaction_API(BaseModel):
+    id_reaction: Optional[int] = 0
+    reaction_type: Optional[str] = "LIKE"
+
+    id_product_reaction : Optional[int] = 0
+    reacted_on_product : Optional[int] = 0
+    
+
+    id_recipe_reaction: Optional[int] = 0
+    recipe_reacting_user: Optional[int] = 0
+    recipe_reaction_ref: Optional[int] = 0
+    reacted_on_recipe: Optional[int] = 0
+
+    product_reacting_user: Optional[int] = 0
+    product_reaction_ref: Optional[int] = 0
+    reacted_on_provider: Optional[int] = 0
+    provider_reaction_value: Optional[float] = 0.0
+
+    id_comment_reaction: Optional[int] = 0
+    comment_reacting_user: Optional[int] = 0
+    comment_reaction_ref: Optional[int] = 0
+    reacted_on_comment: Optional[int] = 0
+
 # -------------------------------------------------------------------------------------
 
 class Ingredient_API(BaseModel):
