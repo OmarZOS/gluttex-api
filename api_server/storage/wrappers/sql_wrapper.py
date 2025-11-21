@@ -298,6 +298,42 @@ def delete_record_by_id(engine,model_class, id):
     data = session.delete()   #.query(model_class).filter(primary_key_name == str(id)).delete()
     # # # session.expunge(data)
     return data
+from sqlalchemy.orm import aliased
+from sqlalchemy.inspection import inspect
+
+
+def resolve_attr_recursive(model, field_path):
+    """
+    Takes e.g. "product_provider.provider_name" 
+    and returns the actual SQLAlchemy attribute,
+    performing necessary joins and returning both:
+    - attribute
+    - relationship path to join
+    """
+
+    parts = field_path.split(".")
+    current_model = model
+    joins = []
+    
+    for i, part in enumerate(parts):
+        mapper = inspect(current_model)
+
+        # last part -> column
+        if i == len(parts) - 1:
+            if part in mapper.columns:
+                return getattr(current_model, part), joins
+            raise ValueError(f"Column '{part}' not found on {current_model}")
+
+        # not last part → must be a relationship
+        if part not in mapper.relationships:
+            raise ValueError(f"Relationship '{part}' not found on {current_model}")
+
+        rel = mapper.relationships[part]
+
+        joins.append(getattr(current_model, part))
+        current_model = rel.mapper.class_
+
+    raise RuntimeError("Invalid path parsing")
 
 
 def search_records(
@@ -317,12 +353,26 @@ def search_records(
 
         if search_query and search_fields:
             keywords = search_query.split()
+            
             for kw in keywords:
-                conditions = [
-                    getattr(model_class, str(field).split(".")[1]).ilike(f"%{kw}%")
-                    for field in search_fields
-                ]
-                query = query.filter(or_(*conditions))
+                or_conditions = []
+                required_joins = []
+
+                for field_path in search_fields:
+                    attr, joins = resolve_attr_recursive(model_class, field_path)
+
+                    # collect joins needed
+                    for j in joins:
+                        required_joins.append(j)
+
+                    or_conditions.append(attr.ilike(f"%{kw}%"))
+
+                # apply joins before filtering
+                for j in required_joins:
+                    query = query.join(j, isouter=True)
+
+                query = query.filter(or_(*or_conditions))
+
         
         if join_tables:
             for join_table in join_tables:

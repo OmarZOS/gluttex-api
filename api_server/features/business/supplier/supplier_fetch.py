@@ -22,10 +22,11 @@ def fetch_supplier_by_id(provider_id: str):
                                     ,ProductProvider.product_provider_type
                                     ,ProductProvider.product_provider_details
                                     ,ProductProvider.product_provider_org
-                                    ,ProductProvider.provider_reaction,
-                                    ProductProvider.management_rule
+                                    ,ProductProvider.provider_image
+                                    ,ProductProvider.provider_reaction
                                     ,ProductProvider.management_rule
-                                ])
+                                 ]
+                                )
     
     if(records != []):
         if(records[0].product_provider_location.location_address_id!=None):
