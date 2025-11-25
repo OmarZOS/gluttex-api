@@ -176,6 +176,27 @@ services:
       - "traefik.http.routers.gluttex-fs.tls.certresolver=letsencrypt"
       - "traefik.http.services.gluttex-fs.loadbalancer.server.port=9099"
 
+  gluttex-stream:
+    container_name: gluttex-stream
+    hostname: gluttex-stream
+    restart: unless-stopped
+    build:
+      context: ./stream_server
+      dockerfile: ./Dockerfile
+    command: uvicorn server:app --host 0.0.0.0 --port 9097 --reload
+    image: omarzos/gluttex-stream
+    ports:
+      - 9097:9097
+    volumes:
+      - ./stream_server/:/code
+    networks:
+      - gluttex-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
   traefik:
     image: traefik:v2.10
     container_name: traefik
