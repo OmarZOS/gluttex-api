@@ -1,5 +1,6 @@
 import ssl, pika
-
+import asyncio
+import websockets
 
 def test_distant_connection():
     ssl_context = ssl.create_default_context()
@@ -88,5 +89,32 @@ def pass_gen():
     password = ''.join(secrets.choice(alphabet) for _ in range(24))
     print(password)
 
-listen_local_connection()
+
+
+async def test_ws():
+    WS_URL = "ws://localhost:9097/ws/2"   
+    try:
+        print(f"Connecting to {WS_URL}...")
+        async with websockets.connect(WS_URL) as websocket:
+            while(True):
+                print("Connected!")
+
+                # Send a message
+                # await websocket.send("Hello WebSocket Server!")
+                # print("Message sent.")
+
+                # Wait for a response
+                response = await websocket.recv()
+                print("Received:", response)
+
+    except Exception as e:
+        print("Error:", e)
+
+
+
+
+asyncio.run(test_ws())
+
+
+# listen_local_connection()
 # pass_gen()

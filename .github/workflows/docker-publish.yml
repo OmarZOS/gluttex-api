@@ -33,6 +33,7 @@ jobs:
           docker build -t gluttex-auth ./auth_server
           docker build -t gluttex-fs ./file_server
           docker build -t gluttex-api ./api_server
+          docker build -t gluttex-stream ./stream_server
       
       # Start containers with docker-compose (auth, fs, api)
       - name: Start containers
@@ -72,6 +73,13 @@ jobs:
           context: ./file_server
           push: true
           tags: omarzos/gluttex-fs:latest
+      # Build & push streaming Server
+      - name: Build and Push Stream Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./stream_server
+          push: true
+          tags: omarzos/gluttex-stream:latest
 
         
 
