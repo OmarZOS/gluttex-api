@@ -47,9 +47,8 @@ def build_notification(notification: Notification_API):
         notification_code  = notification.notification_code,
         notification_params  = notification.notification_params,
         notification_user_ref  = notification.notification_user_ref,
-        
     )
-    if notification.notification_created_at == None:
+    if notification.notification_created_at == None or notification.notification_created_at == "":
         new_notification.notification_created_at  = datetime.now(), 
     if notification.notification_read_at  :
         new_notification.notification_read_at  = notification.notification_read_at
