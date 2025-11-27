@@ -8,6 +8,7 @@
 from fastapi import APIRouter,  status, BackgroundTasks, File, UploadFile
 from fastapi.encoders import jsonable_encoder
 from sse_starlette.sse import EventSourceResponse
+from features.app.notification.notification_update import answer_staff
 from features.business.staff.staff_delete import delete_rule
 from features.business.staff.staff_update import update_staff
 from core.api_models import ManagementRule_API
@@ -104,6 +105,15 @@ def update_staff_details(
     Update staff details and notify subscribers.
     """
     res = update_staff(staff)
+    return res
+
+@staff_router.put("/rule/answer/{staff_id}")
+def answer_staff_invitation(staff_id,
+    answer: int):
+    """
+    Update staff details and notify subscribers.
+    """
+    res = answer_staff(staff_id,answer)
     return res
 
 @staff_router.post("/staff/add")
