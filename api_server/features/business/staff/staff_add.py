@@ -12,7 +12,7 @@ from core.messages import *
 from core.models import *
 import storage.storage_broker as storage_broker
 from sqlalchemy import func
-
+from datetime import datetime 
 from datetime import datetime
 
 
@@ -81,7 +81,8 @@ def insert_rule(rule: ManagementRule_API):
             #  id_notification = 0,
              notification_code="role_invitation",
              notification_params= NotificationFactory.dump_dict(notification),
-             notification_user_ref= rule.rule_ref_user
+             notification_user_ref= rule.rule_ref_user,
+             notification_created_at=datetime.now()
         )))
 
         notify_invitation_to_role_received(notification,final_rule.rule_ref_user)
