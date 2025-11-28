@@ -124,14 +124,14 @@ async def _cleanup_connection(queue_name: str, consumer: OptimizedPikaConsumerTh
     except Exception:
         pass
 
-# Health check endpoint
-@app.get("/health")
-async def health_check():
-    return {
-        "status": "healthy", 
-        "timestamp": time.time(),
-        "active_connections": len(manager.active_connections)
-    }
+# # Health check endpoint
+# @app.get("/health")
+# async def health_check():
+#     return {
+#         "status": "healthy", 
+#         "timestamp": time.time(),
+#         "active_connections": len(manager.active_connections)
+#     }
 
 @app.get("/")
 async def get():
