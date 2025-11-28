@@ -29,7 +29,7 @@ services:
       - "traefik.tcp.routers.rabbitmq-amqps.rule=HostSNI(`amqp.gluttex.com`)"
       - "traefik.tcp.routers.rabbitmq-amqps.entrypoints=amqps"
       - "traefik.tcp.routers.rabbitmq-amqps.tls.certresolver=letsencrypt"
-      - "traefik.tcp.services.rabbitmq-amqps.loadbalancer.server.port=5672"
+      - "traefik.tcp.services.rabbitmq-amqps.loadbalancer.server.port=5671"
 
 
 
@@ -108,7 +108,7 @@ services:
     labels:
       - "traefik.enable=true"
       # - "traefik.docker.network=gluttex-net"  # Critical fix
-      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`)"
       - "traefik.http.routers.gluttex-api.entrypoints=websecure"
       - "traefik.http.routers.gluttex-api.tls=true"
       - "traefik.http.routers.gluttex-api.tls.certresolver=letsencrypt"
@@ -178,38 +178,37 @@ services:
 
   gluttex-stream:
     container_name: gluttex-stream
-    hostname: gluttex-stream
-    restart: unless-stopped
-    command: uvicorn server:app --host 0.0.0.0 --port 9097 --reload
     image: omarzos/gluttex-stream
+    restart: unless-stopped
+    command: uvicorn server:app --host 0.0.0.0 --port 9097
     environment:
       - AMQP_HOST=${AMQP_HOST}
       - AMQP_PORT=${AMQP_PORT}
       - AMQP_VIRTUAL_HOST=${AMQP_VIRTUAL_HOST}
       - AMQP_USER=${AMQP_USER}
       - AMQP_PASS=${AMQP_PASS}
-    ports:
-      - 9097
     networks:
       - gluttex-net
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gluttex-stream.rule=Host(`gluttex.com/stream`)"
+
+      # FIXED (no useless middlewares)
+      - "traefik.http.routers.gluttex-stream.rule=Host(`gluttex.com`) && PathPrefix(`/stream`)"
       - "traefik.http.routers.gluttex-stream.entrypoints=websecure"
-      - "traefik.http.routers.gluttex-stream.tls=true"
       - "traefik.http.routers.gluttex-stream.tls.certresolver=letsencrypt"
       - "traefik.http.services.gluttex-stream.loadbalancer.server.port=9097"
+
+
+      # WebSocket support
+
+
   traefik:
     image: traefik:v2.10
     container_name: traefik
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
+
     command:
       # Entrypoints
       - "--entrypoints.web.address=:80"
@@ -224,28 +223,26 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
 
-      # API Dashboard
+      # API Dashboard (keep insecure only if local or protected)
       - "--api.insecure=true"
 
-      # Let's Encrypt DNS challenge
-      - "--certificatesresolvers.letsencrypt.acme.email=admin@gluttex.com"
+      # LETS ENCRYPT — HTTP CHALLENGE (no Cloudflare needed)
+      - "--certificatesresolvers.letsencrypt.acme.email=osjfvhng16@gmail.com"
       - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
-      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.delaybeforecheck=20"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
 
-    environment:
-      - "CF_API_TOKEN=${CLOUDFLARE_API_TOKEN}"  # Cloudflare API token
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"
+      - "8080:8080"  # dashboard
       - "5671:5671"  # AMQPS
     networks:
       - gluttex-net
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
 
 
 volumes:

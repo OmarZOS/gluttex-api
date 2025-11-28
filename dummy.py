@@ -92,7 +92,7 @@ def pass_gen():
 
 
 async def test_ws():
-    WS_URL = "ws://localhost:9097/ws/2"   
+    WS_URL = "wss://stream.gluttex.com/stream/ws/2"   
     try:
         print(f"Connecting to {WS_URL}...")
         async with websockets.connect(WS_URL) as websocket:
