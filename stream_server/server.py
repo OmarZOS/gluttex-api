@@ -39,7 +39,7 @@ app = FastAPI(
 
 
 # Health check endpoint
-@app.get("/health")
+@app.get("/stream/health")
 async def health_check():
     """Health check endpoint for load balancers and monitoring"""
     return {
@@ -49,7 +49,7 @@ async def health_check():
         "memory_usage": psutil.Process().memory_info().rss / 1024 / 1024
     }
 
-@app.websocket("/ws/{client_id}")
+@app.websocket("/stream/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await websocket.accept()
 
@@ -125,7 +125,7 @@ async def _cleanup_connection(queue_name: str, consumer: OptimizedPikaConsumerTh
         pass
 
 # # Health check endpoint
-# @app.get("/health")
+# @app.get("/stream/health")
 # async def health_check():
 #     return {
 #         "status": "healthy", 
@@ -133,7 +133,7 @@ async def _cleanup_connection(queue_name: str, consumer: OptimizedPikaConsumerTh
 #         "active_connections": len(manager.active_connections)
 #     }
 
-@app.get("/")
+@app.get("/stream/")
 async def get():
     html = """
     <!DOCTYPE html>
