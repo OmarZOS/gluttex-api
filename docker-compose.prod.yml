@@ -108,7 +108,7 @@ services:
     labels:
       - "traefik.enable=true"
       # - "traefik.docker.network=gluttex-net"  # Critical fix
-      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`)"
+      - "traefik.http.routers.gluttex-api.rule=Host(`gluttex.com`) && PathPrefix(`/api`)"
       - "traefik.http.routers.gluttex-api.entrypoints=websecure"
       - "traefik.http.routers.gluttex-api.tls=true"
       - "traefik.http.routers.gluttex-api.tls.certresolver=letsencrypt"
@@ -195,6 +195,7 @@ services:
       # FIXED (no useless middlewares)
       - "traefik.http.routers.gluttex-stream.rule=Host(`gluttex.com`) && PathPrefix(`/stream`)"
       - "traefik.http.routers.gluttex-stream.entrypoints=websecure"
+      - "traefik.http.routers.gluttex-stream.tls=true"
       - "traefik.http.routers.gluttex-stream.tls.certresolver=letsencrypt"
       - "traefik.http.services.gluttex-stream.loadbalancer.server.port=9097"
 
