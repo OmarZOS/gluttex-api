@@ -732,7 +732,7 @@ class OrderedItem(Base):
 
     id_ordered_item = Column(Integer, primary_key=True)
     ordered_product_id = Column(Integer)
-    ordered_quantity = Column(String(100))
+    ordered_quantity = Column(Integer)
     applied_vat = Column(Float(asdecimal=True))
     order_ref = Column(Integer)
     unit_price = Column(Float(asdecimal=True))

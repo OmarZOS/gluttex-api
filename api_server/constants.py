@@ -49,7 +49,7 @@ BASE_URL = os.getenv("BASE_URL", "http://localhost:9000/api")
 
 
 # ---------- OPENAI CONFIG ----------
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", 'test-key-for-testing')
 OPENAI_TEXT_MODELS="gpt-4.1-mini,gpt-4o-mini,gpt-4o,gpt-4.1,o3-mini,o3"
 OPENAI_IMG_TEXT_MODELS="gpt-4o-mini,gpt-4o,gpt-4.1,o3"
 
@@ -60,7 +60,9 @@ RETRIES = 3
 
 # COMPUTING_SERVER_BASE_URL = os.getenv("COMPUTING_SERVER_BASE_URL","gluttex") 
 
-ORDER_STATUSES = {'PENDING', 'REJECTED', 'SUSPENDED', 'OBSOLETE', 'ACTIVE'}
+ORDER_STATUSES = {'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELED'}
+
+RULE_STATUSES = {'PENDING', 'REJECTED', 'SUSPENDED', 'OBSOLETE', 'ACTIVE'}
 
 class RuleFlags:
     CAN_VIEW = 1 << 0          # 1
@@ -68,7 +70,6 @@ class RuleFlags:
     CAN_DELETE = 1 << 2        # 4
     CAN_APPROVE = 1 << 3       # 8
     CAN_EXPORT = 1 << 4        # 16
-
 
 class ReactionType(str, Enum):
     product = "product"

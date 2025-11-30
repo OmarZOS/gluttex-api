@@ -12,6 +12,65 @@ from features.app.user.user_fetch import fetch_user_by_id
 from datetime import datetime;
 
 
+def insert_order_item(api_ordered_item: OrderedItem_API) -> OrderedItem:
+    """
+    Insert a single ordered item into the system.
+
+    Args:
+        api_ordered_item (OrderedItem_API): The ordered item to insert.
+
+    Returns:
+        OrderedItem: The created ordered item.
+
+    Raises:
+        APIException: If product doesn't exist, stock is insufficient, or insertion fails.
+    """
+    try:
+        # Convert API model to internal model
+        ordered_item = build_ordered_item(api_ordered_item)
+        
+        # Validate product exists
+        ordered_product = fetch_product_by_id(ordered_item.ordered_product_id)
+        if ordered_product is None:
+            raise APIException(
+                status=HTTP_404_NOT_FOUND,
+                code=PRODUCT_NOT_EXISTS,
+                details=f"Product #{ordered_item.ordered_product_id} does not exist"
+            )
+        
+        # Validate stock availability
+        if ordered_product.product_quantity < ordered_item.ordered_quantity:
+            raise APIException(
+                status=HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE,
+                code=PRODUCT_QUANTITY_NOT_ENOUGH,
+                details=f"Not enough stock for product #{ordered_item.ordered_product_id}. Available: {ordered_product.product_quantity}, Requested: {ordered_item.ordered_quantity}"
+            )
+        
+        # Update product stock
+        ordered_product.product_quantity -= ordered_item.ordered_quantity
+        update_record_in_api(ordered_product)
+        
+        # Notify subscribers about stock update
+        send_to_product_subscribers(
+            {'product_quantity': ordered_product.product_quantity},
+            ordered_product.id_product
+        )
+        
+        # Insert the ordered item
+        inserted_item = insert_or_complete_or_raise(ordered_item)
+        
+        return inserted_item
+        
+    except APIException:
+        # Re-raise API exceptions as-is
+        raise
+    except Exception as e:
+        raise APIException(
+            status=HTTP_417_EXPECTATION_FAILED,
+            code=ORDER_ITEM_INSERT_FAILED,
+            details=f"Failed to insert ordered item: {str(e)}"
+        )
+
 
 def build_ordered_item(api_ordered_item: OrderedItem_API) -> OrderedItem:
     """

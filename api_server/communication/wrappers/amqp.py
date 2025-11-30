@@ -65,7 +65,7 @@ class FlutterNotificationProducer:
         
         self.channel.basic_publish(
             exchange='user_notifications',
-            routing_key=f'user.{user_id}.',  # User-specific routing key
+            routing_key =f'user.{user_id}.',  # User-specific routing key
             body=json.dumps(message),
             properties=pika.BasicProperties(
                 delivery_mode=2,  # Persistent

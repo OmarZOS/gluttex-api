@@ -201,21 +201,24 @@ class RuleNotificationBuilder(NotificationBuilder):
         return NotificationBuilder.build_params(**params)
     
     @staticmethod
-    def new_rule_added(rule_id: int, rule_name: str, rule_type: str, 
-                      user_id: str, added_by: Optional[int] = None) -> str:
+    def new_rule_added(rule_id: int, role: str, rule_type: str, 
+                      user_id: str, provider_id:int, organization_id:int, invited_by: Optional[int] = None) -> str:
         """
         New rule added notification
         """
         params = {
             "rule_id": rule_id,
-            "rule_name": rule_name,
+            "role": role,
             "rule_type": rule_type,
-            "user_id": user_id,
+            "user_id": user_id
+            ,"provider_id":provider_id
+            ,"organization_id":organization_id,
+            # ,"invited_by":invited_by,
             "timestamp": NotificationBuilder.get_current_timestamp()
         }
         
-        if added_by:
-            params["added_by"] = added_by
+        if invited_by:
+            params["invited_by"] = invited_by
             
         return NotificationBuilder.build_params(**params)
     
@@ -239,8 +242,8 @@ class PersonnelNotificationBuilder(NotificationBuilder):
     """Builder for personnel and work-related notifications"""
     
     @staticmethod
-    def work_invitation(organization_id: int, organization_name: str, role: str, 
-                       invited_by: str, invitation_id: Optional[int] = None) -> str:
+    def work_invitation(organization_id: int, provider_id: int, role: str, 
+                       invited_by: str, rule_id: Optional[int] = None) -> str:
         """
         Work invitation notification
         
@@ -253,25 +256,26 @@ class PersonnelNotificationBuilder(NotificationBuilder):
         """
         params = {
             "organization_id": organization_id,
-            "organization_name": organization_name,
+            "provider_id": provider_id,
             "role": role,
             "invited_by": invited_by,
             "timestamp": NotificationBuilder.get_current_timestamp()
         }
         
-        if invitation_id:
-            params["invitation_id"] = invitation_id
+        if rule_id:
+            params["rule_id"] = rule_id
             
         return NotificationBuilder.build_params(**params)
     
     @staticmethod
-    def invitation_accepted(user_id: int, user_name: str, organization_name: str, 
-                           role: str) -> str:
+    def invitation_accepted(user_id: int, rule_name: str, organization_id: str, 
+                           provider_id:int,role: str) -> str:
         """Work invitation accepted notification"""
         return NotificationBuilder.build_params(
             user_id=user_id,
-            user_name=user_name,
-            organization_name=organization_name,
+            rule_name=rule_name,
+            organization_id=organization_id,
+            provider_id = provider_id,
             role=role,
             timestamp=NotificationBuilder.get_current_timestamp()
         )

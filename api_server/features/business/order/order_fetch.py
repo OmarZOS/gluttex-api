@@ -30,6 +30,14 @@ def fetch_order_by_id(order_id):
     return storage_broker.get(PlacedOrder
                               ,{PlacedOrder.id_placed_order :order_id}
                               ,[]
+                              ,[PlacedOrder.ordered_item]
                               ,None
+                              )
+
+def fetch_only_order_by_id(order_id):
+    return storage_broker.get(PlacedOrder
+                              ,{PlacedOrder.id_placed_order :order_id}
+                              ,[]
+                              ,[]
                               ,None
                               )
