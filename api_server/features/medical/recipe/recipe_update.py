@@ -98,7 +98,6 @@ def update_recipe(recipe_id: int, recipe_api: Recipe_API, image: RecipeImage_API
 
     for k,v in  old_containments.items():
         delete_containment(v)
-    print("Mom i'm home")
     final_recipes = fetch_recipe_record_by_id(recipe_id)[0]
     
     return final_recipes

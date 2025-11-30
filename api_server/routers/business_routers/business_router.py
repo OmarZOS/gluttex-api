@@ -83,7 +83,7 @@ def update_placed_order(
     Returns:
         dict: Success message with updated order details.
     """
-    res = update_order( updated_items, updated_order)
+    res = update_order(updated_items, updated_order)
     
     return res
 

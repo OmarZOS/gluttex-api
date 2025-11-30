@@ -254,7 +254,7 @@ class OrderedItem_API(BaseModel):
     order_ref : Optional[int]
     
     product_discount : Optional[float]
-    ordered_quantity : Optional[float]
+    ordered_quantity : Optional[int]
     unit_price : Optional[float]
     applied_vat : Optional[float]
 

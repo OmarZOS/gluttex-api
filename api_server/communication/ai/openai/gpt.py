@@ -6,7 +6,12 @@ from typing import Optional, List, Dict, Any, AsyncGenerator
 from constants import *
 
 # Initialize client
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Only initialize if we have a real API key or we're not testing
+if OPENAI_API_KEY != 'test-key-for-testing' or not os.getenv('TESTING'):
+    client = OpenAI(api_key=OPENAI_API_KEY)
+else:
+    client = None
+
 
 TEXT_MODELS_LIST = OPENAI_TEXT_MODELS.split(",")
 VISION_MODELS = OPENAI_IMG_TEXT_MODELS.split(",")

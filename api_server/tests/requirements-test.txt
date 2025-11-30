@@ -1,0 +1,15 @@
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+httpx>=0.24.0
+requests>=2.28.0
+sqlalchemy>=1.4.0
+alembic>=1.8.0
+faker>=15.0.0
+freezegun>=1.2.0
+pytest-mock>=3.10.0
+locust>=2.15.0
+itsdangerous
+python-multipart
+starlette
+geoalchemy2

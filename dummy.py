@@ -92,7 +92,7 @@ def pass_gen():
 
 
 async def test_ws():
-    WS_URL = "wss://stream.gluttex.com/stream/ws/2"   
+    WS_URL = "wss://gluttex.com/stream/ws/2"   
     try:
         print(f"Connecting to {WS_URL}...")
         async with websockets.connect(WS_URL) as websocket:
@@ -113,8 +113,8 @@ async def test_ws():
 
 
 
-asyncio.run(test_ws())
+# asyncio.run(test_ws())
 
 
-# listen_local_connection()
+listen_local_connection()
 # pass_gen()

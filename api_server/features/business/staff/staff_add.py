@@ -71,18 +71,18 @@ def insert_rule(rule: ManagementRule_API):
 
     try:
         final_rule = insert_or_complete_or_raise(new_rule)
-        notification = NotificationFactory.rule.new_rule_added(rule_id=final_rule.id_management_rule
-                                                               ,rule_name=final_rule.management_rule_code
-                                                               ,rule_type=final_rule.management_rule_status
-                                                               ,user_id=final_rule.rule_ref_user
-                                                               ,added_by=final_rule.rule_ref_user)
+        notification = NotificationFactory.personnel.work_invitation(rule_id=final_rule.id_management_rule
+                                                               ,role=final_rule.management_rule_code
+                                                               ,provider_id=final_rule.rule_ref_provider
+                                                               ,organization_id=final_rule.rule_ref_org
+                                                               ,invited_by=final_rule.rule_ref_user)
 
         insert_notification(build_notification(Notification_API(
             #  id_notification = 0,
              notification_code="role_invitation",
              notification_params= NotificationFactory.dump_dict(notification),
              notification_user_ref= rule.rule_ref_user,
-             notification_created_at=datetime.now()
+            #  notification_created_at= str(datetime.now())
         )))
 
         notify_invitation_to_role_received(notification,final_rule.rule_ref_user)

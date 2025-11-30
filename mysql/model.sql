@@ -606,7 +606,7 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_item` (
   `id_ordered_item` INT NOT NULL AUTO_INCREMENT,
   `ordered_product_id` INT NULL,
-  `ordered_quantity` VARCHAR(100) NULL,
+  `ordered_quantity` INT NULL,
   `applied_vat` DOUBLE NULL,
   `order_ref` INT NULL,
   `unit_price` DOUBLE NULL,
