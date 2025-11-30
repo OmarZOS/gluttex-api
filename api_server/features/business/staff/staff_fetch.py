@@ -46,8 +46,13 @@ def fetch_staff(org_id, supplier_id, user_id,rule_id, offset, limit):
         None,
         [
             ManagementRule.management_rule_code,
+            ManagementRule.management_rule_status,
+            ManagementRule.management_rule_expiry,
             ManagementRule.provider_organisation,
-            {ManagementRule.product_provider:[ProductProvider.product_provider_details]},
+            {
+                
+                
+                ManagementRule.product_provider:[ProductProvider.product_provider_details]},
                 {
                     ManagementRule.app_user: [{
                         AppUser.app_user_person: [
