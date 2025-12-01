@@ -51,9 +51,11 @@ def update_staff(rule: ManagementRule_API):
              notification_user_ref= rule.rule_ref_user,
             #  notification_created_at=datetime.now()
         )))
-
-        notify_invitation_to_role_received(notification,owner_id)
-        notify_invitation_to_role_received(notification,final_rule.rule_ref_user)
+        try:
+            notify_invitation_to_role_received(notification,owner_id)
+            notify_invitation_to_role_received(notification,final_rule.rule_ref_user)
+        except :
+            pass
 
         return final_rule
     except Exception as e:
@@ -104,8 +106,10 @@ def answer_staff(rule_id: int,answer :int):
                 notification_user_ref= final_rule.rule_ref_user,
                 #  notification_created_at=datetime.now()
             )))
-
-            notify_rule_to_role_received(notification,owner_id)
+            try:
+                notify_rule_to_role_received(notification,owner_id)
+            except :
+                pass 
 
         return final_rule
     except Exception as e:

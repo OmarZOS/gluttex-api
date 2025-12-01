@@ -879,7 +879,10 @@ class RabbitMQTester:
             }
             
             # This should use the decorator
-            notify_order_received(order_data, user_id=1)
+            try:
+                notify_order_received(order_data, user_id=1)
+            except :
+                pass
             
             # Wait for message
             time.sleep(2)

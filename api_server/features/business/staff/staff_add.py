@@ -85,7 +85,10 @@ def insert_rule(rule: ManagementRule_API):
             #  notification_created_at= str(datetime.now())
         )))
 
-        notify_invitation_to_role_received(notification,final_rule.rule_ref_user)
+        try:
+            notify_invitation_to_role_received(notification,final_rule.rule_ref_user)
+        except :
+            pass
 
         return final_rule
     except Exception as e:
