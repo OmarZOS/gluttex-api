@@ -28,9 +28,6 @@ oauth = OAuth()
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:9070")
 
 
-
-
-
 # Register Google OAuth with correct configuration
 oauth.register(
     name="google",
