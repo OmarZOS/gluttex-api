@@ -1,6 +1,8 @@
 from fastapi import APIRouter,  status, BackgroundTasks, File, UploadFile
 from fastapi.encoders import jsonable_encoder
 from sse_starlette.sse import EventSourceResponse
+from core.exception_handler import APIException
+from core.messages import HTTP_404_NOT_FOUND, PRODUCT_FETCH_NOT_FOUND, RULE_DELETE_FAILED, RULE_NOT_EXISTS
 from features.business.product.product_ai import ai_generate_product_info_by_barcode, ai_recognize_product_from_image, format_ai_result_to_iproduct
 from core.models import Product
 from storage.storage_broker import search_records
@@ -64,6 +66,21 @@ async def get_product_from_barcode(barcode: str):
     iproduct_data = format_ai_result_to_iproduct(ai_data, model_name)
 
     return {"source": "ai", "data": [iproduct_data]}
+
+@product_router.get("/product/db/barcode/{barcode}")
+async def get_product_barcode(barcode: str):
+    """
+    Search for a product using a barcode.
+    DB first, fallback to AI if needed.
+    """
+    product = fetch_iproduct_by_barcode(barcode)
+
+    if product:
+        return {"source": "database", "data": product}
+    raise APIException(status= HTTP_404_NOT_FOUND,code=PRODUCT_FETCH_NOT_FOUND,message=f"{PRODUCT_FETCH_NOT_FOUND}: {barcode}")
+        
+    return {"source": "database", "data": []}
+
 
 
 @product_router.post("/product/search/image")
