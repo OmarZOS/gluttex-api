@@ -11,41 +11,54 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,N
 -- -----------------------------------------------------
 -- Schema gluttex
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `gluttex` DEFAULT CHARACTER SET utf8 ;
+CREATE SCHEMA IF NOT EXISTS `gluttex` DEFAULT CHARACTER SET utf8mb3 ;
+-- -----------------------------------------------------
+-- Schema gluttex
+-- -----------------------------------------------------
+
+-- -----------------------------------------------------
+-- Schema gluttex
+-- -----------------------------------------------------
+CREATE SCHEMA IF NOT EXISTS `gluttex` DEFAULT CHARACTER SET utf8mb3 ;
 USE `gluttex` ;
 
 -- -----------------------------------------------------
--- Table `gluttex`.`app_user_type`
+-- Table `gluttex`.`product_provider_type`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`app_user_type` (
-  `id_app_user_type` INT NOT NULL AUTO_INCREMENT,
-  `app_user_type_desc` VARCHAR(45) NULL,
-  PRIMARY KEY (`id_app_user_type`))
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `gluttex`.`product_provider_type` (
+  `id_product_provider_type` INT NOT NULL AUTO_INCREMENT,
+  `product_provider_type_desc` VARCHAR(45) NULL DEFAULT NULL,
+  `product_provider_ref` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_product_provider_type`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 7
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`person_details`
+-- Table `gluttex`.`provider_organisation`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`person_details` (
-  `id_person_details` INT NOT NULL AUTO_INCREMENT,
-  `person_first_name` VARCHAR(45) NULL,
-  `person_last_name` VARCHAR(45) NULL,
-  `person_birth_date` DATE NULL,
-  `person_gender` VARCHAR(45) NULL,
-  `person_nationality` VARCHAR(45) NULL,
-  PRIMARY KEY (`id_person_details`))
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `gluttex`.`provider_organisation` (
+  `idprovider_organisation` INT NOT NULL AUTO_INCREMENT,
+  `provider_organisation_name` VARCHAR(45) NULL DEFAULT NULL,
+  `provider_organisation_desc` VARCHAR(300) NULL DEFAULT NULL,
+  PRIMARY KEY (`idprovider_organisation`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 3
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`blood_type`
+-- Table `gluttex`.`provider_details`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`blood_type` (
-  `id_blood_type` INT NOT NULL AUTO_INCREMENT,
-  `blood_type_desc` VARCHAR(45) NULL,
-  PRIMARY KEY (`id_blood_type`))
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `gluttex`.`provider_details` (
+  `idprovider_details_id` INT NOT NULL AUTO_INCREMENT,
+  `provider_name` VARCHAR(45) NULL DEFAULT NULL,
+  `provider_contact_info` TEXT NULL DEFAULT NULL,
+  PRIMARY KEY (`idprovider_details_id`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 8
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -53,12 +66,14 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`address` (
   `id_address` INT NOT NULL AUTO_INCREMENT,
-  `address_street` VARCHAR(45) NULL,
-  `address_city` VARCHAR(45) NULL,
-  `address_postal_code` VARCHAR(45) NULL,
-  `address_country` VARCHAR(45) NULL,
+  `address_street` VARCHAR(45) NULL DEFAULT NULL,
+  `address_city` VARCHAR(45) NULL DEFAULT NULL,
+  `address_postal_code` VARCHAR(45) NULL DEFAULT NULL,
+  `address_country` VARCHAR(45) NULL DEFAULT NULL,
   PRIMARY KEY (`id_address`))
-ENGINE = InnoDB;
+ENGINE = InnoDB
+AUTO_INCREMENT = 32
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -67,48 +82,29 @@ ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `gluttex`.`location` (
   `id_location` INT NOT NULL AUTO_INCREMENT,
   `location_position` POINT NOT NULL,
-  `location_name` VARCHAR(45) NULL,
-  `location_address_id` INT NULL,
+  `location_name` VARCHAR(45) NULL DEFAULT NULL,
+  `location_address_id` INT NULL DEFAULT NULL,
   PRIMARY KEY (`id_location`),
   INDEX `fk_location_1_idx` (`location_address_id` ASC) VISIBLE,
   SPATIAL INDEX `spatial` (`location_position`) VISIBLE,
   CONSTRAINT `fk_location_1`
     FOREIGN KEY (`location_address_id`)
-    REFERENCES `gluttex`.`address` (`id_address`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    REFERENCES `gluttex`.`address` (`id_address`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 28
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`person`
+-- Table `gluttex`.`app_user_type`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`person` (
-  `id_person` INT NOT NULL AUTO_INCREMENT,
-  `person_details_id` INT NULL,
-  `person_blood_type_id` INT NULL,
-  `person_location_id` INT NULL,
-  PRIMARY KEY (`id_person`),
-  INDEX `fk_person_1_idx` (`person_details_id` ASC) VISIBLE,
-  INDEX `fk_person_2_idx` (`person_blood_type_id` ASC) VISIBLE,
-  INDEX `fk_person_3_idx` (`person_location_id` ASC) VISIBLE,
-  CONSTRAINT `fk_person_1`
-    FOREIGN KEY (`person_details_id`)
-    REFERENCES `gluttex`.`person_details` (`id_person_details`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_person_2`
-    FOREIGN KEY (`person_blood_type_id`)
-    REFERENCES `gluttex`.`blood_type` (`id_blood_type`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_person_3`
-    FOREIGN KEY (`person_location_id`)
-    REFERENCES `gluttex`.`location` (`id_location`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
+CREATE TABLE IF NOT EXISTS `gluttex`.`app_user_type` (
+  `id_app_user_type` INT NOT NULL AUTO_INCREMENT,
+  `app_user_type_desc` VARCHAR(45) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_app_user_type`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 5
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -116,15 +112,69 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`plan` (
   `id_plan` INT NOT NULL AUTO_INCREMENT,
-  `plan_name` VARCHAR(45) NULL,
-  `plan_price` DECIMAL(10,2) NULL,
+  `plan_name` VARCHAR(45) NULL DEFAULT NULL,
+  `plan_price` DECIMAL(10,2) NULL DEFAULT NULL,
   `billing_cycle` ENUM('monthly', 'yearly') NULL DEFAULT 'monthly',
   `plan_type` ENUM('individual', 'organization') NULL DEFAULT 'individual',
   `plan_created_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
   `plan_updated_at` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id_plan`))
-ENGINE = InnoDB;
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`person_details`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`person_details` (
+  `id_person_details` INT NOT NULL AUTO_INCREMENT,
+  `person_first_name` VARCHAR(45) NULL DEFAULT NULL,
+  `person_last_name` VARCHAR(45) NULL DEFAULT NULL,
+  `person_birth_date` DATE NULL DEFAULT NULL,
+  `person_gender` VARCHAR(45) NULL DEFAULT NULL,
+  `person_nationality` VARCHAR(45) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_person_details`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 16
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`blood_type`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`blood_type` (
+  `id_blood_type` INT NOT NULL AUTO_INCREMENT,
+  `blood_type_desc` VARCHAR(45) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_blood_type`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 9
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`person`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`person` (
+  `id_person` INT NOT NULL AUTO_INCREMENT,
+  `person_details_id` INT NULL DEFAULT NULL,
+  `person_blood_type_id` INT NULL DEFAULT NULL,
+  `person_location_id` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_person`),
+  INDEX `fk_person_1_idx` (`person_details_id` ASC) VISIBLE,
+  INDEX `fk_person_2_idx` (`person_blood_type_id` ASC) VISIBLE,
+  INDEX `fk_person_3_idx` (`person_location_id` ASC) VISIBLE,
+  CONSTRAINT `fk_person_1`
+    FOREIGN KEY (`person_details_id`)
+    REFERENCES `gluttex`.`person_details` (`id_person_details`),
+  CONSTRAINT `fk_person_2`
+    FOREIGN KEY (`person_blood_type_id`)
+    REFERENCES `gluttex`.`blood_type` (`id_blood_type`),
+  CONSTRAINT `fk_person_3`
+    FOREIGN KEY (`person_location_id`)
+    REFERENCES `gluttex`.`location` (`id_location`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 37
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -132,69 +182,32 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`app_user` (
   `id_app_user` INT NOT NULL AUTO_INCREMENT,
-  `app_user_name` VARCHAR(100) NULL,
-  `app_user_password` VARCHAR(256) NULL,
-  `app_user_person_id` INT NULL,
-  `app_user_type_id` INT NULL,
-  `app_user_preferences` TEXT NULL,
-  `app_user_image_url` VARCHAR(255) NULL,
-  `app_user_last_active` DATETIME NULL,
-  `app_user_last_updated` DATETIME NULL,
-  `app_user_creation` DATETIME NULL,
-  `app_user_subscription_ref` INT NULL,
+  `app_user_name` VARCHAR(100) NULL DEFAULT NULL,
+  `app_user_password` VARCHAR(256) NULL DEFAULT NULL,
+  `app_user_person_id` INT NULL DEFAULT NULL,
+  `app_user_type_id` INT NULL DEFAULT NULL,
+  `app_user_preferences` TEXT NULL DEFAULT NULL,
+  `app_user_image_url` VARCHAR(255) NULL DEFAULT NULL,
+  `app_user_last_active` DATETIME NULL DEFAULT NULL,
+  `app_user_last_updated` DATETIME NULL DEFAULT NULL,
+  `app_user_creation` DATETIME NULL DEFAULT NULL,
+  `app_user_subscription_ref` INT NULL DEFAULT NULL,
   PRIMARY KEY (`id_app_user`),
   INDEX `fk_app_user_3_idx` (`app_user_person_id` ASC) VISIBLE,
   INDEX `fk_app_user_1_idx` (`app_user_type_id` ASC) VISIBLE,
   INDEX `fk_app_user_2_idx` (`app_user_subscription_ref` ASC) VISIBLE,
   CONSTRAINT `fk_app_user_1`
     FOREIGN KEY (`app_user_type_id`)
-    REFERENCES `gluttex`.`app_user_type` (`id_app_user_type`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    REFERENCES `gluttex`.`app_user_type` (`id_app_user_type`),
   CONSTRAINT `fk_app_user_2`
     FOREIGN KEY (`app_user_subscription_ref`)
-    REFERENCES `gluttex`.`plan` (`id_plan`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    REFERENCES `gluttex`.`plan` (`id_plan`),
   CONSTRAINT `fk_app_user_3`
     FOREIGN KEY (`app_user_person_id`)
-    REFERENCES `gluttex`.`person` (`id_person`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`provider_details`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`provider_details` (
-  `idprovider_details_id` INT NOT NULL AUTO_INCREMENT,
-  `provider_name` VARCHAR(45) NULL,
-  `provider_contact_info` TEXT NULL,
-  PRIMARY KEY (`idprovider_details_id`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`provider_organisation`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`provider_organisation` (
-  `idprovider_organisation` INT NOT NULL AUTO_INCREMENT,
-  `provider_organisation_name` VARCHAR(45) NULL,
-  `provider_organisation_desc` VARCHAR(300) NULL,
-  PRIMARY KEY (`idprovider_organisation`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`product_provider_type`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_provider_type` (
-  `id_product_provider_type` INT NOT NULL AUTO_INCREMENT,
-  `product_provider_type_desc` VARCHAR(45) NULL,
-  `product_provider_ref` INT NULL,
-  PRIMARY KEY (`id_product_provider_type`))
-ENGINE = InnoDB;
+    REFERENCES `gluttex`.`person` (`id_person`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 12
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -202,439 +215,135 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`product_provider` (
   `id_product_provider` INT NOT NULL AUTO_INCREMENT,
-  `product_provider_details_id` INT NULL,
-  `product_provider_type_id` INT NULL,
-  `product_provider_location_id` INT NULL,
-  `product_provider_org_id` INT NULL,
-  `product_provider_owner` INT NULL,
+  `product_provider_details_id` INT NULL DEFAULT NULL,
+  `product_provider_type_id` INT NULL DEFAULT NULL,
+  `product_provider_location_id` INT NULL DEFAULT NULL,
+  `product_provider_org_id` INT NULL DEFAULT NULL,
+  `product_provider_owner` INT NULL DEFAULT NULL,
   PRIMARY KEY (`id_product_provider`),
   INDEX `fk_product_provider_3_idx` (`product_provider_details_id` ASC) VISIBLE,
   INDEX `fk_product_provider_4_idx` (`product_provider_location_id` ASC) VISIBLE,
   INDEX `fk_product_provider_2_idx` (`product_provider_org_id` ASC) VISIBLE,
   INDEX `fk_product_provider_5_idx` (`product_provider_owner` ASC) VISIBLE,
   INDEX `fk_product_provider_1_idx` (`product_provider_type_id` ASC) VISIBLE,
-  CONSTRAINT `fk_product_provider_3`
-    FOREIGN KEY (`product_provider_details_id`)
-    REFERENCES `gluttex`.`provider_details` (`idprovider_details_id`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_product_provider_4`
-    FOREIGN KEY (`product_provider_location_id`)
-    REFERENCES `gluttex`.`location` (`id_location`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_product_provider_2`
-    FOREIGN KEY (`product_provider_org_id`)
-    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_product_provider_5`
-    FOREIGN KEY (`product_provider_owner`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
   CONSTRAINT `fk_product_provider_1`
     FOREIGN KEY (`product_provider_type_id`)
-    REFERENCES `gluttex`.`product_provider_type` (`id_product_provider_type`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    REFERENCES `gluttex`.`product_provider_type` (`id_product_provider_type`),
+  CONSTRAINT `fk_product_provider_2`
+    FOREIGN KEY (`product_provider_org_id`)
+    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`),
+  CONSTRAINT `fk_product_provider_3`
+    FOREIGN KEY (`product_provider_details_id`)
+    REFERENCES `gluttex`.`provider_details` (`idprovider_details_id`),
+  CONSTRAINT `fk_product_provider_4`
+    FOREIGN KEY (`product_provider_location_id`)
+    REFERENCES `gluttex`.`location` (`id_location`),
+  CONSTRAINT `fk_product_provider_5`
+    FOREIGN KEY (`product_provider_owner`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 8
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`product_category`
+-- Table `gluttex`.`cart`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_category` (
-  `id_product_category` INT NOT NULL AUTO_INCREMENT,
-  `product_category_desc` VARCHAR(45) NULL,
-  `product_category_icon` VARCHAR(255) NULL,
-  PRIMARY KEY (`id_product_category`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`iproduct`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`iproduct` (
-  `id_iproduct` INT NOT NULL AUTO_INCREMENT,
-  `iproduct_barcode` VARCHAR(45) NULL,
-  `iproduct_brand` VARCHAR(255) NULL,
-  `iproduct_estimated_price` DECIMAL(8,2) NULL DEFAULT 0.0,
-  `iproduct_price_currency` VARCHAR(45) NULL DEFAULT 'DZD',
-  `iproduct_gluten_status` ENUM('gluten_free', 'contains_gluten', 'may_contain_gluten', 'unknown') NULL DEFAULT 'unknown',
-  `iproduct_info_source` VARCHAR(255) NULL,
-  `iproduct_last_price_update` DATETIME NULL,
-  `iproduct_created_at` DATETIME NULL,
-  `iproduct_last_update` VARCHAR(45) NULL,
-  `iproduct_model_name` VARCHAR(255) NULL,
-  `iproduct_image_url` VARCHAR(255) NULL,
-  `iproduct_name` VARCHAR(255) NULL,
-  `iproduct_category_id` INT NULL,
-  PRIMARY KEY (`id_iproduct`),
-  INDEX `fk_iproduct_1_idx` (`iproduct_category_id` ASC) VISIBLE,
-  CONSTRAINT `fk_iproduct_1`
-    FOREIGN KEY (`iproduct_category_id`)
-    REFERENCES `gluttex`.`product_category` (`id_product_category`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`product`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`product` (
-  `id_product` INT NOT NULL AUTO_INCREMENT,
-  `product_name` VARCHAR(45) NULL,
-  `product_brand` VARCHAR(45) NULL,
-  `product_provider_id` INT NULL,
-  `product_category_id` INT NULL,
-  `product_barcode` VARCHAR(45) NULL,
-  `last_updated` DATETIME NULL,
-  `created` DATETIME NULL,
-  `product_description` VARCHAR(300) NULL,
-  `product_price` DOUBLE NULL,
-  `product_quantity` INT NULL,
-  `product_quantifier` VARCHAR(45) NULL,
-  `product_owner` INT NULL,
-  `product_origin_id` INT NULL,
-  PRIMARY KEY (`id_product`),
-  INDEX `fk_product_1_idx` (`product_provider_id` ASC) VISIBLE,
-  INDEX `fk_product_2_idx` (`product_category_id` ASC) VISIBLE,
-  INDEX `fk_product_3_idx` (`product_owner` ASC) VISIBLE,
-  INDEX `fk_product_4_idx` (`product_origin_id` ASC) VISIBLE,
-  CONSTRAINT `fk_product_1`
-    FOREIGN KEY (`product_provider_id`)
+CREATE TABLE IF NOT EXISTS `gluttex`.`cart` (
+  `cart_id` INT NOT NULL AUTO_INCREMENT,
+  `cart_product_provider_id` INT NOT NULL COMMENT 'Provider owning the cart',
+  `cart_user_id` INT NOT NULL COMMENT 'Customer / patient / client id',
+  `cart_status` VARCHAR(50) NOT NULL DEFAULT 'open' COMMENT 'open, pending, completed, canceled',
+  `cart_total_amount` DECIMAL(15,4) NOT NULL DEFAULT '0.0000',
+  `cart_notes` TEXT NULL DEFAULT NULL,
+  `cart_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `cart_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `cart_deleted_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`cart_id`),
+  INDEX `idx_cart_provider` (`cart_product_provider_id` ASC) VISIBLE,
+  INDEX `idx_cart_user` (`cart_user_id` ASC) VISIBLE,
+  INDEX `idx_cart_status` (`cart_status` ASC) VISIBLE,
+  CONSTRAINT `cart_ibfk_1`
+    FOREIGN KEY (`cart_product_provider_id`)
     REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_product_2`
-    FOREIGN KEY (`product_category_id`)
-    REFERENCES `gluttex`.`product_category` (`id_product_category`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_product_3`
-    FOREIGN KEY (`product_owner`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_product_4`
-    FOREIGN KEY (`product_origin_id`)
-    REFERENCES `gluttex`.`iproduct` (`id_iproduct`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`disease_severity`
+-- Table `gluttex`.`invoice`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`disease_severity` (
-  `id_disease_severity` INT NOT NULL AUTO_INCREMENT,
-  `disease_severity_desc` VARCHAR(45) NULL,
-  PRIMARY KEY (`id_disease_severity`))
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `gluttex`.`invoice` (
+  `invoice_id` INT NOT NULL AUTO_INCREMENT,
+  `invoice_cart_id` INT NOT NULL,
+  `invoice_number` VARCHAR(100) NOT NULL,
+  `invoice_total_amount` DECIMAL(15,4) NOT NULL,
+  `invoice_status` VARCHAR(50) NOT NULL DEFAULT 'unpaid' COMMENT 'unpaid, paid, canceled',
+  `invoice_issue_date` DATE NOT NULL,
+  `invoice_due_date` DATE NULL DEFAULT NULL,
+  `invoice_notes` TEXT NULL DEFAULT NULL,
+  `invoice_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `invoice_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`invoice_id`),
+  UNIQUE INDEX `invoice_number` (`invoice_number` ASC) VISIBLE,
+  INDEX `idx_invoice_cart` (`invoice_cart_id` ASC) VISIBLE,
+  INDEX `idx_invoice_status` (`invoice_status` ASC) VISIBLE,
+  CONSTRAINT `invoice_ibfk_1`
+    FOREIGN KEY (`invoice_cart_id`)
+    REFERENCES `gluttex`.`cart` (`cart_id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`patient`
+-- Table `gluttex`.`payment`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`patient` (
-  `id_patient` INT NOT NULL AUTO_INCREMENT,
-  `patient_person_id` INT NULL,
-  `patient_disease_severity_id` INT NULL,
-  PRIMARY KEY (`id_patient`),
-  INDEX `fk_patient_1_idx` (`patient_person_id` ASC) VISIBLE,
-  INDEX `fk_patient_2_idx` (`patient_disease_severity_id` ASC) VISIBLE,
-  CONSTRAINT `fk_patient_1`
-    FOREIGN KEY (`patient_person_id`)
-    REFERENCES `gluttex`.`person` (`id_person`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_patient_2`
-    FOREIGN KEY (`patient_disease_severity_id`)
-    REFERENCES `gluttex`.`disease_severity` (`id_disease_severity`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `gluttex`.`payment` (
+  `payment_id` INT NOT NULL AUTO_INCREMENT,
+  `payment_invoice_id` INT NOT NULL,
+  `payment_amount` DECIMAL(15,4) NOT NULL,
+  `payment_method` VARCHAR(100) NOT NULL COMMENT 'cash, card, bank, mobile',
+  `payment_status` VARCHAR(50) NOT NULL DEFAULT 'completed',
+  `payment_reference` VARCHAR(255) NULL DEFAULT NULL COMMENT 'Bank or transaction reference',
+  `payment_notes` TEXT NULL DEFAULT NULL,
+  `payment_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `payment_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`payment_id`),
+  INDEX `idx_invoice` (`payment_invoice_id` ASC) VISIBLE,
+  INDEX `idx_status` (`payment_status` ASC) VISIBLE,
+  CONSTRAINT `payment_ibfk_1`
+    FOREIGN KEY (`payment_invoice_id`)
+    REFERENCES `gluttex`.`invoice` (`invoice_id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`serology_indicator`
+-- Table `gluttex`.`additional_fee`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`serology_indicator` (
-  `id_serology_indicator` INT NOT NULL AUTO_INCREMENT,
-  `serology_indicator_name` VARCHAR(45) NULL,
-  `serology_indicator_desc` VARCHAR(300) NULL,
-  PRIMARY KEY (`id_serology_indicator`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`serology`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`serology` (
-  `id_serology` INT NOT NULL AUTO_INCREMENT,
-  `indicator_id` INT NULL,
-  `serology_date` DATE NULL,
-  `patient_id` INT NULL,
-  `indicator_value` VARCHAR(45) NULL,
-  PRIMARY KEY (`id_serology`),
-  INDEX `fk_diagnosis_1_idx` (`patient_id` ASC) VISIBLE,
-  INDEX `fk_serology_1_idx` (`indicator_id` ASC) VISIBLE,
-  CONSTRAINT `fk_diagnosis_1`
-    FOREIGN KEY (`patient_id`)
-    REFERENCES `gluttex`.`patient` (`id_patient`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_serology_1`
-    FOREIGN KEY (`indicator_id`)
-    REFERENCES `gluttex`.`serology_indicator` (`id_serology_indicator`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`recipe_category`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_category` (
-  `id_recipe_category` INT NOT NULL AUTO_INCREMENT,
-  `recipe_category_desc` VARCHAR(45) NULL,
-  `recipe_category_icon` VARCHAR(255) NULL,
-  PRIMARY KEY (`id_recipe_category`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`recipe`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe` (
-  `id_recipe` INT NOT NULL AUTO_INCREMENT,
-  `recipe_owner_id` INT NULL,
-  `recipe_category_id` INT NULL,
-  `recipe_preparation_time` VARCHAR(45) NULL,
-  `recipe_instructions` TEXT NULL,
-  `recipe_name` VARCHAR(45) NULL,
-  `recipe_description` VARCHAR(300) NULL,
-  `recipe_creation` DATETIME NULL,
-  `recipe_last_updated` DATETIME NULL,
-  PRIMARY KEY (`id_recipe`),
-  INDEX `fk_recipe_1_idx` (`recipe_owner_id` ASC) VISIBLE,
-  INDEX `fk_recipe_2_idx` (`recipe_category_id` ASC) VISIBLE,
-  CONSTRAINT `fk_recipe_1`
-    FOREIGN KEY (`recipe_owner_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_recipe_2`
-    FOREIGN KEY (`recipe_category_id`)
-    REFERENCES `gluttex`.`recipe_category` (`id_recipe_category`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`ingredient`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`ingredient` (
-  `id_ingredient` INT NOT NULL AUTO_INCREMENT,
-  `ingredient_name` VARCHAR(45) NULL,
-  `ingredient_icon_url` VARCHAR(255) NULL,
-  PRIMARY KEY (`id_ingredient`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`recipe_contains_ingredient`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_contains_ingredient` (
-  `idrecipe_contains_ingredient_id` INT NOT NULL AUTO_INCREMENT,
-  `containing_recipe_id` INT NULL,
-  `contained_ingredient_id` INT NULL,
-  `contained_quantity` VARCHAR(45) NULL,
-  PRIMARY KEY (`idrecipe_contains_ingredient_id`),
-  INDEX `fk_recipe_contains_ingredient_1_idx` (`containing_recipe_id` ASC) VISIBLE,
-  INDEX `fk_recipe_contains_ingredient_2_idx` (`contained_ingredient_id` ASC) VISIBLE,
-  CONSTRAINT `fk_recipe_contains_ingredient_1`
-    FOREIGN KEY (`containing_recipe_id`)
-    REFERENCES `gluttex`.`recipe` (`id_recipe`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_recipe_contains_ingredient_2`
-    FOREIGN KEY (`contained_ingredient_id`)
-    REFERENCES `gluttex`.`ingredient` (`id_ingredient`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`product_image`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_image` (
-  `id_product_image` INT NOT NULL AUTO_INCREMENT,
-  `product_image_url` VARCHAR(255) NULL,
-  `product_ref_id` INT NULL,
-  PRIMARY KEY (`id_product_image`),
-  INDEX `fk_product_image_1_idx` (`product_ref_id` ASC) VISIBLE,
-  CONSTRAINT `fk_product_image_1`
-    FOREIGN KEY (`product_ref_id`)
-    REFERENCES `gluttex`.`product` (`id_product`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`recipe_image`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_image` (
-  `id_recipe_image` INT NOT NULL AUTO_INCREMENT,
-  `recipe_image_url` VARCHAR(255) NULL,
-  `recipe_ref_id` INT NULL,
-  PRIMARY KEY (`id_recipe_image`),
-  INDEX `fk_recipe_image_1_idx` (`recipe_ref_id` ASC) VISIBLE,
-  CONSTRAINT `fk_recipe_image_1`
-    FOREIGN KEY (`recipe_ref_id`)
-    REFERENCES `gluttex`.`recipe` (`id_recipe`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`symptoms_occurence`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`symptoms_occurence` (
-  `id_symptoms_occurence` INT NOT NULL AUTO_INCREMENT,
-  `symptoms_occurence_submission_time` DATETIME NULL,
-  `symptoms_occurence_reason` VARCHAR(300) NULL,
-  `reason_date` DATETIME NULL,
-  `symptoms_occurence_ref_patient` INT NULL,
-  PRIMARY KEY (`id_symptoms_occurence`),
-  INDEX `fk_symptoms_causality_1_idx` (`symptoms_occurence_ref_patient` ASC) VISIBLE,
-  CONSTRAINT `fk_symptoms_causality_1`
-    FOREIGN KEY (`symptoms_occurence_ref_patient`)
-    REFERENCES `gluttex`.`patient` (`id_patient`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`symptom`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`symptom` (
-  `id_symptom` INT NOT NULL AUTO_INCREMENT,
-  `symptom_name` VARCHAR(45) NULL,
-  `symptom_desc` VARCHAR(300) NULL,
-  PRIMARY KEY (`id_symptom`))
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`presented_symptom`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`presented_symptom` (
-  `id_presented_symptom` INT NOT NULL AUTO_INCREMENT,
-  `presented_symptom_ref_symptoms_occurence` INT NULL,
-  `presented_symptom_ref_symptom` INT NULL,
-  PRIMARY KEY (`id_presented_symptom`),
-  INDEX `fk_presented_symptom_1_idx` (`presented_symptom_ref_symptom` ASC) VISIBLE,
-  INDEX `fk_presented_symptom_2_idx` (`presented_symptom_ref_symptoms_occurence` ASC) VISIBLE,
-  CONSTRAINT `fk_presented_symptom_1`
-    FOREIGN KEY (`presented_symptom_ref_symptom`)
-    REFERENCES `gluttex`.`symptom` (`id_symptom`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_presented_symptom_2`
-    FOREIGN KEY (`presented_symptom_ref_symptoms_occurence`)
-    REFERENCES `gluttex`.`symptoms_occurence` (`id_symptoms_occurence`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`report`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`report` (
-  `id_report` INT NOT NULL AUTO_INCREMENT,
-  `report_text` TEXT NULL,
-  `report_owner` INT NULL,
-  PRIMARY KEY (`id_report`),
-  INDEX `fk_report_1_idx` (`report_owner` ASC) VISIBLE,
-  CONSTRAINT `fk_report_1`
-    FOREIGN KEY (`report_owner`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`placed_order`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`placed_order` (
-  `id_placed_order` INT NOT NULL AUTO_INCREMENT,
-  `ordered_timestamp` DATETIME NULL,
-  `order_discount` DOUBLE NULL,
-  `total_price` DOUBLE NULL,
-  `ordering_user_id` INT NULL,
-  `placed_order_location_ref` INT NULL,
-  PRIMARY KEY (`id_placed_order`),
-  INDEX `fk_placed_order_1_idx` (`ordering_user_id` ASC) VISIBLE,
-  INDEX `fk_placed_order_2_idx` (`placed_order_location_ref` ASC) VISIBLE,
-  CONSTRAINT `fk_placed_order_1`
-    FOREIGN KEY (`ordering_user_id`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_placed_order_2`
-    FOREIGN KEY (`placed_order_location_ref`)
-    REFERENCES `gluttex`.`location` (`id_location`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`ordered_item`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_item` (
-  `id_ordered_item` INT NOT NULL AUTO_INCREMENT,
-  `ordered_product_id` INT NULL,
-  `ordered_quantity` INT NULL,
-  `applied_vat` DOUBLE NULL,
-  `order_ref` INT NULL,
-  `unit_price` DOUBLE NULL,
-  `product_discount` DOUBLE NULL,
-  PRIMARY KEY (`id_ordered_item`),
-  INDEX `fk_ordered_item_1_idx` (`ordered_product_id` ASC) VISIBLE,
-  INDEX `fk_ordered_item_3_idx` (`order_ref` ASC) VISIBLE,
-  CONSTRAINT `fk_ordered_item_1`
-    FOREIGN KEY (`ordered_product_id`)
-    REFERENCES `gluttex`.`product` (`id_product`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_ordered_item_3`
-    FOREIGN KEY (`order_ref`)
-    REFERENCES `gluttex`.`placed_order` (`id_placed_order`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`reaction`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`reaction` (
-  `id_reaction` INT NOT NULL AUTO_INCREMENT,
-  `reaction_type` VARCHAR(45) NULL,
-  PRIMARY KEY (`id_reaction`))
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `gluttex`.`additional_fee` (
+  `additional_fee_id` INT NOT NULL AUTO_INCREMENT,
+  `additional_fee_payment_id` INT NOT NULL,
+  `additional_fee_name` VARCHAR(255) NOT NULL,
+  `additional_fee_amount` DECIMAL(15,4) NOT NULL,
+  `additional_fee_description` TEXT NULL DEFAULT NULL,
+  `additional_fee_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `additional_fee_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`additional_fee_id`),
+  INDEX `idx_payment` (`additional_fee_payment_id` ASC) VISIBLE,
+  CONSTRAINT `additional_fee_ibfk_1`
+    FOREIGN KEY (`additional_fee_payment_id`)
+    REFERENCES `gluttex`.`payment` (`payment_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -642,85 +351,34 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`comment` (
   `idcomment` INT NOT NULL AUTO_INCREMENT,
-  `comment_owner` INT NULL,
-  `comment_content` TEXT NULL,
-  `replying_to` INT NULL,
-  `comment_timestamp` DATETIME NULL,
-  `comment_visibility` TINYINT NULL,
+  `comment_owner` INT NULL DEFAULT NULL,
+  `comment_content` TEXT NULL DEFAULT NULL,
+  `replying_to` INT NULL DEFAULT NULL,
+  `comment_timestamp` DATETIME NULL DEFAULT NULL,
+  `comment_visibility` TINYINT NULL DEFAULT NULL,
   PRIMARY KEY (`idcomment`),
   INDEX `fk_comment_1_idx` (`replying_to` ASC) VISIBLE,
   INDEX `fk_comment_2_idx` (`comment_owner` ASC) VISIBLE,
   CONSTRAINT `fk_comment_1`
     FOREIGN KEY (`replying_to`)
-    REFERENCES `gluttex`.`comment` (`idcomment`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    REFERENCES `gluttex`.`comment` (`idcomment`),
   CONSTRAINT `fk_comment_2`
     FOREIGN KEY (`comment_owner`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    REFERENCES `gluttex`.`app_user` (`id_app_user`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`product_reaction`
+-- Table `gluttex`.`reaction`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`product_reaction` (
-  `id_product_reaction` INT NOT NULL AUTO_INCREMENT,
-  `product_reacting_user` INT NULL,
-  `product_reaction_ref` INT NULL,
-  `reacted_on_product` INT NULL,
-  PRIMARY KEY (`id_product_reaction`),
-  INDEX `fk_product_reaction_1_idx` (`product_reacting_user` ASC) VISIBLE,
-  INDEX `fk_product_reaction_2_idx` (`product_reaction_ref` ASC) VISIBLE,
-  INDEX `fk_product_reaction_3_idx` (`reacted_on_product` ASC) VISIBLE,
-  CONSTRAINT `fk_product_reaction_1`
-    FOREIGN KEY (`product_reacting_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_product_reaction_2`
-    FOREIGN KEY (`product_reaction_ref`)
-    REFERENCES `gluttex`.`reaction` (`id_reaction`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_product_reaction_3`
-    FOREIGN KEY (`reacted_on_product`)
-    REFERENCES `gluttex`.`product` (`id_product`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
-
-
--- -----------------------------------------------------
--- Table `gluttex`.`recipe_reaction`
--- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_reaction` (
-  `id_recipe_reaction` INT NOT NULL AUTO_INCREMENT,
-  `recipe_reacting_user` INT NULL,
-  `recipe_reaction_ref` INT NULL,
-  `reacted_on_recipe` INT NULL,
-  PRIMARY KEY (`id_recipe_reaction`),
-  INDEX `fk_product_reaction_1_idx` (`recipe_reacting_user` ASC) VISIBLE,
-  INDEX `fk_product_reaction_2_idx` (`recipe_reaction_ref` ASC) VISIBLE,
-  INDEX `fk_recipe_reaction_1_idx` (`reacted_on_recipe` ASC) VISIBLE,
-  CONSTRAINT `fk_product_reaction_10`
-    FOREIGN KEY (`recipe_reacting_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_product_reaction_20`
-    FOREIGN KEY (`recipe_reaction_ref`)
-    REFERENCES `gluttex`.`reaction` (`id_reaction`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
-  CONSTRAINT `fk_recipe_reaction_1`
-    FOREIGN KEY (`reacted_on_recipe`)
-    REFERENCES `gluttex`.`recipe` (`id_recipe`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `gluttex`.`reaction` (
+  `id_reaction` INT NOT NULL AUTO_INCREMENT,
+  `reaction_type` VARCHAR(45) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_reaction`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 11
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -728,63 +386,121 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`comment_reaction` (
   `id_comment_reaction` INT NOT NULL AUTO_INCREMENT,
-  `comment_reacting_user` INT NULL,
-  `comment_reaction_ref` INT NULL,
-  `reacted_on_comment` INT NULL,
+  `comment_reacting_user` INT NULL DEFAULT NULL,
+  `comment_reaction_ref` INT NULL DEFAULT NULL,
+  `reacted_on_comment` INT NULL DEFAULT NULL,
   PRIMARY KEY (`id_comment_reaction`),
   INDEX `fk_product_reaction_1_idx` (`comment_reacting_user` ASC) VISIBLE,
   INDEX `fk_product_reaction_2_idx` (`comment_reaction_ref` ASC) VISIBLE,
   INDEX `fk_product_reaction_30_idx` (`reacted_on_comment` ASC) VISIBLE,
   CONSTRAINT `fk_product_reaction_11`
     FOREIGN KEY (`comment_reacting_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    REFERENCES `gluttex`.`app_user` (`id_app_user`),
   CONSTRAINT `fk_product_reaction_21`
     FOREIGN KEY (`comment_reaction_ref`)
-    REFERENCES `gluttex`.`reaction` (`id_reaction`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    REFERENCES `gluttex`.`reaction` (`id_reaction`),
   CONSTRAINT `fk_product_reaction_30`
     FOREIGN KEY (`reacted_on_comment`)
-    REFERENCES `gluttex`.`comment` (`idcomment`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    REFERENCES `gluttex`.`comment` (`idcomment`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`provider_image`
+-- Table `gluttex`.`deposit`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`provider_image` (
-  `id_provider_image` INT NOT NULL AUTO_INCREMENT,
-  `provider_image_url` VARCHAR(255) NULL,
-  `provider_ref_id` INT NULL,
-  PRIMARY KEY (`id_provider_image`),
-  INDEX `fk_provider_image_1_idx` (`provider_ref_id` ASC) VISIBLE,
-  CONSTRAINT `fk_provider_image_1`
-    FOREIGN KEY (`provider_ref_id`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `gluttex`.`deposit` (
+  `deposit_id` INT NOT NULL AUTO_INCREMENT,
+  `deposit_cart_id` INT NULL DEFAULT NULL,
+  `deposit_invoice_id` INT NULL DEFAULT NULL,
+  `deposit_amount` DECIMAL(15,4) NOT NULL,
+  `deposit_method` VARCHAR(100) NOT NULL,
+  `deposit_reference` VARCHAR(255) NULL DEFAULT NULL,
+  `deposit_notes` TEXT NULL DEFAULT NULL,
+  `deposit_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `deposit_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`deposit_id`),
+  INDEX `idx_cart` (`deposit_cart_id` ASC) VISIBLE,
+  INDEX `idx_invoice` (`deposit_invoice_id` ASC) VISIBLE,
+  CONSTRAINT `deposit_ibfk_1`
+    FOREIGN KEY (`deposit_cart_id`)
+    REFERENCES `gluttex`.`cart` (`cart_id`)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE,
+  CONSTRAINT `deposit_ibfk_2`
+    FOREIGN KEY (`deposit_invoice_id`)
+    REFERENCES `gluttex`.`invoice` (`invoice_id`)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
--- Table `gluttex`.`organisation_image`
+-- Table `gluttex`.`disease_severity`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `gluttex`.`organisation_image` (
-  `id_org_image` INT NOT NULL AUTO_INCREMENT,
-  `org_image_url` VARCHAR(255) NULL,
-  `org_ref_id` INT NULL,
-  PRIMARY KEY (`id_org_image`),
-  INDEX `fk_organisation_image_1_idx` (`org_ref_id` ASC) VISIBLE,
-  CONSTRAINT `fk_organisation_image_1`
-    FOREIGN KEY (`org_ref_id`)
-    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `gluttex`.`disease_severity` (
+  `id_disease_severity` INT NOT NULL AUTO_INCREMENT,
+  `disease_severity_desc` VARCHAR(45) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_disease_severity`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`ingredient`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`ingredient` (
+  `id_ingredient` INT NOT NULL AUTO_INCREMENT,
+  `ingredient_name` VARCHAR(45) NULL DEFAULT NULL,
+  `ingredient_icon_url` VARCHAR(255) NULL DEFAULT NULL,
+  `ingredient_quantifier` VARCHAR(45) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_ingredient`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 4
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`product_category`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product_category` (
+  `id_product_category` INT NOT NULL AUTO_INCREMENT,
+  `product_category_desc` VARCHAR(45) NULL DEFAULT NULL,
+  `product_category_icon` VARCHAR(255) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_product_category`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 11
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`iproduct`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`iproduct` (
+  `id_iproduct` INT NOT NULL AUTO_INCREMENT,
+  `iproduct_barcode` VARCHAR(45) NULL DEFAULT NULL,
+  `iproduct_brand` VARCHAR(255) NULL DEFAULT NULL,
+  `iproduct_estimated_price` DECIMAL(8,2) NULL DEFAULT '0.00',
+  `iproduct_price_currency` VARCHAR(45) NULL DEFAULT 'DZD',
+  `iproduct_gluten_status` ENUM('gluten_free', 'contains_gluten', 'may_contain_gluten', 'unknown') NULL DEFAULT 'unknown',
+  `iproduct_info_source` VARCHAR(255) NULL DEFAULT NULL,
+  `iproduct_last_price_update` DATETIME NULL DEFAULT NULL,
+  `iproduct_created_at` DATETIME NULL DEFAULT NULL,
+  `iproduct_last_update` VARCHAR(45) NULL DEFAULT NULL,
+  `iproduct_model_name` VARCHAR(255) NULL DEFAULT NULL,
+  `iproduct_image_url` VARCHAR(255) NULL DEFAULT NULL,
+  `iproduct_name` VARCHAR(255) NULL DEFAULT NULL,
+  `iproduct_info_confidence` DECIMAL(5,4) NULL DEFAULT NULL,
+  `iproduct_category_id` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_iproduct`),
+  INDEX `fk_iproduct_1_idx` (`iproduct_category_id` ASC) VISIBLE,
+  CONSTRAINT `fk_iproduct_1`
+    FOREIGN KEY (`iproduct_category_id`)
+    REFERENCES `gluttex`.`product_category` (`id_product_category`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 17
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -792,16 +508,15 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`location_image` (
   `id_location_image` INT NOT NULL AUTO_INCREMENT,
-  `location_image_url` VARCHAR(255) NULL,
-  `image_location_ref` INT NULL,
+  `location_image_url` VARCHAR(255) NULL DEFAULT NULL,
+  `image_location_ref` INT NULL DEFAULT NULL,
   PRIMARY KEY (`id_location_image`),
   INDEX `fk_location_image_1_idx` (`image_location_ref` ASC) VISIBLE,
   CONSTRAINT `fk_location_image_1`
     FOREIGN KEY (`image_location_ref`)
-    REFERENCES `gluttex`.`location` (`id_location`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    REFERENCES `gluttex`.`location` (`id_location`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -809,33 +524,28 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`management_rule` (
   `id_management_rule` INT NOT NULL AUTO_INCREMENT,
-  `rule_ref_org` INT NULL,
-  `rule_ref_provider` INT NULL,
-  `rule_ref_user` INT NULL,
-  `management_rule_code` INT NULL,
+  `rule_ref_org` INT NULL DEFAULT NULL,
+  `rule_ref_provider` INT NULL DEFAULT NULL,
+  `rule_ref_user` INT NULL DEFAULT NULL,
+  `management_rule_code` INT NULL DEFAULT NULL,
   `management_rule_status` ENUM('PENDING', 'REJECTED', 'SUSPENDED', 'OBSOLETE', 'ACTIVE') NULL DEFAULT 'PENDING',
   `management_rule_expiry` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`id_management_rule`),
   INDEX `fk_management_rule_1_idx` (`rule_ref_org` ASC) VISIBLE,
   INDEX `fk_management_rule_2_idx` (`rule_ref_provider` ASC) VISIBLE,
   INDEX `fk_management_rule_3_idx` (`rule_ref_user` ASC) VISIBLE,
-  
   CONSTRAINT `fk_management_rule_1`
     FOREIGN KEY (`rule_ref_org`)
-    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`),
   CONSTRAINT `fk_management_rule_2`
     FOREIGN KEY (`rule_ref_provider`)
-    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`),
   CONSTRAINT `fk_management_rule_3`
     FOREIGN KEY (`rule_ref_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    REFERENCES `gluttex`.`app_user` (`id_app_user`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 52
+DEFAULT CHARACTER SET = utf8mb3;
 
 
 -- -----------------------------------------------------
@@ -843,66 +553,674 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`notification` (
   `id_notification` INT NOT NULL AUTO_INCREMENT,
-  `notification_code` VARCHAR(255) NULL,
-  `notification_params` TEXT NULL,
-  `notification_user_ref` INT NULL,
-  `notification_created_at` DATETIME NULL,
-  `notification_read_at` DATETIME NULL,
+  `notification_code` VARCHAR(255) NULL DEFAULT NULL,
+  `notification_params` TEXT NULL DEFAULT NULL,
+  `notification_user_ref` INT NULL DEFAULT NULL,
+  `notification_created_at` DATETIME NULL DEFAULT NULL,
+  `notification_read_at` DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (`id_notification`),
   INDEX `fk_notification_1_idx` (`notification_user_ref` ASC) VISIBLE,
   CONSTRAINT `fk_notification_1`
     FOREIGN KEY (`notification_user_ref`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    REFERENCES `gluttex`.`app_user` (`id_app_user`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 36
+DEFAULT CHARACTER SET = utf8mb3;
 
 
+-- -----------------------------------------------------
+-- Table `gluttex`.`product`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product` (
+  `id_product` INT NOT NULL AUTO_INCREMENT,
+  `product_name` VARCHAR(45) NULL DEFAULT NULL,
+  `product_brand` VARCHAR(45) NULL DEFAULT NULL,
+  `product_provider_id` INT NULL DEFAULT NULL,
+  `product_category_id` INT NULL DEFAULT NULL,
+  `product_barcode` VARCHAR(45) NULL DEFAULT NULL,
+  `last_updated` DATETIME NULL DEFAULT NULL,
+  `created` DATETIME NULL DEFAULT NULL,
+  `product_description` VARCHAR(300) NULL DEFAULT NULL,
+  `product_price` DOUBLE NULL DEFAULT NULL,
+  `product_quantity` INT NULL DEFAULT NULL,
+  `product_quantifier` VARCHAR(45) NULL DEFAULT NULL,
+  `product_owner` INT NULL DEFAULT NULL,
+  `product_origin_id` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_product`),
+  INDEX `fk_product_1_idx` (`product_provider_id` ASC) VISIBLE,
+  INDEX `fk_product_2_idx` (`product_category_id` ASC) VISIBLE,
+  INDEX `fk_product_3_idx` (`product_owner` ASC) VISIBLE,
+  INDEX `fk_product_4_idx` (`product_origin_id` ASC) VISIBLE,
+  CONSTRAINT `fk_product_1`
+    FOREIGN KEY (`product_provider_id`)
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`),
+  CONSTRAINT `fk_product_2`
+    FOREIGN KEY (`product_category_id`)
+    REFERENCES `gluttex`.`product_category` (`id_product_category`),
+  CONSTRAINT `fk_product_3`
+    FOREIGN KEY (`product_owner`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+  CONSTRAINT `fk_product_4`
+    FOREIGN KEY (`product_origin_id`)
+    REFERENCES `gluttex`.`iproduct` (`id_iproduct`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 22
+DEFAULT CHARACTER SET = utf8mb3;
 
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`placed_order`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`placed_order` (
+  `id_placed_order` INT NOT NULL AUTO_INCREMENT,
+  `ordered_timestamp` DATETIME NULL DEFAULT NULL,
+  `order_discount` DOUBLE NULL DEFAULT NULL,
+  `total_price` DOUBLE NULL DEFAULT NULL,
+  `ordering_user_id` INT NULL DEFAULT NULL,
+  `placed_order_location_ref` INT NULL DEFAULT NULL,
+  `placed_order_state` VARCHAR(45) NULL DEFAULT NULL,
+  `placed_order_last_mod` DATETIME NULL DEFAULT NULL,
+  `payment_status` VARCHAR(45) NULL DEFAULT NULL,
+  `payment_method` VARCHAR(45) NULL DEFAULT NULL,
+  `payment_ref` VARCHAR(255) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_placed_order`),
+  INDEX `fk_placed_order_1_idx` (`ordering_user_id` ASC) VISIBLE,
+  INDEX `fk_placed_order_2_idx` (`placed_order_location_ref` ASC) VISIBLE,
+  CONSTRAINT `fk_placed_order_1`
+    FOREIGN KEY (`ordering_user_id`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+  CONSTRAINT `fk_placed_order_2`
+    FOREIGN KEY (`placed_order_location_ref`)
+    REFERENCES `gluttex`.`location` (`id_location`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 52
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`ordered_item`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_item` (
+  `id_ordered_item` INT NOT NULL AUTO_INCREMENT,
+  `ordered_product_id` INT NULL DEFAULT NULL,
+  `ordered_quantity` INT NULL DEFAULT NULL,
+  `applied_vat` DOUBLE NULL DEFAULT NULL,
+  `order_ref` INT NULL DEFAULT NULL,
+  `unit_price` DOUBLE NULL DEFAULT NULL,
+  `product_discount` DOUBLE NULL DEFAULT NULL,
+  PRIMARY KEY (`id_ordered_item`),
+  INDEX `fk_ordered_item_1_idx` (`ordered_product_id` ASC) VISIBLE,
+  INDEX `fk_ordered_item_3_idx` (`order_ref` ASC) VISIBLE,
+  CONSTRAINT `fk_ordered_item_1`
+    FOREIGN KEY (`ordered_product_id`)
+    REFERENCES `gluttex`.`product` (`id_product`),
+  CONSTRAINT `fk_ordered_item_3`
+    FOREIGN KEY (`order_ref`)
+    REFERENCES `gluttex`.`placed_order` (`id_placed_order`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 115
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`provided_service_category`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`provided_service_category` (
+  `provided_service_category_id` INT NOT NULL AUTO_INCREMENT,
+  `provided_service_category_name` VARCHAR(255) NOT NULL,
+  `provided_service_category_icon_url` VARCHAR(500) NOT NULL,
+  `provided_service_category_avg_duration` DECIMAL(10,2) NOT NULL COMMENT 'Average duration in minutes',
+  `provided_service_category_description` TEXT NULL DEFAULT NULL,
+  `provided_service_category_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `provided_service_category_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `provided_service_category_deleted_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`provided_service_category_id`),
+  INDEX `idx_provided_service_category_name` (`provided_service_category_name` ASC) VISIBLE,
+  INDEX `idx_provided_service_category_created_at` (`provided_service_category_created_at` ASC) VISIBLE,
+  INDEX `idx_provided_service_category_active` (`provided_service_category_deleted_at` ASC) VISIBLE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`provided_service`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`provided_service` (
+  `provided_service_id` INT NOT NULL AUTO_INCREMENT,
+  `provided_service_name` VARCHAR(255) NOT NULL,
+  `provided_service_description` TEXT NULL DEFAULT NULL,
+  `provided_service_category_id` INT NOT NULL,
+  `provided_service_product_provider_id` INT NOT NULL COMMENT 'References i_product_provider.id_product_provider',
+  `provided_service_base_price` DECIMAL(15,4) NOT NULL,
+  `provided_service_final_price` DECIMAL(15,4) NOT NULL,
+  `provided_service_actual_duration` DECIMAL(10,2) NOT NULL,
+  `provided_service_is_active` TINYINT(1) NULL DEFAULT '1',
+  `provided_service_pricing_config` JSON NOT NULL,
+  `provided_service_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `provided_service_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `provided_service_deleted_at` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`provided_service_id`),
+  INDEX `idx_provided_service_category` (`provided_service_category_id` ASC) VISIBLE,
+  INDEX `idx_provided_service_provider` (`provided_service_product_provider_id` ASC) VISIBLE,
+  INDEX `idx_provided_service_name` (`provided_service_name` ASC) VISIBLE,
+  INDEX `idx_provided_service_active` (`provided_service_is_active` ASC, `provided_service_deleted_at` ASC) VISIBLE,
+  INDEX `idx_provided_service_price_range` (`provided_service_base_price` ASC, `provided_service_final_price` ASC) VISIBLE,
+  INDEX `idx_provided_service_created_at` (`provided_service_created_at` ASC) VISIBLE,
+  CONSTRAINT `provided_service_ibfk_1`
+    FOREIGN KEY (`provided_service_category_id`)
+    REFERENCES `gluttex`.`provided_service_category` (`provided_service_category_id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `provided_service_ibfk_2`
+    FOREIGN KEY (`provided_service_product_provider_id`)
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`ordered_service`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_service` (
+  `ordered_service_id` INT NOT NULL AUTO_INCREMENT,
+  `ordered_service_cart_id` INT NOT NULL,
+  `ordered_service_service_id` INT NOT NULL COMMENT 'References provided_service',
+  `ordered_service_quantity` INT NOT NULL DEFAULT '1',
+  `ordered_service_unit_price` DECIMAL(15,4) NOT NULL,
+  `ordered_service_total_price` DECIMAL(15,4) NOT NULL,
+  `ordered_service_notes` TEXT NULL DEFAULT NULL,
+  `ordered_service_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `ordered_service_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`ordered_service_id`),
+  INDEX `idx_cart` (`ordered_service_cart_id` ASC) VISIBLE,
+  INDEX `idx_service` (`ordered_service_service_id` ASC) VISIBLE,
+  CONSTRAINT `ordered_service_ibfk_1`
+    FOREIGN KEY (`ordered_service_cart_id`)
+    REFERENCES `gluttex`.`cart` (`cart_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `ordered_service_ibfk_2`
+    FOREIGN KEY (`ordered_service_service_id`)
+    REFERENCES `gluttex`.`provided_service` (`provided_service_id`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`organisation_image`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`organisation_image` (
+  `id_org_image` INT NOT NULL AUTO_INCREMENT,
+  `org_image_url` VARCHAR(255) NULL DEFAULT NULL,
+  `org_ref_id` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_org_image`),
+  INDEX `fk_organisation_image_1_idx` (`org_ref_id` ASC) VISIBLE,
+  CONSTRAINT `fk_organisation_image_1`
+    FOREIGN KEY (`org_ref_id`)
+    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 3
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`patient`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`patient` (
+  `id_patient` INT NOT NULL AUTO_INCREMENT,
+  `patient_person_id` INT NULL DEFAULT NULL,
+  `patient_disease_severity_id` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_patient`),
+  INDEX `fk_patient_1_idx` (`patient_person_id` ASC) VISIBLE,
+  INDEX `fk_patient_2_idx` (`patient_disease_severity_id` ASC) VISIBLE,
+  CONSTRAINT `fk_patient_1`
+    FOREIGN KEY (`patient_person_id`)
+    REFERENCES `gluttex`.`person` (`id_person`),
+  CONSTRAINT `fk_patient_2`
+    FOREIGN KEY (`patient_disease_severity_id`)
+    REFERENCES `gluttex`.`disease_severity` (`id_disease_severity`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`symptom`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`symptom` (
+  `id_symptom` INT NOT NULL AUTO_INCREMENT,
+  `symptom_name` VARCHAR(45) NULL DEFAULT NULL,
+  `symptom_desc` VARCHAR(300) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_symptom`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`symptoms_occurence`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`symptoms_occurence` (
+  `id_symptoms_occurence` INT NOT NULL AUTO_INCREMENT,
+  `symptoms_occurence_submission_time` DATETIME NULL DEFAULT NULL,
+  `symptoms_occurence_reason` VARCHAR(300) NULL DEFAULT NULL,
+  `reason_date` DATETIME NULL DEFAULT NULL,
+  `symptoms_occurence_ref_patient` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_symptoms_occurence`),
+  INDEX `fk_symptoms_causality_1_idx` (`symptoms_occurence_ref_patient` ASC) VISIBLE,
+  CONSTRAINT `fk_symptoms_causality_1`
+    FOREIGN KEY (`symptoms_occurence_ref_patient`)
+    REFERENCES `gluttex`.`patient` (`id_patient`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`presented_symptom`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`presented_symptom` (
+  `id_presented_symptom` INT NOT NULL AUTO_INCREMENT,
+  `presented_symptom_ref_symptoms_occurence` INT NULL DEFAULT NULL,
+  `presented_symptom_ref_symptom` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_presented_symptom`),
+  INDEX `fk_presented_symptom_1_idx` (`presented_symptom_ref_symptom` ASC) VISIBLE,
+  INDEX `fk_presented_symptom_2_idx` (`presented_symptom_ref_symptoms_occurence` ASC) VISIBLE,
+  CONSTRAINT `fk_presented_symptom_1`
+    FOREIGN KEY (`presented_symptom_ref_symptom`)
+    REFERENCES `gluttex`.`symptom` (`id_symptom`),
+  CONSTRAINT `fk_presented_symptom_2`
+    FOREIGN KEY (`presented_symptom_ref_symptoms_occurence`)
+    REFERENCES `gluttex`.`symptoms_occurence` (`id_symptoms_occurence`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`product_image`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product_image` (
+  `id_product_image` INT NOT NULL AUTO_INCREMENT,
+  `product_image_url` VARCHAR(255) NULL DEFAULT NULL,
+  `product_ref_id` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_product_image`),
+  INDEX `fk_product_image_1_idx` (`product_ref_id` ASC) VISIBLE,
+  CONSTRAINT `fk_product_image_1`
+    FOREIGN KEY (`product_ref_id`)
+    REFERENCES `gluttex`.`product` (`id_product`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 26
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`product_reaction`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`product_reaction` (
+  `id_product_reaction` INT NOT NULL AUTO_INCREMENT,
+  `product_reacting_user` INT NULL DEFAULT NULL,
+  `product_reaction_ref` INT NULL DEFAULT NULL,
+  `reacted_on_product` INT NULL DEFAULT NULL,
+  `product_reaction_value` FLOAT NULL DEFAULT '0',
+  PRIMARY KEY (`id_product_reaction`),
+  INDEX `fk_product_reaction_1_idx` (`product_reacting_user` ASC) VISIBLE,
+  INDEX `fk_product_reaction_2_idx` (`product_reaction_ref` ASC) VISIBLE,
+  INDEX `fk_product_reaction_3_idx` (`reacted_on_product` ASC) VISIBLE,
+  CONSTRAINT `fk_product_reaction_1`
+    FOREIGN KEY (`product_reacting_user`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+  CONSTRAINT `fk_product_reaction_2`
+    FOREIGN KEY (`product_reaction_ref`)
+    REFERENCES `gluttex`.`reaction` (`id_reaction`),
+  CONSTRAINT `fk_product_reaction_3`
+    FOREIGN KEY (`reacted_on_product`)
+    REFERENCES `gluttex`.`product` (`id_product`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 3
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`provider_image`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`provider_image` (
+  `id_provider_image` INT NOT NULL AUTO_INCREMENT,
+  `provider_image_url` VARCHAR(255) NULL DEFAULT NULL,
+  `provider_ref_id` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_provider_image`),
+  INDEX `fk_provider_image_1_idx` (`provider_ref_id` ASC) VISIBLE,
+  CONSTRAINT `fk_provider_image_1`
+    FOREIGN KEY (`provider_ref_id`)
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 6
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`provider_reaction`
+-- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `gluttex`.`provider_reaction` (
   `id_product_reaction` INT NOT NULL AUTO_INCREMENT,
-  `product_reacting_user` INT NULL,
-  `product_reaction_ref` INT NULL,
-  `reacted_on_provider` INT NULL,
+  `product_reacting_user` INT NULL DEFAULT NULL,
+  `product_reaction_ref` INT NULL DEFAULT NULL,
+  `reacted_on_provider` INT NULL DEFAULT NULL,
+  `provider_reaction_value` FLOAT NULL DEFAULT '0',
   PRIMARY KEY (`id_product_reaction`),
   INDEX `fk_product_reaction_1_idx` (`product_reacting_user` ASC) VISIBLE,
   INDEX `fk_product_reaction_2_idx` (`product_reaction_ref` ASC) VISIBLE,
   INDEX `fk_product_reaction_31_idx` (`reacted_on_provider` ASC) VISIBLE,
   CONSTRAINT `fk_product_reaction_12`
     FOREIGN KEY (`product_reacting_user`)
-    REFERENCES `gluttex`.`app_user` (`id_app_user`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    REFERENCES `gluttex`.`app_user` (`id_app_user`),
   CONSTRAINT `fk_product_reaction_22`
     FOREIGN KEY (`product_reaction_ref`)
-    REFERENCES `gluttex`.`reaction` (`id_reaction`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION,
+    REFERENCES `gluttex`.`reaction` (`id_reaction`),
   CONSTRAINT `fk_product_reaction_31`
     FOREIGN KEY (`reacted_on_provider`)
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`receipt`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`receipt` (
+  `receipt_id` INT NOT NULL AUTO_INCREMENT,
+  `receipt_payment_id` INT NOT NULL,
+  `receipt_number` VARCHAR(100) NOT NULL,
+  `receipt_amount` DECIMAL(15,4) NOT NULL,
+  `receipt_notes` TEXT NULL DEFAULT NULL,
+  `receipt_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`receipt_id`),
+  UNIQUE INDEX `receipt_number` (`receipt_number` ASC) VISIBLE,
+  INDEX `idx_payment` (`receipt_payment_id` ASC) VISIBLE,
+  CONSTRAINT `receipt_ibfk_1`
+    FOREIGN KEY (`receipt_payment_id`)
+    REFERENCES `gluttex`.`payment` (`payment_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe_category`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_category` (
+  `id_recipe_category` INT NOT NULL AUTO_INCREMENT,
+  `recipe_category_desc` VARCHAR(45) NULL DEFAULT NULL,
+  `recipe_category_icon` VARCHAR(255) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_recipe_category`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 21
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe` (
+  `id_recipe` INT NOT NULL AUTO_INCREMENT,
+  `recipe_owner_id` INT NULL DEFAULT NULL,
+  `recipe_category_id` INT NULL DEFAULT NULL,
+  `recipe_preparation_time` VARCHAR(45) NULL DEFAULT NULL,
+  `recipe_instructions` TEXT NULL DEFAULT NULL,
+  `recipe_name` VARCHAR(45) NULL DEFAULT NULL,
+  `recipe_description` VARCHAR(300) NULL DEFAULT NULL,
+  `recipe_creation` DATETIME NULL DEFAULT NULL,
+  `recipe_last_updated` DATETIME NULL DEFAULT NULL,
+  PRIMARY KEY (`id_recipe`),
+  INDEX `fk_recipe_1_idx` (`recipe_owner_id` ASC) VISIBLE,
+  INDEX `fk_recipe_2_idx` (`recipe_category_id` ASC) VISIBLE,
+  CONSTRAINT `fk_recipe_1`
+    FOREIGN KEY (`recipe_owner_id`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+  CONSTRAINT `fk_recipe_2`
+    FOREIGN KEY (`recipe_category_id`)
+    REFERENCES `gluttex`.`recipe_category` (`id_recipe_category`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 19
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe_contains_ingredient`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_contains_ingredient` (
+  `idrecipe_contains_ingredient_id` INT NOT NULL AUTO_INCREMENT,
+  `containing_recipe_id` INT NULL DEFAULT NULL,
+  `contained_ingredient_id` INT NULL DEFAULT NULL,
+  `contained_quantity` VARCHAR(45) NULL DEFAULT NULL,
+  PRIMARY KEY (`idrecipe_contains_ingredient_id`),
+  INDEX `fk_recipe_contains_ingredient_1_idx` (`containing_recipe_id` ASC) VISIBLE,
+  INDEX `fk_recipe_contains_ingredient_2_idx` (`contained_ingredient_id` ASC) VISIBLE,
+  CONSTRAINT `fk_recipe_contains_ingredient_1`
+    FOREIGN KEY (`containing_recipe_id`)
+    REFERENCES `gluttex`.`recipe` (`id_recipe`),
+  CONSTRAINT `fk_recipe_contains_ingredient_2`
+    FOREIGN KEY (`contained_ingredient_id`)
+    REFERENCES `gluttex`.`ingredient` (`id_ingredient`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 13
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe_image`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_image` (
+  `id_recipe_image` INT NOT NULL AUTO_INCREMENT,
+  `recipe_image_url` VARCHAR(255) NULL DEFAULT NULL,
+  `recipe_ref_id` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_recipe_image`),
+  INDEX `fk_recipe_image_1_idx` (`recipe_ref_id` ASC) VISIBLE,
+  CONSTRAINT `fk_recipe_image_1`
+    FOREIGN KEY (`recipe_ref_id`)
+    REFERENCES `gluttex`.`recipe` (`id_recipe`))
+ENGINE = InnoDB
+AUTO_INCREMENT = 24
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`recipe_reaction`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`recipe_reaction` (
+  `id_recipe_reaction` INT NOT NULL AUTO_INCREMENT,
+  `recipe_reacting_user` INT NULL DEFAULT NULL,
+  `recipe_reaction_ref` INT NULL DEFAULT NULL,
+  `reacted_on_recipe` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_recipe_reaction`),
+  INDEX `fk_product_reaction_1_idx` (`recipe_reacting_user` ASC) VISIBLE,
+  INDEX `fk_product_reaction_2_idx` (`recipe_reaction_ref` ASC) VISIBLE,
+  INDEX `fk_recipe_reaction_1_idx` (`reacted_on_recipe` ASC) VISIBLE,
+  CONSTRAINT `fk_product_reaction_10`
+    FOREIGN KEY (`recipe_reacting_user`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`),
+  CONSTRAINT `fk_product_reaction_20`
+    FOREIGN KEY (`recipe_reaction_ref`)
+    REFERENCES `gluttex`.`reaction` (`id_reaction`),
+  CONSTRAINT `fk_recipe_reaction_1`
+    FOREIGN KEY (`reacted_on_recipe`)
+    REFERENCES `gluttex`.`recipe` (`id_recipe`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`report`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`report` (
+  `id_report` INT NOT NULL AUTO_INCREMENT,
+  `report_text` TEXT NULL DEFAULT NULL,
+  `report_owner` INT NULL DEFAULT NULL,
+  PRIMARY KEY (`id_report`),
+  INDEX `fk_report_1_idx` (`report_owner` ASC) VISIBLE,
+  CONSTRAINT `fk_report_1`
+    FOREIGN KEY (`report_owner`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`serology_indicator`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`serology_indicator` (
+  `id_serology_indicator` INT NOT NULL AUTO_INCREMENT,
+  `serology_indicator_name` VARCHAR(45) NULL DEFAULT NULL,
+  `serology_indicator_desc` VARCHAR(300) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_serology_indicator`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`serology`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`serology` (
+  `id_serology` INT NOT NULL AUTO_INCREMENT,
+  `indicator_id` INT NULL DEFAULT NULL,
+  `serology_date` DATE NULL DEFAULT NULL,
+  `patient_id` INT NULL DEFAULT NULL,
+  `indicator_value` VARCHAR(45) NULL DEFAULT NULL,
+  PRIMARY KEY (`id_serology`),
+  INDEX `fk_diagnosis_1_idx` (`patient_id` ASC) VISIBLE,
+  INDEX `fk_serology_1_idx` (`indicator_id` ASC) VISIBLE,
+  CONSTRAINT `fk_diagnosis_1`
+    FOREIGN KEY (`patient_id`)
+    REFERENCES `gluttex`.`patient` (`id_patient`),
+  CONSTRAINT `fk_serology_1`
+    FOREIGN KEY (`indicator_id`)
+    REFERENCES `gluttex`.`serology_indicator` (`id_serology_indicator`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`service_package`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`service_package` (
+  `service_package_id` INT NOT NULL AUTO_INCREMENT,
+  `service_package_name` VARCHAR(255) NOT NULL,
+  `service_package_description` TEXT NULL DEFAULT NULL,
+  `service_package_product_provider_id` INT NOT NULL,
+  `service_package_price` DECIMAL(15,4) NOT NULL,
+  `service_package_discount_percentage` DECIMAL(5,2) NULL DEFAULT NULL,
+  `service_package_is_active` TINYINT(1) NULL DEFAULT '1',
+  `service_package_valid_from` DATE NULL DEFAULT NULL,
+  `service_package_valid_to` DATE NULL DEFAULT NULL,
+  `service_package_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `service_package_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`service_package_id`),
+  INDEX `idx_service_package_provider` (`service_package_product_provider_id` ASC) VISIBLE,
+  INDEX `idx_service_package_active` (`service_package_is_active` ASC) VISIBLE,
+  INDEX `idx_service_package_validity` (`service_package_valid_from` ASC, `service_package_valid_to` ASC) VISIBLE,
+  CONSTRAINT `service_package_ibfk_1`
+    FOREIGN KEY (`service_package_product_provider_id`)
     REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
-    ON DELETE NO ACTION
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB;
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
 
 
+-- -----------------------------------------------------
+-- Table `gluttex`.`service_package_item`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`service_package_item` (
+  `service_package_item_id` INT NOT NULL AUTO_INCREMENT,
+  `service_package_item_package_id` INT NOT NULL,
+  `service_package_item_service_id` INT NOT NULL,
+  `service_package_item_sequence_order` INT NOT NULL DEFAULT '1',
+  `service_package_item_quantity` INT NOT NULL DEFAULT '1',
+  `service_package_item_notes` TEXT NULL DEFAULT NULL,
+  PRIMARY KEY (`service_package_item_id`),
+  UNIQUE INDEX `uk_package_service` (`service_package_item_package_id` ASC, `service_package_item_service_id` ASC) VISIBLE,
+  INDEX `idx_service_package_item_service` (`service_package_item_service_id` ASC) VISIBLE,
+  CONSTRAINT `service_package_item_ibfk_1`
+    FOREIGN KEY (`service_package_item_package_id`)
+    REFERENCES `gluttex`.`service_package` (`service_package_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `service_package_item_ibfk_2`
+    FOREIGN KEY (`service_package_item_service_id`)
+    REFERENCES `gluttex`.`provided_service` (`provided_service_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`service_resource_requirement`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`service_resource_requirement` (
+  `service_resource_requirement_id` INT NOT NULL AUTO_INCREMENT,
+  `service_resource_requirement_service_id` INT NOT NULL,
+  `service_resource_requirement_name` VARCHAR(255) NOT NULL,
+  `service_resource_requirement_type` VARCHAR(100) NULL DEFAULT NULL,
+  `service_resource_requirement_quantity` INT NOT NULL DEFAULT '1',
+  `service_resource_requirement_cost_per_unit` DECIMAL(15,4) NULL DEFAULT NULL,
+  `service_resource_requirement_is_consumable` TINYINT(1) NULL DEFAULT '0',
+  `service_resource_requirement_notes` TEXT NULL DEFAULT NULL,
+  `service_resource_requirement_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `service_resource_requirement_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`service_resource_requirement_id`),
+  INDEX `idx_resource_requirement_service` (`service_resource_requirement_service_id` ASC) VISIBLE,
+  INDEX `idx_resource_requirement_name` (`service_resource_requirement_name` ASC) VISIBLE,
+  INDEX `idx_resource_requirement_type` (`service_resource_requirement_type` ASC) VISIBLE,
+  CONSTRAINT `service_resource_requirement_ibfk_1`
+    FOREIGN KEY (`service_resource_requirement_service_id`)
+    REFERENCES `gluttex`.`provided_service` (`provided_service_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`service_staff_requirement`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `gluttex`.`service_staff_requirement` (
+  `service_staff_requirement_id` INT NOT NULL AUTO_INCREMENT,
+  `service_staff_requirement_service_id` INT NOT NULL,
+  `service_staff_requirement_role` VARCHAR(100) NOT NULL,
+  `service_staff_requirement_min_count` INT NOT NULL DEFAULT '1',
+  `service_staff_requirement_max_count` INT NULL DEFAULT NULL,
+  `service_staff_requirement_hourly_rate` DECIMAL(15,4) NULL DEFAULT NULL,
+  `service_staff_requirement_allocated_hours` DECIMAL(5,2) NULL DEFAULT NULL,
+  `service_staff_requirement_notes` TEXT NULL DEFAULT NULL,
+  `service_staff_requirement_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `service_staff_requirement_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`service_staff_requirement_id`),
+  INDEX `idx_service_staff_requirement_service` (`service_staff_requirement_service_id` ASC) VISIBLE,
+  INDEX `idx_service_staff_requirement_role` (`service_staff_requirement_role` ASC) VISIBLE,
+  CONSTRAINT `service_staff_requirement_ibfk_1`
+    FOREIGN KEY (`service_staff_requirement_service_id`)
+    REFERENCES `gluttex`.`provided_service` (`provided_service_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8mb3;
+
+USE `gluttex` ;
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
 
-CREATE USER 'dev_user'@'%' IDENTIFIED BY 'dev_password';
-GRANT ALL PRIVILEGES ON *.* TO 'dev_user'@'%';
-FLUSH PRIVILEGES;
-
 -- Dump completed on 2025-08-16 19:54:35
 
-ALTER TABLE `product_reaction`
-ADD COLUMN `product_reaction_value` FLOAT DEFAULT 0.0;
+-- ALTER TABLE `product_reaction`
+-- ADD COLUMN `product_reaction_value` FLOAT DEFAULT 0.0;
 
-ALTER TABLE `provider_reaction`
-ADD COLUMN `provider_reaction_value` FLOAT DEFAULT 0.0;
+-- ALTER TABLE `provider_reaction`
+-- ADD COLUMN `provider_reaction_value` FLOAT DEFAULT 0.0;
 
 insert into reaction (reaction_type) values ('love'),('tasty'),('like'),('sick'),('danger'),('easy'),('long'),('unlike'),('safe'),('savy');
 
