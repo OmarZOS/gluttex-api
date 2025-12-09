@@ -5,29 +5,72 @@ from core.persistent_models import BusinessOperation, BusinessOperationWithTotal
 from core.api_models import OrderedItem_API, PlacedOrder_API
 from core.messages import APPUSER_NOT_EXISTS, PRODUCT_NOT_EXISTS, PRODUCT_QUANTITY_NOT_ENOUGH
 from core.models import *
+
 from storage import storage_broker;
 
-
-
-
-def fetch_placed_orders(user_id, offset ,limit):
+def fetch_cart(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_id: int = 0,person_id: int = 0,offset :int = 0,limit:int = 0):
     conditions = {}
-    # if supplier_id!=0:
-    #     conditions[PlacedOrder.] = supplier_id
-    if user_id!=0:
-        conditions[PlacedOrder.ordering_user_id] = user_id
-
+    eager_fields = [Cart.invoice,Cart.receipt,Cart.deposit]
+    
+    if provider_id != 0 :
+        conditions[Cart.cart_product_provider_id] = provider_id
+    if seller_id != 0 :
+        conditions[Cart.cart_selling_user] = seller_id
+    if cart_id != 0 :
+        conditions[Cart.cart_id] = cart_id
+        eager_fields.extend(
+            [
+                
+                Cart.ordered_item,
+                Cart.app_user_ ,
+                Cart.app_user,
+                Cart.ordered_service,
+                {
+                    Cart.invoice:[
+                        Invoice.payment
+                        ]
+                }
+                ,
+                {
+                    Cart.receipt:[
+                        Receipt.receipt_payment
+                        ]
+                }
+                ,
+                {
+                    Cart.person:[
+                        Person.person_details
+                        ]
+                },
+            ])
+    if client_id != 0 :
+        conditions[Cart.cart_client_user] = client_id
+    if person_id != 0 :
+        conditions[Cart.cart_person_ref] = person_id
+    
     # supplier_id,user_id, offset ,limit
         
-    return storage_broker.get(PlacedOrder
-                              ,{PlacedOrder.ordering_user_id :user_id}
-                              ,[OrderedItem]
-                              ,None
-                              ,
-                              offset=offset,
-                              limit=limit
+    return storage_broker.get(Cart
+                              ,conditions
+                              ,[]
+                              ,eager_fields
+                              ,offset=offset
+                              ,limit=limit
                               )
 
+
+def touch_cart(cart_id: int):
+    
+    # supplier_id,user_id, offset ,limit
+        
+    cart_list = storage_broker.get(Cart
+                              ,{Cart.cart_id:cart_id}
+                              ,[]
+                              ,None
+                              )
+    if cart_list == []:
+        return None     
+    return cart_list[0]
 
 
 def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: int = 0, client: int = 0, seller_id:int = 0, offset: int = 0, limit: int = 0):

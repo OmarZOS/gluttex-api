@@ -42,6 +42,17 @@ def fetch_supplier_by_id(provider_id: str):
     # if records == []: return None
     return records
 
+def touch_supplier(provider_id: str):
+    records = storage_broker.get(ProductProvider
+                                 ,{ProductProvider.id_product_provider:provider_id}
+                                 ,None
+                                 ,[]
+                                )
+        
+
+    if records == []: return None
+    return records[0]
+
 def fetch_only_supplier_by_id(provider_id: str):
     records = storage_broker.get(ProductProvider
                                  ,{ProductProvider.id_product_provider:provider_id}

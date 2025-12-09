@@ -232,6 +232,8 @@ volumes:
     driver: local
   rabbitmq_logs:
     driver: local
+  volumes:
+    driver: local
 
 
 networks:

@@ -202,8 +202,8 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
 
         # Use joinedload to eager load relationships with specified depth
         """
-    Recursively apply eager loading.
-    Example:
+        Recursively apply eager loading.
+        Example:
         eager_load_depth = [
             AppUser.app_user_type,
             AppUser.app_user_person,
@@ -215,8 +215,9 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
             query = query.options(*build_eager_options(model_class,eager_load_depth))
 
         # Order by primary key in descending order (newest first)
-        pk_column = list(model_class.__table__.primary_key.columns)[0]
-        query = query.order_by(desc(pk_column))
+        if len(list(model_class.__table__.primary_key.columns))>0: 
+            pk_column = list(model_class.__table__.primary_key.columns)[0]
+            query = query.order_by(desc(pk_column))
 
         # Fetch all records
         records = query.offset(offset).limit(limit).all()
