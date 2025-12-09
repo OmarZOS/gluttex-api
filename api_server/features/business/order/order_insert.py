@@ -76,13 +76,15 @@ def build_ordered_item(api_ordered_item: OrderedItem_API) -> OrderedItem:
     """
     Convert API ordered item into internal OrderedItem model.
     """
-    return OrderedItem(
+    order =  OrderedItem(
         ordered_product_id=api_ordered_item.ordered_product_id,
-        order_ref=api_ordered_item.order_ref,
         ordered_quantity=api_ordered_item.ordered_quantity,
         applied_vat=api_ordered_item.applied_vat,
         unit_price=api_ordered_item.unit_price
     )
+    if api_ordered_item.order_ref>0:
+        order.order_ref=api_ordered_item.order_ref
+    return order
 
 
 def insert_order(api_ordered_items: List[OrderedItem_API], placed_order_api: PlacedOrder_API) -> Tuple[List[int], PlacedOrder]:
@@ -145,13 +147,13 @@ def insert_order(api_ordered_items: List[OrderedItem_API], placed_order_api: Pla
     # --- Create final order object ---
     placed_order = PlacedOrder(
         ordering_user_id=ordering_user.id_app_user,
-        ordered_timestamp=datetime.now(),
+        # ordered_timestamp=datetime.now(),
         order_discount=placed_order_api.order_discount,
-        payment_ref = placed_order_api.payment_ref,
+        # payment_ref = placed_order_api.payment_ref,
         placed_order_last_mod = datetime.now(),
-        placed_order_state = placed_order_api.placed_order_state,
-        payment_status = placed_order_api.payment_status,
-        payment_method = placed_order_api.payment_method,
+        # placed_order_state = placed_order_api.placed_order_state,
+        # payment_status = placed_order_api.payment_status,
+        # payment_method = placed_order_api.payment_method,
         total_price=order_total_price
     )
     placed_order.ordered_item = ordered_items
@@ -165,3 +167,4 @@ def insert_order(api_ordered_items: List[OrderedItem_API], placed_order_api: Pla
 
 
     return updated_quantities, final_order
+

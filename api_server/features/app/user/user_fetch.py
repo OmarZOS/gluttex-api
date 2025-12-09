@@ -35,6 +35,19 @@ def fetch_full_user_by_id(user_id: str):
 
     return user
 
+def touch_user(user_id: str):
+    user_list = storage_broker.get(AppUser
+                              ,{AppUser.id_app_user :int(user_id)}
+                              ,[]
+                              ,[]
+                              ,None
+                              )
+                            
+    if user_list == []:
+        return None 
+    return user_list[0]
+
+
 def fetch_user_by_id(user_id: str):
     user_list = storage_broker.get(AppUser
                               ,{AppUser.id_app_user :int(user_id)}

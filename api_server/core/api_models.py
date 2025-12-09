@@ -85,7 +85,7 @@ class Symptoms_API(BaseModel):
     symptom_ids: list[int]
     symptoms_occurence_reason : Optional[str]
     reason_date : Optional[str]
-    
+
 # -------------------------------------------------------------------------------------
 
 class Iproduct_API(BaseModel):
@@ -120,11 +120,102 @@ class Product_API(BaseModel):
     product_owner : Optional[int]
     # ProductCategory_API
 
-
 class ProductImage_API(BaseModel):
     id_product_image: int
     product_image_url: Optional[str]
     product_ref_id: Optional[int]
+
+class ProvidedService_API(BaseModel):
+    provided_service_product_provider_id : int 
+    provided_service_id : Optional[int] = 0
+    provided_service_name : Optional[str] = 0
+    provided_service_description : Optional[str] = 0
+    provided_service_category_id : Optional[int] = 0
+    provided_service_base_price : Optional[float] = 0
+    provided_service_final_price : Optional[float] = 0
+    provided_service_actual_duration : Optional[float] = 0
+    provided_service_is_active : Optional[bool] = True
+    provided_service_pricing_config : Optional[str] = 0
+
+
+class OrderedService_API(BaseModel):
+    ordered_service_service_id: Optional[int] = 0
+    ordered_service_quantity: Optional[float] = 0.0
+    ordered_service_unit_price: Optional[float] = 0.0
+    ordered_service_total_price : Optional[float] = 0.0
+    ordered_service_notes: Optional[str] = ""
+    resource_requirement_id: Optional[int] = 0
+
+class ServiceResourceRequirement_API(BaseModel):
+    resource_requirement_id : Optional[int] = 0
+    resource_requirement_service_id : Optional[int] = 0
+    resource_requirement_name : Optional[str] = ""
+    resource_requirement_type : Optional[str] = ""
+    resource_requirement_quantity : Optional[float] = 0
+    resource_requirement_cost_per_unit : Optional[float] = 0
+    resource_requirement_is_consumable : Optional[bool] = 0
+    resource_requirement_notes : Optional[str] = ""
+    resource_requirement_product_ref : Optional[int] = 0
+
+class ServiceStaffRequirement_API(BaseModel):
+    service_staff_requirement_id :Optional[int]= 0
+    service_staff_requirement_service_id :Optional[int]= 0
+    service_staff_requirement_role : Optional[str] = ""
+    service_staff_requirement_notes : Optional[str] = ""
+    service_staff_requirement_min_count :Optional[float]=  0
+    service_staff_requirement_max_count :  Optional[float]= 0
+    service_staff_requirement_hourly_rate: Optional[float] = 0.0
+    service_staff_requirement_allocated_hours : Optional[float] = 0.0
+
+class Cart_API(BaseModel):
+    cart_id : Optional[int] = 0
+    cart_product_provider_id : Optional[int] = 0
+    cart_selling_user : Optional[int] = 0
+    cart_person_ref : Optional[int] = 0
+    cart_client_user : Optional[int] = 0
+
+    cart_status : Optional[str] = "PENDING"
+    cart_total_amount : Optional[float] = None
+    cart_notes : Optional[str] = ""
+
+    cart_invoice : Optional[bool] = False
+    cart_receipt : Optional[bool] = False
+
+    cart_deposit : Optional[bool] = False
+    cart_payment : Optional[bool] = False
+    cart_paid_money : Optional[float] = 0.0
+
+
+class Payment_API(BaseModel):
+    payment_id : Optional[int] = None
+    payment_invoice_id : Optional[int] = None
+    payment_amount : Optional[float] = 0.0
+    payment_method : Optional[str] = ""
+    payment_status : Optional[str] = ""
+    payment_reference : Optional[str] = ""
+    payment_notes : Optional[str] = ""
+
+class Deposit_API(BaseModel):
+    deposit_id : Optional[int] = None
+    deposit_amount : Optional[float] = 0.0
+    deposit_method : Optional[str] = ""
+    deposit_cart_id : Optional[int] = None
+    deposit_invoice_id : Optional[int] = None
+    deposit_reference : Optional[str] = ""
+    deposit_notes : Optional[str] = ""
+    deposit_receipt_id : Optional[int] = None
+
+class AdditionalFee_API(BaseModel):
+    additional_fee_id : Optional[int] = None
+    additional_fee_payment_id : Optional[int] = None
+    additional_fee_name : Optional[str] = ""
+    additional_fee_amount : Optional[float] = 0.0
+    additional_fee_description : Optional[str] = ""
+    additional_fee_document_url: Optional[str] = None
+    additional_fee_user_id : int
+    additional_fee_on_provider_id : int 
+
+
 
 class ProductProvider_API(BaseModel):
     id_product_provider: int

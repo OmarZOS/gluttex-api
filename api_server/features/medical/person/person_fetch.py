@@ -55,8 +55,7 @@ def fetch_only_person_by_id(person_id: str):
     records = storage_broker.get(Person
                                  ,{Person.id_person:person_id}
                                  ,None
-                                 ,[
-                                     
+                                 ,[   
                                 ])
     if records == []: return None
     return records[0] 
