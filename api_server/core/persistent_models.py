@@ -97,56 +97,56 @@ class BusinessOperation(Base):
 
 
 
-class BusinessOperationWithTotals(Base):
-    __tablename__ = 'business_operation_with_totals'
+# class BusinessOperationWithTotals(Base):
+#     __tablename__ = 'business_operation_with_totals'
     
-    # Primary key columns (nullable for summary rows)
-    supplier_id = Column(Integer, nullable=True)
-    order_id = Column(Integer, nullable=True)
-    cart_id = Column(Integer, nullable=True)
+#     # Primary key columns (nullable for summary rows)
+#     supplier_id = Column(Integer, nullable=True)
+#     order_id = Column(Integer, nullable=True)
+#     cart_id = Column(Integer, nullable=True)
     
-    # Business data columns
-    client = Column(Integer, nullable=True)
-    seller_id = Column(Integer, nullable=True)
-    total_amount = Column(Float(asdecimal=True))
-    invoice_status = Column(String(50))
-    total_paid = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
-    total_deposited = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
-    balance_due = Column(Float(asdecimal=True))
-    payment_status = Column(String(14))
-    source_table = Column(String(12))
+#     # Business data columns
+#     client = Column(Integer, nullable=True)
+#     seller_id = Column(Integer, nullable=True)
+#     total_amount = Column(Float(asdecimal=True))
+#     invoice_status = Column(String(50))
+#     total_paid = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
+#     total_deposited = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
+#     balance_due = Column(Float(asdecimal=True))
+#     payment_status = Column(String(14))
+#     source_table = Column(String(12))
     
-    # Row type to distinguish between detail and summary rows
-    row_type = Column(String(20), nullable=False)  # 'detail', 'supplier_summary', 'grand_total'
+#     # Row type to distinguish between detail and summary rows
+#     row_type = Column(String(20), nullable=False)  # 'detail', 'supplier_summary', 'grand_total'
     
-    # Since this is a view with union of different row types, we need to define
-    # a composite primary key that works for all row types
-    __mapper_args__ = {
-        'primary_key': [supplier_id, order_id, cart_id, row_type]
-    }
+#     # Since this is a view with union of different row types, we need to define
+#     # a composite primary key that works for all row types
+#     __mapper_args__ = {
+#         'primary_key': [supplier_id, order_id, cart_id, row_type]
+#     }
     
-    def __repr__(self):
-        return f"<BusinessOperationWithTotals(row_type='{self.row_type}', supplier_id={self.supplier_id}, amount={self.total_amount})>"
+#     def __repr__(self):
+#         return f"<BusinessOperationWithTotals(row_type='{self.row_type}', supplier_id={self.supplier_id}, amount={self.total_amount})>"
     
-    @property
-    def is_detail_row(self):
-        """Check if this is a detail row."""
-        return self.row_type == 'detail'
+#     @property
+#     def is_detail_row(self):
+#         """Check if this is a detail row."""
+#         return self.row_type == 'detail'
     
-    @property
-    def is_supplier_summary(self):
-        """Check if this is a supplier summary row."""
-        return self.row_type == 'supplier_summary'
+#     @property
+#     def is_supplier_summary(self):
+#         """Check if this is a supplier summary row."""
+#         return self.row_type == 'supplier_summary'
     
-    @property
-    def is_grand_total(self):
-        """Check if this is a grand total row."""
-        return self.row_type == 'grand_total'
+#     @property
+#     def is_grand_total(self):
+#         """Check if this is a grand total row."""
+#         return self.row_type == 'grand_total'
     
-    @property
-    def is_summary_row(self):
-        """Check if this is any type of summary row."""
-        return self.row_type in ['supplier_summary', 'grand_total']
+#     @property
+#     def is_summary_row(self):
+#         """Check if this is any type of summary row."""
+#         return self.row_type in ['supplier_summary', 'grand_total']
 
 
 

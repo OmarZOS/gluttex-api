@@ -1526,6 +1526,7 @@ USE `gluttex`;
 -- -----------------------------------------------------
 
 
+
 CREATE OR REPLACE VIEW business_operation AS
 -- PART 1: Cart-based operations (what we already have)
 SELECT 

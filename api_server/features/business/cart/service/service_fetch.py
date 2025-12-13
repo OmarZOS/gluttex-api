@@ -1,4 +1,4 @@
-from core.persistent_models import BusinessOperation, BusinessOperationWithTotals
+from core.persistent_models import BusinessOperation
 from core.api_models import OrderedItem_API, PlacedOrder_API
 from core.messages import APPUSER_NOT_EXISTS, PRODUCT_NOT_EXISTS, PRODUCT_QUANTITY_NOT_ENOUGH
 from core.models import *

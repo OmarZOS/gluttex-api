@@ -22,10 +22,10 @@ def fetch_full_user_by_id(user_id: str):
     users = storage_broker.get(
         table=AppUser,
         conditions={AppUser.id_app_user: int(user_id)},
-        join_tables=[AppUser.app_user_person,AppUser.app_user_type],
+        join_tables=[],
         eager_load_depth=[AppUser.app_user_type,{AppUser.app_user_person:[Person.person_details,Person.person_blood_type,{Person.person_location:[Location.location_address,Location.location_name,Location.position_wkt]}]}],
         offset=0,
-        limit=1
+        limit=10
     )
 
     if users == []:

@@ -1,7 +1,7 @@
 
 # here, we make schema translations
 
-from core.persistent_models import BusinessOperation, BusinessOperationWithTotals
+from core.persistent_models import BusinessOperation
 from core.api_models import OrderedItem_API, PlacedOrder_API
 from core.messages import APPUSER_NOT_EXISTS, PRODUCT_NOT_EXISTS, PRODUCT_QUANTITY_NOT_ENOUGH
 from core.models import *
@@ -21,7 +21,17 @@ def fetch_cart(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_i
         eager_fields.extend(
             [
                 
-                Cart.ordered_item,
+                {Cart.ordered_item:[
+
+                    OrderedItem.id_ordered_item,
+                    OrderedItem.ordered_product_id,
+                    OrderedItem.ordered_quantity,
+                    OrderedItem.applied_vat,
+                    OrderedItem.order_ref,
+                    OrderedItem.unit_price,
+                    OrderedItem.product_discount,
+                    OrderedItem.ordered_product,
+                ]},
                 Cart.app_user_ ,
                 Cart.app_user,
                 Cart.ordered_service,
@@ -78,7 +88,6 @@ def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: in
     conditions = {}
     result = {}
 
-
     if supplier_id!=0:
         conditions[BusinessOperation.supplier_id] = supplier_id
     if order_id!=0:
@@ -90,9 +99,7 @@ def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: in
     if seller_id!=0:
         conditions[BusinessOperation.seller_id] = seller_id
 
-
-    
-    return storage_broker.get(BusinessOperationWithTotals
+    return storage_broker.get(BusinessOperation
                             ,conditions
                             ,[]
                             ,[]

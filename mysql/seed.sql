@@ -1675,3 +1675,81 @@ INSERT INTO `gluttex`.`payment` (
 -- -- Deposit without cart reference
 -- (NULL, 20, 100.0000, 'bank', 'DEP-BANK-009', 'Deposit against invoice - cart not specified', NULL),
 -- (NULL, 21, 52.5000, 'card', 'DEP-TXN-008', 'Partial deposit - cart unknown', NULL);
+
+
+desc app_user ;
+insert into app_user (id_app_user,
+app_user_name,
+app_user_password,
+app_user_type_id,
+app_user_preferences,
+app_user_image_url,
+app_user_last_active,
+app_user_last_updated,
+app_user_creation)
+values
+(4, 'admin', '77b23d5396b51608e7189cf8895bd283c88639db5ed6211fa8bfbaecf477409f',  3,NULL , NULL , '2025-12-10 08:01:27', '2025-12-10 08:01:27', '2025-12-10 08:01:27' );
+
+
+INSERT INTO `gluttex`.`management_rule` (
+  `rule_ref_org`,
+  `rule_ref_provider`,
+  `rule_ref_user`,
+  `management_rule_code`,
+  `management_rule_status`,
+  `management_rule_expiry`
+) VALUES
+-- Provider 1: Magasin habibou sans gluten (Bakery)
+(NULL, 1, 4, 63, 'PENDING', DATE_ADD(NOW(), INTERVAL 30 DAY)),
+
+-- Provider 2: Uno (Supermarket)
+(NULL, 2, 4, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY)),
+
+-- Provider 3: Superette université (Supermarket)
+(NULL, 3, 4, 63, 'PENDING', DATE_ADD(NOW(), INTERVAL 45 DAY)),
+
+-- Provider 4: Corridors Shopping (Restaurant)
+(NULL, 4, 4, 63, 'REJECTED', DATE_ADD(NOW(), INTERVAL 90 DAY)),
+
+-- Provider 5: Caramel sans gluten (Supermarket)
+(NULL, 5, 4, 63, 'SUSPENDED', DATE_ADD(NOW(), INTERVAL 15 DAY)),
+
+-- Provider 6: Magasin habibou sans gluten (Bakery - duplicate name but different ID)
+(NULL, 6, 4, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 180 DAY)),
+
+-- Provider 7: Uno (Supermarket - duplicate name but different ID)
+(NULL, 7, 4, 63, 'OBSOLETE', DATE_ADD(NOW(), INTERVAL 7 DAY));
+
+-- Optional: Insert more variations with different statuses for testing
+INSERT INTO `gluttex`.`management_rule` (
+  `rule_ref_org`,
+  `rule_ref_provider`,
+  `rule_ref_user`,
+  `management_rule_code`,
+  `management_rule_status`,
+  `management_rule_expiry`
+) VALUES
+-- Additional rules with different expiry dates
+(NULL, 1, 4, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 365 DAY)),  -- 1 year expiry
+(NULL, 2, 4, 63, 'PENDING', NULL),  -- No expiry date
+(NULL, 3, 4, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL -7 DAY)),  -- Already expired
+(NULL, 4, 4, 63, 'SUSPENDED', DATE_ADD(NOW(), INTERVAL 30 DAY)),
+
+-- Same provider, different rule codes for user 4
+(NULL, 2, 4, 64, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 90 DAY)),  -- Different rule code
+(NULL, 2, 4, 65, 'PENDING', DATE_ADD(NOW(), INTERVAL 30 DAY)),  -- Another rule code
+
+-- Same provider and rule code, different users (if you want to test with other users)
+(NULL, 2, 1, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY)),  -- User ID 1
+(NULL, 2, 2, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY)),  -- User ID 2
+(NULL, 2, 3, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY));  -- User ID 3
+
+
+
+
+
+
+
+
+
+
