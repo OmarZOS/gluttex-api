@@ -30,31 +30,31 @@ def fetch_placed_orders(user_id, offset ,limit):
 
 
 
-def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: int = 0, client: int = 0, seller_id:int = 0, offset: int = 0, limit: int = 0):
+# def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: int = 0, client: int = 0, seller_id:int = 0, offset: int = 0, limit: int = 0):
     
-    conditions = {}
-    result = {}
+#     conditions = {}
+#     result = {}
 
 
-    if supplier_id!=0:
-        conditions[BusinessOperation.supplier_id] = supplier_id
-    if order_id!=0:
-        conditions[BusinessOperation.order_id] = order_id
-    if cart_id!=0:
-        conditions[BusinessOperation.cart_id] = cart_id
-    if client!=0:
-        conditions[BusinessOperation.client] = client
-    if seller_id!=0:
-        conditions[BusinessOperation.seller_id] = seller_id
+#     if supplier_id!=0:
+#         conditions[BusinessOperation.supplier_id] = supplier_id
+#     if order_id!=0:
+#         conditions[BusinessOperation.order_id] = order_id
+#     if cart_id!=0:
+#         conditions[BusinessOperation.cart_id] = cart_id
+#     if client!=0:
+#         conditions[BusinessOperation.client_id] = client
+#     if seller_id!=0:
+#         conditions[BusinessOperation.seller_id] = seller_id
 
 
     
-    return storage_broker.get(BusinessOperation
-                            ,conditions
-                            ,[]
-                            ,[]
-                            ,None
-                            )
+#     return storage_broker.get(BusinessOperation
+#                             ,conditions
+#                             ,[]
+#                             ,[]
+#                             ,None
+#                             )
 
     # if supplier_id!=0:
     #     conditions[PlacedOrder.] = supplier_id

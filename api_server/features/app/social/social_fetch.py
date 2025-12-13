@@ -94,6 +94,19 @@ def fetch_notifications(notification_user_ref, offset, limit):
     return rule_list
 
 
+def fetch_full_person_by_id(person_id):
+
+    # Fetch data
+    rule_list = storage_broker.get(
+        Person,
+        {Person.id_person : person_id},
+        None,
+        [Person.person_details ],
+    )
+
+    return rule_list
+
+
 
 
 

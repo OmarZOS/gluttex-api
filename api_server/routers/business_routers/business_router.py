@@ -11,7 +11,8 @@ from features.business.order.order_update import update_order
 from core.api_models import AdditionalFee_API, Cart_API, Deposit_API, Payment_API,  OrderedItem_API, OrderedService_API, Person_API, PlacedOrder_API, ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
 
 from features.business.order.order_insert import insert_order
-from features.business.order.order_fetch import fetch_business_operations, fetch_placed_order_details, fetch_placed_orders
+from features.business.cart.cart_fetch import fetch_business_operations
+from features.business.order.order_fetch import  fetch_placed_order_details, fetch_placed_orders
 from features.business.product.product_update import notify_subscribers
 
 business_router = APIRouter()

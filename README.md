@@ -74,6 +74,33 @@ For the spatial data:
     person = relationship('Person', back_populates='person_location')
     product_provider = relationship('ProductProvider', back_populates='product_provider_location')
 
+For the business logic:
+
+    Placed Order → ordered_items → Product → Provider
+        ↓
+        → Invoice → Payment
+
+
+    Cart → (ordered_items OR ordered_services) → Provider
+        ↓
+        → Placed Order (optional?) → Invoice → Payment
+
+    -- Two competing payment tables
+    payment → invoice (full payment)
+    deposit → cart OR invoice (partial payments)
+
+    -- Receipt can reference payment OR cart directly
+    receipt → payment_id
+    receipt → cart_ref
+
+    ordered_item → order_ref (placed_order)  -- Path A
+    ordered_item → cart_ref                  -- Path B
+    ordered_service → cart_ref               -- Only path
+
+    1. ordered_item → product → provider
+    2. cart → product_provider (direct)
+    3. ordered_service → provided_service → provider
+
 
 ### Progress
     

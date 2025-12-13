@@ -1,4 +1,5 @@
 from fastapi import APIRouter,  status
+from features.app.social.social_fetch import fetch_full_person_by_id
 from constants import ReactionType
 from features.app.social.social_add import handle_reaction
 from core.exception_handler import APIException
@@ -27,6 +28,17 @@ def get_user_by_id(user_id: int):
     if not user:
         raise APIException(status=HTTP_404_NOT_FOUND,code=APPUSER_NOT_EXISTS, details=f"{APPUSER_NOT_EXISTS}: {user_id}")
     return user
+
+
+@app_user_router.get("/person/{person_id}")
+def get_person_by_id(person_id: int):
+    """
+    Retrieve a person by ID.
+    """
+    person = fetch_full_person_by_id(person_id)
+    if not person:
+        raise APIException(status=HTTP_404_NOT_FOUND,code=PERSON_FETCH_NOT_FOUND, details=f"{PERSON_FETCH_NOT_FOUND}: {person_id}")
+    return person
 
 @app_user_router.post("/app_user/add")
 async def insert_user_endpoint(user: AppUser_API, person: Person_API = None, location: Location_API = None):
