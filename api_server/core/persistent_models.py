@@ -46,7 +46,7 @@ To avoid issues, always use position_wkt, which exposes the geometry in a safe, 
     )
 
     id_location = Column(Integer, primary_key=True)
-    location_position = Column(Geometry('POINT', srid=4326), nullable=False)
+    location_position = Column(Geometry('POINT', srid=4326))
     position_wkt = column_property(func.ST_AsText(location_position)) 
     location_name = Column(String(45))
     location_address_id = Column(Integer)
@@ -59,43 +59,72 @@ To avoid issues, always use position_wkt, which exposes the geometry in a safe, 
     placed_order = relationship('PlacedOrder', back_populates='location')
 
 
+
 class BusinessOperation(Base):
     """
-    Business Operations View Model
+    Business Operations View Model - Updated Version
 
-    This model maps to the `business_operation` database view that consolidates
-    all business transactions from both cart-based and order-based systems.
+    This model maps to the enhanced `business_operation` database view that 
+    consolidates all business transactions with comprehensive tracking.
 
-    The view provides:
-    • Complete financial transaction history
-    • Payment status and balance tracking
-    • Supplier relationship mapping
-    • Source type identification for each transaction
+    The view now provides:
+    • Complete financial transaction history across all operation types
+    • Full document tracking (invoices, receipts, deposits)
+    • Detailed payment status categorization
+    • Operation type classification (products, services, mixed)
+    • Timestamp tracking for all operations
+
+    New Fields:
+    • invoice_id - Direct reference to invoice table
+    • receipt_id - Direct reference to receipt table  
+    • document_type - Type of financial document created
+    • operation_type - Classification of the business operation
+    • operation_date - When the operation occurred
 
     Used for:
     • Financial reporting and analytics
-    • Supplier performance monitoring
-    • Payment reconciliation
+    • Document reconciliation and audit trails
     • Business intelligence dashboards
+    • Payment tracking across all transaction types
+    • Performance monitoring by operation type
 
     Note: This is a read-only view model. Direct modifications are not supported.
     """
     __tablename__ = 'business_operation'
     
+    # Supplier/Provider Information
     supplier_id = Column(Integer, primary_key=True)
-    order_id = Column(Integer)
-    cart_id = Column(Integer)
-    client = Column(Integer)
-    seller_id = Column(Integer)
-    total_amount = Column(Float(asdecimal=True))
+    
+    # Transaction References
+    order_id = Column(Integer, primary_key=True)
+    cart_id = Column(Integer, primary_key=True)
+    
+    # Participant Information
+    client_id = Column(Integer, primary_key=True)  # Renamed from 'client' to 'client_id'
+    seller_id = Column(Integer, primary_key=True)
+    
+    # Financial Information
+    total_amount = Column(Float)
+    balance_due = Column(Float)
+    
+    # Document Tracking
+    invoice_id = Column(Integer, primary_key=True)
     invoice_status = Column(String(50))
-    total_paid = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
-    total_deposited = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
-    balance_due = Column(Float(asdecimal=True))
-    payment_status = Column(String(14))
-    source_table = Column(String(12))
-
-
+    receipt_id = Column(Integer, primary_key=True)
+    
+    # Payment Information
+    total_paid = Column(DECIMAL(37, 4))
+    total_deposited = Column(DECIMAL(37, 4))
+    
+    # Status and Classification
+    payment_status = Column(String(27))
+    document_type = Column(String(19))
+    operation_type = Column(String(23))
+    source_table = Column(String(13))
+    
+    # Temporal Information
+    operation_date = Column(TIMESTAMP)
+    
 
 # class BusinessOperationWithTotals(Base):
 #     __tablename__ = 'business_operation_with_totals'
@@ -110,14 +139,14 @@ class BusinessOperation(Base):
 #     seller_id = Column(Integer, nullable=True)
 #     total_amount = Column(Float(asdecimal=True))
 #     invoice_status = Column(String(50))
-#     total_paid = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
-#     total_deposited = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
+#     total_paid = Column(DECIMAL(37, 4))
+#     total_deposited = Column(DECIMAL(37, 4))
 #     balance_due = Column(Float(asdecimal=True))
 #     payment_status = Column(String(14))
 #     source_table = Column(String(12))
     
 #     # Row type to distinguish between detail and summary rows
-#     row_type = Column(String(20), nullable=False)  # 'detail', 'supplier_summary', 'grand_total'
+#     row_type = Column(String(20))  # 'detail', 'supplier_summary', 'grand_total'
     
 #     # Since this is a view with union of different row types, we need to define
 #     # a composite primary key that works for all row types

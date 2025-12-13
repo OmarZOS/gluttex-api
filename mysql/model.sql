@@ -514,7 +514,6 @@ DEFAULT CHARACTER SET = utf8mb3;
 -- Table `gluttex`.`deposit`
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `gluttex`.`deposit` ;
-
 CREATE TABLE IF NOT EXISTS `gluttex`.`deposit` (
   `deposit_id` INT NOT NULL AUTO_INCREMENT,
   `deposit_cart_id` INT NULL DEFAULT NULL,
@@ -547,7 +546,6 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`deposit` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb3;
-
 
 -- -----------------------------------------------------
 -- Table `gluttex`.`disease_severity`
@@ -1527,40 +1525,64 @@ USE `gluttex`;
 
 
 
+
+
+
 CREATE OR REPLACE VIEW business_operation AS
--- PART 1: Cart-based operations (what we already have)
+-- PART 1: Complete Cart-based operations with ALL financial scenarios
 SELECT 
     -- Supplier information from cart's product provider
     pp.id_product_provider AS supplier_id,
     
-    -- Order information (from placed_order if available, otherwise null)
+    -- Order information (if order exists)
     po.id_placed_order AS order_id,
     
     -- Cart information
     c.cart_id,
     
     -- Client information
-    c.cart_client_user AS client,
+    COALESCE(c.cart_client_user, c.cart_selling_user) AS client_id,
     
     -- Seller information
-    c.cart_selling_user AS seller_id,
+    COALESCE(c.cart_selling_user, c.cart_client_user) AS seller_id,
     
-    -- Financial information
-    COALESCE(c.cart_total_amount, 0) AS total_amount,
-    
-    -- Invoice status
-    COALESCE(i.invoice_status, 'no_invoice') AS invoice_status,
-    
-    -- Total paid amount from payments
+    -- Financial information (use highest available amount)
     COALESCE(
+        i.invoice_total_amount, 
+        r.receipt_amount, 
+        c.cart_total_amount, 
+        0
+    ) AS total_amount,
+    
+    -- Invoice information
+    i.invoice_id,
+    COALESCE(i.invoice_status, 
+        CASE WHEN r.receipt_id IS NOT NULL THEN 'receipt_only'
+             WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id) THEN 'deposit_only'
+             ELSE 'no_document' END
+    ) AS invoice_status,
+    
+    -- Receipt information
+    r.receipt_id,
+    
+    -- Total paid amount from ALL payment sources
+    COALESCE(
+        -- Payments linked to invoice
         (SELECT SUM(p2.payment_amount) 
          FROM payment p2 
          WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status = 'completed'), 
+         AND p2.payment_status = 'completed'),
+         
+        -- Payments linked to receipt
+        (SELECT SUM(p3.payment_amount)
+         FROM payment p3
+         WHERE p3.payment_id = r.receipt_payment_id
+         AND p3.payment_status = 'completed'),
+         
         0
     ) AS total_paid,
     
-    -- Total deposited amount
+    -- Total deposited amount (from deposits table)
     COALESCE(
         (SELECT SUM(d2.deposit_amount) 
          FROM deposit d2 
@@ -1569,158 +1591,395 @@ SELECT
         0
     ) AS total_deposited,
     
-    -- Balance due
-    COALESCE(c.cart_total_amount, 0) - 
-    COALESCE(
-        (SELECT SUM(p2.payment_amount) 
-         FROM payment p2 
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status = 'completed'), 
-        0
+    -- Balance due calculation (considering all payment types)
+    COALESCE(i.invoice_total_amount, c.cart_total_amount, 0) - 
+    (
+        COALESCE(
+            (SELECT SUM(p2.payment_amount) 
+             FROM payment p2 
+             WHERE p2.payment_invoice_id = i.invoice_id
+             AND p2.payment_status = 'completed'), 0
+        ) +
+        COALESCE(
+            (SELECT SUM(d2.deposit_amount) 
+             FROM deposit d2 
+             WHERE (d2.deposit_cart_id = c.cart_id OR d2.deposit_invoice_id = i.invoice_id)
+             AND d2.deposit_amount > 0), 0
+        )
     ) AS balance_due,
     
-    -- Payment status
+    -- Payment status (comprehensive)
     CASE 
-        WHEN i.invoice_id IS NULL THEN 'no_invoice'
-        WHEN EXISTS (
-            SELECT 1 FROM payment p3 
-            WHERE p3.payment_invoice_id = i.invoice_id 
-            AND p3.payment_status = 'completed'
-            AND p3.payment_amount >= i.invoice_total_amount
-        ) THEN 'fully_paid'
-        WHEN EXISTS (
-            SELECT 1 FROM payment p3 
-            WHERE p3.payment_invoice_id = i.invoice_id 
-            AND p3.payment_status = 'completed'
-        ) THEN 'partially_paid'
-        ELSE 'unpaid'
+        -- Receipt-based payments (immediate)
+        WHEN r.receipt_id IS NOT NULL THEN 
+            CASE WHEN r.receipt_amount >= COALESCE(c.cart_total_amount, 0) 
+                 THEN 'fully_paid_receipt' 
+                 ELSE 'partially_paid_receipt' 
+            END
+        
+        -- Invoice-based payments
+        WHEN i.invoice_id IS NOT NULL THEN
+            CASE 
+                WHEN EXISTS (
+                    SELECT 1 FROM payment p3 
+                    WHERE p3.payment_invoice_id = i.invoice_id 
+                    AND p3.payment_status = 'completed'
+                    AND p3.payment_amount >= i.invoice_total_amount
+                ) THEN 'fully_paid_invoice'
+                
+                WHEN EXISTS (
+                    SELECT 1 FROM deposit d3 
+                    WHERE d3.deposit_invoice_id = i.invoice_id
+                    AND d3.deposit_amount >= i.invoice_total_amount
+                ) THEN 'fully_paid_deposit'
+                
+                WHEN EXISTS (
+                    SELECT 1 FROM payment p4 
+                    WHERE p4.payment_invoice_id = i.invoice_id 
+                    AND p4.payment_status = 'completed'
+                ) OR EXISTS (
+                    SELECT 1 FROM deposit d4 
+                    WHERE d4.deposit_invoice_id = i.invoice_id
+                ) THEN 'partially_paid'
+                
+                ELSE 'unpaid_invoice'
+            END
+        
+        -- Deposit-only (no invoice/receipt)
+        WHEN EXISTS (SELECT 1 FROM deposit d5 WHERE d5.deposit_cart_id = c.cart_id) THEN
+            CASE 
+                WHEN (SELECT SUM(d6.deposit_amount) FROM deposit d6 
+                      WHERE d6.deposit_cart_id = c.cart_id) >= COALESCE(c.cart_total_amount, 0)
+                THEN 'fully_paid_deposit_only'
+                ELSE 'partially_paid_deposit_only'
+            END
+        
+        -- No financial documents yet
+        ELSE 'pending_payment'
     END AS payment_status,
     
+    -- Document type
+    CASE 
+        WHEN i.invoice_id IS NOT NULL AND r.receipt_id IS NOT NULL THEN 'invoice_and_receipt'
+        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
+        WHEN r.receipt_id IS NOT NULL THEN 'receipt'
+        WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id) THEN 'deposit_only'
+        ELSE 'no_document'
+    END AS document_type,
+    
+    -- Operation type
+    CASE 
+        WHEN EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id) 
+             AND EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id)
+        THEN 'mixed_products_services'
+        WHEN EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id) 
+        THEN 'products_only'
+        WHEN EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id) 
+        THEN 'services_only'
+        ELSE 'empty_cart'
+    END AS operation_type,
+    
     -- Source identifier
-    'cart_based' AS source_table
+    'cart_based' AS source_table,
+    
+    -- Creation timestamp
+    COALESCE(
+        i.invoice_created_at,
+        r.receipt_created_at,
+        c.cart_created_at
+    ) AS operation_date
 
 FROM cart c
 -- Join to Product Provider (Supplier)
 LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
--- Join to Invoice
+-- Join to Invoice (if exists)
 LEFT JOIN invoice i ON c.cart_id = i.invoice_cart_id
--- Join to Placed Order (if exists)
-LEFT JOIN placed_order po ON c.cart_id = po.id_placed_order  -- Adjust based on your actual relationship
+-- Join to Receipt (if exists)
+LEFT JOIN receipt r ON c.cart_id = r.receipt_cart_ref
+-- Join to Placed Order (if exists - corrected relationship)
+LEFT JOIN placed_order po ON po.placed_order_invoice_ref = i.invoice_id OR 
+                            (po.id_placed_order IN (
+                                SELECT oi.order_ref 
+                                FROM ordered_item oi 
+                                WHERE oi.ordered_item_cart_ref = c.cart_id
+                            ))
 
-WHERE c.cart_id IS NOT NULL
+WHERE c.cart_status IN ('completed', 'pending', 'processing')  -- Only relevant carts
 
 UNION ALL
 
--- PART 2: Order-based items (ordered_item without cart reference but with order reference)
+-- PART 2: Direct Order-based items (without cart reference)
 SELECT 
-    -- Supplier information from order's provider
+    -- Supplier information
     COALESCE(
-        -- Try to get supplier from product provider via product
+        -- From product's provider
         (SELECT pp2.id_product_provider 
          FROM product p2 
          JOIN product_provider pp2 ON p2.product_provider_id = pp2.id_product_provider
          WHERE p2.id_product = oi.ordered_product_id),
-        -- Try to get supplier from order's location or other means
-        (SELECT pp3.id_product_provider 
-         FROM placed_order po2
-         JOIN location l ON po2.placed_order_location_ref = l.id_location
-         JOIN product_provider pp3 ON l.id_location = pp3.product_provider_location_id
-         WHERE po2.id_placed_order = oi.order_ref
-         LIMIT 1),
+         
         0
     ) AS supplier_id,
     
     -- Order information
     oi.order_ref AS order_id,
     
-    -- Cart information (null for these records)
+    -- Cart information (null for these)
     NULL AS cart_id,
     
     -- Client information from placed_order
-    (SELECT po3.ordering_user_id 
-     FROM placed_order po3 
-     WHERE po3.id_placed_order = oi.order_ref) AS client,
+    po.ordering_user_id AS client_id,
     
-    -- Seller information (could be derived from order or default)
-    (SELECT au.id_app_user 
-     FROM placed_order po4
-     JOIN app_user au ON po4.ordering_user_id = au.id_app_user
-     WHERE po4.id_placed_order = oi.order_ref
-     LIMIT 1) AS seller_id,
-    
-    -- Financial information from ordered_item
-    (oi.ordered_quantity * oi.unit_price * (1 - COALESCE(oi.product_discount, 0)/100)) AS total_amount,
-    
-    -- Invoice status from order's invoice
+    -- Seller information (default to ordering user if no seller)
     COALESCE(
-        (SELECT i2.invoice_status 
-         FROM invoice i2 
-         JOIN placed_order po5 ON i2.invoice_id = po5.placed_order_invoice_ref
-         WHERE po5.id_placed_order = oi.order_ref),
-        'no_invoice'
-    ) AS invoice_status,
+        (SELECT au.id_app_user FROM app_user au 
+         WHERE au.id_app_user IN (SELECT au2.id_app_user FROM app_user au2 WHERE au2.id_app_user = po.ordering_user_id)),
+        po.ordering_user_id
+    ) AS seller_id,
     
-    -- Total paid amount for this order's invoice
+    -- Financial information
+    (oi.ordered_quantity * oi.unit_price * 
+     (1 - COALESCE(oi.product_discount, 0)/100) *
+     (1 + COALESCE(oi.applied_vat, 0)/100)) AS total_amount,
+    
+    -- Invoice information
+    i.invoice_id,
+    COALESCE(i.invoice_status, 'no_invoice') AS invoice_status,
+    
+    -- Receipt information
+    NULL AS receipt_id,
+    
+    -- Total paid amount
     COALESCE(
         (SELECT SUM(p2.payment_amount)
          FROM payment p2
-         JOIN invoice i3 ON p2.payment_invoice_id = i3.invoice_id
-         JOIN placed_order po6 ON i3.invoice_id = po6.placed_order_invoice_ref
-         WHERE po6.id_placed_order = oi.order_ref
+         WHERE p2.payment_invoice_id = i.invoice_id
          AND p2.payment_status = 'completed'),
         0
     ) AS total_paid,
     
-    -- Total deposited amount for this order
+    -- Total deposited amount
     COALESCE(
         (SELECT SUM(d2.deposit_amount)
          FROM deposit d2
-         JOIN placed_order po7 ON d2.deposit_invoice_id = po7.placed_order_invoice_ref
-         WHERE po7.id_placed_order = oi.order_ref),
+         WHERE d2.deposit_invoice_id = i.invoice_id),
         0
     ) AS total_deposited,
     
     -- Balance due
-    (oi.ordered_quantity * oi.unit_price * (1 - COALESCE(oi.product_discount, 0)/100)) - 
+    (oi.ordered_quantity * oi.unit_price * 
+     (1 - COALESCE(oi.product_discount, 0)/100) *
+     (1 + COALESCE(oi.applied_vat, 0)/100)) - 
     COALESCE(
         (SELECT SUM(p2.payment_amount)
          FROM payment p2
-         JOIN invoice i3 ON p2.payment_invoice_id = i3.invoice_id
-         JOIN placed_order po6 ON i3.invoice_id = po6.placed_order_invoice_ref
-         WHERE po6.id_placed_order = oi.order_ref
+         WHERE p2.payment_invoice_id = i.invoice_id
          AND p2.payment_status = 'completed'),
+        0
+    ) - 
+    COALESCE(
+        (SELECT SUM(d2.deposit_amount)
+         FROM deposit d2
+         WHERE d2.deposit_invoice_id = i.invoice_id),
         0
     ) AS balance_due,
     
-    -- Payment status for this order
+    -- Payment status
     CASE 
+        WHEN i.invoice_id IS NULL THEN 'no_invoice'
+        
         WHEN EXISTS (
-            SELECT 1 
-            FROM payment p3
-            JOIN invoice i4 ON p3.payment_invoice_id = i4.invoice_id
-            JOIN placed_order po8 ON i4.invoice_id = po8.placed_order_invoice_ref
-            WHERE po8.id_placed_order = oi.order_ref
+            SELECT 1 FROM payment p3 
+            WHERE p3.payment_invoice_id = i.invoice_id 
             AND p3.payment_status = 'completed'
-            AND p3.payment_amount >= i4.invoice_total_amount
+            AND p3.payment_amount >= i.invoice_total_amount
         ) THEN 'fully_paid'
+        
         WHEN EXISTS (
-            SELECT 1 
-            FROM payment p3
-            JOIN invoice i4 ON p3.payment_invoice_id = i4.invoice_id
-            JOIN placed_order po8 ON i4.invoice_id = po8.placed_order_invoice_ref
-            WHERE po8.id_placed_order = oi.order_ref
+            SELECT 1 FROM payment p3 
+            WHERE p3.payment_invoice_id = i.invoice_id 
             AND p3.payment_status = 'completed'
+        ) OR EXISTS (
+            SELECT 1 FROM deposit d3 
+            WHERE d3.deposit_invoice_id = i.invoice_id
         ) THEN 'partially_paid'
+        
         ELSE 'unpaid'
     END AS payment_status,
     
+    -- Document type
+    CASE 
+        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
+        ELSE 'no_document'
+    END AS document_type,
+    
+    -- Operation type
+    'direct_order' AS operation_type,
+    
     -- Source identifier
-    'order_based' AS source_table
+    'order_based' AS source_table,
+    
+    -- Creation timestamp
+    COALESCE(
+        i.invoice_created_at,
+        po.placed_order_creation
+    ) AS operation_date
 
 FROM ordered_item oi
+-- Join to placed_order
+LEFT JOIN placed_order po ON po.id_placed_order = oi.order_ref
+-- Join to invoice via placed_order
+LEFT JOIN invoice i ON i.invoice_id = po.placed_order_invoice_ref
 -- Only include items without cart reference but with order reference
 WHERE oi.ordered_item_cart_ref IS NULL 
-AND oi.order_ref IS NOT NULL;
+AND oi.order_ref IS NOT NULL
+AND oi.ordered_product_id IS NOT NULL
+
+UNION ALL
+
+-- PART 3: Services-only operations (from ordered_service through cart)
+SELECT 
+    -- Supplier information from cart's provider
+    pp.id_product_provider AS supplier_id,
+    
+    -- Order information (services usually don't create placed_orders)
+    NULL AS order_id,
+    
+    -- Cart information
+    c.cart_id,
+    
+    -- Client information
+    COALESCE(c.cart_client_user, c.cart_selling_user) AS client_id,
+    
+    -- Seller information
+    COALESCE(c.cart_selling_user, c.cart_client_user) AS seller_id,
+    
+    -- Financial information (sum of all services in cart)
+    COALESCE(
+        (SELECT SUM(os.ordered_service_total_price)
+         FROM ordered_service os
+         WHERE os.ordered_service_cart_id = c.cart_id),
+        c.cart_total_amount,
+        0
+    ) AS total_amount,
+    
+    -- Invoice information
+    i.invoice_id,
+    COALESCE(i.invoice_status, 'no_invoice') AS invoice_status,
+    
+    -- Receipt information
+    r.receipt_id,
+    
+    -- Total paid amount
+    COALESCE(
+        (SELECT SUM(p2.payment_amount) 
+         FROM payment p2 
+         WHERE p2.payment_invoice_id = i.invoice_id
+         AND p2.payment_status = 'completed'),
+         
+        (SELECT SUM(p3.payment_amount)
+         FROM payment p3
+         WHERE p3.payment_id = r.receipt_payment_id
+         AND p3.payment_status = 'completed'),
+         
+        0
+    ) AS total_paid,
+    
+    -- Total deposited amount
+    COALESCE(
+        (SELECT SUM(d2.deposit_amount) 
+         FROM deposit d2 
+         WHERE d2.deposit_cart_id = c.cart_id),
+        0
+    ) AS total_deposited,
+    
+    -- Balance due
+    COALESCE(
+        (SELECT SUM(os.ordered_service_total_price)
+         FROM ordered_service os
+         WHERE os.ordered_service_cart_id = c.cart_id),
+        c.cart_total_amount,
+        0
+    ) - 
+    (
+        COALESCE(
+            (SELECT SUM(p2.payment_amount) 
+             FROM payment p2 
+             WHERE p2.payment_invoice_id = i.invoice_id
+             AND p2.payment_status = 'completed'), 0
+        ) +
+        COALESCE(
+            (SELECT SUM(d2.deposit_amount) 
+             FROM deposit d2 
+             WHERE d2.deposit_cart_id = c.cart_id), 0
+        )
+    ) AS balance_due,
+    
+    -- Payment status (similar to cart-based)
+    CASE 
+        WHEN r.receipt_id IS NOT NULL THEN 'fully_paid_receipt'
+        WHEN i.invoice_id IS NOT NULL THEN
+            CASE 
+                WHEN EXISTS (
+                    SELECT 1 FROM payment p3 
+                    WHERE p3.payment_invoice_id = i.invoice_id 
+                    AND p3.payment_status = 'completed'
+                    AND p3.payment_amount >= i.invoice_total_amount
+                ) THEN 'fully_paid_invoice'
+                WHEN EXISTS (
+                    SELECT 1 FROM payment p4 
+                    WHERE p4.payment_invoice_id = i.invoice_id 
+                    AND p4.payment_status = 'completed'
+                ) THEN 'partially_paid'
+                ELSE 'unpaid_invoice'
+            END
+        WHEN EXISTS (SELECT 1 FROM deposit d5 WHERE d5.deposit_cart_id = c.cart_id) THEN
+            CASE 
+                WHEN (SELECT SUM(d6.deposit_amount) FROM deposit d6 
+                      WHERE d6.deposit_cart_id = c.cart_id) >= 
+                     COALESCE(c.cart_total_amount, 0)
+                THEN 'fully_paid_deposit_only'
+                ELSE 'partially_paid_deposit_only'
+            END
+        ELSE 'pending_payment'
+    END AS payment_status,
+    
+    -- Document type
+    CASE 
+        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
+        WHEN r.receipt_id IS NOT NULL THEN 'receipt'
+        WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id) THEN 'deposit_only'
+        ELSE 'no_document'
+    END AS document_type,
+    
+    -- Operation type
+    'services_only' AS operation_type,
+    
+    -- Source identifier
+    'service_based' AS source_table,
+    
+    -- Creation timestamp
+    COALESCE(
+        i.invoice_created_at,
+        r.receipt_created_at,
+        c.cart_created_at
+    ) AS operation_date
+
+FROM cart c
+-- Join to Product Provider
+LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
+-- Join to Invoice
+LEFT JOIN invoice i ON c.cart_id = i.invoice_cart_id
+-- Join to Receipt
+LEFT JOIN receipt r ON c.cart_id = r.receipt_cart_ref
+-- Ensure cart has services
+WHERE EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id)
+AND NOT EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id)  -- No products
+AND c.cart_status IN ('completed', 'pending', 'processing');
+
+
+
+
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;

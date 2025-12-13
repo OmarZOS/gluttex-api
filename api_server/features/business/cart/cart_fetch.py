@@ -83,7 +83,7 @@ def touch_cart(cart_id: int):
     return cart_list[0]
 
 
-def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: int = 0, client: int = 0, seller_id:int = 0, offset: int = 0, limit: int = 0):
+def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: int = 0, client_id: int = 0, seller_id:int = 0, offset: int = 0, limit: int = 0):
     
     conditions = {}
     result = {}
@@ -94,16 +94,16 @@ def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: in
         conditions[BusinessOperation.order_id] = order_id
     if cart_id!=0:
         conditions[BusinessOperation.cart_id] = cart_id
-    if client!=0:
-        conditions[BusinessOperation.client] = client
+    if client_id!=0:
+        conditions[BusinessOperation.client_id] = client_id
     if seller_id!=0:
         conditions[BusinessOperation.seller_id] = seller_id
 
     return storage_broker.get(BusinessOperation
                             ,conditions
                             ,[]
-                            ,[]
                             ,None
+                            ,offset,limit
                             )
 
     # if supplier_id!=0:

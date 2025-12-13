@@ -1744,12 +1744,102 @@ INSERT INTO `gluttex`.`management_rule` (
 (NULL, 2, 2, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY)),  -- User ID 2
 (NULL, 2, 3, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY));  -- User ID 3
 
+INSERT INTO `gluttex`.`placed_order` 
+(`id_placed_order`, `order_discount`, `total_price`, `ordering_user_id`, `placed_order_state_ref`, `placed_order_creation`) VALUES
+(1, 5.00, 95.00, 1, 1, '2024-01-15 09:30:00'),
+(2, 0.00, 150.00, 2, 1, '2024-01-16 14:15:00'),
+(3, 10.00, 180.00, 3, 2, '2024-01-17 11:45:00'),
+(4, 15.00, 235.00, 4, 3, '2024-01-18 16:20:00'),
+(5, 0.00, 75.00, 1, 1, '2024-01-19 10:00:00'),
+(6, 20.00, 280.00, 2, 4, '2024-01-20 13:30:00'),
+(7, 8.00, 142.00, 3, 1, '2024-01-21 15:45:00'),
+(8, 0.00, 90.00, 4, 2, '2024-01-22 12:10:00'),
+(9, 12.50, 187.50, 1, 3, '2024-01-23 09:15:00'),
+(10, 5.00, 195.00, 2, 1, '2024-01-24 17:00:00');
 
 
+INSERT INTO `gluttex`.`ordered_item`
+( `ordered_product_id`, `ordered_quantity`, `applied_vat`, `order_ref`, `unit_price`, `product_discount`) VALUES
+-- Order 1 items
+( 1, 2, 15.00, 1, 30.00, 0.00),
+( 2, 1, 15.00, 1, 40.00, 5.00),
+
+-- Order 2 items
+( 3, 3, 18.00, 2, 25.00, 0.00),
+( 4, 1, 18.00, 2, 75.00, 0.00),
+
+-- Order 3 items
+( 5, 2, 20.00, 3, 50.00, 10.00),
+( 6, 1, 20.00, 3, 80.00, 0.00),
+
+-- Order 4 items
+( 7, 5, 10.00, 4, 30.00, 15.00),
+( 8, 2, 10.00, 4, 75.00, 0.00),
+
+-- Order 5 items
+( 1, 1, 15.00, 5, 75.00, 0.00),
+
+-- Order 6 items
+( 2, 4, 18.00, 6, 50.00, 20.00),
+( 3, 2, 18.00, 6, 60.00, 0.00),
+
+-- Order 7 items
+( 4, 3, 15.00, 7, 30.00, 8.00),
+( 5, 1, 15.00, 7, 60.00, 0.00),
+
+-- Order 8 items
+( 6, 2, 20.00, 8, 45.00, 0.00),
+
+-- Order 9 items (no items - order canceled?)
+-- Order 10 items
+( 7, 3, 15.00, 10, 40.00, 5.00),
+( 8, 2, 15.00, 10, 50.00, 0.00),
+( 1, 1, 15.00, 10, 25.00, 0.00);
+
+INSERT INTO `gluttex`.`invoice`
+( `invoice_number`, `invoice_total_amount`, `invoice_status`, `invoice_issue_date`, `invoice_due_date`, `invoice_notes`, `invoice_created_at`) VALUES
+( 'INV-2024-001', 95.00, 'paid', '2024-01-15', '2024-02-15', 'First order discount applied', '2024-01-15 09:35:00'),
+( 'INV-2024-002', 150.00, 'paid', '2024-01-16', '2024-02-16', 'Bulk order', '2024-01-16 14:20:00'),
+( 'INV-2024-003', 180.00, 'unpaid', '2024-01-17', '2024-02-17', 'Pending payment', '2024-01-17 11:50:00'),
+( 'INV-2024-004', 235.00, 'paid', '2024-01-18', '2024-02-18', 'Multiple items', '2024-01-18 16:25:00'),
+( 'INV-2024-005', 75.00, 'canceled', '2024-01-19', '2024-02-19', 'Customer canceled', '2024-01-19 10:05:00'),
+( 'INV-2024-006', 280.00, 'paid', '2024-01-20', '2024-02-20', 'Large order with discount', '2024-01-20 13:35:00'),
+( 'INV-2024-007', 142.00, 'paid', '2024-01-21', '2024-02-21', 'Standard order', '2024-01-21 15:50:00'),
+( 'INV-2024-008', 90.00, 'unpaid', '2024-01-22', '2024-02-22', 'Awaiting payment', '2024-01-22 12:15:00');
 
 
+INSERT INTO `gluttex`.`payment`
+( `payment_invoice_id`, `payment_amount`, `payment_method`, `payment_status`, `payment_reference`, `payment_notes`) VALUES
+( 50, 95.00, 'card', 'completed', 'TRX-001234', 'Paid with Visa'),
+( 51, 150.00, 'bank', 'completed', 'BANK-567890', 'Bank transfer'),
+( 52, 235.00, 'mobile', 'completed', 'MOB-112233', 'Mobile payment'),
+( 53, 280.00, 'card', 'completed', 'TRX-445566', 'Paid with Mastercard'),
+( 54, 142.00, 'cash', 'completed', 'CASH-001', 'Cash payment');
 
+INSERT INTO `gluttex`.`payment`
+( `payment_invoice_id`, `payment_amount`, `payment_method`, `payment_status`, `payment_reference`, `payment_notes`) VALUES
+-- Invoice 3 deposits
+( 55, 90.00, 'bank', 'completed', 'BANK-778899', 'First installment'),
+( 55, 90.00, 'bank', 'pending', 'BANK-990011', 'Second installment due'),
 
+-- Invoice 8 deposits
+( 56, 45.00, 'mobile', 'completed', 'MOB-223344', 'Partial payment'),
+( 56, 45.00, 'cash', 'completed', 'CASH-002', 'Final payment');
+
+UPDATE `gluttex`.`placed_order` 
+SET `placed_order_invoice_ref` = CASE `id_placed_order`
+    WHEN 1 THEN 50
+    WHEN 2 THEN 51
+        WHEN 3 THEN 52
+        WHEN 4 THEN 53
+        WHEN 5 THEN 54
+        WHEN 6 THEN 55
+        WHEN 7 THEN 56
+        WHEN 8 THEN 57
+
+    ELSE NULL
+END
+WHERE `id_placed_order` BETWEEN 1 AND 8;
 
 
 
