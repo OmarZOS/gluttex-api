@@ -1,7 +1,7 @@
 
 # here, we make schema translations
 
-from core.persistent_models import BusinessOperation, BusinessOperationWithTotals
+from core.persistent_models import BusinessOperation
 from core.api_models import OrderedItem_API, PlacedOrder_API
 from core.messages import APPUSER_NOT_EXISTS, PRODUCT_NOT_EXISTS, PRODUCT_QUANTITY_NOT_ENOUGH
 from core.models import *
@@ -49,7 +49,7 @@ def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: in
 
 
     
-    return storage_broker.get(BusinessOperationWithTotals
+    return storage_broker.get(BusinessOperation
                             ,conditions
                             ,[]
                             ,[]
