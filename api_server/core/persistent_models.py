@@ -126,6 +126,33 @@ class BusinessOperation(Base):
     operation_date = Column(TIMESTAMP)
     
 
+class FinancialDocument(Base):
+    __tablename__ = 'financial_documents_status'
+    
+    document_type = Column(String(12))
+    document_id = Column(Integer, primary_key=True)
+    document_number = Column(String(100))
+    source_id = Column(Integer, primary_key=True)
+    source_type = Column(String(14))
+    supplier_id = Column(Integer, primary_key=True)
+    customer_id = Column(Integer, primary_key=True)
+    customer_type = Column(String(7))
+    seller_id = Column(Integer, primary_key=True)
+    document_amount = Column(DECIMAL(15, 4))
+    issue_date = Column(Date)
+    due_date = Column(Date)
+    total_paid = Column(DECIMAL(37, 4))
+    total_deposited = Column(DECIMAL(37, 4))
+    additional_fees = Column(DECIMAL(37, 4))
+    outstanding_balance = Column(DECIMAL(39, 4))
+    document_status = Column(String(50))
+    payment_status = Column(String(21))
+    days_issued = Column(Integer)
+    days_overdue = Column(Integer)
+    invoice_created_at = Column(TIMESTAMP)
+    invoice_updated_at = Column(TIMESTAMP)
+
+
 # class BusinessOperationWithTotals(Base):
 #     __tablename__ = 'business_operation_with_totals'
     

@@ -7,9 +7,6 @@ from core.messages import APPUSER_NOT_EXISTS, PRODUCT_NOT_EXISTS, PRODUCT_QUANTI
 from core.models import *
 from storage import storage_broker;
 
-
-
-
 def fetch_placed_orders(user_id, offset ,limit):
     conditions = {}
     # if supplier_id!=0:
@@ -28,7 +25,30 @@ def fetch_placed_orders(user_id, offset ,limit):
                               limit=limit
                               )
 
+def fetch_items_order(provider_id, offset ,limit):
+    conditions = {}
+    # if supplier_id!=0:
+    #     conditions[PlacedOrder.] = supplier_id
+    if provider_id!=0:
+        conditions[Product.product_provider_id] = provider_id
 
+    # supplier_id,provider_id, offset ,limit
+        
+    return storage_broker.get(Product
+                              ,conditions
+                              ,[OrderedItem]
+                              ,[{Product.ordered_item:[{
+                                  OrderedItem.placed_order:[{
+                                      PlacedOrder.ordering_user:[{
+                                          AppUser.app_user_person:[
+                                              Person.person_details
+                                              ]
+                                              }]
+                                              }]}]
+                                              }]
+                              ,offset=offset
+                              ,limit=limit
+                              )
 
 # def fetch_business_operations(supplier_id:int = 0,order_id : int = 0,cart_id: int = 0, client: int = 0, seller_id:int = 0, offset: int = 0, limit: int = 0):
     

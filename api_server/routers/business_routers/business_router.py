@@ -1,6 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks,  status
 from fastapi.encoders import jsonable_encoder
 from typing import List
+from features.business.finance.payment_fetch import fetch_financial_item
 from features.business.finance.payment_insert import insert_financial_item
 from features.business.cart.cart_insert import insert_cart
 from features.business.cart.cart_fetch import fetch_cart
@@ -12,7 +13,7 @@ from core.api_models import AdditionalFee_API, Cart_API, Deposit_API, Payment_AP
 
 from features.business.order.order_insert import insert_order
 from features.business.cart.cart_fetch import fetch_business_operations
-from features.business.order.order_fetch import  fetch_placed_order_details, fetch_placed_orders
+from features.business.order.order_fetch import  fetch_items_order, fetch_placed_order_details, fetch_placed_orders
 from features.business.product.product_update import notify_subscribers
 
 business_router = APIRouter()
@@ -44,8 +45,6 @@ def insert_placed_order(
     
     return res
 
-
-
 @business_router.get("/business/user/{user_id}/{offset}/{limit}")
 def fetch_every_placed_order_by_user(user_id: int, offset: int, limit: int):
     """
@@ -57,7 +56,20 @@ def fetch_every_placed_order_by_user(user_id: int, offset: int, limit: int):
     Returns:
         list: List of placed orders.
     """
-    return fetch_placed_orders(user_id, offset ,limit)
+    return fetch_placed_orders(user_id,offset ,limit)
+
+@business_router.get("/business/provider/{provider_id}/{offset}/{limit}")
+def fetch_every_ordered_item_by_provider(provider_id: int, offset: int, limit: int):
+    """
+    Fetches all placed orders for a specific user.
+
+    Args:
+        user_id (int): The user's ID.
+
+    Returns:
+        list: List of placed orders.
+    """
+    return fetch_items_order(provider_id, offset ,limit)
 
 @business_router.get("/business/order/{supplier_id}/{order_id}/{cart_id}/{client}/{seller_id}/{offset}/{limit}")
 def fetch_business_ops(supplier_id:int,order_id : int,cart_id: int, client: int, seller_id:int, offset: int, limit: int):
@@ -205,5 +217,19 @@ def add_payment(payment: Payment_API = None,deposit : Deposit_API= None, fee : A
     """
     return insert_financial_item(payment,deposit, fee)
 
+
+@business_router.get("/business/doc/{supplier_id}/{person_id}/{client_id}/{seller_id}/{cart_id}/{order_id}/{deposit_id}/{invoice_id}/{offset}/{limit}")
+def get_finances(supplier_id: int = 0,person_id: int = 0,client_id: int = 0,seller_id: int = 0,cart_id: int = 0,order_id: int = 0,deposit_id: int = 0,invoice_id: int = 0,offset: int= 0, limit : int=10):
+    """
+    Fetches all placed orders for a specific user.
+
+    Args:
+        client (int): The user's ID.
+
+    Returns:
+        list: List of placed orders.
+    """
+    return fetch_financial_item(
+        supplier_id,person_id,client_id,seller_id,cart_id,deposit_id,invoice_id, offset, limit)
 
 

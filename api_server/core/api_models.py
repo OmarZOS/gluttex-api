@@ -143,6 +143,7 @@ class OrderedService_API(BaseModel):
     ordered_service_quantity: Optional[float] = 0.0
     ordered_service_unit_price: Optional[float] = 0.0
     ordered_service_total_price : Optional[float] = 0.0
+    ordered_service_scheduled_at: Optional[str] = ""
     ordered_service_notes: Optional[str] = ""
     resource_requirement_id: Optional[int] = 0
 
