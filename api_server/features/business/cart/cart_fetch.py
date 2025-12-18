@@ -32,8 +32,22 @@ def fetch_cart(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_i
                     OrderedItem.product_discount,
                     OrderedItem.ordered_product,
                 ]},
-                Cart.app_user_ ,
-                Cart.app_user,
+                {
+                    Cart.app_user_:{
+                                          AppUser.app_user_person:[
+                                              Person.person_details
+                                              ]
+                                              }
+                 
+                 } ,
+                {
+                    Cart.app_user:{
+                                          AppUser.app_user_person:[
+                                              Person.person_details
+                                              ]
+                                              }
+                 
+                 },
                 Cart.ordered_service,
                 {
                     Cart.invoice:[
@@ -43,7 +57,8 @@ def fetch_cart(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_i
                 ,
                 {
                     Cart.receipt:[
-                        Receipt.receipt_payment
+                        Receipt.receipt_payment,
+                        Receipt.deposit
                         ]
                 }
                 ,

@@ -849,6 +849,7 @@ class OrderedService(Base):
     ordered_service_unit_price = Column(DECIMAL(15, 4))
     ordered_service_total_price = Column(DECIMAL(15, 4))
     ordered_service_notes = Column(Text)
+    ordered_service_scheduled_at = Column(TIMESTAMP)
     ordered_service_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     ordered_service_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
 

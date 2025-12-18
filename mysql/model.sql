@@ -926,6 +926,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`ordered_service` (
   `ordered_service_total_price` DECIMAL(15,4) NULL,
   `ordered_service_notes` TEXT NULL DEFAULT NULL,
   `ordered_service_created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+  `ordered_service_scheduled_at` TIMESTAMP NULL DEFAULT NULL,
   `ordered_service_updated_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`ordered_service_id`),
   INDEX `idx_cart` (`ordered_service_cart_id` ASC) VISIBLE,
@@ -1525,9 +1526,6 @@ USE `gluttex`;
 
 
 
-
-
-
 CREATE OR REPLACE VIEW business_operation AS
 -- PART 1: Complete Cart-based operations with ALL financial scenarios
 SELECT 
@@ -1978,8 +1976,330 @@ AND NOT EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c
 AND c.cart_status IN ('completed', 'pending', 'processing');
 
 
+-- -----------------------------------------------------
+-- View: financial_documents_status
+-- -----------------------------------------------------
+DROP VIEW IF EXISTS `gluttex`.`financial_documents_status`;
+CREATE VIEW `gluttex`.`financial_documents_status` AS
+-- PART 1: Invoice-based transactions (with or without cart)
+SELECT 
+    -- Document Identification
+    'invoice' AS document_type,
+    i.invoice_id AS document_id,
+    i.invoice_number AS document_number,
+    
+    -- Transaction Identification
+    COALESCE(c.cart_id, po.id_placed_order) AS source_id,
+    CASE 
+        WHEN c.cart_id IS NOT NULL THEN 'cart_based'
+        WHEN po.id_placed_order IS NOT NULL THEN 'order_based'
+        ELSE 'direct_invoice'
+    END AS source_type,
+    
+    -- Provider/Supplier Information
+    COALESCE(
+        -- From cart's provider
+        pp_cart.id_product_provider,
+        -- From order's products
+        (SELECT pp_prod.id_product_provider 
+         FROM ordered_item oi2 
+         JOIN product p2 ON oi2.ordered_product_id = p2.id_product
+         JOIN product_provider pp_prod ON p2.product_provider_id = pp_prod.id_product_provider
+         WHERE oi2.order_ref = po.id_placed_order 
+         LIMIT 1),
+        -- Default
+        0
+    ) AS supplier_id,
+    
+    -- Customer Information
+    COALESCE(
+        c.cart_client_user,
+        c.cart_selling_user,
+        po.ordering_user_id
+    ) AS customer_id,
+    
+    -- Seller Information
+    COALESCE(
+        c.cart_selling_user,
+        c.cart_client_user,
+        po.ordering_user_id
+    ) AS seller_id,
+    
+    -- Financial Information
+    i.invoice_total_amount AS document_amount,
+    i.invoice_issue_date AS issue_date,
+    i.invoice_due_date AS due_date,
+    
+    -- Payment Information
+    COALESCE(
+        (SELECT SUM(p.payment_amount) 
+         FROM payment p 
+         WHERE p.payment_invoice_id = i.invoice_id 
+         AND p.payment_status = 'completed'),
+        0
+    ) AS total_paid,
+    
+    -- Deposit Information (if any)
+    COALESCE(
+        (SELECT SUM(d.deposit_amount) 
+         FROM deposit d 
+         WHERE d.deposit_invoice_id = i.invoice_id),
+        0
+    ) AS total_deposited,
+    
+    -- Additional Fees
+    COALESCE(
+        (SELECT SUM(af.additional_fee_amount) 
+         FROM additional_fee af 
+         WHERE af.additional_fee_payment_id IN (
+             SELECT p2.payment_id 
+             FROM payment p2 
+             WHERE p2.payment_invoice_id = i.invoice_id
+         )),
+        0
+    ) AS additional_fees,
+    
+    -- Balance Calculation
+    (i.invoice_total_amount - 
+     COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id AND p.payment_status = 'completed'), 0) -
+     COALESCE((SELECT SUM(d.deposit_amount) FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id), 0)
+    ) AS outstanding_balance,
+    
+    -- Status Summary
+    i.invoice_status AS document_status,
+    
+    -- Payment Status Classification
+    CASE 
+        WHEN i.invoice_status = 'canceled' THEN 'canceled'
+        WHEN (SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id AND p.payment_status = 'completed') >= i.invoice_total_amount 
+            THEN 'fully_paid'
+        WHEN (SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id AND p.payment_status = 'completed') > 0 
+            OR (SELECT COUNT(*) FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id) > 0
+            THEN 'partially_paid'
+        ELSE 'unpaid'
+    END AS payment_status,
+    
+    -- Aging Information
+    DATEDIFF(CURRENT_DATE(), i.invoice_issue_date) AS days_issued,
+    DATEDIFF(CURRENT_DATE(), i.invoice_due_date) AS days_overdue,
+    
+    -- Metadata
+    i.invoice_created_at,
+    i.invoice_updated_at
 
+FROM invoice i
+LEFT JOIN cart c ON i.invoice_cart_id = c.cart_id
+LEFT JOIN placed_order po ON i.invoice_id = po.placed_order_invoice_ref
+LEFT JOIN product_provider pp_cart ON c.cart_product_provider_id = pp_cart.id_product_provider
 
+UNION ALL
+
+-- PART 2: Receipt-based transactions (direct payments without invoice)
+SELECT 
+    'receipt' AS document_type,
+    r.receipt_id AS document_id,
+    r.receipt_number AS document_number,
+    
+    c.cart_id AS source_id,
+    'cart_based' AS source_type,
+    
+    pp.id_product_provider AS supplier_id,
+    
+    COALESCE(c.cart_client_user, c.cart_selling_user) AS customer_id,
+    COALESCE(c.cart_selling_user, c.cart_client_user) AS seller_id,
+    
+    r.receipt_amount AS document_amount,
+    DATE(r.receipt_created_at) AS issue_date,
+    DATE(r.receipt_created_at) AS due_date, -- Same as issue date for receipts
+    
+    -- Receipt implies full payment
+    r.receipt_amount AS total_paid,
+    
+    0 AS total_deposited,
+    
+    -- Additional fees from payment if receipt linked to payment
+    COALESCE(
+        (SELECT SUM(af.additional_fee_amount) 
+         FROM additional_fee af 
+         WHERE af.additional_fee_payment_id = r.receipt_payment_id),
+        0
+    ) AS additional_fees,
+    
+    0 AS outstanding_balance, -- Receipt means paid in full
+    
+    'paid' AS document_status,
+    'fully_paid' AS payment_status,
+    
+    0 AS days_issued,
+    0 AS days_overdue,
+    
+    r.receipt_created_at,
+    r.receipt_created_at AS invoice_updated_at -- No separate updated_at for receipt
+
+FROM receipt r
+LEFT JOIN cart c ON r.receipt_cart_ref = c.cart_id
+LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
+WHERE r.receipt_payment_id IS NOT NULL -- Only receipts with confirmed payment
+
+UNION ALL
+
+-- PART 3: Deposit-only transactions (no invoice or receipt yet)
+SELECT 
+    'deposit' AS document_type,
+    d.deposit_id AS document_id,
+    CONCAT('DEP-', d.deposit_id) AS document_number,
+    
+    COALESCE(d.deposit_cart_id, d.deposit_invoice_id) AS source_id,
+    CASE 
+        WHEN d.deposit_cart_id IS NOT NULL THEN 'cart_based'
+        WHEN d.deposit_invoice_id IS NOT NULL THEN 'invoice_based'
+        ELSE 'direct_deposit'
+    END AS source_type,
+    
+    COALESCE(
+        -- For cart-based deposits
+        (SELECT pp.id_product_provider 
+         FROM cart c2 
+         JOIN product_provider pp ON c2.cart_product_provider_id = pp.id_product_provider
+         WHERE c2.cart_id = d.deposit_cart_id),
+        -- For invoice-based deposits, get provider from invoice
+        (SELECT pp2.id_product_provider 
+         FROM invoice i2 
+         LEFT JOIN cart c3 ON i2.invoice_cart_id = c3.cart_id
+         LEFT JOIN product_provider pp2 ON c3.cart_product_provider_id = pp2.id_product_provider
+         WHERE i2.invoice_id = d.deposit_invoice_id),
+        0
+    ) AS supplier_id,
+    
+    -- Customer identification
+    COALESCE(
+        -- From cart
+        (SELECT COALESCE(c4.cart_client_user, c4.cart_selling_user) 
+         FROM cart c4 
+         WHERE c4.cart_id = d.deposit_cart_id),
+        -- From invoice via cart
+        (SELECT COALESCE(c5.cart_client_user, c5.cart_selling_user) 
+         FROM invoice i3 
+         LEFT JOIN cart c5 ON i3.invoice_cart_id = c5.cart_id
+         WHERE i3.invoice_id = d.deposit_invoice_id),
+        -- Default
+        0
+    ) AS customer_id,
+    
+    -- Seller identification
+    COALESCE(
+        -- From cart
+        (SELECT COALESCE(c6.cart_selling_user, c6.cart_client_user) 
+         FROM cart c6 
+         WHERE c6.cart_id = d.deposit_cart_id),
+        -- From invoice via cart
+        (SELECT COALESCE(c7.cart_selling_user, c7.cart_client_user) 
+         FROM invoice i4 
+         LEFT JOIN cart c7 ON i4.invoice_cart_id = c7.cart_id
+         WHERE i4.invoice_id = d.deposit_invoice_id),
+        -- Default
+        0
+    ) AS seller_id,
+    
+    d.deposit_amount AS document_amount,
+    DATE(d.deposit_created_at) AS issue_date,
+    DATE(d.deposit_created_at) AS due_date, -- Same as issue date for deposits
+    
+    0 AS total_paid, -- Deposits are separate from regular payments
+    d.deposit_amount AS total_deposited,
+    
+    0 AS additional_fees,
+    
+    -- For deposits against invoices, calculate remaining balance
+    CASE 
+        WHEN d.deposit_invoice_id IS NOT NULL THEN
+            (SELECT i5.invoice_total_amount 
+             FROM invoice i5 
+             WHERE i5.invoice_id = d.deposit_invoice_id) - 
+            (d.deposit_amount + 
+             COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = d.deposit_invoice_id AND p.payment_status = 'completed'), 0))
+        ELSE d.deposit_amount -- For cart-based deposits, full amount is outstanding
+    END AS outstanding_balance,
+    
+    'pending' AS document_status,
+    
+    CASE 
+        WHEN d.deposit_invoice_id IS NOT NULL AND 
+             (SELECT i6.invoice_total_amount FROM invoice i6 WHERE i6.invoice_id = d.deposit_invoice_id) <= 
+             (d.deposit_amount + COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = d.deposit_invoice_id AND p.payment_status = 'completed'), 0))
+            THEN 'deposit_fully_covered'
+        ELSE 'deposit_partial'
+    END AS payment_status,
+    
+    DATEDIFF(CURRENT_DATE(), d.deposit_created_at) AS days_issued,
+    0 AS days_overdue,
+    
+    d.deposit_created_at,
+    d.deposit_updated_at AS invoice_updated_at
+
+FROM deposit d
+WHERE d.deposit_amount > 0
+
+UNION ALL
+
+-- PART 4: Cart-based transactions without financial documents (pending)
+SELECT 
+    'pending_cart' AS document_type,
+    c.cart_id AS document_id,
+    CONCAT('CART-', c.cart_id) AS document_number,
+    
+    c.cart_id AS source_id,
+    'cart_based' AS source_type,
+    
+    pp.id_product_provider AS supplier_id,
+    
+    COALESCE(c.cart_client_user, c.cart_selling_user) AS customer_id,
+    COALESCE(c.cart_selling_user, c.cart_client_user) AS seller_id,
+    
+    c.cart_total_amount AS document_amount,
+    DATE(c.cart_created_at) AS issue_date,
+    DATE(c.cart_created_at) AS due_date,
+    
+    0 AS total_paid,
+    COALESCE(
+        (SELECT SUM(d2.deposit_amount) 
+         FROM deposit d2 
+         WHERE d2.deposit_cart_id = c.cart_id),
+        0
+    ) AS total_deposited,
+    
+    0 AS additional_fees,
+    
+    c.cart_total_amount - 
+    COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0) 
+    AS outstanding_balance,
+    
+    c.cart_status AS document_status,
+    
+    CASE 
+        WHEN c.cart_status = 'canceled' THEN 'canceled'
+        WHEN EXISTS (SELECT 1 FROM deposit d3 WHERE d3.deposit_cart_id = c.cart_id AND d3.deposit_amount > 0) 
+            THEN 'deposit_received'
+        ELSE 'pending_payment'
+    END AS payment_status,
+    
+    DATEDIFF(CURRENT_DATE(), c.cart_created_at) AS days_issued,
+    0 AS days_overdue,
+    
+    c.cart_created_at,
+    c.cart_updated_at AS invoice_updated_at
+
+FROM cart c
+LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
+WHERE c.cart_status NOT IN ('completed', 'canceled') -- Only active/pending carts
+AND NOT EXISTS (
+    -- Exclude carts that already have invoices or receipts
+    SELECT 1 FROM invoice i WHERE i.invoice_cart_id = c.cart_id
+    UNION ALL
+    SELECT 1 FROM receipt r WHERE r.receipt_cart_ref = c.cart_id
+)
+
+ORDER BY issue_date DESC, document_type, document_id;
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
