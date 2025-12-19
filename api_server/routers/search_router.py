@@ -48,6 +48,22 @@ def search_for_user(token:str,offset:int,limit:int):
                                            ,offset= offset
                                            ,limit= limit)
 
+@search_router.get("/search/people/{token}/{offset}/{limit}")
+def search_for_user(token:str,offset:int,limit:int):
+    """
+    Search employees by token.
+    """
+    return search_records(Person
+                          ,search_query=token
+                          ,search_fields= ['person_details.person_first_name'
+                                          ,'person_details.person_last_name'
+                                          ,'person_details.person_nationality'
+                                           ]
+                                           ,eager_load_depth=[Person.person_details]
+                                           ,offset= offset
+                                           ,limit= limit)
+
+
 
 @search_router.get("/search/supplier/{token}/{offset}/{limit}")
 def search_supplier(token:str,offset:int,limit:int):
