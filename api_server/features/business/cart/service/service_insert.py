@@ -77,9 +77,9 @@ def build_ordered_service(ordered_service_api : OrderedService_API, new: bool = 
         ordered_service_unit_price = ordered_service_api.ordered_service_unit_price ,
         ordered_service_total_price = ordered_service_api.ordered_service_total_price ,
         ordered_service_notes = ordered_service_api.ordered_service_notes ,
-        ordered_service_scheduled_at = ordered_service_api.ordered_service_scheduled_at ,
     )
-
+    if ordered_service_api.ordered_service_scheduled_at and ordered_service_api.ordered_service_scheduled_at != '':
+        service.ordered_service_scheduled_at = ordered_service_api.ordered_service_scheduled_at ,
     if (new):
         service.ordered_service_id = ordered_service_api.ordered_service_service_id,
 
