@@ -68,6 +68,7 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
             person_obj = generate_person_object(client)
         else:
             person_obj = fetch_only_person_by_id(client.id_person)
+        
     
     if (buyer_user is None) and (person_obj is None):
         raise APIException(status=HTTP_404_NOT_FOUND, code=CLIENT_NOT_EXISTS)
@@ -156,13 +157,18 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
     # Set optional relationships
     if buyer_user is not None:
         cart.cart_client_user = buyer_user.id_app_user
-    
+    print("Adding the new guy1")
     if person_obj is not None:
-        cart.cart_person_ref = person_obj.id_person
+        if cart.cart_person_ref == 0:
+            cart.cart_person_ref = person_obj.id_person
+        else:
+            cart.person = person_obj
     
     if len(ordered_services) > 0:
         cart.ordered_service = ordered_services
     
+    # print("sqsqs")
+
     if len(ordered_items) > 0:
         cart.ordered_item = ordered_items
     
@@ -172,7 +178,7 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
     try:
         # Insert cart first
         cart = insert_or_complete_or_raise(cart)
-        
+        invoice = None
         # Generate invoice if requested
         if api_cart.cart_invoice:
             invoice = create_invoice_for_cart(cart, final_total_price)
@@ -180,10 +186,14 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
             
         # Generate payment if requested
         if api_cart.cart_payment and api_cart.cart_paid_money > 0:
-            payment = create_payment_for_invoice(
-                invoice, 
-                api_cart.cart_paid_money
-            )
+            if invoice != None:
+                payment = create_payment_for_invoice(
+                    invoice, 
+                    api_cart.cart_paid_money
+                )
+            else:
+                status = "partial" if api_cart.cart_paid_money < api_cart.cart_total_amount else "completed" 
+                payment = create_payment(api_cart.cart_paid_money,status)
             financial_documents['payment'] = payment
             
             # Generate receipt if requested
@@ -280,6 +290,24 @@ def create_payment_for_invoice(invoice: Invoice, amount: float) -> Payment:
     if round(amount,2) >= float(invoice.invoice_total_amount):
         invoice.invoice_status = 'paid'
         update_record_in_api(invoice)
+    
+    return insert_or_complete_or_raise(payment)
+
+def create_payment(amount: float,status:str) -> Payment:
+    """Create a payment for an invoice."""
+    payment_method = "cash"  # Default, could be from API
+    
+    payment_status = status
+
+    payment = Payment(
+        # payment_invoice_id=invoice.invoice_id,
+        payment_amount=amount,
+        payment_method=payment_method,
+        payment_status=payment_status,
+        payment_reference=f"PAY-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+        # payment_notes=f"Payment for Invoice {invoice.invoice_number}"
+    )
+    
     
     return insert_or_complete_or_raise(payment)
 

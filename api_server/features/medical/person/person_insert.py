@@ -46,10 +46,12 @@ def generate_person_object(person: Person_API, location: Location_API = None) ->
         mensch.person_details = PersonDetails(
             person_first_name=person.person_first_name,
             person_last_name=person.person_last_name,
-            person_birth_date=person.person_birth_date,
+            # person_birth_date=person.person_birth_date,
             person_gender=person.person_gender,
             person_nationality=person.person_nationality,
         )
+        if person.person_birth_date != None and person.person_birth_date!='':
+            mensch.person_details.person_birth_date =person.person_birth_date
 
     # Attach Location
     if location:
