@@ -19,6 +19,14 @@ geoalchemy2
 
 openai
 pika
+
+Jinja2
+weasyprint
+# pillow
+python-dotenv
+qrcode
+segno
+
 # shapely
 # pytest
 # pytest-asyncio

@@ -2,7 +2,9 @@ from features.business.location.location_insert import insert_location
 from core.exception_handler import APIException
 from core.api_models import Location_API, Person_API
 from core.messages import *
-from core.models import Address, BloodType, Location, Person, PersonDetails
+from core.persistent_models import Location
+
+from core.models import Address, BloodType, Person, PersonDetails
 from features.insertion import insert_or_complete_or_raise, update_record_in_api
 from features.business.location.location_fetch import build_location, fetch_address_object, fetch_location_object
 from features.medical.person.person_fetch import fetch_only_person_by_id, fetch_person_blood_type_object, fetch_person_details, fetch_person_details_object

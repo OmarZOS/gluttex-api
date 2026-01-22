@@ -168,6 +168,33 @@ class ServiceStaffRequirement_API(BaseModel):
     service_staff_requirement_hourly_rate: Optional[float] = 0.0
     service_staff_requirement_allocated_hours : Optional[float] = 0.0
 
+class Delivery_API(BaseModel):
+    
+    id_delivery : Optional[int] = 0
+    recipient_person : Optional[int] = 0
+    recipient_provider : Optional[int] = 0
+    delivery_package_count : Optional[int] = 0
+    delivery_total_weight : Optional[float] = 0.0
+    delivery_cargo_dimensions : Optional[str] = ""
+    delivery_goods_description : Optional[str] = ""
+    hs_code : Optional[str] = 0
+    delivery_merchant_name : Optional[str] = 0
+    delivery_shipping_method : Optional[str] = 0
+    delivery_special_instructions : Optional[str] = 0
+    delivery_status : Optional[str] = 0
+    delivery_address_id : Optional[int] = 0
+    delivery_current_address_id : Optional[int] = 0
+    delivery_fee : Optional[float] = 0
+    delivery_placed_order : Optional[int] = 0
+    delivery_provider_id : Optional[int] = 0
+    delivery_broker_id : Optional[int] = 0
+
+    address_street: Optional[str] = ''
+    address_city: Optional[str] = ''
+    address_postal_code: Optional[str] = ''
+    address_country: Optional[str] = ''
+
+
 class Cart_API(BaseModel):
     cart_id : Optional[int] = 0
     cart_product_provider_id : Optional[int] = 0
@@ -175,6 +202,7 @@ class Cart_API(BaseModel):
     cart_person_ref : Optional[int] = 0
     cart_client_user : Optional[int] = 0
 
+    cart_due_date : Optional[str] = None
     cart_status : Optional[str] = "PENDING"
     cart_total_amount : Optional[float] = None
     cart_notes : Optional[str] = ""
@@ -266,6 +294,8 @@ class ReactionBase(BaseModel):
     value: Optional[float] = None
     type: ReactionType
     target_id: int   # product_id, recipe_id, provider_id, comment_id
+
+
 
 
 class Reaction_API(BaseModel):

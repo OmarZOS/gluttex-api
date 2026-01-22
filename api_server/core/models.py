@@ -1,21 +1,9 @@
-from sqlalchemy import Table,BigInteger,TIMESTAMP,DECIMAL,JSON,  DateTime, Enum, Float, ForeignKeyConstraint, Index, Integer, String, Text, text,Column, Date, DateTime, Float, Index, Integer, LargeBinary, String, Text,  select, func
-from sqlalchemy.orm import column_property
-
-from sqlalchemy.sql.sqltypes import NullType
-
-from geoalchemy2 import Geometry
-from sqlalchemy.orm import column_property
-from sqlalchemy.sql import func
-
-from sqlalchemy import Column, Date, DateTime, Float, ForeignKeyConstraint, Index, Integer, String, Text
+from sqlalchemy import Column, DECIMAL, Date, DateTime, Enum, Float, ForeignKeyConstraint, Index, Integer, JSON, String, TIMESTAMP, Text, text
 from sqlalchemy.dialects.mysql import TINYINT
 from sqlalchemy.sql.sqltypes import NullType
+from sqlalchemy.orm import declarative_base, relationship
 
-from sqlalchemy.orm import relationship
-from core.persistent_models import Location, Base, metadata
-
-
-
+from core.persistent_models import Base,metadata,Location
 
 class Address(Base):
     __tablename__ = 'address'
@@ -26,6 +14,8 @@ class Address(Base):
     address_postal_code = Column(String(45))
     address_country = Column(String(45))
 
+    delivery = relationship('Delivery', foreign_keys='[Delivery.delivery_address_id]', back_populates='delivery_address')
+    delivery_ = relationship('Delivery', foreign_keys='[Delivery.delivery_current_address_id]', back_populates='delivery_current_address')
     location = relationship('Location', back_populates='location_address')
 
 
@@ -47,10 +37,61 @@ class BloodType(Base):
     person = relationship('Person', back_populates='person_blood_type')
 
 
+class Cart(Base):
+    __tablename__ = 'cart'
+    __table_args__ = (
+        ForeignKeyConstraint(['cart_client_user'], ['app_user.id_app_user'], name='fk_cart_2'),
+        ForeignKeyConstraint(['cart_delivery'], ['delivery.id_delivery'], name='fk_cart_4'),
+        ForeignKeyConstraint(['cart_person_ref'], ['person.id_person'], name='fk_cart_3'),
+        ForeignKeyConstraint(['cart_product_provider_id'], ['product_provider.id_product_provider'], ondelete='RESTRICT', onupdate='CASCADE', name='cart_ibfk_1'),
+        ForeignKeyConstraint(['cart_selling_user'], ['app_user.id_app_user'], name='fk_cart_1'),
+        Index('fk_cart_2', 'cart_client_user'),
+        Index('fk_cart_3_idx', 'cart_person_ref'),
+        Index('fk_cart_4_idx', 'cart_delivery'),
+        Index('idx_cart_provider', 'cart_product_provider_id'),
+        Index('idx_cart_status', 'cart_status'),
+        Index('idx_cart_user', 'cart_selling_user')
+    )
+
+    cart_id = Column(Integer, primary_key=True)
+    cart_product_provider_id = Column(Integer, comment='Provider owning the cart')
+    cart_selling_user = Column(Integer, comment='Customer / patient / client id')
+    cart_status = Column(String(50), server_default=text("'open'"), comment='open, pending, completed, canceled')
+    cart_total_amount = Column(DECIMAL(15, 4), server_default=text("'0.0000'"))
+    cart_notes = Column(Text)
+    cart_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    cart_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    cart_person_ref = Column(Integer)
+    cart_client_user = Column(Integer)
+    cart_due_date = Column(Date)
+    cart_delivery = Column(Integer)
+
+    app_user = relationship('AppUser', foreign_keys=[cart_client_user], back_populates='cart')
+    delivery = relationship('Delivery', back_populates='cart')
+    person = relationship('Person', back_populates='cart')
+    cart_product_provider = relationship('ProductProvider', back_populates='cart')
+    app_user_ = relationship('AppUser', foreign_keys=[cart_selling_user], back_populates='cart_')
+    invoice = relationship('Invoice', back_populates='invoice_cart')
+    receipt = relationship('Receipt', back_populates='cart')
+    deposit = relationship('Deposit', back_populates='deposit_cart')
+    ordered_item = relationship('OrderedItem', back_populates='cart')
+    ordered_service = relationship('OrderedService', back_populates='ordered_service_cart')
 
 
 class Delivery(Base):
     __tablename__ = 'delivery'
+    __table_args__ = (
+        ForeignKeyConstraint(['delivery_address_id'], ['address.id_address'], name='fk_delivery_1'),
+        ForeignKeyConstraint(['delivery_broker_id'], ['delivery_broker.id_delivery_broker'], name='fk_delivery_5'),
+        ForeignKeyConstraint(['delivery_current_address_id'], ['address.id_address'], name='fk_delivery_2'),
+        ForeignKeyConstraint(['delivery_placed_order'], ['placed_order.id_placed_order'], name='fk_delivery_3'),
+        ForeignKeyConstraint(['delivery_provider_id'], ['product_provider.id_product_provider'], name='fk_delivery_4'),
+        Index('fk_delivery_1_idx', 'delivery_address_id'),
+        Index('fk_delivery_2_idx', 'delivery_current_address_id'),
+        Index('fk_delivery_3_idx', 'delivery_placed_order'),
+        Index('fk_delivery_4_idx', 'delivery_provider_id'),
+        Index('fk_delivery_5_idx', 'delivery_broker_id')
+    )
 
     id_delivery = Column(Integer, primary_key=True)
     recipient_person = Column(Integer)
@@ -66,8 +107,19 @@ class Delivery(Base):
     delivery_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     delivery_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
     delivery_status = Column(String(255), server_default=text("'PENDING'"))
+    delivery_address_id = Column(Integer)
+    delivery_current_address_id = Column(Integer)
+    delivery_fee = Column(Float(asdecimal=True), server_default=text("'0'"))
+    delivery_placed_order = Column(Integer)
+    delivery_provider_id = Column(Integer)
+    delivery_broker_id = Column(Integer)
 
+    cart = relationship('Cart', back_populates='delivery')
+    delivery_address = relationship('Address', foreign_keys=[delivery_address_id], back_populates='delivery')
+    delivery_broker = relationship('DeliveryBroker', back_populates='delivery')
+    delivery_current_address = relationship('Address', foreign_keys=[delivery_current_address_id], back_populates='delivery_')
     placed_order = relationship('PlacedOrder', back_populates='delivery')
+    delivery_provider = relationship('ProductProvider', back_populates='delivery')
 
 
 class DiseaseSeverity(Base):
@@ -90,6 +142,54 @@ class Ingredient(Base):
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='contained_ingredient')
 
 
+class Invoice(Base):
+    __tablename__ = 'invoice'
+    __table_args__ = (
+        ForeignKeyConstraint(['invoice_cart_id'], ['cart.cart_id'], ondelete='RESTRICT', onupdate='CASCADE', name='invoice_ibfk_1'),
+        Index('idx_invoice_cart', 'invoice_cart_id'),
+        Index('idx_invoice_status', 'invoice_status')
+    )
+
+    invoice_id = Column(Integer, primary_key=True)
+    invoice_cart_id = Column(Integer)
+    invoice_number = Column(String(100))
+    invoice_total_amount = Column(DECIMAL(15, 4))
+    invoice_status = Column(String(50), server_default=text("'unpaid'"), comment='unpaid, paid, canceled')
+    invoice_issue_date = Column(Date)
+    invoice_due_date = Column(Date)
+    invoice_notes = Column(Text)
+    invoice_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    invoice_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+
+    invoice_cart = relationship('Cart', back_populates='invoice')
+    payment = relationship('Payment', back_populates='payment_invoice')
+    placed_order = relationship('PlacedOrder', back_populates='invoice')
+    deposit = relationship('Deposit', back_populates='deposit_invoice')
+
+
+class Payment(Base):
+    __tablename__ = 'payment'
+    __table_args__ = (
+        ForeignKeyConstraint(['payment_invoice_id'], ['invoice.invoice_id'], ondelete='RESTRICT', onupdate='CASCADE', name='payment_ibfk_1'),
+        Index('idx_invoice', 'payment_invoice_id'),
+        Index('idx_status', 'payment_status')
+    )
+
+    payment_id = Column(Integer, primary_key=True)
+    payment_invoice_id = Column(Integer)
+    payment_amount = Column(DECIMAL(15, 4))
+    payment_method = Column(String(100), comment='cash, card, bank, mobile')
+    payment_status = Column(String(50), server_default=text("'completed'"))
+    payment_reference = Column(String(255), comment='Bank or transaction reference')
+    payment_notes = Column(Text)
+    payment_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    payment_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+
+    payment_invoice = relationship('Invoice', back_populates='payment')
+    receipt = relationship('Receipt', back_populates='receipt_payment')
+    additional_fee = relationship('AdditionalFee', back_populates='additional_fee_payment')
+
+
 class PersonDetails(Base):
     __tablename__ = 'person_details'
 
@@ -99,8 +199,41 @@ class PersonDetails(Base):
     person_birth_date = Column(Date)
     person_gender = Column(String(45))
     person_nationality = Column(String(45))
+    person_phone = Column(String(45))
 
     person = relationship('Person', back_populates='person_details')
+
+
+class PlacedOrder(Base):
+    __tablename__ = 'placed_order'
+    __table_args__ = (
+        ForeignKeyConstraint(['ordering_user_id'], ['app_user.id_app_user'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_placed_order_1'),
+        ForeignKeyConstraint(['placed_order_invoice_ref'], ['invoice.invoice_id'], name='fk_placed_order_4'),
+        ForeignKeyConstraint(['placed_order_location_ref'], ['location.id_location'], name='fk_placed_order_2'),
+        ForeignKeyConstraint(['placed_order_receipt_ref'], ['receipt.receipt_id'], name='fk_placed_order_3'),
+        Index('fk_placed_order_1_idx', 'ordering_user_id'),
+        Index('fk_placed_order_2_idx', 'placed_order_location_ref'),
+        Index('fk_placed_order_3_idx', 'placed_order_receipt_ref'),
+        Index('fk_placed_order_4_idx', 'placed_order_invoice_ref')
+    )
+
+    id_placed_order = Column(Integer, primary_key=True)
+    order_discount = Column(Float(asdecimal=True))
+    total_price = Column(Float(asdecimal=True))
+    ordering_user_id = Column(Integer)
+    placed_order_location_ref = Column(Integer)
+    placed_order_state_ref = Column(Integer)
+    placed_order_last_mod = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    placed_order_invoice_ref = Column(Integer)
+    placed_order_receipt_ref = Column(Integer)
+    placed_order_creation = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+
+    delivery = relationship('Delivery', back_populates='placed_order')
+    ordering_user = relationship('AppUser', back_populates='placed_order')
+    invoice = relationship('Invoice', back_populates='placed_order')
+    location = relationship('Location', back_populates='placed_order')
+    receipt = relationship('Receipt', back_populates='placed_order')
+    ordered_item = relationship('OrderedItem', back_populates='placed_order')
 
 
 class Plan(Base):
@@ -168,19 +301,6 @@ class ProviderDetails(Base):
     product_provider = relationship('ProductProvider', back_populates='product_provider_details')
 
 
-class ProviderOrganisation(Base):
-    __tablename__ = 'provider_organisation'
-
-    idprovider_organisation = Column(Integer, primary_key=True)
-    provider_organisation_name = Column(String(45))
-    provider_organisation_desc = Column(String(300))
-
-    organisation_image = relationship('OrganisationImage', back_populates='org_ref')
-    product_provider = relationship('ProductProvider', back_populates='product_provider_org')
-    management_rule = relationship('ManagementRule', back_populates='provider_organisation')
-    service_contribution = relationship('ServiceContribution', back_populates='provider_organisation')
-
-
 class Reaction(Base):
     __tablename__ = 'reaction'
 
@@ -191,6 +311,29 @@ class Reaction(Base):
     provider_reaction = relationship('ProviderReaction', back_populates='reaction')
     recipe_reaction = relationship('RecipeReaction', back_populates='reaction')
     product_reaction = relationship('ProductReaction', back_populates='reaction')
+
+
+class Receipt(Base):
+    __tablename__ = 'receipt'
+    __table_args__ = (
+        ForeignKeyConstraint(['receipt_cart_ref'], ['cart.cart_id'], name='fk_receipt_1'),
+        ForeignKeyConstraint(['receipt_payment_id'], ['payment.payment_id'], ondelete='CASCADE', onupdate='CASCADE', name='receipt_ibfk_1'),
+        Index('fk_receipt_1_idx', 'receipt_cart_ref'),
+        Index('idx_payment', 'receipt_payment_id')
+    )
+
+    receipt_id = Column(Integer, primary_key=True)
+    receipt_amount = Column(DECIMAL(15, 4), nullable=False)
+    receipt_payment_id = Column(Integer)
+    receipt_number = Column(String(100))
+    receipt_notes = Column(Text)
+    receipt_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    receipt_cart_ref = Column(Integer)
+
+    placed_order = relationship('PlacedOrder', back_populates='receipt')
+    cart = relationship('Cart', back_populates='receipt')
+    receipt_payment = relationship('Payment', back_populates='receipt')
+    deposit = relationship('Deposit', back_populates='deposit_receipt')
 
 
 class RecipeCategory(Base):
@@ -223,6 +366,68 @@ class Symptom(Base):
     presented_symptom = relationship('PresentedSymptom', back_populates='symptom')
 
 
+class Wallet(Base):
+    __tablename__ = 'wallet'
+
+    id_wallet = Column(Integer, primary_key=True)
+    wallet_type = Column(String(45))
+    wallet_currency = Column(String(45))
+    wallet_balance = Column(Float(asdecimal=True))
+    wallet_status = Column(String(45))
+
+    delivery_broker = relationship('DeliveryBroker', back_populates='delivery_broker_wallet')
+    money_transaction = relationship('MoneyTransaction', foreign_keys='[MoneyTransaction.money_transaction_wallet_destination_id]', back_populates='money_transaction_wallet_destination')
+    money_transaction_ = relationship('MoneyTransaction', foreign_keys='[MoneyTransaction.money_transaction_wallet_source_id]', back_populates='money_transaction_wallet_source')
+    provider_organisation = relationship('ProviderOrganisation', back_populates='provider_organisation_wallet')
+    app_user = relationship('AppUser', back_populates='app_user_wallet')
+    product_provider = relationship('ProductProvider', back_populates='product_provider_wallet')
+
+
+class DeliveryBroker(Base):
+    __tablename__ = 'delivery_broker'
+    __table_args__ = (
+        ForeignKeyConstraint(['delivery_broker_wallet_id'], ['wallet.id_wallet'], name='fk_delivery_broker_1'),
+        Index('fk_delivery_broker_1_idx', 'delivery_broker_wallet_id')
+    )
+
+    id_delivery_broker = Column(Integer, primary_key=True)
+    delivery_broker_name = Column(String(255))
+    delivery_broker_label = Column(String(255))
+    delivery_broker_logo_url = Column(String(255))
+    delivery_broker_image_url = Column(String(255))
+    delivery_broker_wallet_id = Column(Integer)
+
+    delivery = relationship('Delivery', back_populates='delivery_broker')
+    delivery_broker_wallet = relationship('Wallet', back_populates='delivery_broker')
+
+
+class Deposit(Base):
+    __tablename__ = 'deposit'
+    __table_args__ = (
+        ForeignKeyConstraint(['deposit_cart_id'], ['cart.cart_id'], ondelete='SET NULL', onupdate='CASCADE', name='deposit_ibfk_1'),
+        ForeignKeyConstraint(['deposit_invoice_id'], ['invoice.invoice_id'], ondelete='SET NULL', onupdate='CASCADE', name='deposit_ibfk_2'),
+        ForeignKeyConstraint(['deposit_receipt_id'], ['receipt.receipt_id'], name='fk_deposit_1'),
+        Index('fk_deposit_1_idx', 'deposit_receipt_id'),
+        Index('idx_cart', 'deposit_cart_id'),
+        Index('idx_invoice', 'deposit_invoice_id')
+    )
+
+    deposit_id = Column(Integer, primary_key=True)
+    deposit_amount = Column(DECIMAL(15, 4), nullable=False)
+    deposit_method = Column(String(100), nullable=False)
+    deposit_cart_id = Column(Integer)
+    deposit_invoice_id = Column(Integer)
+    deposit_reference = Column(String(255))
+    deposit_notes = Column(Text)
+    deposit_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    deposit_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    deposit_receipt_id = Column(Integer)
+
+    deposit_cart = relationship('Cart', back_populates='deposit')
+    deposit_invoice = relationship('Invoice', back_populates='deposit')
+    deposit_receipt = relationship('Receipt', back_populates='deposit')
+
+
 class Iproduct(Base):
     __tablename__ = 'iproduct'
     __table_args__ = (
@@ -250,20 +455,47 @@ class Iproduct(Base):
     product = relationship('Product', back_populates='product_origin')
 
 
-
-
-class OrganisationImage(Base):
-    __tablename__ = 'organisation_image'
+class MoneyTransaction(Base):
+    __tablename__ = 'money_transaction'
     __table_args__ = (
-        ForeignKeyConstraint(['org_ref_id'], ['provider_organisation.idprovider_organisation'], name='fk_organisation_image_1'),
-        Index('fk_organisation_image_1_idx', 'org_ref_id')
+        ForeignKeyConstraint(['money_transaction_wallet_destination_id'], ['wallet.id_wallet'], name='fk_money_transaction_2'),
+        ForeignKeyConstraint(['money_transaction_wallet_source_id'], ['wallet.id_wallet'], name='fk_money_transaction_1'),
+        Index('fk_money_transaction_1_idx', 'money_transaction_wallet_source_id'),
+        Index('fk_money_transaction_2_idx', 'money_transaction_wallet_destination_id')
     )
 
-    id_org_image = Column(Integer, primary_key=True)
-    org_image_url = Column(String(255))
-    org_ref_id = Column(Integer)
+    id_money_transaction = Column(Integer, primary_key=True)
+    money_transaction_document_url = Column(String(255))
+    money_transaction_amount = Column(Float(asdecimal=True), server_default=text("'0'"))
+    money_transaction_reference = Column(String(255))
+    money_transaction_creation = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    money_transaction_last_updated = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    money_transaction_wallet_source_id = Column(Integer)
+    money_transaction_wallet_destination_id = Column(Integer)
+    money_transaction_status = Column(String(45))
 
-    org_ref = relationship('ProviderOrganisation', back_populates='organisation_image')
+    money_transaction_wallet_destination = relationship('Wallet', foreign_keys=[money_transaction_wallet_destination_id], back_populates='money_transaction')
+    money_transaction_wallet_source = relationship('Wallet', foreign_keys=[money_transaction_wallet_source_id], back_populates='money_transaction_')
+
+
+class ProviderOrganisation(Base):
+    __tablename__ = 'provider_organisation'
+    __table_args__ = (
+        ForeignKeyConstraint(['provider_organisation_wallet_id'], ['wallet.id_wallet'], name='fk_provider_organisation_1'),
+        Index('fk_provider_organisation_1_idx', 'provider_organisation_wallet_id')
+    )
+
+    idprovider_organisation = Column(Integer, primary_key=True)
+    provider_organisation_name = Column(String(45))
+    provider_organisation_desc = Column(String(300))
+    provider_organisation_wallet_id = Column(Integer)
+
+    provider_organisation_wallet = relationship('Wallet', back_populates='provider_organisation')
+    organisation_image = relationship('OrganisationImage', back_populates='org_ref')
+    product_provider = relationship('ProductProvider', back_populates='product_provider_org')
+    conversation = relationship('Conversation', back_populates='conversation_org')
+    management_rule = relationship('ManagementRule', back_populates='provider_organisation')
+    service_contribution = relationship('ServiceContribution', back_populates='provider_organisation')
 
 
 class LocationImage(Base):
@@ -280,10 +512,24 @@ class LocationImage(Base):
     location = relationship('Location', back_populates='location_image')
 
 
+class OrganisationImage(Base):
+    __tablename__ = 'organisation_image'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_ref_id'], ['provider_organisation.idprovider_organisation'], name='fk_organisation_image_1'),
+        Index('fk_organisation_image_1_idx', 'org_ref_id')
+    )
+
+    id_org_image = Column(Integer, primary_key=True)
+    org_image_url = Column(String(255))
+    org_ref_id = Column(Integer)
+
+    org_ref = relationship('ProviderOrganisation', back_populates='organisation_image')
+
+
 class Person(Base):
     __tablename__ = 'person'
     __table_args__ = (
-        ForeignKeyConstraint(['person_blood_type_id'], ['blood_type.id_blood_type'], name='fk_person_2'),
+        ForeignKeyConstraint(['person_blood_type_id'], ['blood_type.id_blood_type'], onupdate='RESTRICT', name='fk_person_2'),
         ForeignKeyConstraint(['person_details_id'], ['person_details.id_person_details'], name='fk_person_1'),
         ForeignKeyConstraint(['person_location_id'], ['location.id_location'], name='fk_person_3'),
         Index('fk_person_1_idx', 'person_details_id'),
@@ -296,12 +542,12 @@ class Person(Base):
     person_blood_type_id = Column(Integer)
     person_location_id = Column(Integer)
 
+    cart = relationship('Cart', back_populates='person')
     person_blood_type = relationship('BloodType', back_populates='person')
     person_details = relationship('PersonDetails', back_populates='person')
     person_location = relationship('Location', back_populates='person')
     app_user = relationship('AppUser', back_populates='app_user_person')
     patient = relationship('Patient', back_populates='patient_person')
-    cart = relationship('Cart', back_populates='person')
     service_contribution = relationship('ServiceContribution', back_populates='person')
 
 
@@ -310,10 +556,12 @@ class AppUser(Base):
     __table_args__ = (
         ForeignKeyConstraint(['app_user_person_id'], ['person.id_person'], name='fk_app_user_3'),
         ForeignKeyConstraint(['app_user_subscription_ref'], ['plan.id_plan'], name='fk_app_user_2'),
-        ForeignKeyConstraint(['app_user_type_id'], ['app_user_type.id_app_user_type'], name='fk_app_user_1'),
+        ForeignKeyConstraint(['app_user_type_id'], ['app_user_type.id_app_user_type'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_app_user_1'),
+        ForeignKeyConstraint(['app_user_wallet_id'], ['wallet.id_wallet'], name='fk_app_user_4'),
         Index('fk_app_user_1_idx', 'app_user_type_id'),
         Index('fk_app_user_2_idx', 'app_user_subscription_ref'),
-        Index('fk_app_user_3_idx', 'app_user_person_id')
+        Index('fk_app_user_3_idx', 'app_user_person_id'),
+        Index('fk_app_user_4_idx', 'app_user_wallet_id')
     )
 
     id_app_user = Column(Integer, primary_key=True)
@@ -327,26 +575,31 @@ class AppUser(Base):
     app_user_last_updated = Column(TIMESTAMP)
     app_user_creation = Column(TIMESTAMP)
     app_user_subscription_ref = Column(Integer)
+    app_user_email = Column(String(255))
+    app_user_wallet_id = Column(Integer)
 
+    cart = relationship('Cart', foreign_keys='[Cart.cart_client_user]', back_populates='app_user')
+    cart_ = relationship('Cart', foreign_keys='[Cart.cart_selling_user]', back_populates='app_user_')
+    placed_order = relationship('PlacedOrder', back_populates='ordering_user')
     app_user_person = relationship('Person', back_populates='app_user')
     plan = relationship('Plan', back_populates='app_user')
     app_user_type = relationship('AppUserType', back_populates='app_user')
+    app_user_wallet = relationship('Wallet', back_populates='app_user')
     comment = relationship('Comment', back_populates='app_user')
     notification = relationship('Notification', back_populates='app_user')
     product_provider = relationship('ProductProvider', back_populates='app_user')
     recipe = relationship('Recipe', back_populates='recipe_owner')
     report = relationship('Report', back_populates='app_user')
-    cart = relationship('Cart', foreign_keys='[Cart.cart_client_user]', back_populates='app_user')
-    cart_ = relationship('Cart', foreign_keys='[Cart.cart_selling_user]', back_populates='app_user_')
+    additional_fee = relationship('AdditionalFee', back_populates='additional_fee_user')
     comment_reaction = relationship('CommentReaction', back_populates='app_user')
+    conversation = relationship('Conversation', foreign_keys='[Conversation.conversation_destination_user_id]', back_populates='conversation_destination_user')
+    conversation_ = relationship('Conversation', foreign_keys='[Conversation.conversation_sender_user_id]', back_populates='conversation_sender_user')
     management_rule = relationship('ManagementRule', back_populates='app_user')
     product = relationship('Product', back_populates='app_user')
     provider_reaction = relationship('ProviderReaction', back_populates='app_user')
     recipe_reaction = relationship('RecipeReaction', back_populates='app_user')
     product_reaction = relationship('ProductReaction', back_populates='app_user')
     service_contribution = relationship('ServiceContribution', back_populates='app_user')
-    additional_fee = relationship('AdditionalFee', back_populates='additional_fee_user')
-    placed_order = relationship('PlacedOrder', back_populates='ordering_user')
 
 
 class Patient(Base):
@@ -415,12 +668,14 @@ class ProductProvider(Base):
         ForeignKeyConstraint(['product_provider_location_id'], ['location.id_location'], name='fk_product_provider_4'),
         ForeignKeyConstraint(['product_provider_org_id'], ['provider_organisation.idprovider_organisation'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_product_provider_2'),
         ForeignKeyConstraint(['product_provider_owner'], ['app_user.id_app_user'], name='fk_product_provider_5'),
-        ForeignKeyConstraint(['product_provider_type_id'], ['product_provider_type.id_product_provider_type'], name='fk_product_provider_1'),
+        ForeignKeyConstraint(['product_provider_type_id'], ['product_provider_type.id_product_provider_type'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_product_provider_1'),
+        ForeignKeyConstraint(['product_provider_wallet_id'], ['wallet.id_wallet'], name='fk_product_provider_6'),
         Index('fk_product_provider_1_idx', 'product_provider_type_id'),
         Index('fk_product_provider_2_idx', 'product_provider_org_id'),
         Index('fk_product_provider_3_idx', 'product_provider_details_id'),
         Index('fk_product_provider_4_idx', 'product_provider_location_id'),
-        Index('fk_product_provider_5_idx', 'product_provider_owner')
+        Index('fk_product_provider_5_idx', 'product_provider_owner'),
+        Index('fk_product_provider_6_idx', 'product_provider_wallet_id')
     )
 
     id_product_provider = Column(Integer, primary_key=True)
@@ -429,13 +684,18 @@ class ProductProvider(Base):
     product_provider_location_id = Column(Integer)
     product_provider_org_id = Column(Integer)
     product_provider_owner = Column(Integer)
+    product_provider_wallet_id = Column(Integer)
 
+    cart = relationship('Cart', back_populates='cart_product_provider')
+    delivery = relationship('Delivery', back_populates='delivery_provider')
     product_provider_details = relationship('ProviderDetails', back_populates='product_provider')
     product_provider_location = relationship('Location', back_populates='product_provider')
     product_provider_org = relationship('ProviderOrganisation', back_populates='product_provider')
     app_user = relationship('AppUser', back_populates='product_provider')
     product_provider_type = relationship('ProductProviderType', back_populates='product_provider')
-    cart = relationship('Cart', back_populates='cart_product_provider')
+    product_provider_wallet = relationship('Wallet', back_populates='product_provider')
+    additional_fee = relationship('AdditionalFee', back_populates='additional_fee_on_provider')
+    conversation = relationship('Conversation', back_populates='conversation_provider')
     management_rule = relationship('ManagementRule', back_populates='product_provider')
     product = relationship('Product', back_populates='product_provider')
     provided_service = relationship('ProvidedService', back_populates='provided_service_product_provider')
@@ -443,7 +703,6 @@ class ProductProvider(Base):
     provider_reaction = relationship('ProviderReaction', back_populates='product_provider')
     service_package = relationship('ServicePackage', back_populates='service_package_product_provider')
     service_contribution = relationship('ServiceContribution', back_populates='product_provider')
-    additional_fee = relationship('AdditionalFee', back_populates='additional_fee_on_provider')
 
 
 class Recipe(Base):
@@ -522,40 +781,31 @@ class SymptomsOccurence(Base):
     presented_symptom = relationship('PresentedSymptom', back_populates='symptoms_occurence')
 
 
-class Cart(Base):
-    __tablename__ = 'cart'
+class AdditionalFee(Base):
+    __tablename__ = 'additional_fee'
     __table_args__ = (
-        ForeignKeyConstraint(['cart_client_user'], ['app_user.id_app_user'], name='fk_cart_2'),
-        ForeignKeyConstraint(['cart_person_ref'], ['person.id_person'], name='fk_cart_3'),
-        ForeignKeyConstraint(['cart_product_provider_id'], ['product_provider.id_product_provider'], ondelete='RESTRICT', onupdate='CASCADE', name='cart_ibfk_1'),
-        ForeignKeyConstraint(['cart_selling_user'], ['app_user.id_app_user'], name='fk_cart_1'),
-        Index('fk_cart_2', 'cart_client_user'),
-        Index('fk_cart_3_idx', 'cart_person_ref'),
-        Index('idx_cart_provider', 'cart_product_provider_id'),
-        Index('idx_cart_status', 'cart_status'),
-        Index('idx_cart_user', 'cart_selling_user')
+        ForeignKeyConstraint(['additional_fee_on_provider_id'], ['product_provider.id_product_provider'], name='fk_additional_fee_2'),
+        ForeignKeyConstraint(['additional_fee_payment_id'], ['payment.payment_id'], ondelete='CASCADE', onupdate='CASCADE', name='additional_fee_ibfk_1'),
+        ForeignKeyConstraint(['additional_fee_user_id'], ['app_user.id_app_user'], name='fk_additional_fee_1'),
+        Index('fk_additional_fee_1_idx', 'additional_fee_user_id'),
+        Index('fk_additional_fee_2_idx', 'additional_fee_on_provider_id'),
+        Index('idx_payment', 'additional_fee_payment_id')
     )
 
-    cart_id = Column(Integer, primary_key=True)
-    cart_product_provider_id = Column(Integer, comment='Provider owning the cart')
-    cart_selling_user = Column(Integer, comment='Customer / patient / client id')
-    cart_status = Column(String(50), server_default=text("'open'"), comment='open, pending, completed, canceled')
-    cart_total_amount = Column(DECIMAL(15, 4), server_default=text("'0.0000'"))
-    cart_notes = Column(Text)
-    cart_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
-    cart_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-    cart_person_ref = Column(Integer)
-    cart_client_user = Column(Integer)
+    additional_fee_id = Column(Integer, primary_key=True)
+    additional_fee_payment_id = Column(Integer)
+    additional_fee_name = Column(String(255))
+    additional_fee_amount = Column(DECIMAL(15, 4))
+    additional_fee_description = Column(Text)
+    additional_fee_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    additional_fee_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    additional_fee_document_url = Column(String(255))
+    additional_fee_user_id = Column(Integer)
+    additional_fee_on_provider_id = Column(Integer)
 
-    app_user = relationship('AppUser', foreign_keys=[cart_client_user], back_populates='cart')
-    person = relationship('Person', back_populates='cart')
-    cart_product_provider = relationship('ProductProvider', back_populates='cart')
-    app_user_ = relationship('AppUser', foreign_keys=[cart_selling_user], back_populates='cart_')
-    invoice = relationship('Invoice', back_populates='invoice_cart')
-    ordered_service = relationship('OrderedService', back_populates='ordered_service_cart')
-    receipt = relationship('Receipt', back_populates='cart')
-    deposit = relationship('Deposit', back_populates='deposit_cart')
-    ordered_item = relationship('OrderedItem', back_populates='cart')
+    additional_fee_on_provider = relationship('ProductProvider', back_populates='additional_fee')
+    additional_fee_payment = relationship('Payment', back_populates='additional_fee')
+    additional_fee_user = relationship('AppUser', back_populates='additional_fee')
 
 
 class CommentReaction(Base):
@@ -577,6 +827,32 @@ class CommentReaction(Base):
     app_user = relationship('AppUser', back_populates='comment_reaction')
     reaction = relationship('Reaction', back_populates='comment_reaction')
     comment = relationship('Comment', back_populates='comment_reaction')
+
+
+class Conversation(Base):
+    __tablename__ = 'conversation'
+    __table_args__ = (
+        ForeignKeyConstraint(['conversation_destination_user_id'], ['app_user.id_app_user'], name='fk_message_2'),
+        ForeignKeyConstraint(['conversation_org_id'], ['provider_organisation.idprovider_organisation'], name='fk_message_4'),
+        ForeignKeyConstraint(['conversation_provider_id'], ['product_provider.id_product_provider'], name='fk_message_3'),
+        ForeignKeyConstraint(['conversation_sender_user_id'], ['app_user.id_app_user'], name='fk_message_1'),
+        Index('fk_message_1_idx', 'conversation_sender_user_id'),
+        Index('fk_message_2_idx', 'conversation_destination_user_id'),
+        Index('fk_message_3_idx', 'conversation_provider_id'),
+        Index('fk_message_4_idx', 'conversation_org_id')
+    )
+
+    id_conversation = Column(Integer, primary_key=True)
+    conversation_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    conversation_org_id = Column(Integer)
+    conversation_provider_id = Column(Integer)
+    conversation_sender_user_id = Column(Integer)
+    conversation_destination_user_id = Column(Integer)
+
+    conversation_destination_user = relationship('AppUser', foreign_keys=[conversation_destination_user_id], back_populates='conversation')
+    conversation_org = relationship('ProviderOrganisation', back_populates='conversation')
+    conversation_provider = relationship('ProductProvider', back_populates='conversation')
+    conversation_sender_user = relationship('AppUser', foreign_keys=[conversation_sender_user_id], back_populates='conversation_')
 
 
 class ManagementRule(Base):
@@ -652,10 +928,10 @@ class Product(Base):
     product_origin = relationship('Iproduct', back_populates='product')
     app_user = relationship('AppUser', back_populates='product')
     product_provider = relationship('ProductProvider', back_populates='product')
+    ordered_item = relationship('OrderedItem', back_populates='ordered_product')
     product_image = relationship('ProductImage', back_populates='product_ref')
     product_reaction = relationship('ProductReaction', back_populates='product')
     service_resource_requirement = relationship('ServiceResourceRequirement', back_populates='product')
-    ordered_item = relationship('OrderedItem', back_populates='ordered_product')
 
 
 class ProvidedService(Base):
@@ -734,7 +1010,7 @@ class RecipeContainsIngredient(Base):
     __tablename__ = 'recipe_contains_ingredient'
     __table_args__ = (
         ForeignKeyConstraint(['contained_ingredient_id'], ['ingredient.id_ingredient'], name='fk_recipe_contains_ingredient_2'),
-        ForeignKeyConstraint(['containing_recipe_id'], ['recipe.id_recipe'], name='fk_recipe_contains_ingredient_1'),
+        ForeignKeyConstraint(['containing_recipe_id'], ['recipe.id_recipe'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_recipe_contains_ingredient_1'),
         Index('fk_recipe_contains_ingredient_1_idx', 'containing_recipe_id'),
         Index('fk_recipe_contains_ingredient_2_idx', 'contained_ingredient_id')
     )
@@ -808,36 +1084,40 @@ class ServicePackage(Base):
     service_package_item = relationship('ServicePackageItem', back_populates='service_package_item_package')
 
 
-class Invoice(Base):
-    __tablename__ = 'invoice'
+class OrderedItem(Base):
+    __tablename__ = 'ordered_item'
     __table_args__ = (
-        ForeignKeyConstraint(['invoice_cart_id'], ['cart.cart_id'], ondelete='RESTRICT', onupdate='CASCADE', name='invoice_ibfk_1'),
-        Index('idx_invoice_cart', 'invoice_cart_id'),
-        Index('idx_invoice_status', 'invoice_status')
+        ForeignKeyConstraint(['order_ref'], ['placed_order.id_placed_order'], name='fk_ordered_item_3'),
+        ForeignKeyConstraint(['ordered_item_cart_ref'], ['cart.cart_id'], name='fk_ordered_item_2'),
+        ForeignKeyConstraint(['ordered_product_id'], ['product.id_product'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_ordered_item_1'),
+        Index('fk_ordered_item_1_idx', 'ordered_product_id'),
+        Index('fk_ordered_item_2_idx', 'ordered_item_cart_ref'),
+        Index('fk_ordered_item_3_idx', 'order_ref')
     )
 
-    invoice_id = Column(Integer, primary_key=True)
-    invoice_cart_id = Column(Integer)
-    invoice_number = Column(String(100))
-    invoice_total_amount = Column(DECIMAL(15, 4))
-    invoice_status = Column(String(50), server_default=text("'unpaid'"), comment='unpaid, paid, canceled')
-    invoice_issue_date = Column(Date)
-    invoice_due_date = Column(Date)
-    invoice_notes = Column(Text)
-    invoice_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
-    invoice_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    id_ordered_item = Column(Integer, primary_key=True)
+    ordered_product_id = Column(Integer)
+    ordered_quantity = Column(Integer)
+    applied_vat = Column(Float(asdecimal=True))
+    order_ref = Column(Integer)
+    unit_price = Column(Float(asdecimal=True))
+    product_discount = Column(Float(asdecimal=True))
+    ordered_item_cart_ref = Column(Integer)
+    ordered_item_delivery_status = Column(String(45))
+    ordered_item_delivery_fee = Column(Float(asdecimal=True), server_default=text("'0'"))
 
-    invoice_cart = relationship('Cart', back_populates='invoice')
-    payment = relationship('Payment', back_populates='payment_invoice')
-    deposit = relationship('Deposit', back_populates='deposit_invoice')
-    placed_order = relationship('PlacedOrder', back_populates='invoice')
+    placed_order = relationship('PlacedOrder', back_populates='ordered_item')
+    cart = relationship('Cart', back_populates='ordered_item')
+    ordered_product = relationship('Product', back_populates='ordered_item')
 
 
 class OrderedService(Base):
     __tablename__ = 'ordered_service'
     __table_args__ = (
         ForeignKeyConstraint(['ordered_service_cart_id'], ['cart.cart_id'], ondelete='CASCADE', onupdate='CASCADE', name='ordered_service_ibfk_1'),
+        ForeignKeyConstraint(['ordered_service_location_id'], ['location.id_location'], name='fk_ordered_service_1'),
         ForeignKeyConstraint(['ordered_service_service_id'], ['provided_service.provided_service_id'], ondelete='RESTRICT', onupdate='CASCADE', name='ordered_service_ibfk_2'),
+        Index('fk_ordered_service_1_idx', 'ordered_service_location_id'),
         Index('idx_cart', 'ordered_service_cart_id'),
         Index('idx_service', 'ordered_service_service_id')
     )
@@ -849,11 +1129,15 @@ class OrderedService(Base):
     ordered_service_unit_price = Column(DECIMAL(15, 4))
     ordered_service_total_price = Column(DECIMAL(15, 4))
     ordered_service_notes = Column(Text)
-    ordered_service_scheduled_at = Column(TIMESTAMP)
     ordered_service_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     ordered_service_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    ordered_service_scheduled_at = Column(TIMESTAMP)
+    ordered_service_location_id = Column(Integer)
+    ordered_service_delivery_fee = Column(Float(asdecimal=True), server_default=text("'0'"))
+    ordered_service_delivery_status = Column(String(45))
 
     ordered_service_cart = relationship('Cart', back_populates='ordered_service')
+    ordered_service_location = relationship('Location', back_populates='ordered_service')
     ordered_service_service = relationship('ProvidedService', back_populates='ordered_service')
 
 
@@ -993,163 +1277,3 @@ class ServiceStaffRequirement(Base):
     service_staff_requirement_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
 
     service_staff_requirement_service = relationship('ProvidedService', back_populates='service_staff_requirement')
-
-
-class Payment(Base):
-    __tablename__ = 'payment'
-    __table_args__ = (
-        ForeignKeyConstraint(['payment_invoice_id'], ['invoice.invoice_id'], ondelete='RESTRICT', onupdate='CASCADE', name='payment_ibfk_1'),
-        Index('idx_invoice', 'payment_invoice_id'),
-        Index('idx_status', 'payment_status')
-    )
-
-    payment_id = Column(Integer, primary_key=True)
-    payment_invoice_id = Column(Integer)
-    payment_amount = Column(DECIMAL(15, 4))
-    payment_method = Column(String(100), comment='cash, card, bank, mobile')
-    payment_status = Column(String(50), server_default=text("'completed'"))
-    payment_reference = Column(String(255), comment='Bank or transaction reference')
-    payment_notes = Column(Text)
-    payment_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
-    payment_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-
-    payment_invoice = relationship('Invoice', back_populates='payment')
-    additional_fee = relationship('AdditionalFee', back_populates='additional_fee_payment')
-    receipt = relationship('Receipt', back_populates='receipt_payment')
-
-
-class AdditionalFee(Base):
-    __tablename__ = 'additional_fee'
-    __table_args__ = (
-        ForeignKeyConstraint(['additional_fee_on_provider_id'], ['product_provider.id_product_provider'], name='fk_additional_fee_2'),
-        ForeignKeyConstraint(['additional_fee_payment_id'], ['payment.payment_id'], ondelete='CASCADE', onupdate='CASCADE', name='additional_fee_ibfk_1'),
-        ForeignKeyConstraint(['additional_fee_user_id'], ['app_user.id_app_user'], name='fk_additional_fee_1'),
-        Index('fk_additional_fee_1_idx', 'additional_fee_user_id'),
-        Index('fk_additional_fee_2_idx', 'additional_fee_on_provider_id'),
-        Index('idx_payment', 'additional_fee_payment_id')
-    )
-
-    additional_fee_id = Column(Integer, primary_key=True)
-    additional_fee_payment_id = Column(Integer)
-    additional_fee_name = Column(String(255))
-    additional_fee_amount = Column(DECIMAL(15, 4))
-    additional_fee_description = Column(Text)
-    additional_fee_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
-    additional_fee_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-    additional_fee_document_url = Column(String(255))
-    additional_fee_user_id = Column(Integer)
-    additional_fee_on_provider_id = Column(Integer)
-
-    additional_fee_on_provider = relationship('ProductProvider', back_populates='additional_fee')
-    additional_fee_payment = relationship('Payment', back_populates='additional_fee')
-    additional_fee_user = relationship('AppUser', back_populates='additional_fee')
-
-
-class Receipt(Base):
-    __tablename__ = 'receipt'
-    __table_args__ = (
-        ForeignKeyConstraint(['receipt_cart_ref'], ['cart.cart_id'], name='fk_receipt_1'),
-        ForeignKeyConstraint(['receipt_payment_id'], ['payment.payment_id'], ondelete='CASCADE', onupdate='CASCADE', name='receipt_ibfk_1'),
-        Index('fk_receipt_1_idx', 'receipt_cart_ref'),
-        Index('idx_payment', 'receipt_payment_id')
-    )
-
-    receipt_id = Column(Integer, primary_key=True)
-    receipt_amount = Column(DECIMAL(15, 4), nullable=False)
-    receipt_payment_id = Column(Integer)
-    receipt_number = Column(String(100))
-    receipt_notes = Column(Text)
-    receipt_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
-    receipt_cart_ref = Column(Integer)
-
-    cart = relationship('Cart', back_populates='receipt')
-    receipt_payment = relationship('Payment', back_populates='receipt')
-    deposit = relationship('Deposit', back_populates='deposit_receipt')
-    placed_order = relationship('PlacedOrder', back_populates='receipt')
-
-
-class Deposit(Base):
-    __tablename__ = 'deposit'
-    __table_args__ = (
-        ForeignKeyConstraint(['deposit_cart_id'], ['cart.cart_id'], ondelete='SET NULL', onupdate='CASCADE', name='deposit_ibfk_1'),
-        ForeignKeyConstraint(['deposit_invoice_id'], ['invoice.invoice_id'], ondelete='SET NULL', onupdate='CASCADE', name='deposit_ibfk_2'),
-        ForeignKeyConstraint(['deposit_receipt_id'], ['receipt.receipt_id'], name='fk_deposit_1'),
-        Index('fk_deposit_1_idx', 'deposit_receipt_id'),
-        Index('idx_cart', 'deposit_cart_id'),
-        Index('idx_invoice', 'deposit_invoice_id')
-    )
-
-    deposit_id = Column(Integer, primary_key=True)
-    deposit_amount = Column(DECIMAL(15, 4), nullable=False)
-    deposit_method = Column(String(100), nullable=False)
-    deposit_cart_id = Column(Integer)
-    deposit_invoice_id = Column(Integer)
-    deposit_reference = Column(String(255))
-    deposit_notes = Column(Text)
-    deposit_created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
-    deposit_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-    deposit_receipt_id = Column(Integer)
-
-    deposit_cart = relationship('Cart', back_populates='deposit')
-    deposit_invoice = relationship('Invoice', back_populates='deposit')
-    deposit_receipt = relationship('Receipt', back_populates='deposit')
-
-
-class PlacedOrder(Base):
-    __tablename__ = 'placed_order'
-    __table_args__ = (
-        ForeignKeyConstraint(['ordering_user_id'], ['app_user.id_app_user'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_placed_order_1'),
-        ForeignKeyConstraint(['placed_order_delivery'], ['delivery.id_delivery'], name='fk_placed_order_5'),
-        ForeignKeyConstraint(['placed_order_invoice_ref'], ['invoice.invoice_id'], name='fk_placed_order_4'),
-        ForeignKeyConstraint(['placed_order_location_ref'], ['location.id_location'], name='fk_placed_order_2'),
-        ForeignKeyConstraint(['placed_order_receipt_ref'], ['receipt.receipt_id'], name='fk_placed_order_3'),
-        Index('fk_placed_order_1_idx', 'ordering_user_id'),
-        Index('fk_placed_order_2_idx', 'placed_order_location_ref'),
-        Index('fk_placed_order_3_idx', 'placed_order_receipt_ref'),
-        Index('fk_placed_order_4_idx', 'placed_order_invoice_ref'),
-        Index('fk_placed_order_5_idx', 'placed_order_delivery')
-    )
-
-    id_placed_order = Column(Integer, primary_key=True)
-    order_discount = Column(Float(asdecimal=True))
-    total_price = Column(Float(asdecimal=True))
-    ordering_user_id = Column(Integer)
-    placed_order_location_ref = Column(Integer)
-    placed_order_state_ref = Column(Integer)
-    placed_order_last_mod = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-    placed_order_invoice_ref = Column(Integer)
-    placed_order_receipt_ref = Column(Integer)
-    placed_order_creation = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
-    placed_order_delivery = Column(Integer)
-
-    ordering_user = relationship('AppUser', back_populates='placed_order')
-    delivery = relationship('Delivery', back_populates='placed_order')
-    invoice = relationship('Invoice', back_populates='placed_order')
-    location = relationship('Location', back_populates='placed_order')
-    receipt = relationship('Receipt', back_populates='placed_order')
-    ordered_item = relationship('OrderedItem', back_populates='placed_order')
-
-
-class OrderedItem(Base):
-    __tablename__ = 'ordered_item'
-    __table_args__ = (
-        ForeignKeyConstraint(['order_ref'], ['placed_order.id_placed_order'], name='fk_ordered_item_3'),
-        ForeignKeyConstraint(['ordered_item_cart_ref'], ['cart.cart_id'], name='fk_ordered_item_2'),
-        ForeignKeyConstraint(['ordered_product_id'], ['product.id_product'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_ordered_item_1'),
-        Index('fk_ordered_item_1_idx', 'ordered_product_id'),
-        Index('fk_ordered_item_2_idx', 'ordered_item_cart_ref'),
-        Index('fk_ordered_item_3_idx', 'order_ref')
-    )
-
-    id_ordered_item = Column(Integer, primary_key=True)
-    ordered_product_id = Column(Integer)
-    ordered_quantity = Column(Integer)
-    applied_vat = Column(Float(asdecimal=True))
-    order_ref = Column(Integer)
-    unit_price = Column(Float(asdecimal=True))
-    product_discount = Column(Float(asdecimal=True))
-    ordered_item_cart_ref = Column(Integer)
-
-    placed_order = relationship('PlacedOrder', back_populates='ordered_item')
-    cart = relationship('Cart', back_populates='ordered_item')
-    ordered_product = relationship('Product', back_populates='ordered_item')

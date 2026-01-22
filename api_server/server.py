@@ -13,6 +13,7 @@ from routers.health_routers.health_router import health_router
 from routers.app_routers.auth_router import auth_router
 from routers.app_routers.notification_router import notification_router
 from routers.business_routers.staff_router import staff_router
+from routers.business_routers.document_router import document_router
 
 from routers.business_routers.business_router import business_router
 from routers.search_router import search_router
@@ -78,6 +79,7 @@ app.include_router(business_router,prefix="/api")
 app.include_router(search_router,prefix="/api")
 app.include_router(staff_router,prefix="/api")
 app.include_router(notification_router,prefix="/api")
+app.include_router(document_router,prefix="/api")
 
 # ------------- Standard endpoints -----------------------------------------------
 

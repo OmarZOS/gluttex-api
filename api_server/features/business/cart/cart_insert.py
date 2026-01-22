@@ -1,6 +1,7 @@
 # here, we make schema translations
 
 from typing import List, Tuple
+from features.business.location.delivery_insert import build_delivery
 from features.business.cart.cart_update import update_cart_status
 from features.business.cart.service.service_insert import build_ordered_service, build_service
 from features.business.supplier.supplier_fetch import touch_supplier
@@ -9,7 +10,7 @@ from features.medical.person.person_insert import generate_person_object
 from features.business.order.order_insert import build_ordered_item
 from communication.publisher import send_to_product_subscribers
 from core.exception_handler import APIException
-from core.api_models import Cart_API, OrderedItem_API, OrderedService_API, Payment_API, Person_API, PlacedOrder_API, ProvidedService_API
+from core.api_models import Cart_API, Delivery_API, OrderedItem_API, OrderedService_API, Payment_API, Person_API, PlacedOrder_API, ProvidedService_API
 from core.messages import *
 from core.models import *
 from features.insertion import insert_or_complete_or_raise, update_record_in_api
@@ -24,6 +25,7 @@ from datetime import datetime, timedelta;
 def insert_cart(api_ordered_items: List[OrderedItem_API], 
                 api_provided_services: List[OrderedService_API],
                 api_cart: Cart_API, 
+                delivery : Delivery_API = None,
                 client: Person_API = None,
                 provider_id: int = 0, 
                 seller_user_id: int = 0, 
@@ -69,7 +71,6 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
         else:
             person_obj = fetch_only_person_by_id(client.id_person)
         
-    
     if (buyer_user is None) and (person_obj is None):
         raise APIException(status=HTTP_404_NOT_FOUND, code=CLIENT_NOT_EXISTS)
     
@@ -114,10 +115,10 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
         # Update product in database
         try:
             update_record_in_api(ordered_product)
-            send_to_product_subscribers(
-                {'product_quantity': ordered_product.product_quantity},
-                ordered_product.id_product
-            )
+            # send_to_product_subscribers(
+            #     {'product_quantity': ordered_product.product_quantity},
+            #     ordered_product.id_product
+            # )
         except Exception as e:
             raise APIException(
                 status=HTTP_417_EXPECTATION_FAILED,
@@ -153,11 +154,13 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
         cart_total_amount=final_total_price,
         cart_notes=api_cart.cart_notes,
     )
+
+    if api_cart.cart_due_date is not None and api_cart.cart_due_date != "":
+        cart.cart_due_date = api_cart.cart_due_date
     
     # Set optional relationships
     if buyer_user is not None:
         cart.cart_client_user = buyer_user.id_app_user
-    print("Adding the new guy1")
     if person_obj is not None:
         if cart.cart_person_ref == 0:
             cart.cart_person_ref = person_obj.id_person
@@ -175,6 +178,10 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
     # --- Handle financial documents based on API flags ---
     financial_documents = {}
     
+    if delivery is not None:
+        delivery_obj = build_delivery(delivery)
+        cart.delivery = delivery_obj
+
     try:
         # Insert cart first
         cart = insert_or_complete_or_raise(cart)
@@ -210,9 +217,9 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
             financial_documents['deposit'] = deposit
             
             # Generate receipt for deposit if requested
-            if api_cart.cart_receipt:
-                receipt = create_receipt_for_deposit(deposit, cart)
-                financial_documents['receipt'] = receipt
+            # if api_cart.cart_receipt:
+            #     receipt = create_receipt_for_deposit(deposit, cart)
+            #     financial_documents['receipt'] = receipt
         
         # Update cart status based on payment/deposit
         update_cart_status(cart, api_cart, financial_documents)
@@ -325,7 +332,7 @@ def create_receipt_for_payment(payment: Payment, cart: Cart) -> Receipt:
     return insert_or_complete_or_raise(receipt)
 
 
-def create_deposit_for_cart(cart: Cart, amount: float, api_cart: Cart_API) -> Deposit:
+def create_deposit_for_cart(cart: Cart, amount: float, api_cart: Cart_API = None) -> Deposit:
     """Create a deposit for a cart."""
     deposit_method = "cash"  # Default, could be from API
     

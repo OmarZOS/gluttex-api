@@ -4,7 +4,8 @@
 from sqlalchemy import func
 
 from storage.storage_broker import search_by_location
-from core.models import Address, Location, PersonDetails, ProductProvider, ProviderDetails, ProviderOrganisation
+from core.models import Address, PersonDetails, ProductProvider, ProviderDetails, ProviderOrganisation
+from core.persistent_models import Location
 from storage.wrappers.sql_wrapper import get_records_by_filter
 from sqlalchemy import func
 # from shapely.geometry import Point

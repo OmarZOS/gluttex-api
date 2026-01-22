@@ -10,7 +10,7 @@ sqlacodegen's instruction of
 
 
 
-from sqlalchemy import Table,BigInteger,TIMESTAMP,DECIMAL,JSON,  DateTime, Enum, Float, ForeignKeyConstraint, Index, Integer, String, Text, text,Column, Date, DateTime, Float, Index, Integer, LargeBinary, String, Text,  select, func
+from sqlalchemy import Table,BigInteger, PrimaryKeyConstraint,TIMESTAMP,DECIMAL,JSON,  DateTime, Enum, Float, ForeignKeyConstraint, Index, Integer, String, Text, text,Column, Date, DateTime, Float, Index, Integer, LargeBinary, String, Text,  select, func
 from sqlalchemy.orm import column_property
 
 from sqlalchemy.sql.sqltypes import NullType
@@ -56,9 +56,8 @@ To avoid issues, always use position_wkt, which exposes the geometry in a safe, 
     person = relationship('Person', back_populates='person_location')
     product_provider = relationship('ProductProvider', back_populates='product_provider_location')
     location_image = relationship('LocationImage', back_populates='location')
+    ordered_service = relationship('OrderedService', back_populates='ordered_service_location')
     placed_order = relationship('PlacedOrder', back_populates='location')
-
-
 
 class BusinessOperation(Base):
     """
@@ -123,86 +122,48 @@ class BusinessOperation(Base):
     source_table = Column(String(13))
     
     # Temporal Information
-    operation_date = Column(TIMESTAMP)
-    
+    operation_date = Column(TIMESTAMP)    
 
 class FinancialDocument(Base):
     __tablename__ = 'financial_documents_status'
     
-    document_type = Column(String(12))
-    document_id = Column(Integer, primary_key=True)
+    # Primary key columns - note: you have server_default='0' for document_id
+    document_type = Column(String(12), primary_key=True)  # 'deposit', 'invoice', 'pending_cart'
+    document_id = Column(Integer, primary_key=True, server_default=text("'0'"))  # Note the server_default
+    
+    # Other columns - note type differences (BigInteger vs Integer)
     document_number = Column(String(100))
-    source_id = Column(Integer, primary_key=True)
+    source_id = Column(Integer)
     source_type = Column(String(14))
-    supplier_id = Column(Integer, primary_key=True)
-    customer_id = Column(Integer, primary_key=True)
+    supplier_id = Column(BigInteger)  # Changed from Integer to BigInteger
+    customer_id = Column(BigInteger)  # Changed from Integer to BigInteger
     customer_type = Column(String(7))
-    seller_id = Column(Integer, primary_key=True)
+    customer_person_id = Column(BigInteger)  # Changed from Integer to BigInteger
+    seller_id = Column(BigInteger)  # Changed from Integer to BigInteger
+    
+    # Decimal columns with server defaults
     document_amount = Column(DECIMAL(15, 4))
     issue_date = Column(Date)
     due_date = Column(Date)
-    total_paid = Column(DECIMAL(37, 4))
-    total_deposited = Column(DECIMAL(37, 4))
-    additional_fees = Column(DECIMAL(37, 4))
+    total_paid = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
+    total_deposited = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
+    additional_fees = Column(DECIMAL(37, 4), server_default=text("'0.0000'"))
     outstanding_balance = Column(DECIMAL(39, 4))
+    
+    # Status columns
     document_status = Column(String(50))
-    payment_status = Column(String(21))
-    days_issued = Column(Integer)
-    days_overdue = Column(Integer)
+    payment_status = Column(String(19))  # Changed from 21 to 19
+    
+    # Days columns - changed from Integer to BigInteger
+    days_issued = Column(BigInteger)
+    days_overdue = Column(BigInteger)
+    
+    # Timestamp columns
     invoice_created_at = Column(TIMESTAMP)
     invoice_updated_at = Column(TIMESTAMP)
+    # Define composite primary key
+    
 
-
-# class BusinessOperationWithTotals(Base):
-#     __tablename__ = 'business_operation_with_totals'
-    
-#     # Primary key columns (nullable for summary rows)
-#     supplier_id = Column(Integer, nullable=True)
-#     order_id = Column(Integer, nullable=True)
-#     cart_id = Column(Integer, nullable=True)
-    
-#     # Business data columns
-#     client = Column(Integer, nullable=True)
-#     seller_id = Column(Integer, nullable=True)
-#     total_amount = Column(Float(asdecimal=True))
-#     invoice_status = Column(String(50))
-#     total_paid = Column(DECIMAL(37, 4))
-#     total_deposited = Column(DECIMAL(37, 4))
-#     balance_due = Column(Float(asdecimal=True))
-#     payment_status = Column(String(14))
-#     source_table = Column(String(12))
-    
-#     # Row type to distinguish between detail and summary rows
-#     row_type = Column(String(20))  # 'detail', 'supplier_summary', 'grand_total'
-    
-#     # Since this is a view with union of different row types, we need to define
-#     # a composite primary key that works for all row types
-#     __mapper_args__ = {
-#         'primary_key': [supplier_id, order_id, cart_id, row_type]
-#     }
-    
-#     def __repr__(self):
-#         return f"<BusinessOperationWithTotals(row_type='{self.row_type}', supplier_id={self.supplier_id}, amount={self.total_amount})>"
-    
-#     @property
-#     def is_detail_row(self):
-#         """Check if this is a detail row."""
-#         return self.row_type == 'detail'
-    
-#     @property
-#     def is_supplier_summary(self):
-#         """Check if this is a supplier summary row."""
-#         return self.row_type == 'supplier_summary'
-    
-#     @property
-#     def is_grand_total(self):
-#         """Check if this is a grand total row."""
-#         return self.row_type == 'grand_total'
-    
-#     @property
-#     def is_summary_row(self):
-#         """Check if this is any type of summary row."""
-#         return self.row_type in ['supplier_summary', 'grand_total']
 
 
 
