@@ -63,7 +63,7 @@ def touch_invoice(invoice_id:int):
     return invoice_list[0]
 
 
-def fetch_financial_item(supplier_id: int = 0,person_id: int = 0,client_id: int = 0,seller_id: int = 0,cart_id: int = 0,order_id: int = 0,deposit_id: int = 0,invoice_id: int = 0,offset: int= 0, limit : int=10):
+def fetch_financial_item(supplier_id: int = 0,person_id: int = 0,client_id: int = 0,seller_id: int = 0,cart_id: int = 0,order_id : int = 0,deposit_id: int = 0,invoice_id: int = 0,offset: int= 0, limit : int=10):
     
     conditions = {}
     if  supplier_id != 0 :
@@ -89,13 +89,11 @@ def fetch_financial_item(supplier_id: int = 0,person_id: int = 0,client_id: int 
         conditions[FinancialDocument.source_id] = invoice_id
     
     
-    fianance_list = storage_broker.get(FinancialDocument
+    finance_list = storage_broker.get(FinancialDocument
                               ,conditions
                               ,None,None
                               ,offset, limit
                               )
                             
-    # if invoice_list == []:
-    #     return None 
-    return fianance_list
+    return finance_list
 

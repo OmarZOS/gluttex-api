@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from features.business.supplier.supplier_search import search_supplier_by_location
-from core.models import AppUser, Location, Person, PersonDetails, Product, ProductProvider, ProviderDetails, Recipe
+from core.models import AppUser, Person, PersonDetails, Product, ProductProvider, ProviderDetails, Recipe
+from core.persistent_models import Location
 from storage.storage_broker import search_records
 
 search_router = APIRouter()

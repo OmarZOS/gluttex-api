@@ -48,7 +48,8 @@ def fetch_cart(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_i
                                               }
                  
                  },
-                Cart.ordered_service,
+                {Cart.ordered_service:[OrderedService.ordered_service_service]},
+                {Cart.cart_product_provider:[ProductProvider.product_provider_details,ProductProvider.product_provider_type,ProductProvider.product_provider_org]},
                 {
                     Cart.invoice:[
                         Invoice.payment

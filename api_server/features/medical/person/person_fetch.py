@@ -2,7 +2,9 @@
 from core.exception_handler import APIException
 from core.api_models import Location_API, Person_API
 from core.messages import *
-from core.models import BloodType, Location, Person, PersonDetails
+from core.models import BloodType, Person, PersonDetails
+from core.persistent_models import Location
+
 from features.insertion import insert_or_complete_or_raise
 from core.models import  Product
 import storage.storage_broker as storage_broker

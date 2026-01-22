@@ -6,7 +6,10 @@
 
 
 from core.api_models import Location_API, ProductProvider_API
-from core.models import Address, Location, OrganisationImage, ProductProvider, ProductProviderType, ProviderDetails, ProviderImage, ProviderOrganisation
+from core.models import Address,  OrganisationImage, ProductProvider, ProductProviderType, ProviderDetails, ProviderImage, ProviderOrganisation
+from core.persistent_models import Location
+
+
 import storage.storage_broker as storage_broker
 
 
@@ -17,7 +20,7 @@ def fetch_supplier_by_id(provider_id: str):
                                  ,None
                                  ,[
                                      {ProductProvider.product_provider_location:
-                                        [Location.position_wkt,Location.location_name,Location.id_location,Location.location_address_id]
+                                        [Location.position_wkt,Location.location_name,Location.id_location,Location.location_address]
                                       }
                                     ,ProductProvider.product_provider_type
                                     ,ProductProvider.product_provider_details
@@ -25,18 +28,19 @@ def fetch_supplier_by_id(provider_id: str):
                                     ,ProductProvider.provider_image
                                     ,ProductProvider.provider_reaction
                                     ,ProductProvider.management_rule
+                                    
                                  ]
                                 )
     
-    if(records != []):
-        if(records[0].product_provider_location.location_address_id!=None):
-            addresses = storage_broker.get(Address
-                                    ,{Address.id_address:records[0].product_provider_location.location_address_id}
-                                    ,None
-                                    ,[
-                                        ])
-            if (addresses!=[]):
-                records[0].product_provider_location.location_address = addresses[0]
+    # if(records != []):
+    #     if(records[0].product_provider_location.location_address_id!=None):
+    #         addresses = storage_broker.get(Address
+    #                                 ,{Address.id_address:records[0].product_provider_location.location_address_id}
+    #                                 ,None
+    #                                 ,[
+    #                                     ])
+    #         if (addresses!=[]):
+    #             records[0].product_provider_location.location_address = addresses[0]
         
 
     # if records == []: return None

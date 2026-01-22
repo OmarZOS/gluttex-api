@@ -9,7 +9,7 @@ from features.business.cart.service.service_fetch import fetch_services
 # from features.business.cart.service.service_insert import insert_service
 from features.business.order.order_delete import delete_order
 from features.business.order.order_update import update_order
-from core.api_models import AdditionalFee_API, Cart_API, Deposit_API, Payment_API,  OrderedItem_API, OrderedService_API, Person_API, PlacedOrder_API, ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
+from core.api_models import AdditionalFee_API, Cart_API, Delivery_API, Deposit_API, Payment_API,  OrderedItem_API, OrderedService_API, Person_API, PlacedOrder_API, ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
 
 from features.business.order.order_insert import insert_order
 from features.business.cart.cart_fetch import fetch_business_operations
@@ -181,7 +181,8 @@ def fetch_carts(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_
 @business_router.post("/business/cart/add")
 def add_cart(api_ordered_items: List[OrderedItem_API], 
                 api_provided_services: List[OrderedService_API],
-                api_cart: Cart_API = None, 
+                api_cart: Cart_API = None,
+                delivery: Delivery_API = None, 
                 client: Person_API = None,
                 provider_id: int = 0, 
                 seller_user_id: int = 0, 
@@ -195,9 +196,11 @@ def add_cart(api_ordered_items: List[OrderedItem_API],
     Returns:
         list: List of placed orders.
     """
+
     return insert_cart(api_ordered_items, 
                         api_provided_services,
-                        api_cart, 
+                        api_cart,
+                        delivery, 
                         client,
                         provider_id,
                         seller_user_id,
@@ -219,7 +222,7 @@ def add_payment(payment: Payment_API = None,deposit : Deposit_API= None, fee : A
 
 
 @business_router.get("/business/doc/{supplier_id}/{person_id}/{client_id}/{seller_id}/{cart_id}/{order_id}/{deposit_id}/{invoice_id}/{offset}/{limit}")
-def get_finances(supplier_id: int = 0,person_id: int = 0,client_id: int = 0,seller_id: int = 0,cart_id: int = 0,order_id: int = 0,deposit_id: int = 0,invoice_id: int = 0,offset: int= 0, limit : int=10):
+def get_finances(supplier_id: int = 0,person_id: int = 0,client_id: int = 0,seller_id: int = 0,cart_id: int = 0,order_id : int = 0,deposit_id: int = 0,invoice_id: int = 0,offset: int= 0, limit : int=10):
     """
     Fetches all placed orders for a specific user.
 
@@ -230,6 +233,6 @@ def get_finances(supplier_id: int = 0,person_id: int = 0,client_id: int = 0,sell
         list: List of placed orders.
     """
     return fetch_financial_item(
-        supplier_id,person_id,client_id,seller_id,cart_id,deposit_id,invoice_id, offset, limit)
+        supplier_id,person_id,client_id,seller_id,cart_id,order_id,deposit_id,invoice_id, offset, limit)
 
 

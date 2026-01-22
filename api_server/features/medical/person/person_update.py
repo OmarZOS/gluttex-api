@@ -7,7 +7,7 @@ from core.messages import (
 )
 from core.models import Address, Location, Person, PersonDetails
 from features.insertion import insert_or_complete_or_raise, update_record_in_api
-from features.business.location.location_fetch import build_location, fetch_address_object, fetch_location_object
+from features.business.location.location_fetch import build_address_from_location, build_location, fetch_address_object, fetch_location_object
 from features.medical.person.person_fetch import (
     fetch_person_blood_type_object,
     fetch_person_details_object,
@@ -37,14 +37,7 @@ def insert_person_details(person: Person_API) -> PersonDetails:
         )
 
 
-def _build_address(location: Location_API) -> Address:
-    """Helper to build an Address from Location_API."""
-    return Address(
-        address_street=location.address_street,
-        address_city=location.address_city,
-        address_postal_code=location.address_postal_code,
-        address_country=location.address_country,
-    )
+
 
 
 
@@ -79,7 +72,7 @@ def generate_person_object(person: Person_API, location: Location_API = None) ->
 
             address_object = fetch_address_object(location.location_address_id)
             if not address_object:
-                new_location.location_address = _build_address(location)
+                new_location.location_address = build_address_from_location(location)
 
             mensch.person_location = new_location
 

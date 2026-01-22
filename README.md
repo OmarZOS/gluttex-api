@@ -102,6 +102,34 @@ For the business logic:
     3. ordered_service → provided_service → provider
 
 
+
+    @startuml
+
+    [*] --> paid : creates a cart and its payment 
+
+    [*] --> unpaid : creates a cart, might create invoice or a receipt 
+
+    unpaid -> paid : creates a payment or a full deposit
+    unpaid: can be invoice
+    unpaid: can be receipt
+    unpaid: can be cart
+
+
+
+    unpaid --> deposited : creates a deposit and a receipt
+    deposited:  might be associated with a receipt
+
+    deposited --> paid : creates a deposit
+
+    paid --> [*]
+    paid : by a single payment
+    paid : by multiple deposits
+
+
+    @enduml
+
+
+
 ### Progress
     
 - Serving feature. ![x](https://us-central1-progress-markdown.cloudfunctions.net/progress/90)

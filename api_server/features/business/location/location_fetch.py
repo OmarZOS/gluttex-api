@@ -1,9 +1,36 @@
 from typing import Optional
-from core.api_models import Location_API
-from core.models import Address, AppUser, AppUserType, BloodType, Location, Person, PersonDetails
+from core.api_models import Delivery_API, Location_API
+from core.models import Address, AppUser, AppUserType, BloodType, Person, PersonDetails
+from core.persistent_models import Location
 import storage.storage_broker as storage_broker
 from features.medical.person.person_fetch import fetch_person_blood_type_object, fetch_person_details_object
 from geoalchemy2.elements import WKTElement
+
+
+def build_address_from_location(location: Location_API) -> Address:
+    """Helper to build an Address from Location_API."""
+    return Address(
+        address_street=location.address_street,
+        address_city=location.address_city,
+        address_postal_code=location.address_postal_code,
+        address_country=location.address_country,
+    )
+
+def build_address_from_delivery(delivery: Delivery_API) -> Address:
+    """Helper to build an Address from Location_API."""
+    address  = Address()
+    if delivery.delivery_address_id != '':
+        address.id_address = delivery.delivery_address_id
+    if delivery.address_street != '':
+        address.address_street = delivery.address_street
+    if delivery.address_city != '':
+        address.address_city = delivery.address_city
+    if delivery.address_postal_code != '':
+        address.address_postal_code = delivery.address_postal_code
+    if delivery.address_country != '':
+        address.address_country = delivery.address_country
+    
+    return address
 
 def build_location(location: Location_API) -> Location:
     """Helper to build a Location from Location_API."""
