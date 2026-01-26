@@ -51,6 +51,7 @@ async def insert_user(
         app_user_preferences=user.app_user_preferences,
         app_user_image_url=user.app_user_image_url,
         app_user_type_id=user_type.id_app_user_type,
+        app_user_email=user.app_user_email,
         app_user_last_active=str(now),
         app_user_last_updated=str(now),
         app_user_creation=str(now),

@@ -54,6 +54,7 @@ class AppUser_API(BaseModel):
     app_user_password: Optional[str]
     app_user_person_id: Optional[int]
     app_user_preferences: Optional[str]
+    app_user_email: Optional[str]
     app_user_image_url: Optional[str]
     #  AppUserType
     app_user_type_id: Optional[int]
@@ -128,14 +129,14 @@ class ProductImage_API(BaseModel):
 class ProvidedService_API(BaseModel):
     provided_service_product_provider_id : int 
     provided_service_id : Optional[int] = 0
-    provided_service_name : Optional[str] = 0
-    provided_service_description : Optional[str] = 0
+    provided_service_name : Optional[str] = ""
+    provided_service_description : Optional[str] = ""
     provided_service_category_id : Optional[int] = 0
     provided_service_base_price : Optional[float] = 0
     provided_service_final_price : Optional[float] = 0
     provided_service_actual_duration : Optional[float] = 0
     provided_service_is_active : Optional[bool] = True
-    provided_service_pricing_config : Optional[str] = 0
+    provided_service_pricing_config : Optional[str] = ""
 
 
 class OrderedService_API(BaseModel):
