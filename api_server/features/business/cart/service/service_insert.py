@@ -53,7 +53,7 @@ def build_resource_requirement(resource_requirement_api : ServiceResourceRequire
     
     return requirement
 
-def build_service(provided_service_api : ProvidedService_API):
+def build_service(provided_service_api : ProvidedService_API)-> ProvidedService:
     service =  ProvidedService(
         provided_service_name = provided_service_api.provided_service_name ,
         provided_service_description = provided_service_api.provided_service_description ,
@@ -70,6 +70,37 @@ def build_service(provided_service_api : ProvidedService_API):
         service.provided_service_id = provided_service_api.provided_service_id,
 
     return service
+
+
+def insert_service(service:ProvidedService_API ,    requirements :  List[ServiceResourceRequirement_API] ,staff_requirements: List[ServiceStaffRequirement_API] ):
+
+    if service.provided_service_category_id == 0:
+        raise APIException(
+            status=HTTP_404_NOT_FOUND,
+            code=SERVICE_CATEGORY_NOT_FOUND,
+            details=SERVICE_CATEGORY_NOT_FOUND
+        )
+
+
+
+    service = build_service(service)
+    resource_requirement = []
+    staff_requirement = []
+
+    for req in requirements:
+        resource_requirement.append(build_resource_requirement(req))
+
+    for req in staff_requirements:
+        staff_requirement.append(build_staff_requirement(req))
+
+    service.resource_requirements = resource_requirement
+    service.staff_requirements = staff_requirement
+
+    final_service = insert_or_complete_or_raise(service)
+
+    return final_service
+
+
 
 def build_ordered_service(ordered_service_api : OrderedService_API, new: bool = False):
     service =  OrderedService(

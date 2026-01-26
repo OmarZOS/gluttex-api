@@ -71,8 +71,8 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
         else:
             person_obj = fetch_only_person_by_id(client.id_person)
         
-    if (buyer_user is None) and (person_obj is None):
-        raise APIException(status=HTTP_404_NOT_FOUND, code=CLIENT_NOT_EXISTS)
+    # if (buyer_user is None) and (person_obj is None):
+    #     raise APIException(status=HTTP_404_NOT_FOUND, code=CLIENT_NOT_EXISTS)
     
     # --- Validate products & build ordered items ---
     ordered_items: List[OrderedItem] = []

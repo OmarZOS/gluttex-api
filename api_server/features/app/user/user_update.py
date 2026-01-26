@@ -62,6 +62,7 @@ def update_api_user(user_record: AppUser_API,person_record: Person_API,location_
         "app_user_preferences",
         "app_user_last_active",
         "app_user_image_url",
+        "app_user_email",
         # "app_user_last_updated",
         "app_user_type_id",
         # Add any other fields you want to allow updating
