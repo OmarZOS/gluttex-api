@@ -27,6 +27,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r file_server/requirements.txt
+      - name: Run File Server tests
+        run: |
+          pytest file_server/
+
+      - name: Run Stream Server tests
+        run: |
+          pytest stream_server/
+
       # Build your images (auth, fs, api, etc.)
       - name: Build Docker images
         run: |

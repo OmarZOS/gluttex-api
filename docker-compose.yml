@@ -193,6 +193,8 @@ services:
       - 9099:9099
     environment:
       - FS_PORT=9099
+      - FS_BASE_STORAGE=${FS_BASE_STORAGE}
+      - FS_CACHE_STORAGE=${FS_CACHE_STORAGE}
     networks:
       - gluttex-net
     volumes:
