@@ -7,13 +7,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.exception_handler import APIException
 from core.models import API_Resolution
 from core.messages import *
-from lib import *
+from contextlib import asynccontextmanager
+
+from lib import (
+    BASE_STORAGE,
+    get_path,
+    get_cache_path,
+    create_thumbnail,
+    init_storage,
+)
 
 app = FastAPI(
     openapi_url="/fs/openapi.json",  # Move OpenAPI to `/api/openapi.json`
     docs_url="/fs/docs",  # Keep Swagger UI at `/docs`
     redoc_url="/fs/redoc"  # Keep ReDoc at `/redoc`
 )
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    init_storage()
+    yield
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -97,7 +112,10 @@ async def get_file(entity_type: str, owner_id: str, entity_id: str, filename: st
 
     if not cache_path.exists():
         print(f"⚠️ Thumbnail not found, generating one for {file_path}")
-        create_thumbnail(file_path, cache_path)
+        try:
+            create_thumbnail(file_path, cache_path)
+        except Exception as e:
+            print(f"Thumbnail error: {e}")
 
         # If thumbnail creation failed, return original file as fallback
         if not cache_path.exists():
@@ -125,17 +143,19 @@ async def delete_file(entity_type: str, owner_id: str, entity_id: str, filename:
 
 @app.get("/fs/files/{entity_type}/{owner_id}/")
 async def list_user_files(entity_type: str, owner_id: str):
-    """
-    Lists all directories (entities) owned by a user and their files.
-    """
     user_path = BASE_STORAGE / entity_type / owner_id
 
-    if not user_path.exists() or not user_path.is_dir():
-        raise APIException(status=404,code= HTTP_404_NOT_FOUND,details="User directory not found")
+    if not user_path.exists():
+        raise APIException(
+            status=404,
+            code=HTTP_404_NOT_FOUND,
+            details="User directory not found",
+        )
 
     files = {
-        entity_id.name: [f.name for f in entity_id.iterdir() if f.is_file()]
-        for entity_id in user_path.iterdir() if entity_id.is_dir()
+        entity.name: [f.name for f in entity.iterdir() if f.is_file()]
+        for entity in user_path.iterdir()
+        if entity.is_dir()
     }
 
     return {"user_id": owner_id, "files": files}

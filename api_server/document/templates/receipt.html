@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RECU {{ receipt_number }}</title>
+    <style>
+        /* Algerian government receipt style - ultra compact */
+        body { 
+            font-family: 'Arial', sans-serif; 
+            font-size: 9px; 
+            line-height: 1.1; 
+            margin: 0; 
+            padding: 0; 
+            color: #000; 
+        }
+        
+        .receipt-container {
+            width: 210mm; /* A4 width */
+            min-height: 148mm; /* Half A4 for receipt */
+            margin: 0 auto;
+            padding: 5mm;
+            background: #fff;
+            border: 2px solid #000;
+        }
+        
+        /* Header - official stamp style */
+        .receipt-header {
+            border-bottom: 3px double #000;
+            padding-bottom: 3px;
+            margin-bottom: 4px;
+            text-align: center;
+        }
+        
+        .receipt-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+        
+        .receipt-subtitle {
+            font-size: 10px;
+            font-weight: bold;
+            margin: 2px 0;
+            text-transform: uppercase;
+        }
+        
+        .receipt-number {
+            font-size: 11px;
+            font-weight: bold;
+            margin: 2px 0;
+        }
+        
+        .stamp-box {
+            display: inline-block;
+            border: 2px solid #000;
+            padding: 3px 10px;
+            margin: 3px 0;
+            background: #fff;
+        }
+        
+        /* Compact info blocks */
+        .info-blocks {
+            display: flex;
+            gap: 5mm;
+            margin: 4px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid #000;
+        }
+        
+        .info-block {
+            flex: 1;
+        }
+        
+        .info-block h3 {
+            font-size: 9px;
+            font-weight: bold;
+            margin: 0 0 2px 0;
+            text-transform: uppercase;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1px;
+        }
+        
+        .info-row {
+            display: flex;
+            margin-bottom: 1px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            min-width: 25mm;
+        }
+        
+        /* Compact table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 3px 0 5px 0;
+            font-size: 8px;
+        }
+        
+        .items-table th {
+            background: #f0f0f0;
+            border: 1px solid #000;
+            padding: 2px 3px;
+            text-align: left;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .items-table td {
+            border: 1px solid #ddd;
+            padding: 2px 3px;
+            vertical-align: top;
+        }
+        
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        
+        /* Totals */
+        .totals-section {
+            margin: 5px 0;
+        }
+        
+        .totals-table {
+            width: 50mm;
+            margin-left: auto;
+            border-collapse: collapse;
+            font-size: 9px;
+        }
+        
+        .totals-table td {
+            padding: 2px 4px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .totals-table tr:last-child td {
+            border-bottom: 2px solid #000;
+            font-weight: bold;
+        }
+        
+        /* Payment details */
+        .payment-details {
+            margin: 4px 0;
+            padding: 3px;
+            border: 1px solid #000;
+            font-size: 8px;
+        }
+        
+        .payment-row {
+            display: flex;
+            margin-bottom: 1px;
+        }
+        
+        .payment-label {
+            font-weight: bold;
+            min-width: 25mm;
+        }
+        
+        /* QR Code area */
+        .qr-section {
+            margin: 6px 0;
+            padding: 3px 0;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+        }
+        
+        .qr-container {
+            display: flex;
+            align-items: center;
+            gap: 5mm;
+        }
+        
+        .qr-code {
+            flex-shrink: 0;
+        }
+        
+        .qr-code img {
+            width: 30mm;
+            height: 30mm;
+            border: 1px solid #000;
+            padding: 1px;
+            background: #fff;
+        }
+        
+        .qr-info {
+            flex: 1;
+            font-size: 8px;
+        }
+        
+        /* Footer */
+        .receipt-footer {
+            margin-top: 5px;
+            padding-top: 3px;
+            border-top: 1px solid #000;
+            font-size: 8px;
+            text-align: center;
+        }
+        
+        .signature-area {
+            display: flex;
+            justify-content: space-between;
+            margin: 4px 0;
+        }
+        
+        .signature-block {
+            text-align: center;
+            width: 40mm;
+        }
+        
+        .signature-line {
+            width: 100%;
+            border-bottom: 1px solid #000;
+            margin: 2px auto;
+            padding-bottom: 1px;
+        }
+        
+        /* Print optimization */
+        @media print {
+            body { margin: 0; padding: 0; }
+            .receipt-container { 
+                width: 100%; 
+                margin: 0; 
+                padding: 3mm; 
+                border: none;
+                border: 2px solid #000;
+            }
+        }
+        
+        /* Status indicators */
+        .status-paid {
+            color: #006600;
+            font-weight: bold;
+        }
+        
+        .stamp-paid {
+            display: inline-block;
+            border: 2px solid #006600;
+            color: #006600;
+            padding: 1px 5px;
+            font-weight: bold;
+            font-size: 8px;
+            transform: rotate(-5deg);
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt-container">
+        <!-- Header with official stamp -->
+        <header class="receipt-header">
+            <div class="stamp-box">
+                <div class="receipt-title">RECU DE PAIEMENT</div>
+                <div class="receipt-subtitle">PAYMENT RECEIPT</div>
+            </div>
+            <div class="receipt-number">N°: <strong>{{ receipt_number }}</strong></div>
+            <div style="font-size: 8px; margin-top: 1px;">
+                {{ company.name }} • {{ company.tax_id_label }}: {{ company.tax_id }}
+            </div>
+        </header>
+
+        <!-- Receipt validation stamp -->
+        <div style="text-align: right; margin: 2px 0;">
+            <span class="stamp-paid">PAYE / PAID</span>
+        </div>
+
+        <!-- Info blocks -->
+        <div class="info-blocks">
+            <div class="info-block">
+                <h3>CLIENT / CUSTOMER</h3>
+                <div class="info-row">
+                    <div class="info-label">Nom/Name:</div>
+                    <div>{{ client.name }}</div>
+                </div>
+                {% if client.company %}
+                <div class="info-row">
+                    <div class="info-label">Société/Company:</div>
+                    <div>{{ client.company }}</div>
+                </div>
+                {% endif %}
+                {% if client.tax_id %}
+                <div class="info-row">
+                    <div class="info-label">NIF/Tax ID:</div>
+                    <div>{{ client.tax_id }}</div>
+                </div>
+                {% endif %}
+                <div class="info-row">
+                    <div class="info-label">Réf. Facture/Inv. Ref:</div>
+                    <div>{{ invoice_number }}</div>
+                </div>
+            </div>
+            
+            <div class="info-block">
+                <h3>PAIEMENT / PAYMENT</h3>
+                <div class="info-row">
+                    <div class="info-label">Date:</div>
+                    <div>{{ payment_date }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Heure/Time:</div>
+                    <div>{{ payment_time }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Méthode/Method:</div>
+                    <div>{{ payment_method|upper }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Transaction:</div>
+                    <div>{{ transaction_id }}</div>
+                </div>
+                {% if auth_code %}
+                <div class="info-row">
+                    <div class="info-label">Auth Code:</div>
+                    <div>{{ auth_code }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Items Table - Very Compact -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th width="5%">N°</th>
+                    <th width="65%">DESCRIPTION</th>
+                    <th width="10%" class="text-center">QTÉ</th>
+                    <th width="20%" class="text-right">MONTANT</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td>{{ item.description }}</td>
+                    <td class="text-center">{{ item.quantity }} {{ item.unit }}</td>
+                    <td class="text-right">{{ "%.2f"|format(item.total) }} {{ currency_symbol }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Totals -->
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td>Total HT/Subtotal:</td>
+                    <td class="text-right">{{ "%.2f"|format(amount_paid - tax_amount) }} {{ currency_symbol }}</td>
+                </tr>
+                <tr>
+                    <td>TVA/VAT ({{ tax_percent }}%):</td>
+                    <td class="text-right">{{ "%.2f"|format(tax_amount) }} {{ currency_symbol }}</td>
+                </tr>
+                {% if fee > 0 %}
+                <tr>
+                    <td>Frais/Charges:</td>
+                    <td class="text-right">{{ "%.2f"|format(fee) }} {{ currency_symbol }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td><strong>TOTAL PAYE/PAID:</strong></td>
+                    <td class="text-right"><strong>{{ "%.2f"|format(total_paid) }} {{ currency_symbol }}</strong></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="payment-details">
+            <div class="payment-row">
+                <div class="payment-label">Mode de paiement:</div>
+                <div>{{ payment_method|upper }}</div>
+            </div>
+            {% if last_four %}
+            <div class="payment-row">
+                <div class="payment-label">Carte/Card:</div>
+                <div>**** **** **** {{ last_four }}</div>
+            </div>
+            {% endif %}
+            <div class="payment-row">
+                <div class="payment-label">Transaction ID:</div>
+                <div><strong>{{ transaction_id }}</strong></div>
+            </div>
+            <div class="payment-row">
+                <div class="payment-label">Statut/Status:</div>
+                <div class="status-paid"><strong>CONFIRME / CONFIRMED</strong></div>
+            </div>
+        </div>
+
+        <!-- QR Code Section with Professional QR Generator -->
+        <div class="qr-section">
+            <div class="qr-container">
+                <div class="qr-code">
+                    {% if qr_code_data %}
+                    <img src="{{ qr_code_data }}" alt="Receipt QR Code">
+                    {% else %}
+                    <div style="width: 30mm; height: 30mm; border: 2px dashed #999; display: flex; align-items: center; justify-content: center; font-size: 7px; color: #999;">
+                        <div>
+                            CODE QR<br>
+                            QR CODE
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="qr-info">
+                    <div style="font-weight: bold; margin-bottom: 2px;">VERIFICATION / VERIFICATION</div>
+                    <div style="margin-bottom: 2px;">Scannez ce code QR pour vérifier l'authenticité de ce reçu.</div>
+                    <div style="margin-bottom: 2px;">Scan this QR code to verify the authenticity of this receipt.</div>
+                    <div style="font-size: 7px; color: #666; margin-top: 3px;">
+                        Recu ID: {{ receipt_id }}<br>
+                        Date: {{ payment_date }} {{ payment_time }}<br>
+                        Montant: {{ "%.2f"|format(total_paid) }} {{ currency_symbol }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer with signatures -->
+        <footer class="receipt-footer">
+            <div class="signature-area">
+                <div class="signature-block">
+                    <div>Pour l'administration / For administration</div>
+                    <div class="signature-line"></div>
+                    <div>{{ company.name }}</div>
+                    <div style="font-size: 7px; margin-top: 1px;">Cachet et signature / Stamp and signature</div>
+                </div>
+                
+                <div class="signature-block">
+                    <div>Reçu par / Received by</div>
+                    <div class="signature-line"></div>
+                    <div>{{ client.name }}</div>
+                    <div style="font-size: 7px; margin-top: 1px;">Signature du client / Client signature</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 3px; padding-top: 3px; border-top: 1px solid #ddd;">
+                <div>{{ company.name }} • {{ company.address }} • {{ company.city_state_zip }}</div>
+                <div>Tél: {{ company.phone }} • Email: {{ company.email }}</div>
+                <div style="margin-top: 1px; font-size: 7px; color: #666;">
+                    Ce reçu a une valeur légale / This receipt has legal value • 
+                    Généré le/Generated: {{ generated_datetime }}
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

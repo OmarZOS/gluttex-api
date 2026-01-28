@@ -20,7 +20,7 @@ import orjson
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import Field
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings,SettingsConfigDict
 
 AMQP_HOST = os.getenv("AMQP_HOST", "rabbitmq")
 AMQP_PORT = os.getenv("AMQP_PORT", "5672")
@@ -28,29 +28,55 @@ AMQP_VIRTUAL_HOST = os.getenv("AMQP_VIRTUAL_HOST", "/gluttex")
 AMQP_USER = os.getenv("AMQP_USER", "dev_user")
 AMQP_PASS = os.getenv("AMQP_PASS", "dev_pass")
 
-# Configuration with environment variables
-class Settings(BaseSettings):
-    host: str = Field(default="rabbitmq", env="HOST")
-    port: int = Field(default=8000, env="PORT")
-    max_connections: int = Field(default=10000, env="MAX_CONNECTIONS")
-    prefetch_count: int = Field(default=50, env="PREFETCH_COUNT")
-    heartbeat_interval: int = Field(default=30, env="HEARTBEAT_INTERVAL")
-    connection_timeout: int = Field(default=10, env="CONNECTION_TIMEOUT")
-    log_level: str = Field(default="INFO", env="LOG_LEVEL")
-    
-    class Config:
-        env_file = ".env"
 
-settings = Settings()
+
+def create_consumer(queue_name, asyncio_queue, on_error=None, prefetch_count=50):
+    """Factory to create a consumer thread"""
+    from lib import OptimizedPikaConsumerThread
+    consumer = OptimizedPikaConsumerThread(
+        queue_name=queue_name,
+        asyncio_queue=asyncio_queue,
+        on_error=on_error,
+        prefetch_count=prefetch_count
+    )
+    consumer.start()
+    return consumer
+
+
+
+
+class Settings(BaseSettings):
+    host: str = "rabbitmq"
+    port: int = 8000
+    log_level: str = "INFO"
+    max_connections: int = 10000
+    prefetch_count: int = 50
+    heartbeat_interval: int = 30
+    connection_timeout: int = 10
+    
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_prefix="",  # optional prefix
+         extra="ignore" 
+    )
+
+settings: Settings | None = None
+
+def get_settings() -> Settings:
+    global settings
+    if settings is None:
+        settings = Settings()
+    return settings
 
 logging.basicConfig(
-    level=getattr(logging, settings.log_level),
+    level=getattr(logging, get_settings().log_level),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
         logging.FileHandler('websocket_server.log') if os.getenv('LOG_TO_FILE') else logging.NullHandler()
     ]
 )
+
 logger = logging.getLogger("ws-rmq-bridge")
 
 class OptimizedPikaConsumerThread:
@@ -491,28 +517,3 @@ class WebSocketConnectionManager:
             logger.error(f"Error getting subscribers for {routing_key}: {e}")
             return []
 
-# # Create FastAPI app
-# app = FastAPI(title="WebSocket-RabbitMQ Bridge")
-
-# # Add CORS middleware
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
-# @app.get("/health")
-# async def health_check():
-#     return {"status": "healthy", "timestamp": time.time()}
-
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(
-#         "main:app",
-#         host="0.0.0.0",
-#         port=settings.port,
-#         reload=True,
-#         log_level=settings.log_level.lower()
-#     )
