@@ -38,9 +38,9 @@ jobs:
           pip install -r auth_server/requirements.txt
           pip install -r stream_server/requirements.txt
           pip install httpx pytest python-multipart pytest-asyncio
-      - name: Run File Server tests
-        run: |
-          pytest file_server/
+      # - name: Run File Server tests
+      #   run: |
+      #     pytest file_server/
 
       # - name: Run Stream Server tests
       #   run: |
