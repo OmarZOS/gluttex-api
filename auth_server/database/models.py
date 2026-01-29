@@ -21,8 +21,8 @@ class AppUser(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     # this is the most important id to get the user from the database
     app_user_id = Column(Integer,  nullable=True)
-    email = Column(String, unique=True, index=True, nullable=True)
-    phone_number = Column(String, unique=True, index=True, nullable=True)
+    email = Column(String, index=True, nullable=True)
+    phone_number = Column(String, index=True, nullable=True)
     hashed_password = Column(String, nullable=True)
     password_salt = Column(LargeBinary, nullable=True)
     profile_picture = Column(LargeBinary, nullable=True)

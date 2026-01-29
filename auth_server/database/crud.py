@@ -61,16 +61,26 @@ def delete_user_object(db: Session, user):
     db.commit()
     return data
 
+# In crud.py, fix the delete_user function
 def delete_user(db: Session, user:schemas.UserUpdate):
     db_user = get_user(db, user.app_user_id)
     if not db_user:
-        # print(db_user)
         raise APIException(status=HTTP_401_UNAUTHORIZED,code=USER_DELETE_FAILED,message=f"{USER_DELETE_FAILED}: {user.username}")
     try:
-        updated_user = delete_user_object(db,db_user)
+        # Store user data before deletion
+        user_data = {
+            "app_user_id": db_user.app_user_id,
+            "username": db_user.username,
+            "email": db_user.email
+        }
+        # Delete the user
+        db.delete(db_user)
+        db.commit()
+        # Return the deleted user data
+        return user_data
     except Exception as e:
+        db.rollback()
         raise APIException(status=HTTP_417_EXPECTATION_FAILED,code=USER_DELETE_FAILED,message=str(e))
-    return updated_user
 
 def change_user_password(db: Session, user:schemas.UserUpdate):
     db_user = get_user(db, user.app_user_id)

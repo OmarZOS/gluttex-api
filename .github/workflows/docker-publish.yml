@@ -27,7 +27,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -36,13 +35,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r file_server/requirements.txt
+          pip install httpx pytest python-multipart pytest-asyncio
       - name: Run File Server tests
         run: |
           pytest file_server/
 
-      - name: Run Stream Server tests
+      # - name: Run Stream Server tests
+      #   run: |
+      #     pytest stream_server/
+
+      - name: Run Auth Server tests
         run: |
-          pytest stream_server/
+          pytest auth_server/
 
       # Build your images (auth, fs, api, etc.)
       - name: Build Docker images

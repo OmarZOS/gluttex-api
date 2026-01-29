@@ -21,6 +21,7 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
+# In auth.py, fix create_access_token
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
@@ -28,6 +29,20 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     else:
         expire = datetime.now() + timedelta(minutes=15)
     to_encode.update({"exp": expire})
+    
+    # Convert ALL datetime objects to ISO format strings
+    def convert_datetimes(obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, dict):
+            return {k: convert_datetimes(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_datetimes(item) for item in obj]
+        else:
+            return obj
+    
+    to_encode = convert_datetimes(to_encode)
+    
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 

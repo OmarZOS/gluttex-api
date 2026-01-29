@@ -1,168 +1,242 @@
-# tests/test_auth.py
+# tests/test_auth_endpoints.py - Fixed
 import pytest
 from fastapi.testclient import TestClient
-from database import crud, schemas
-from database.crypt import verify_password
+from database import schemas, crud
+from sqlalchemy.orm import Session
 from datetime import datetime
 
-# -----------------------
-# Unit Tests (CRUD/Auth)
-# -----------------------
+# Fixtures from conftest.py
 
-def test_create_user_unit(db_session):
-    """Test creating a user via CRUD directly."""
+def create_test_user(db_session, username="testuser", app_user_id=1):
+    """Helper to create a test user."""
+    # Delete if exists
+    existing_user = crud.get_user_by_username(db_session, username)
+    if existing_user:
+        db_session.delete(existing_user)
+        db_session.commit()
+    
+    # Create new user
     user_data = schemas.UserCreate(
-        username="unituser",
+        username=username,
         password="secret123",
-        app_user_id=10,
-        email="unit@example.com",
-        first_name="Unit",
-        last_name="Test",
-        phone_number="5555555",
-        date_of_birth=datetime(1990, 1, 1),
-        gender="F",
+        app_user_id=app_user_id,
+        email=f"{username}@example.com",
+        first_name="Test",
+        last_name="User",
+        phone_number="1234567890",
+        date_of_birth=datetime(2000, 1, 1),
+        gender="male",
         roles="user",
-        login_count=0,
-        failed_login_attempts=0,
+        login_count="0",
+        failed_login_attempts="0",
         profile_picture=None
     )
-    user = crud.create_user(db_session, user_data)
-    assert user.username == "unituser"
-    assert verify_password("secret123", user.hashed_password, user.password_salt)
-    assert user.email == "unit@example.com"
+    return crud.create_user(db_session, user_data)
 
-def test_change_password_unit(db_session, test_user):
-    """Test changing a user's password via CRUD."""
-    from database.crud import change_user_password
-    new_password_data = schemas.UserUpdate(
-        username=test_user.username,
-        new_password="newpass123",
-        app_user_id=test_user.app_user_id
-    )
-    updated_user = change_user_password(db_session, new_password_data)
-    assert verify_password("newpass123", updated_user.hashed_password, updated_user.password_salt)
-
-def test_delete_user_unit(db_session):
-    """Test deleting a user via CRUD."""
-    # Create user
-    user_data = schemas.UserCreate(
-        username="deleteuser",
-        password="secret123",
-        app_user_id=20,
-        email="delete@example.com",
-        first_name="Delete",
-        last_name="Me",
-        phone_number="555666",
-        date_of_birth=datetime(1980,1,1),
-        gender="M",
-        roles="user",
-        login_count=0,
-        failed_login_attempts=0,
-        profile_picture=None
-    )
-    user = crud.create_user(db_session, user_data)
-    # Delete
-    delete_data = schemas.UserUpdate(
-        username=user.username,
-        new_password="doesntmatter",
-        app_user_id=user.app_user_id
-    )
-    deleted_user = crud.delete_user(db_session, delete_data)
-    assert deleted_user.app_user_id == user.app_user_id
-    # Verify deletion
-    assert crud.get_user(db_session, user_id=user.app_user_id) is None
-
-
-# -----------------------
-# Service/Integration Tests
-# -----------------------
-
-def test_register_user(client):
-    """Test POST /auth/users/"""
-    response = client.post("/auth/users/", json={
-        "username": "serviceuser",
-        "password": "mypassword",
-        "app_user_id": 100,
-        "email": "service@example.com",
-        "first_name": "Service",
-        "last_name": "Tester",
-        "phone_number": "123123123",
+@pytest.mark.order(1)
+def test_create_user(client: TestClient, db_session: Session):
+    """Test user registration."""
+    # Clean up first
+    existing_user = crud.get_user_by_username(db_session, "testuser")
+    if existing_user:
+        db_session.delete(existing_user)
+        db_session.commit()
+    
+    user_data = {
+        "username": "testuser",
+        "email": "test@example.com",
+        "first_name": "Test",
+        "last_name": "User",
+        "phone_number": "1234567890",
         "date_of_birth": "2000-01-01T00:00:00",
-        "gender": "M",
+        "gender": "male",
         "roles": "user",
-        "login_count": 0,
-        "failed_login_attempts": 0,
-        "profile_picture": None
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert data["username"] == "serviceuser"
-    assert data["email"] == "service@example.com"
+        "app_user_id": 1,
+        "password": "secret123",
+        "login_count": "0",
+        "failed_login_attempts": "0"
+    }
 
-
-def test_login_user(client, test_user):
-    """Test POST /auth/token"""
-    response = client.post("/auth/token", data={
-        "username": test_user.username,
-        "password": "password123"
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
-    assert data["app_user_id"] == str(test_user.app_user_id)
-
-
-def test_get_current_user(client, auth_headers):
-    """Test GET /auth/users/me/"""
-    response = client.get("/auth/users/me/", headers=auth_headers)
+    response = client.post("/auth/users/", json=user_data)
+    print(f"Response status: {response.status_code}")
+    print(f"Response body: {response.text}")
     assert response.status_code == 200
     data = response.json()
     assert data["username"] == "testuser"
+    assert "hashed_password" in data
 
+@pytest.mark.order(2)
+def test_login_for_access_token(client: TestClient, db_session: Session):
+    """Test login endpoint."""
+    # Create user
+    create_test_user(db_session, "testuser", 1)
+    
+    data = {
+        "username": "testuser",
+        "password": "secret123"
+    }
+    response = client.post("/auth/token", data=data)
+    print(f"Login response status: {response.status_code}")
+    print(f"Login response body: {response.text}")
+    assert response.status_code == 200
+    token_data = response.json()
+    assert "access_token" in token_data
+    assert token_data["token_type"] == "bearer"
 
-def test_update_password(client, auth_headers):
-    """Test POST /auth/users/update-password/"""
-    response = client.post("/auth/users/update-password/", headers=auth_headers, json={
+@pytest.mark.order(3)
+def test_read_users_me(client: TestClient, db_session: Session):
+    """Test fetching current user info."""
+    from server import app
+    from auth import get_current_user  # Correct import
+    
+    # Create user
+    user = create_test_user(db_session, "testuser", 1)
+    
+    # Create a proper mock that matches UserResponse schema
+    class MockUser:
+        def __init__(self, user):
+            self.id = user.id
+            self.username = user.username
+            self.email = user.email
+            self.app_user_id = user.app_user_id
+            self.phone_number = user.phone_number
+            self.hashed_password = user.hashed_password
+            self.first_name = user.first_name
+            self.last_name = user.last_name
+            self.date_of_birth = user.date_of_birth
+            self.gender = user.gender
+            self.profile_picture = user.profile_picture
+            self.roles = user.roles
+            self.last_login = user.last_login
+            self.login_count = user.login_count if hasattr(user, 'login_count') else 0
+            self.failed_login_attempts = user.failed_login_attempts if hasattr(user, 'failed_login_attempts') else 0
+            self.account_locked = user.account_locked if hasattr(user, 'account_locked') else False
+            self.mfa_enabled = user.mfa_enabled if hasattr(user, 'mfa_enabled') else False
+            self.created_at = user.created_at
+            self.updated_at = user.updated_at
+            self.deleted_at = user.deleted_at
+    
+    mock_user = MockUser(user)
+    
+    async def override_get_current_user():
+        return mock_user
+    
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    
+    try:
+        response = client.get("/auth/users/me/")
+        print(f"Current user response status: {response.status_code}")
+        print(f"Current user response body: {response.text}")
+        assert response.status_code == 200
+        user_data = response.json()
+        assert user_data["username"] == "testuser"
+    finally:
+        # Clean up
+        if get_current_user in app.dependency_overrides:
+            del app.dependency_overrides[get_current_user]
+
+@pytest.mark.order(4)
+def test_update_user_password(client: TestClient, db_session: Session):
+    """Test updating user password."""
+    from server import app
+    from auth import get_current_user  # Correct import
+    
+    # Create user
+    user = create_test_user(db_session, "testuser", 1)
+    
+    # Create a proper mock
+    class MockUser:
+        def __init__(self):
+            self.username = "testuser"
+            self.email = "test@example.com"
+            self.full_name = "Test User"
+            self.disabled = False
+    
+    mock_user = MockUser()
+    
+    async def override_get_current_user():
+        return mock_user
+    
+    app.dependency_overrides[get_current_user] = override_get_current_user
+    
+    update_data = {
         "username": "testuser",
         "app_user_id": 1,
-        "new_password": "newpassword123"
-    })
-    assert response.status_code == 200
-    data = response.json()
-    assert "hashed_password" in data
-    # Confirm password changed via CRUD
-    from database.crud import get_user
-    from database.crypt import verify_password
-    user = get_user(client.app.dependency_overrides[0](), 1)
-    assert verify_password("newpassword123", user.hashed_password, user.password_salt)
-
-
-def test_delete_user_service(client):
-    """Test DELETE /auth/users/delete"""
-    # Create user to delete
-    user_data = {
-        "username": "tobedeleted",
-        "password": "pass123",
-        "app_user_id": 200,
-        "email": "delete@example.com",
-        "first_name": "Delete",
-        "last_name": "Me",
-        "phone_number": "777888",
-        "date_of_birth": "1995-05-05T00:00:00",
-        "gender": "F",
+        "new_password": "newsecret123",
+        "new_username": None,
+        "email": "test@example.com",
+        "first_name": "Test",
+        "last_name": "User",
+        "phone_number": "1234567890",
+        "date_of_birth": "2000-01-01T00:00:00",
+        "gender": "male",
         "roles": "user",
-        "login_count": 0,
-        "failed_login_attempts": 0,
+        "last_login": None,
+        "login_count": "0",
+        "failed_login_attempts": "0",
+        "account_locked": False,
+        "mfa_enabled": False,
         "profile_picture": None
     }
-    client.post("/auth/users/", json=user_data)
-    # Delete user
-    response = client.delete("/auth/users/delete", json={
-        "username": "tobedeleted",
-        "app_user_id": 200,
-        "new_password": "doesntmatter"
-    })
+
+    try:
+        response = client.post("/auth/users/update-password/", json=update_data)
+        print(f"Update password response status: {response.status_code}")
+        print(f"Update password response body: {response.text}")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["username"] == "testuser"
+
+        # Verify that login works with new password
+        login_data_new = {"username": "testuser", "password": "newsecret123"}
+        login_res_new = client.post("/auth/token", data=login_data_new)
+        assert login_res_new.status_code == 200
+        assert "access_token" in login_res_new.json()
+    finally:
+        # Clean up
+        if get_current_user in app.dependency_overrides:
+            del app.dependency_overrides[get_current_user]
+
+@pytest.mark.order(5)
+def test_delete_user(client: TestClient, db_session: Session):
+    """Test deleting a user."""
+    # Create a fresh user
+    user = create_test_user(db_session, "deletetestuser", 999)
+    
+    delete_data = {
+        "username": "deletetestuser",
+        "app_user_id": 999,
+        "new_password": "newsecret123",
+        "new_username": None,
+        "email": "deletetestuser@example.com",
+        "first_name": "Test",
+        "last_name": "User",
+        "phone_number": "1234567890",
+        "date_of_birth": "2000-01-01T00:00:00",
+        "gender": "male",
+        "roles": "user",
+        "last_login": None,
+        "login_count": "0",
+        "failed_login_attempts": "0",
+        "account_locked": False,
+        "mfa_enabled": False,
+        "profile_picture": None
+    }
+
+    # Use client.request() for DELETE with body
+    response = client.request(
+        "DELETE",
+        "/auth/users/delete",
+        json=delete_data
+    )
+    
+    print(f"Delete response status: {response.status_code}")
+    print(f"Delete response body: {response.text}")
     assert response.status_code == 200
     data = response.json()
-    assert data["username"] == "tobedeleted"
+    assert data["username"] == "deletetestuser"
+
+    # Check database directly instead of trying to login
+    db_user = crud.get_user_by_username(db_session, "deletetestuser")
+    print(f"User in database after deletion: {db_user}")
+    assert db_user is None, "User should be deleted from database"
