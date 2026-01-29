@@ -140,6 +140,7 @@ def update_user_password(
     logger.info(f"{user.username}; {user.new_password}")
     return crud.change_user_password(db=db, user=user)
 
+# In server.py, update the delete_user endpoint:
 @app.delete("/auth/users/delete", response_model=schemas.UserResponse)
 def delete_user(
         user: schemas.UserUpdate, 
@@ -147,6 +148,42 @@ def delete_user(
     ):
     """Deletion of the authenticated user."""
     logger.info(f"{user.username}; {user.new_password}")
-    return crud.delete_user(db=db, user=user)
+    # Get the user first to return full response
+    db_user = crud.get_user(db, user.app_user_id)
+    if not db_user:
+        raise APIException(
+            status_code=HTTP_404_NOT_FOUND,
+            code=USER_NOT_FOUND,
+            message=f"User not found: {user.username}"
+        )
+    
+    # Store user data for response
+    user_data = {
+        "id": db_user.id,
+        "username": db_user.username,
+        "email": db_user.email,
+        "app_user_id": db_user.app_user_id,
+        "hashed_password": db_user.hashed_password,
+        "first_name": db_user.first_name,
+        "last_name": db_user.last_name,
+        "phone_number": db_user.phone_number,
+        "date_of_birth": db_user.date_of_birth,
+        "gender": db_user.gender,
+        "roles": db_user.roles,
+        "login_count": str(db_user.login_count) if db_user.login_count else "0",
+        "failed_login_attempts": str(db_user.failed_login_attempts) if db_user.failed_login_attempts else "0",
+        "account_locked": db_user.account_locked,
+        "mfa_enabled": db_user.mfa_enabled,
+        "last_login": db_user.last_login,
+        "created_at": db_user.created_at,
+        "updated_at": db_user.updated_at,
+        "profile_picture": db_user.profile_picture
+    }
+    
+    # Delete the user
+    result = crud.delete_user(db=db, user=user)
+    
+    # Return the stored user data
+    return user_data
 
 
