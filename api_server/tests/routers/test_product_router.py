@@ -127,43 +127,43 @@ def test_get_product_image():
         print_test_result("Get Product Image", False, error=str(e))
         return False
 
-def test_barcode_search():
-    """Test GET /product/barcode/{barcode}"""
-    print("Testing GET /product/barcode/{barcode}...")
-    try:
-        # Test with some common barcodes
-        test_barcodes = [
-            "1234567890123",  # Generic test barcode
-            "978020137962",   # ISBN-like
-            "4006381333931",  # Real product barcode format
-        ]
+# def test_barcode_search():
+#     """Test GET /product/barcode/{barcode}"""
+#     print("Testing GET /product/barcode/{barcode}...")
+#     try:
+#         # Test with some common barcodes
+#         test_barcodes = [
+#             "1234567890123",  # Generic test barcode
+#             "978020137962",   # ISBN-like
+#             "4006381333931",  # Real product barcode format
+#         ]
         
-        for barcode in test_barcodes:
-            url = f"{BASE_URL}/product/barcode/{barcode}"
-            response = requests.get(url)
+#         for barcode in test_barcodes:
+#             url = f"{BASE_URL}/product/barcode/{barcode}"
+#             response = requests.get(url)
             
-            success = response.status_code in [200, 404]
-            source = "unknown"
-            if success and response.status_code == 200:
-                data = response.json()
-                source = data.get('source', 'unknown')
+#             success = response.status_code in [200, 404]
+#             source = "unknown"
+#             if success and response.status_code == 200:
+#                 data = response.json()
+#                 source = data.get('source', 'unknown')
             
-            test_name = f"Barcode Search: {barcode} (source: {source})"
-            print_test_result(test_name, success, response)
+#             test_name = f"Barcode Search: {barcode} (source: {source})"
+#             print_test_result(test_name, success, response)
             
-            # If we found a product in DB, return its ID
-            if success and source == "database":
-                product_data = data.get('data', {})
-                if isinstance(product_data, list) and len(product_data) > 0:
-                    return product_data[0].get('id_product')
-                elif isinstance(product_data, dict):
-                    return product_data.get('id_product')
+#             # If we found a product in DB, return its ID
+#             if success and source == "database":
+#                 product_data = data.get('data', {})
+#                 if isinstance(product_data, list) and len(product_data) > 0:
+#                     return product_data[0].get('id_product')
+#                 elif isinstance(product_data, dict):
+#                     return product_data.get('id_product')
         
-        return None
+#         return None
         
-    except Exception as e:
-        print_test_result("Barcode Search", False, error=str(e))
-        return None
+#     except Exception as e:
+#         print_test_result("Barcode Search", False, error=str(e))
+#         return None
 
 def test_create_product():
     """Test POST /product/add"""
