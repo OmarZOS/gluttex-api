@@ -169,8 +169,7 @@ class ServiceStaffRequirement_API(BaseModel):
     service_staff_requirement_hourly_rate: Optional[float] = 0.0
     service_staff_requirement_allocated_hours : Optional[float] = 0.0
 
-class Delivery_API(BaseModel):
-    
+class Delivery_API(BaseModel):    
     id_delivery : Optional[int] = 0
     recipient_person : Optional[int] = 0
     recipient_provider : Optional[int] = 0

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks,  status
 from fastapi.encoders import jsonable_encoder
 from typing import List
+from features.business.location.delivery_fetch import fetch_delivery
 from core.models import ServiceResourceRequirement
 from document.invoice_data import ProvidedService
 from features.business.cart.service.service_insert import insert_service
@@ -186,6 +187,21 @@ def fetch_carts(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_
         list: List of placed orders.
     """
     return fetch_cart(provider_id,seller_id,cart_id, client_id ,person_id, offset ,limit)
+
+
+@business_router.get("/business/delivery/{provider_id}/{order_id}/{broker_id}/{offset}/{limit}")
+def fetch_deliveries(provider_id: int = 0,order_id: int = 0,broker_id: int = 0,offset :int = 0,limit:int = 0):
+    """
+    Fetches all placed orders for a specific user.
+
+    Args:
+        client (int): The user's ID.
+
+    Returns:
+        list: List of placed orders.
+    """
+    return fetch_delivery(provider_id,order_id,cart_id, broker_id , offset ,limit)
+
 
 @business_router.post("/business/cart/add")
 def add_cart(api_ordered_items: List[OrderedItem_API], 
