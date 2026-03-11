@@ -2,7 +2,7 @@ import json
 from fastapi import APIRouter, BackgroundTasks,  status
 from fastapi.encoders import jsonable_encoder
 from typing import List
-from document.generator import renderer
+from document.generator import get_renderer
 from document.invoice_data import InvoiceGenerator
 from features.business.finance.payment_fetch import fetch_financial_item
 from features.business.finance.payment_insert import insert_financial_item
@@ -40,7 +40,7 @@ def fetch_cart_invoice(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,
 
     cart = fetch_cart(provider_id,seller_id,cart_id, client_id ,person_id, 0 ,1)
     invoice  = InvoiceGenerator.from_json(InvoiceGenerator.cart_to_json(cart[0]) )
-    return HTMLResponse(content=renderer.render_compact_invoice(invoice), status_code=200)
+    return HTMLResponse(content=get_renderer().render_compact_invoice(invoice), status_code=200)
 
 @document_router.get("/document/cart/receipt/{provider_id}/{seller_id}/{cart_id}/{client_id}/{person_id}")
 def fetch_cart_receipt(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_id: int = 0,person_id: int = 0):
@@ -56,6 +56,6 @@ def fetch_cart_receipt(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,
     """
     cart = fetch_cart(provider_id,seller_id,cart_id, client_id ,person_id, 0 ,1)
     invoice  = InvoiceGenerator.from_json(InvoiceGenerator.cart_to_json(cart[0]) )
-    return HTMLResponse(content=renderer.render_compact_receipt(invoice), status_code=200)
+    return HTMLResponse(content=get_renderer().render_compact_receipt(invoice), status_code=200)
 
 

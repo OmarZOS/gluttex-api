@@ -1,8 +1,10 @@
 # tests/conftest.py (additional database-specific fixtures)
+from fastapi.testclient import TestClient
 import pytest
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.pool import StaticPool
+from server import app
 import tempfile
 import os
 
@@ -38,6 +40,12 @@ from core.models import (
     ServiceResourceRequirement, ServiceStaffRequirement, Location,
     
 )
+
+# Fixture for TestClient
+@pytest.fixture()
+def client():
+    with TestClient(app) as c:
+        yield c
 
 # Create test database in memory
 @pytest.fixture(scope="session")

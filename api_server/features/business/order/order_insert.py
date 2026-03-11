@@ -157,8 +157,10 @@ def insert_order(api_ordered_items: List[OrderedItem_API], placed_order_api: Pla
         total_price=order_total_price
     )
     placed_order.ordered_item = ordered_items
+    placed_order.delivery = Delivery()
 
     # --- Persist order ---
+    
     try:
         final_order = insert_or_complete_or_raise(placed_order)
         
