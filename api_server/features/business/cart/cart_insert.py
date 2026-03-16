@@ -181,6 +181,8 @@ def insert_cart(api_ordered_items: List[OrderedItem_API],
     if delivery is not None:
         delivery_obj = build_delivery(delivery)
         cart.delivery = delivery_obj
+    else:
+        cart.delivery = Delivery()
 
     try:
         # Insert cart first
