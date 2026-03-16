@@ -200,7 +200,7 @@ def fetch_deliveries(provider_id: int = 0,order_id: int = 0,broker_id: int = 0,o
     Returns:
         list: List of placed orders.
     """
-    return fetch_delivery(provider_id,order_id,cart_id, broker_id , offset ,limit)
+    return fetch_delivery(provider_id,order_id, broker_id , offset ,limit)
 
 
 @business_router.post("/business/cart/add")
