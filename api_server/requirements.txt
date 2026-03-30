@@ -20,7 +20,8 @@ geoalchemy2
 openai
 pika
 
-prometheus_client
+prometheus-fastapi-instrumentator
+# prometheus_client
 
 Jinja2
 weasyprint

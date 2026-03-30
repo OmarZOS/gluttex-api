@@ -8,7 +8,8 @@ from core.exception_handler import APIException
 from core.models import API_Resolution
 from core.messages import *
 from contextlib import asynccontextmanager
-from prometheus_client import make_asgi_app
+# from prometheus_client import make_asgi_app
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from lib import (
     BASE_STORAGE,
@@ -24,7 +25,8 @@ app = FastAPI(
     redoc_url="/fs/redoc"  # Keep ReDoc at `/redoc`
 )
 
-app.mount("/metrics", make_asgi_app())
+# app.mount("/metrics", make_asgi_app())
+Instrumentator().instrument(app).expose(app)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

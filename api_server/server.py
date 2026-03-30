@@ -19,7 +19,8 @@ from routers.business_routers.business_router import business_router
 from routers.search_router import search_router
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from prometheus_client import make_asgi_app
+# from prometheus_client import make_asgi_app
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # ----------- App initialisation -------------------------------------
 
@@ -30,7 +31,8 @@ app = FastAPI(
     redoc_url="/api/redoc"  # Keep ReDoc at `/redoc`
 )
 
-app.mount("/metrics", make_asgi_app())
+# app.mount("/metrics", make_asgi_app())
+Instrumentator().instrument(app).expose(app)
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
