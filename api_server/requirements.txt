@@ -20,12 +20,15 @@ geoalchemy2
 openai
 pika
 
+prometheus_client
+
 Jinja2
 weasyprint
 # pillow
 python-dotenv
 qrcode
 segno
+
 
 # shapely
 # pytest

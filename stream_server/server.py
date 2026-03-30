@@ -13,6 +13,7 @@ import orjson
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 # from prometheus_client import Counter, Histogram, Gauge, generate_latest
+from prometheus_client import make_asgi_app
 from pydantic import  Field
 from pydantic_settings import BaseSettings
 from lib import OptimizedPikaConsumerThread, create_consumer, ConnectionManager, manager,logger
@@ -36,6 +37,8 @@ app = FastAPI(
 )
 
 app.include_router(binding_router,prefix="/stream", )
+
+app.mount("/metrics", make_asgi_app())
 
 # Health check endpoint
 @app.get("/stream/health")

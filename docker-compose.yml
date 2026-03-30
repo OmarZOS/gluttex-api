@@ -4,6 +4,20 @@
 
 services:
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    restart: unless-stopped
+
+    ports:
+      - "9091:9090"
+
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+    networks:
+      - gluttex-net
+
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     container_name: rabbitmq

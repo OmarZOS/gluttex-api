@@ -6,5 +6,6 @@ python-jose
 sqlalchemy
 passlib
 python-multipart
+prometheus_client
 # sqlite
 # prometheus-fastapi-instrumentator
