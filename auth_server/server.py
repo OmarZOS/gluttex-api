@@ -14,6 +14,7 @@ from database import schemas, crud, models
 from database.models import engine
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import timedelta,timezone
+from prometheus_client import make_asgi_app
 
 # Create database tables
 models.Base.metadata.create_all(bind=engine)
@@ -34,6 +35,7 @@ app = FastAPI(
     docs_url="/auth/docs",  # Keep Swagger UI at `/docs`
     redoc_url="/auth/redoc"  # Keep ReDoc at `/redoc`
 )
+
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -68,6 +70,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/metrics", make_asgi_app())
 
 @app.post("/auth/users/", response_model=schemas.UserResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(dependencies.get_db)):

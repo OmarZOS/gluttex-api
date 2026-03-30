@@ -19,13 +19,18 @@ from routers.business_routers.business_router import business_router
 from routers.search_router import search_router
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_client import make_asgi_app
+
 # ----------- App initialisation -------------------------------------
+
 
 app = FastAPI(
     openapi_url="/api/openapi.json",  # Move OpenAPI to `/api/openapi.json`
     docs_url="/api/docs",  # Keep Swagger UI at `/docs`
     redoc_url="/api/redoc"  # Keep ReDoc at `/redoc`
 )
+
+app.mount("/metrics", make_asgi_app())
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
