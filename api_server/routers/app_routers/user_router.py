@@ -1,88 +1,111 @@
-from fastapi import APIRouter,  status
-from features.app.social.social_fetch import fetch_full_person_by_id
-from constants import ReactionType
-from features.app.social.social_add import handle_reaction
+# routers/app_user_router.py
+from fastapi import APIRouter, HTTPException, status, Depends
 from core.exception_handler import APIException
 from core.messages import *
 from core.api_models import AppUser_API, AppUserUpdate_API, Location_API, Person_API, ReactionBase
-from features.app.user.user_delete import delete_user
-from features.app.user.user_fetch import fetch_all_users, fetch_full_user_by_id, fetch_user_by_id
-from features.app.user.user_insert import insert_user
-from features.app.user.user_net import update_user_password
-from features.app.user.user_update import update_api_user, update_api_user_image_url
+from services.user_service import UserService
+from services.social_service import SocialService
 
 app_user_router = APIRouter()
+
+# Dependency injection
+def get_user_service() -> UserService:
+    return UserService()
+
+def get_social_service() -> SocialService:
+    return SocialService()
+
 @app_user_router.get("/app_user")
-def get_all_users():
+def get_all_users(user_service: UserService = Depends(get_user_service)):
     """
     Retrieve all users.
     """
-    return fetch_all_users()
+    return user_service.get_all_users()
 
 @app_user_router.get("/app_user/{user_id}")
-def get_user_by_id(user_id: int):
+def get_user_by_id(
+    user_id: int,
+    full: bool = False,
+    user_service: UserService = Depends(get_user_service)
+):
     """
     Retrieve a user by ID.
     """
-    user = fetch_full_user_by_id(user_id)
-    if not user:
-        raise APIException(status=HTTP_404_NOT_FOUND,code=APPUSER_NOT_EXISTS, details=f"{APPUSER_NOT_EXISTS}: {user_id}")
-    return user
-
+    return user_service.get_user_by_id(user_id, full)
 
 @app_user_router.get("/person/{person_id}")
-def get_person_by_id(person_id: int):
+def get_person_by_id(
+    person_id: int,
+    social_service: SocialService = Depends(get_social_service)
+):
     """
     Retrieve a person by ID.
     """
-    person = fetch_full_person_by_id(person_id)
-    if not person:
-        raise APIException(status=HTTP_404_NOT_FOUND,code=PERSON_FETCH_NOT_FOUND, details=f"{PERSON_FETCH_NOT_FOUND}: {person_id}")
-    return person
+    return social_service.get_person_by_id(person_id)
 
 @app_user_router.post("/app_user/add")
-async def insert_user_endpoint(user: AppUser_API, person: Person_API = None, location: Location_API = None):
+async def insert_user_endpoint(
+    user: AppUser_API,
+    person: Person_API = None,
+    location: Location_API = None,
+    provider: str = None,
+    user_service: UserService = Depends(get_user_service)
+):
     """
     Insert a new user.
     """
-    return await insert_user(user, person, location)
+    return await user_service.create_user(user, person, location, provider)
 
 @app_user_router.delete("/app_user/delete")
-def delete_user_endpoint(user: AppUser_API):
+def delete_user_endpoint(
+    user: AppUser_API,
+    user_service: UserService = Depends(get_user_service)
+):
     """
     Delete a user.
     """
-    return delete_user(user)
+    return user_service.delete_user(user)
 
 @app_user_router.put("/app_user/update_password")
-async def update_user_password_endpoint(user: AppUserUpdate_API, token: str):
+async def update_user_password_endpoint(
+    user: AppUserUpdate_API,
+    token: str,
+    user_service: UserService = Depends(get_user_service)
+):
     """
     Update the user password.
     """
-    return await update_user_password(user, token)
+    return await user_service.update_user_password_with_auth(user, token)
 
 @app_user_router.put("/app_user/update_image_url")
-def update_user_image_url_endpoint(user: AppUser_API, image_url: str):
+def update_user_image_url_endpoint(
+    user: AppUser_API,
+    image_url: str,
+    user_service: UserService = Depends(get_user_service)
+):
     """
-        Update the user image url.
+    Update the user image url.
     """
-    return update_api_user_image_url(user, image_url)
+    return user_service.update_user_image_url(user, image_url)
 
 @app_user_router.put("/app_user/update")
-def update_user_record_endpoint(user: AppUser_API, person_record: Person_API,location_record:Location_API):
+def update_user_record_endpoint(
+    user: AppUser_API,
+    person_record: Person_API,
+    location_record: Location_API,
+    user_service: UserService = Depends(get_user_service)
+):
     """
-        Update the user image url.
+    Update the user record.
     """
-    return update_api_user(user, person_record,location_record)
+    return user_service.update_user(user, person_record, location_record)
 
 @app_user_router.post("/reaction")
-def reaction_endpoint(reaction : ReactionBase):
+def reaction_endpoint(
+    reaction: ReactionBase,
+    social_service: SocialService = Depends(get_social_service)
+):
     """
-        insert reactions or update them.
+    Insert reactions or update them.
     """
-    return handle_reaction(reaction)
-
-
-
-
-
+    return social_service.handle_reaction(reaction)

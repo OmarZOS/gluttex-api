@@ -1,6 +1,7 @@
 # pika==1.2.0
 fastapi
 uvicorn
+pydantic-settings
 
 mysql-connector-python
 sqlalchemy

@@ -1,98 +1,194 @@
-from fastapi import APIRouter
-from features.business.supplier.supplier_search import search_supplier_by_location
-from core.models import AppUser, Person, PersonDetails, Product, ProductProvider, ProviderDetails, Recipe
-from core.persistent_models import Location
-from storage.storage_broker import search_records
+# routers/search_router.py
+from fastapi import APIRouter, Depends, Query
+from typing import List, Optional
+from services.search_service import SearchService
 
 search_router = APIRouter()
-# logger = logging.getLogger("FastAPIApp")
 
-@search_router.get("/search/product/{token}/{offset}/{limit}")
-def search_for_product(token:str,offset:int,limit:int):
-    """
-    Search products by token.
-    """
-    return search_records( Product
-                          , search_query=token
-                          ,search_fields=[Product.product_brand
-                            ,Product.product_name
-                            ,Product.product_description]
-                            ,offset=offset
-                            ,limit=limit )
+def get_search_service() -> SearchService:
+    return SearchService()
 
 
-@search_router.get("/search/recipe/{token}/{offset}/{limit}")
-def search_for_recipe(token:str,offset:int,limit:int):
+@search_router.get("/product/{token}/{offset}/{limit}")
+def search_for_product(
+    token: str,
+    offset: int,
+    limit: int,
+    search_service: SearchService = Depends(get_search_service)
+):
     """
-    Search recipes by token.
+    Search products by token in name, brand, and description.
+    
+    Args:
+        token: Search query string
+        offset: Pagination offset
+        limit: Pagination limit
+    
+    Returns:
+        List of matching products
     """
-    return search_records(Recipe
-                          , search_query= token
-                          ,search_fields= [Recipe.recipe_name
-                                           ,Recipe.recipe_description
-                                           ,Recipe.recipe_instructions]
-                          ,offset= offset
-                          ,limit= limit)
-
-@search_router.get("/search/personnel/{token}/{offset}/{limit}")
-def search_for_user(token:str,offset:int,limit:int):
-    """
-    Search employees by token.
-    """
-    return search_records(AppUser
-                          , search_query= token
-                          ,search_fields= ['app_user_person.person_details.person_first_name'
-                                           ,'app_user_person.person_details.person_last_name'
-                                           ,'app_user_person.person_details.person_nationality'
-                                           ,'app_user_name']
-                                           ,eager_load_depth=[{AppUser.app_user_person:{Person.person_details:[PersonDetails]}}]
-                                           ,offset= offset
-                                           ,limit= limit)
-
-@search_router.get("/search/people/{token}/{offset}/{limit}")
-def search_for_user(token:str,offset:int,limit:int):
-    """
-    Search employees by token.
-    """
-    return search_records(Person
-                          ,search_query=token
-                          ,search_fields= ['person_details.person_first_name'
-                                          ,'person_details.person_last_name'
-                                          ,'person_details.person_nationality'
-                                           ]
-                                           ,eager_load_depth=[Person.person_details]
-                                           ,offset= offset
-                                           ,limit= limit)
+    return search_service.search_products(token, offset, limit)
 
 
-
-@search_router.get("/search/supplier/{token}/{offset}/{limit}")
-def search_supplier(token:str,offset:int,limit:int):
+@search_router.get("/recipe/{token}/{offset}/{limit}")
+def search_for_recipe(
+    token: str,
+    offset: int,
+    limit: int,
+    search_service: SearchService = Depends(get_search_service)
+):
     """
-    Search supplier by token.
+    Search recipes by token in name, description, and instructions.
+    
+    Args:
+        token: Search query string
+        offset: Pagination offset
+        limit: Pagination limit
+    
+    Returns:
+        List of matching recipes
     """
-    return search_records(ProviderDetails
-                            ,[
-                              ProviderDetails.product_provider
-                              ]
-                            ,search_fields=[ProviderDetails.provider_name
-                                ,ProviderDetails.provider_contact_info
-                            # ,ProductProvider.product_provider_details_id
-                            ]
-                            ,search_query=token
-                            ,eager_load_depth=[
-                                {ProviderDetails.product_provider:[ProductProvider.product_provider_org,{ProductProvider.product_provider_location:{
-                                    Location.location_name,Location.position_wkt,Location.location_address,
-                                }}]}
-                                ]
-                            ,offset=offset
-                            ,limit=limit)
-
-@search_router.get("/search/position/supplier/{longitude}/{latitude}/{offset}/{limit}")
-def search_supplier_by_position(longitude:float,latitude:float,distance_km:float,offset:int,limit:int):
-    """
-    Search supplier by position, distance is in meters.
-    """
-    return search_supplier_by_location((longitude,latitude),distance_km,offset,limit)
+    return search_service.search_recipes(token, offset, limit)
 
 
+@search_router.get("/personnel/{token}/{offset}/{limit}")
+def search_for_user(
+    token: str,
+    offset: int,
+    limit: int,
+    search_service: SearchService = Depends(get_search_service)
+):
+    """
+    Search users (personnel) by token in person details and username.
+    
+    Args:
+        token: Search query string
+        offset: Pagination offset
+        limit: Pagination limit
+    
+    Returns:
+        List of matching users
+    """
+    return search_service.search_users(token, offset, limit)
+
+
+@search_router.get("/people/{token}/{offset}/{limit}")
+def search_for_people(
+    token: str,
+    offset: int,
+    limit: int,
+    search_service: SearchService = Depends(get_search_service)
+):
+    """
+    Search people by token in person details.
+    
+    Args:
+        token: Search query string
+        offset: Pagination offset
+        limit: Pagination limit
+    
+    Returns:
+        List of matching people
+    """
+    return search_service.search_people(token, offset, limit)
+
+
+@search_router.get("/supplier/{token}/{offset}/{limit}")
+def search_supplier(
+    token: str,
+    offset: int,
+    limit: int,
+    search_service: SearchService = Depends(get_search_service)
+):
+    """
+    Search suppliers by token in provider name and contact info.
+    
+    Args:
+        token: Search query string
+        offset: Pagination offset
+        limit: Pagination limit
+    
+    Returns:
+        List of matching suppliers
+    """
+    return search_service.search_suppliers(token, offset, limit)
+
+
+@search_router.get("/position/supplier/{longitude}/{latitude}/{distance_km}/{offset}/{limit}")
+def search_supplier_by_position(
+    longitude: float,
+    latitude: float,
+    distance_km: float,
+    offset: int,
+    limit: int,
+    search_service: SearchService = Depends(get_search_service)
+):
+    """
+    Search suppliers by geographic position.
+    
+    Args:
+        longitude: Longitude coordinate
+        latitude: Latitude coordinate
+        distance_km: Search radius in kilometers
+        offset: Pagination offset
+        limit: Pagination limit
+    
+    Returns:
+        List of matching suppliers with distance information
+    """
+    return search_service.search_suppliers_by_location(
+        longitude, latitude, distance_km, offset, limit
+    )
+
+
+# ==================== Enhanced Search Endpoints ====================
+
+@search_router.get("/multi")
+def multi_search(
+    token: str = Query(..., description="Search query string"),
+    entities: List[str] = Query(
+        default=['products', 'recipes', 'users', 'people', 'suppliers'],
+        description="Entity types to search"
+    ),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    search_service: SearchService = Depends(get_search_service)
+):
+    """
+    Search across multiple entity types in a single request.
+    
+    Args:
+        token: Search query string
+        entities: List of entity types to search
+        offset: Pagination offset
+        limit: Pagination limit per entity
+    
+    Returns:
+        Dictionary with results grouped by entity type
+    """
+    return search_service.multi_search(token, entities, offset, limit)
+
+
+@search_router.get("/quick/{token}")
+def quick_search(
+    token: str,
+    limit: int = Query(5, ge=1, le=20),
+    search_service: SearchService = Depends(get_search_service)
+):
+    """
+    Quick search across all entity types with small result sets.
+    Useful for autocomplete or quick lookup features.
+    
+    Args:
+        token: Search query string
+        limit: Maximum results per entity type
+    
+    Returns:
+        Dictionary with limited results from all entity types
+    """
+    return search_service.multi_search(
+        token,
+        ['products', 'recipes', 'users', 'people', 'suppliers'],
+        0,
+        limit
+    )

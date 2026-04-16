@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy.pool import StaticPool
-from server import app
+from api_server.server import app
 import tempfile
 import os
 
@@ -64,6 +64,55 @@ def test_engine():
     yield engine
     
     # Cleanup
+    Base.metadata.drop_all(bind=engine)
+
+@pytest.fixture
+def db_session(test_engine):
+    """Create a fresh database session for each test."""
+    Session = sessionmaker(bind=test_engine)
+    session = Session()
+    
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
+
+
+@pytest.fixture(scope="session")
+def test_engine():
+    """Create an in-memory SQLite database with geometry mocking."""
+    engine = create_engine(
+        'sqlite:///:memory:',
+        connect_args={'check_same_thread': False},
+        poolclass=StaticPool
+    )
+    
+    # Mock PostGIS functions for SQLite
+    @event.listens_for(engine, "connect")
+    def setup_spatialite(dbapi_connection, connection_record):
+        # Try to load SpatiaLite if available
+        try:
+            dbapi_connection.enable_load_extension(True)
+            dbapi_connection.load_extension('mod_spatialite')
+        except Exception:
+            # If SpatiaLite not available, create dummy geometry column function
+            dbapi_connection.create_function("RecoverGeometryColumn", 5, lambda *args: 1)
+            dbapi_connection.create_function("ST_Distance", 2, lambda *args: 0.0)
+            dbapi_connection.create_function("ST_DWithin", 3, lambda *args: 1)
+            dbapi_connection.create_function("ST_GeomFromText", 2, lambda *args: "POINT(0 0)")
+    
+    # Create tables without geometry columns for testing
+    from core.persistent_models import Base
+    from sqlalchemy import Column, String, Float
+    
+    # Temporarily modify Location model for testing
+    with patch('core.persistent_models.Location.location_position', 
+               Column(String(255), nullable=True)):
+        Base.metadata.create_all(bind=engine)
+    
+    yield engine
+    
     Base.metadata.drop_all(bind=engine)
 
 @pytest.fixture

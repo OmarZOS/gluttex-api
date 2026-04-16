@@ -1,263 +1,108 @@
-from fastapi import APIRouter, BackgroundTasks,  status
-from fastapi.encoders import jsonable_encoder
-from typing import List
-from features.business.location.delivery_fetch import fetch_delivery
-from core.models import ServiceResourceRequirement
-from document.invoice_data import ProvidedService
-from features.business.cart.service.service_insert import insert_service
-from features.business.finance.payment_fetch import fetch_financial_item
-from features.business.finance.payment_insert import insert_financial_item
-from features.business.cart.cart_insert import insert_cart
-from features.business.cart.cart_fetch import fetch_cart
-from features.business.cart.service.service_fetch import fetch_services
-# from features.business.cart.service.service_insert import insert_service
-from features.business.order.order_delete import delete_order
-from features.business.order.order_update import update_order
-from core.api_models import AdditionalFee_API, Cart_API, Delivery_API, Deposit_API, Payment_API,  OrderedItem_API, OrderedService_API, Person_API, PlacedOrder_API, ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
+# routers/business_router.py
+from fastapi import APIRouter, Depends
+from typing import List, Optional
+from core.api_models import (
+    Cart_API, Delivery_API, Payment_API, Deposit_API, AdditionalFee_API,
+    OrderedItem_API, OrderedService_API, Person_API, PlacedOrder_API,
+    ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
+)
+from core.exception_handler import APIException
+from core.messages import *
 
-from features.business.order.order_insert import insert_order
-from features.business.cart.cart_fetch import fetch_business_operations
-from features.business.order.order_fetch import  fetch_items_order, fetch_placed_order_details, fetch_placed_orders
-from features.business.product.product_update import notify_subscribers
+# Import routers to attach
+from routers.business_routers.order_router import order_router
+from routers.business_routers.cart_router import cart_router
+from routers.business_routers.delivery_router import delivery_router
+from routers.business_routers.service_router import service_router
+from routers.business_routers.financial_router import financial_router
+from routers.business_routers.business_operation_router import business_operation_router
 
+# Import services for remaining direct endpoints
+from services.cart_service import CartService
+from services.financial_service import FinancialService
+
+# Create main business router
 business_router = APIRouter()
 
-@business_router.post("/business/order/add")
-def insert_placed_order(
-    ordered_items: List[OrderedItem_API], 
-    submitted_order: PlacedOrder_API, 
-    background_tasks: BackgroundTasks
-):
-    """
-    Inserts a placed order and notifies subscribers about stock updates.
-    
-    Args:
-        ordered_items (List[OrderedItem_API]): List of ordered items.
-        submitted_order (PlacedOrder_API): The placed order details.
-        background_tasks (BackgroundTasks): Task queue for background execution.
 
-    Returns:
-        dict: Success message with order details.
-    """
-    quantities, res = insert_order(ordered_items, submitted_order)
-    for index, item in enumerate(ordered_items): 
-        background_tasks.add_task(
-            notify_subscribers, 
-            item.ordered_product_id, 
-            {"product_quantity": quantities[index]}
-        )
-    
-    return res
+# Dependency injection for remaining endpoints
+def get_cart_service() -> CartService:
+    return CartService()
 
-@business_router.get("/business/user/{user_id}/{offset}/{limit}")
-def fetch_every_placed_order_by_user(user_id: int, offset: int, limit: int):
-    """
-    Fetches all placed orders for a specific user.
+def get_financial_service() -> FinancialService:
+    return FinancialService()
 
-    Args:
-        user_id (int): The user's ID.
-
-    Returns:
-        list: List of placed orders.
-    """
-    return fetch_placed_orders(user_id,offset ,limit)
-
-@business_router.get("/business/provider/{provider_id}/{offset}/{limit}")
-def fetch_every_ordered_item_by_provider(provider_id: int, offset: int, limit: int):
-    """
-    Fetches all placed orders for a specific user.
-
-    Args:
-        user_id (int): The user's ID.
-
-    Returns:
-        list: List of placed orders.
-    """
-    return fetch_items_order(provider_id, offset ,limit)
-
-@business_router.get("/business/order/{supplier_id}/{order_id}/{cart_id}/{client}/{seller_id}/{offset}/{limit}")
-def fetch_business_ops(supplier_id:int,order_id : int,cart_id: int, client: int, seller_id:int, offset: int, limit: int):
-    """
-    Fetches all placed orders for a specific user.
-
-    Args:
-        client (int): The user's ID.
-
-    Returns:
-        list: List of placed orders.
-    """
-    return fetch_business_operations(supplier_id,order_id,cart_id, client,seller_id, offset ,limit)
-
-
-@business_router.get("/business/order/orders/{order_id}")
-def fetch_every_item_in_order(order_id: int):
-    """
-    Fetches all items for a specific order_id.
-
-    Args:
-        order_id (int): The order's ID.
-
-    Returns:
-        list: List of ordered items.
-    """
-    return fetch_placed_order_details(order_id)
-
-
-@business_router.put("/business/order/update/{order_id}")
-def update_placed_order(
-    updated_items: List[OrderedItem_API], 
-    updated_order: PlacedOrder_API, 
-    ):
-    """
-    Updates a placed order and notifies subscribers about stock updates.
-    
-    Args:
-        order_id (int): The ID of the order to update.
-        updated_items (List[OrderedItem_API]): Updated list of ordered items.
-        updated_order (PlacedOrder_API): The updated order details.
-        background_tasks (BackgroundTasks): Task queue for background execution.
-
-    Returns:
-        dict: Success message with updated order details.
-    """
-    res = update_order(updated_items, updated_order)
-
-    return res
-
-@business_router.delete("/business/order/delete/{order_id}")
-def delete_placed_order(
-    order_id: int,
-):
-    """
-    Deletes a placed order and notifies subscribers about stock restocking.
-    
-    Args:
-        order_id (int): The ID of the order to delete.
-        background_tasks (BackgroundTasks): Task queue for background execution.
-
-    Returns:
-        dict: Success message with deletion confirmation.
-    """
-    
-    # Delete the order
-    res = delete_order(order_id)
-    
-    return res
-
-# @business_router.post("/business/service/add")
-# def insert_provided_service(
-#     provided_service: ProvidedService_API = None, 
-#     resource_requirement: ServiceResourceRequirement_API = None, 
-#     staff_requirement: ServiceStaffRequirement_API = None
-# ):
-#     return insert_service(
-#         provided_service,resource_requirement,staff_requirement
-#     )
-
-@business_router.get("/business/service/{service_id}/{category_id}/{provider_id}/{offset}/{limit}")
-def fetch_service(service_id:int = 0,category_id:int = 0,provider_id:int = 0,offset :int = 0,limit:int = 0):
-    """
-    Fetches all placed orders for a specific user.
-
-    Args:
-        client (int): The user's ID.
-
-    Returns:
-        list: List of placed orders.
-    """
-    return fetch_services(service_id,category_id,provider_id, offset ,limit)
-
-@business_router.post("/business/service/add")
-def add_service(service:ProvidedService_API ,    requirements :  List[ServiceResourceRequirement_API] ,staff_requirements:List[ServiceStaffRequirement_API] ):
-    return insert_service(service,requirements,staff_requirements)
-
-
-
-@business_router.get("/business/cart/{provider_id}/{seller_id}/{cart_id}/{client_id}/{person_id}/{offset}/{limit}")
-def fetch_carts(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_id: int = 0,person_id: int = 0,offset :int = 0,limit:int = 0):
-
-
-    """
-    Fetches all placed orders for a specific user.
-
-    Args:
-        client (int): The user's ID.
-
-    Returns:
-        list: List of placed orders.
-    """
-    return fetch_cart(provider_id,seller_id,cart_id, client_id ,person_id, offset ,limit)
-
-
-@business_router.get("/business/delivery/{provider_id}/{order_id}/{broker_id}/{offset}/{limit}")
-def fetch_deliveries(provider_id: int = 0,order_id: int = 0,broker_id: int = 0,offset :int = 0,limit:int = 0):
-    """
-    Fetches all placed orders for a specific user.
-
-    Args:
-        client (int): The user's ID.
-
-    Returns:
-        list: List of placed orders.
-    """
-    return fetch_delivery(provider_id,order_id, broker_id , offset ,limit)
-
+# ==================== REMAINING DIRECT ENDPOINTS ====================
 
 @business_router.post("/business/cart/add")
-def add_cart(api_ordered_items: List[OrderedItem_API], 
-                api_provided_services: List[OrderedService_API],
-                api_cart: Cart_API = None,
-                delivery: Delivery_API = None, 
-                client: Person_API = None,
-                provider_id: int = 0, 
-                seller_user_id: int = 0, 
-                buyer_user_id: int = 0):
+def add_cart(
+    api_ordered_items: List[OrderedItem_API],
+    api_provided_services: List[OrderedService_API],
+    api_cart: Cart_API = None,
+    delivery: Delivery_API = None,
+    client: Person_API = None,
+    provider_id: int = 0,
+    seller_user_id: int = 0,
+    buyer_user_id: int = 0,
+    cart_service: CartService = Depends(get_cart_service)
+):
     """
-    Fetches all placed orders for a specific user.
-
-    Args:
-        client (int): The user's ID.
-
-    Returns:
-        list: List of placed orders.
+    Creates a new cart with ordered items and services.
     """
-
-    return insert_cart(api_ordered_items, 
-                        api_provided_services,
-                        api_cart,
-                        delivery, 
-                        client,
-                        provider_id,
-                        seller_user_id,
-                        buyer_user_id)
-
+    financial_docs, cart = cart_service.create_cart(
+        api_ordered_items,
+        api_provided_services,
+        api_cart,
+        delivery,
+        client,
+        provider_id,
+        seller_user_id,
+        buyer_user_id
+    )
+    
+    return {
+        "message": "Cart created successfully",
+        "cart_id": cart.cart_id,
+        "financial_documents": {
+            "has_invoice": 'invoice' in financial_docs,
+            "has_payment": 'payment' in financial_docs,
+            "has_receipt": 'receipt' in financial_docs,
+            "has_deposit": 'deposit' in financial_docs
+        },
+        "cart": cart
+    }
 
 @business_router.post("/business/payment/add")
-def add_payment(payment: Payment_API = None,deposit : Deposit_API= None, fee : AdditionalFee_API =None):
+def add_payment(
+    payment: Payment_API = None,
+    deposit: Deposit_API = None,
+    fee: AdditionalFee_API = None,
+    financial_service: FinancialService = Depends(get_financial_service)
+):
     """
-    Fetches all placed orders for a specific user.
-
-    Args:
-        client (int): The user's ID.
-
-    Returns:
-        list: List of placed orders.
+    Adds a financial item (payment, deposit, or fee).
     """
-    return insert_financial_item(payment,deposit, fee)
-
+    return financial_service.create_financial_item(payment, deposit, fee)
 
 @business_router.get("/business/doc/{supplier_id}/{person_id}/{client_id}/{seller_id}/{cart_id}/{order_id}/{deposit_id}/{invoice_id}/{offset}/{limit}")
-def get_finances(supplier_id: int = 0,person_id: int = 0,client_id: int = 0,seller_id: int = 0,cart_id: int = 0,order_id : int = 0,deposit_id: int = 0,invoice_id: int = 0,offset: int= 0, limit : int=10):
+def get_finances(
+    supplier_id: int = 0,
+    person_id: int = 0,
+    client_id: int = 0,
+    seller_id: int = 0,
+    cart_id: int = 0,
+    order_id: int = 0,
+    deposit_id: int = 0,
+    invoice_id: int = 0,
+    offset: int = 0,
+    limit: int = 10,
+    financial_service: FinancialService = Depends(get_financial_service)
+):
     """
-    Fetches all placed orders for a specific user.
-
-    Args:
-        client (int): The user's ID.
-
-    Returns:
-        list: List of placed orders.
+    Fetches financial documents based on filters.
     """
-    return fetch_financial_item(
-        supplier_id,person_id,client_id,seller_id,cart_id,order_id,deposit_id,invoice_id, offset, limit)
-
-
+    return financial_service.get_financial_items(
+        supplier_id, person_id, client_id, seller_id,
+        cart_id, order_id, deposit_id, invoice_id,
+        offset, limit
+    )

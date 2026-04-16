@@ -1,67 +1,132 @@
-
-
-
-
-
-
-
-from fastapi import APIRouter
-from fastapi.encoders import jsonable_encoder
-from sse_starlette.sse import EventSourceResponse
-from features.business.staff.staff_update import answer_staff
-from features.business.staff.staff_delete import delete_rule
-from features.business.staff.staff_update import update_staff
+# routers/business_routers/staff_router.py
+from fastapi import APIRouter, Depends, Query
+from typing import Optional, List
 from core.api_models import ManagementRule_API
-from features.business.staff.staff_add import insert_rule
-from storage.storage_broker import search_records
-from features.business.staff.staff_fetch import *
-import asyncio
-import logging
+from services.management_rule_service import ManagementRuleService
 
 staff_router = APIRouter()
-logger = logging.getLogger("FastAPIApp")
 
-# ----------------- staff Endpoints -----------------
+def get_management_rule_service() -> ManagementRuleService:
+    return ManagementRuleService()
 
-@staff_router.get("/staff/{org_id}/{provider_id}/{user_id}/{rule_id}/{offset}/{limit}")
-def get_staff(org_id: int,provider_id: int, user_id: int,rule_id:int, offset: int, limit: int):
+
+@staff_router.get("/{org_id}/{provider_id}/{user_id}/{rule_id}/{offset}/{limit}")
+def get_staff(
+    org_id: int,
+    provider_id: int,
+    user_id: int,
+    rule_id: int,
+    offset: int,
+    limit: int,
+    rule_service: ManagementRuleService = Depends(get_management_rule_service)
+):
     """
-    Fetch staffs with pagination.
+    Fetch staff members with pagination.
+    
+    Args:
+        org_id: Organisation ID filter
+        provider_id: Provider ID filter
+        user_id: User ID filter
+        rule_id: Rule ID filter
+        offset: Pagination offset
+        limit: Pagination limit
+    
+    Returns:
+        List of staff members (management rules)
     """
-    return fetch_staff(org_id,provider_id,user_id,rule_id, offset, limit)
+    return rule_service.get_all_rules(
+        org_id=org_id,
+        supplier_id=provider_id,
+        user_id=user_id,
+        rule_id=rule_id,
+        offset=offset,
+        limit=limit
+    )
 
 
-# # ----------------- staff Modification Endpoints -----------------
+@staff_router.get("/user/{user_id}")
+def get_user_staff(
+    user_id: int,
+    status: Optional[str] = Query(None, description="Filter by status (ACTIVE, PENDING, REJECTED)"),
+    rule_service: ManagementRuleService = Depends(get_management_rule_service)
+):
+    """
+    Get all staff assignments for a specific user.
+    """
+    if status:
+        return rule_service.get_user_rules(user_id, status)
+    return rule_service.get_user_rules(user_id)
 
-@staff_router.put("/staff/{staff_id}")
+
+@staff_router.get("/provider/{provider_id}")
+def get_provider_staff(
+    provider_id: int,
+    active_only: bool = Query(True, description="Return only active staff"),
+    rule_service: ManagementRuleService = Depends(get_management_rule_service)
+):
+    """
+    Get all staff members for a provider.
+    """
+    return rule_service.get_provider_staff(provider_id, active_only)
+
+
+@staff_router.get("/pending/{user_id}")
+def get_pending_invitations(
+    user_id: int,
+    rule_service: ManagementRuleService = Depends(get_management_rule_service)
+):
+    """
+    Get all pending invitations for a user.
+    """
+    return rule_service.get_pending_invitations(user_id)
+
+
+@staff_router.post("/add")
+def insert_staff_details(
+    rule: ManagementRule_API,
+    rule_service: ManagementRuleService = Depends(get_management_rule_service)
+):
+    """
+    Insert a new staff member (create a management rule).
+    """
+    return rule_service.create_rule(rule)
+
+
+@staff_router.put("/{staff_id}")
 def update_staff_details(
-    staff: ManagementRule_API):
+    staff_id: int,
+    staff: ManagementRule_API,
+    rule_service: ManagementRuleService = Depends(get_management_rule_service)
+):
     """
-    Update staff details and notify subscribers.
+    Update staff details.
     """
-    res = update_staff(staff)
-    return res
+    staff.id_management_rule = staff_id
+    return rule_service.update_rule(staff)
 
-@staff_router.put("/rule/answer/{staff_id}")
-def answer_staff_invitation(staff_id,
-    answer: int):
-    """
-    Update staff details and notify subscribers.
-    """
-    res = answer_staff(staff_id,answer)
-    return res
 
-@staff_router.post("/staff/add")
-def insert_staff_details(rule: ManagementRule_API):
+@staff_router.put("/answer/{staff_id}")
+def answer_staff_invitation(
+    staff_id: int,
+    accept: bool = Query(..., description="Accept (true) or reject (false) invitation"),
+    rule_service: ManagementRuleService = Depends(get_management_rule_service)
+):
     """
-    Insert a new staff.
+    Answer a staff invitation (accept or reject).
+    
+    Args:
+        staff_id: The rule ID
+        accept: True to accept, False to reject
     """
-    return  insert_rule(rule)
+    return rule_service.answer_invitation(staff_id, accept)
 
-@staff_router.delete("/staff/delete/{staff_id}")
-def delete_staff_by_id(staff_id: int):
-    """
-    Delete a staff by ID.
-    """
-    return delete_rule(staff_id)
 
+@staff_router.delete("/delete/{staff_id}")
+def delete_staff_by_id(
+    staff_id: int,
+    rule_service: ManagementRuleService = Depends(get_management_rule_service)
+):
+    """
+    Delete a staff member by ID.
+    """
+    return rule_service.delete_rule(staff_id)

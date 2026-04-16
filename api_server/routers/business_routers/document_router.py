@@ -1,61 +1,143 @@
-import json
-from fastapi import APIRouter, BackgroundTasks,  status
-from fastapi.encoders import jsonable_encoder
-from typing import List
-from document.generator import get_renderer
-from document.invoice_data import InvoiceGenerator
-from features.business.finance.payment_fetch import fetch_financial_item
-from features.business.finance.payment_insert import insert_financial_item
-from features.business.cart.cart_insert import insert_cart
-from features.business.cart.cart_fetch import fetch_cart
-from features.business.cart.service.service_fetch import fetch_services
-# from features.business.cart.service.service_insert import insert_service
-from features.business.order.order_delete import delete_order
-from features.business.order.order_update import update_order
-from core.api_models import AdditionalFee_API, Cart_API, Deposit_API, Payment_API,  OrderedItem_API, OrderedService_API, Person_API, PlacedOrder_API, ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
-
-from features.business.order.order_insert import insert_order
-from features.business.cart.cart_fetch import fetch_business_operations
-from features.business.order.order_fetch import  fetch_items_order, fetch_placed_order_details, fetch_placed_orders
-from features.business.product.product_update import notify_subscribers
-from fastapi.responses import HTMLResponse
-
+# routers/document_router.py
+from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi.responses import HTMLResponse, Response
+from typing import Optional
+from services.document_service import DocumentService
 
 document_router = APIRouter()
 
+def get_document_service() -> DocumentService:
+    return DocumentService()
 
-
-
-@document_router.get("/document/cart/invoice/{provider_id}/{seller_id}/{cart_id}/{client_id}/{person_id}")
-def fetch_cart_invoice(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_id: int = 0,person_id: int = 0):
+@document_router.get("/cart/invoice/{provider_id}/{seller_id}/{cart_id}/{client_id}/{person_id}")
+def fetch_cart_invoice(
+    provider_id: int = 0,
+    seller_id: int = 0,
+    cart_id: int = 0,
+    client_id: int = 0,
+    person_id: int = 0,
+    document_service: DocumentService = Depends(get_document_service)
+):
     """
-    Fetches all placed orders for a specific user.
-
+    Generate invoice HTML for a cart.
+    
     Args:
-        client (int): The user's ID.
-
+        provider_id: Filter by provider ID
+        seller_id: Filter by seller ID
+        cart_id: Filter by cart ID
+        client_id: Filter by client ID
+        person_id: Filter by person ID
+    
     Returns:
-        list: List of placed orders.
+        HTMLResponse: Invoice HTML document
     """
+    return document_service.generate_invoice_html(
+        provider_id, seller_id, cart_id, client_id, person_id
+    )
 
-    cart = fetch_cart(provider_id,seller_id,cart_id, client_id ,person_id, 0 ,1)
-    invoice  = InvoiceGenerator.from_json(InvoiceGenerator.cart_to_json(cart[0]) )
-    return HTMLResponse(content=get_renderer().render_compact_invoice(invoice), status_code=200)
-
-@document_router.get("/document/cart/receipt/{provider_id}/{seller_id}/{cart_id}/{client_id}/{person_id}")
-def fetch_cart_receipt(provider_id: int = 0,seller_id: int = 0,cart_id: int = 0,client_id: int = 0,person_id: int = 0):
-
+@document_router.get("/cart/receipt/{provider_id}/{seller_id}/{cart_id}/{client_id}/{person_id}")
+def fetch_cart_receipt(
+    provider_id: int = 0,
+    seller_id: int = 0,
+    cart_id: int = 0,
+    client_id: int = 0,
+    person_id: int = 0,
+    document_service: DocumentService = Depends(get_document_service)
+):
     """
-    Fetches all placed orders for a specific user.
-
+    Generate receipt HTML for a cart.
+    
     Args:
-        client (int): The user's ID.
-
+        provider_id: Filter by provider ID
+        seller_id: Filter by seller ID
+        cart_id: Filter by cart ID
+        client_id: Filter by client ID
+        person_id: Filter by person ID
+    
     Returns:
-        list: List of placed orders.
+        HTMLResponse: Receipt HTML document
     """
-    cart = fetch_cart(provider_id,seller_id,cart_id, client_id ,person_id, 0 ,1)
-    invoice  = InvoiceGenerator.from_json(InvoiceGenerator.cart_to_json(cart[0]) )
-    return HTMLResponse(content=get_renderer().render_compact_receipt(invoice), status_code=200)
+    return document_service.generate_receipt_html(
+        provider_id, seller_id, cart_id, client_id, person_id
+    )
 
+@document_router.get("/cart/invoice/pdf")
+def fetch_cart_invoice_pdf(
+    provider_id: int = Query(0),
+    seller_id: int = Query(0),
+    cart_id: int = Query(0),
+    client_id: int = Query(0),
+    person_id: int = Query(0),
+    document_service: DocumentService = Depends(get_document_service)
+):
+    """
+    Generate invoice PDF for a cart.
+    
+    Returns:
+        Response: PDF file download
+    """
+    try:
+        pdf_content = document_service.generate_invoice_pdf(
+            provider_id, seller_id, cart_id, client_id, person_id
+        )
+        
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=invoice_cart_{cart_id or provider_id or seller_id}.pdf"}
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
+@document_router.get("/cart/receipt/pdf")
+def fetch_cart_receipt_pdf(
+    provider_id: int = Query(0),
+    seller_id: int = Query(0),
+    cart_id: int = Query(0),
+    client_id: int = Query(0),
+    person_id: int = Query(0),
+    document_service: DocumentService = Depends(get_document_service)
+):
+    """
+    Generate receipt PDF for a cart.
+    
+    Returns:
+        Response: PDF file download
+    """
+    try:
+        pdf_content = document_service.generate_receipt_pdf(
+            provider_id, seller_id, cart_id, client_id, person_id
+        )
+        
+        return Response(
+            content=pdf_content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=receipt_cart_{cart_id or provider_id or seller_id}.pdf"}
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+# Optional: Add endpoint to get cart data as JSON for debugging/integration
+@document_router.get("/cart/data")
+def get_cart_data(
+    provider_id: int = Query(0),
+    seller_id: int = Query(0),
+    cart_id: int = Query(0),
+    client_id: int = Query(0),
+    person_id: int = Query(0),
+    document_service: DocumentService = Depends(get_document_service)
+):
+    """
+    Get cart data as JSON for debugging or API integration.
+    
+    Returns:
+        dict: Cart data in JSON format
+    """
+    cart_data = document_service.get_cart_for_document(
+        provider_id, seller_id, cart_id, client_id, person_id
+    )
+    
+    if not cart_data:
+        raise HTTPException(status_code=404, detail="Cart not found")
+    
+    return cart_data
