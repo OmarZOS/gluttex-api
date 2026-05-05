@@ -89,7 +89,8 @@ class SupplierRepository:
                 ProductProvider.product_provider_org
             ],
             offset=offset,
-            limit=limit
+            limit=limit,
+            serialize=True
         )
     
     def get_supplier_by_type(self, type_id: str) -> List[ProductProvider]:
@@ -329,7 +330,8 @@ class OrganisationRepository:
             None,
             eager_load_depth=[ProviderOrganisation.organisation_image],
             offset=offset,
-            limit=limit
+            limit=limit,
+            serialize=True
         )
     
     def create_org(self, organisation: ProviderOrganisation) -> ProviderOrganisation:
@@ -353,7 +355,8 @@ class OrganisationRepository:
             OrganisationImage,
             {OrganisationImage.org_ref_id: org_id},
             None,
-            []
+            [],
+            serialize=True
         )
     
     def get_org_image_by_id(self, image_id: str) -> Optional[OrganisationImage]:

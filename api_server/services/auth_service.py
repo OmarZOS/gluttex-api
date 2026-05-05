@@ -17,6 +17,12 @@ from features.auth_client import AuthClient
 class AuthService:
     """Service for authentication and OAuth operations"""
     
+
+    @staticmethod
+    def get_supported_providers():
+        """Get list of supported OAuth providers."""
+        return ["google", "facebook", "instagram"]
+    
     def __init__(self):
         # self.user_service = UserService()
         self.auth_client = AuthClient()

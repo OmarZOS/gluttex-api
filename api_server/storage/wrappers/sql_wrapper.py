@@ -184,7 +184,7 @@ def build_eager_options(model_class, eager_load_depth: List[Any]):
     return options
 
 # Function to get objects from a table based on conditions
-def get_records(engine, model_class, conditions=None, join_tables=None, eager_load_depth=None, offset=0, limit=10):
+def get_records(engine, model_class, conditions=None, join_tables=None, eager_load_depth=None, offset=0, limit=10,serialize=False):
     with session_scope(engine) as session:
         query = session.query(model_class)
 
@@ -219,8 +219,10 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
 
         # Fetch all records
         records = query.offset(offset).limit(limit).all()
-
         session.expunge_all()
+        
+        if serialize:
+            records = serialize_model(records)
         return records
 
 
@@ -462,3 +464,28 @@ def get_records_by_filter(
 
         return results
     
+
+def serialize_model(obj):
+    """
+    Convert SQLAlchemy model instance to dictionary.
+    Handles datetime objects and nested relationships.
+    """
+    if obj is None:
+        return None
+    if isinstance(obj, list):
+        return [serialize_model(item) for item in obj]
+    if isinstance(obj, dict):
+        return {k: serialize_model(v) for k, v in obj.items()}
+    if hasattr(obj, '__table__'):  # SQLAlchemy model
+        result = {}
+        for column in obj.__table__.columns:
+            value = getattr(obj, column.name)
+            # Handle datetime objects
+            if hasattr(value, 'isoformat'):
+                value = value.isoformat()
+            # Handle other non-serializable types
+            elif hasattr(value, '__dict__') and not isinstance(value, (str, int, float, bool, type(None))):
+                continue  # Skip complex nested objects
+            result[column.name] = value
+        return result
+    return obj

@@ -16,6 +16,20 @@ from core.models import (
     Cart, Delivery, OrderedItem, OrderedService, Product, Invoice, 
     Payment, Receipt, Deposit, AppUser, Person, ProductProvider
 )
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+import os
+
+
+# Use an in-memory SQLite database for testing
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL", "sqlite:///./test_auth.db")
+
+engine = create_engine(
+    TEST_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 
 class TestCartService:

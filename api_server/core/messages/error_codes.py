@@ -13,6 +13,8 @@ class ErrorCode(str, Enum):
     TIMEDOUT = "TIMEDOUT"
     UNKNOWN = "UNKNOWN"
     
+    VALIDATION_ERROR = "VALIDATION_ERROR" 
+
     # Authentication errors
     AUTH_REQUIRED = "AUTH_REQUIRED"
     AUTH_DECODE_FAILED = "AUTH_DECODE_FAILED"

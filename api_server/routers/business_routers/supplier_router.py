@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, List
 import logging
 
+from core.exceptions.specific.supplier_exceptions import SupplierNotFoundException
 from core.api_models import (
     Location_API, ProductProvider_API, ProviderImage_API,
     ProviderOrganisation_API, OrganisationImage_API
@@ -348,14 +349,17 @@ def delete_supplier(
     """
     logger.info(f"Deleting supplier with ID: {provider_id} (force={force_delete})")
     
-    result = supplier_service.delete_supplier(provider_id)
-    
-    return SuccessResponseModel(
-        success=True,
-        message=f"Supplier {provider_id} deleted successfully",
-        data=result,
-        details={"force_deleted": force_delete}
-    )
+    try:
+        result = supplier_service.delete_supplier(provider_id)
+        return SuccessResponseModel(
+            success=True,
+            message=f"Supplier {provider_id} deleted successfully",
+            data=result,
+            details={"force_deleted": force_delete}
+        )
+    except SupplierNotFoundException:
+        # Re-raise to let the exception handler handle it
+        raise
 
 
 # ==================== Organisation Endpoints ====================

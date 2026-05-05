@@ -9,11 +9,11 @@ from enum import Enum
 
 
 SQL_SCHEMA = os.getenv("SQL_SCHEMA","mysql+pymysql")
-SQL_HOST = os.getenv("SQL_HOST","172.18.0.2")
+SQL_HOST = os.getenv("SQL_HOST","127.0.0.1")
 SQL_USER = os.getenv("SQL_USER","root")
 SQL_PASSWORD = os.getenv("SQL_PASSWORD","dev_password")
 SQL_DATABASE = os.getenv("SQL_DATABASE","gluttex")
-SQL_PORT= os.getenv("SQL_PORT","3306")
+SQL_PORT= os.getenv("SQL_PORT","3308")
 DB_URI = f"{SQL_SCHEMA}://{SQL_USER}:{SQL_PASSWORD}@{SQL_HOST}:{SQL_PORT}/{SQL_DATABASE}"
 
 

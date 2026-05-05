@@ -584,3 +584,41 @@ class InvalidTrackingAddressException(DeliveryTrackingException):
             status_code=HTTP_400_BAD_REQUEST,
             details=error_details
         )
+
+
+class AddressNotFoundException(DeliveryException):
+    """Exception when an address is not found"""
+    
+    def __init__(
+        self,
+        address_id: int = None,
+        delivery_id: int = None,
+        address_type: str = None,  # "delivery" or "current" or "tracking"
+        details: Dict[str, Any] = None
+    ):
+        error_details = details or {}
+        
+        if address_id:
+            error_details["address_id"] = address_id
+        if delivery_id:
+            error_details["delivery_id"] = delivery_id
+        if address_type:
+            error_details["address_type"] = address_type
+        
+        message = "Address not found"
+        if address_id:
+            message = f"Address with ID '{address_id}' not found"
+        elif delivery_id and address_type:
+            message = f"{address_type.capitalize()} address for delivery ID '{delivery_id}' not found"
+        elif delivery_id:
+            message = f"Address for delivery ID '{delivery_id}' not found"
+        
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.ADDRESS_NOT_FOUND,
+            status_code=HTTP_404_NOT_FOUND,
+            details=error_details
+        )
+
+
+

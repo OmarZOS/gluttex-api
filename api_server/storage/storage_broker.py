@@ -111,7 +111,8 @@ def get(
     join_tables: Optional[List] = None,
     eager_load_depth: Optional[int] = None,
     offset: int = 0,
-    limit: int = 10
+    limit: int = 10,
+    serialize=False
 ) -> List[Any]:
     """
     Fetch records from the database
@@ -143,7 +144,7 @@ def get(
         
         result = medicom_store.get_records(
             engine, table, conditions, join_tables, 
-            eager_load_depth, offset, limit
+            eager_load_depth, offset, limit,serialize
         )
         logger.debug(f"Retrieved {len(result)} records from {table.__name__ if hasattr(table, '__name__') else table}")
         return result

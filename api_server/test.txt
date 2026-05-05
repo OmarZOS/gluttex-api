@@ -1,0 +1,121 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-9.0.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/omar/Projects/gluttex/gluttex-api/api_server
+configfile: pytest.ini
+testpaths: tests
+plugins: asyncio-1.3.0, anyio-4.11.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 23 items
+
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_get_all_suppliers_success FAILED [  4%]
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_get_all_suppliers_with_filters FAILED [  8%]
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_get_supplier_types_success PASSED [ 13%]
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_search_suppliers_by_location_success PASSED [ 17%]
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_search_suppliers_by_location_invalid_coordinates PASSED [ 21%]
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_get_supplier_by_id_not_found FAILED [ 26%]
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_create_supplier_success FAILED [ 30%]
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_create_supplier_missing_required_fields PASSED [ 34%]
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_update_supplier_not_found FAILED [ 39%]
+tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_delete_supplier_not_found FAILED [ 43%]
+tests/integration/test_supplier_router.py::TestOrganisationEndpoints::test_get_all_organisations_success PASSED [ 47%]
+tests/integration/test_supplier_router.py::TestOrganisationEndpoints::test_get_all_organisations_pagination PASSED [ 52%]
+tests/integration/test_supplier_router.py::TestOrganisationEndpoints::test_get_organisation_by_id_not_found PASSED [ 56%]
+tests/integration/test_supplier_router.py::TestOrganisationEndpoints::test_create_organisation_success FAILED [ 60%]
+tests/integration/test_supplier_router.py::TestOrganisationEndpoints::test_create_organisation_missing_name PASSED [ 65%]
+tests/integration/test_supplier_router.py::TestOrganisationEndpoints::test_update_organisation_not_found FAILED [ 69%]
+tests/integration/test_supplier_router.py::TestOrganisationEndpoints::test_delete_organisation_not_found PASSED [ 73%]
+tests/integration/test_supplier_router.py::TestSupplierEdgeCases::test_get_suppliers_zero_limit PASSED [ 78%]
+tests/integration/test_supplier_router.py::TestSupplierEdgeCases::test_get_suppliers_negative_offset PASSED [ 82%]
+tests/integration/test_supplier_router.py::TestSupplierEdgeCases::test_search_suppliers_extreme_distance PASSED [ 86%]
+tests/integration/test_supplier_router.py::TestSupplierEdgeCases::test_create_supplier_without_location PASSED [ 91%]
+tests/integration/test_supplier_router.py::TestSupplierResponseFormat::test_success_response_format PASSED [ 95%]
+tests/integration/test_supplier_router.py::TestSupplierResponseFormat::test_error_response_format FAILED [100%]
+
+=================================== FAILURES ===================================
+_____________ TestSupplierEndpoints.test_get_all_suppliers_success _____________
+tests/integration/test_supplier_router.py:121: in test_get_all_suppliers_success
+    assert response.status_code == 200
+E   assert 500 == 200
+E    +  where 500 = <Response [500 Internal Server Error]>.status_code
+------------------------------ Captured log call -------------------------------
+ERROR    storage.storage_broker:storage_broker.py:33 Storage error during get_records: Only 'unbound' loader options may be used with the Load.options() method
+WARNING  core.exceptions.handler:handler.py:47 API Exception: ErrorCode.DATABASE_ERROR - Database operation failed: get_records
+__________ TestSupplierEndpoints.test_get_all_suppliers_with_filters ___________
+tests/integration/test_supplier_router.py:131: in test_get_all_suppliers_with_filters
+    assert response.status_code == 200
+E   assert 500 == 200
+E    +  where 500 = <Response [500 Internal Server Error]>.status_code
+------------------------------ Captured log call -------------------------------
+ERROR    storage.storage_broker:storage_broker.py:33 Storage error during get_records: Only 'unbound' loader options may be used with the Load.options() method
+WARNING  core.exceptions.handler:handler.py:47 API Exception: ErrorCode.DATABASE_ERROR - Database operation failed: get_records
+___________ TestSupplierEndpoints.test_get_supplier_by_id_not_found ____________
+tests/integration/test_supplier_router.py:167: in test_get_supplier_by_id_not_found
+    assert response.status_code == 404
+E   assert 500 == 404
+E    +  where 500 = <Response [500 Internal Server Error]>.status_code
+------------------------------ Captured log call -------------------------------
+ERROR    storage.storage_broker:storage_broker.py:33 Storage error during get_records: Only 'unbound' loader options may be used with the Load.options() method
+WARNING  core.exceptions.handler:handler.py:47 API Exception: ErrorCode.DATABASE_ERROR - Database operation failed: get_records
+______________ TestSupplierEndpoints.test_create_supplier_success ______________
+tests/integration/test_supplier_router.py:175: in test_create_supplier_success
+    assert response.status_code == 201
+E   assert 422 == 201
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+------------------------------ Captured log call -------------------------------
+WARNING  core.exceptions.handler:handler.py:61 Validation error: [{'type': 'missing', 'loc': ('body', 'provider', 'idprovider_details_id'), 'msg': 'Field required', 'input': {'id_product_provider': 0, 'provider_name': 'Test Supplier', 'provider_contact_info': 'contact@testsupplier.com', 'id_provider_owner': 1, 'id_product_provider_type': 1, 'id_provider_organisation': 0, 'provider_organisation_name': 'Test Org', 'provider_organisation_desc': 'Test Description'}}, {'type': 'missing', 'loc': ('body', 'provider', 'product_provider_type_desc'), 'msg': 'Field required', 'input': {'id_product_provider': 0, 'provider_name': 'Test Supplier', 'provider_contact_info': 'contact@testsupplier.com', 'id_provider_owner': 1, 'id_product_provider_type': 1, 'id_provider_organisation': 0, 'provider_organisation_name': 'Test Org', 'provider_organisation_desc': 'Test Description'}}, {'type': 'missing', 'loc': ('body', 'location', 'location_address_id'), 'msg': 'Field required', 'input': {'id_location': 0, 'location_name': 'Main Office', 'location_latitude': 36.7538, 'location_longitude': 3.0588, 'address_street': '123 Test St', 'address_city': 'Algiers', 'address_postal_code': '16000', 'address_country': 'Algeria'}}, {'type': 'missing', 'loc': ('body', 'location', 'id_address'), 'msg': 'Field required', 'input': {'id_location': 0, 'location_name': 'Main Office', 'location_latitude': 36.7538, 'location_longitude': 3.0588, 'address_street': '123 Test St', 'address_city': 'Algiers', 'address_postal_code': '16000', 'address_country': 'Algeria'}}, {'type': 'missing', 'loc': ('body', 'image', 'provider_ref_id'), 'msg': 'Field required', 'input': {'id_provider_image': 0, 'provider_image_url': 'https://example.com/supplier.jpg'}}]
+_____________ TestSupplierEndpoints.test_update_supplier_not_found _____________
+tests/integration/test_supplier_router.py:197: in test_update_supplier_not_found
+    assert response.status_code == 404
+E   assert 422 == 404
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+------------------------------ Captured log call -------------------------------
+WARNING  core.exceptions.handler:handler.py:61 Validation error: [{'type': 'missing', 'loc': ('body', 'provider', 'idprovider_details_id'), 'msg': 'Field required', 'input': {'id_product_provider': 0, 'provider_name': 'Test Supplier', 'provider_contact_info': 'contact@testsupplier.com', 'id_provider_owner': 1, 'id_product_provider_type': 1, 'id_provider_organisation': 0, 'provider_organisation_name': 'Test Org', 'provider_organisation_desc': 'Test Description'}}, {'type': 'missing', 'loc': ('body', 'provider', 'product_provider_type_desc'), 'msg': 'Field required', 'input': {'id_product_provider': 0, 'provider_name': 'Test Supplier', 'provider_contact_info': 'contact@testsupplier.com', 'id_provider_owner': 1, 'id_product_provider_type': 1, 'id_provider_organisation': 0, 'provider_organisation_name': 'Test Org', 'provider_organisation_desc': 'Test Description'}}, {'type': 'missing', 'loc': ('body', 'image', 'provider_ref_id'), 'msg': 'Field required', 'input': {'id_provider_image': 0, 'provider_image_url': 'https://example.com/supplier.jpg'}}, {'type': 'missing', 'loc': ('body', 'location', 'location_address_id'), 'msg': 'Field required', 'input': {'id_location': 0, 'location_name': 'Main Office', 'location_latitude': 36.7538, 'location_longitude': 3.0588, 'address_street': '123 Test St', 'address_city': 'Algiers', 'address_postal_code': '16000', 'address_country': 'Algeria'}}, {'type': 'missing', 'loc': ('body', 'location', 'id_address'), 'msg': 'Field required', 'input': {'id_location': 0, 'location_name': 'Main Office', 'location_latitude': 36.7538, 'location_longitude': 3.0588, 'address_street': '123 Test St', 'address_city': 'Algiers', 'address_postal_code': '16000', 'address_country': 'Algeria'}}]
+_____________ TestSupplierEndpoints.test_delete_supplier_not_found _____________
+tests/integration/test_supplier_router.py:203: in test_delete_supplier_not_found
+    assert response.status_code == 404
+E   assert 500 == 404
+E    +  where 500 = <Response [500 Internal Server Error]>.status_code
+------------------------------ Captured log call -------------------------------
+ERROR    storage.storage_broker:storage_broker.py:33 Storage error during get_records: Only 'unbound' loader options may be used with the Load.options() method
+WARNING  core.exceptions.handler:handler.py:47 API Exception: ErrorCode.DATABASE_ERROR - Database operation failed: get_records
+__________ TestOrganisationEndpoints.test_create_organisation_success __________
+tests/integration/test_supplier_router.py:238: in test_create_organisation_success
+    assert response.status_code == 201
+E   assert 422 == 201
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+------------------------------ Captured log call -------------------------------
+WARNING  core.exceptions.handler:handler.py:61 Validation error: [{'type': 'missing', 'loc': ('body', 'org_image', 'org_ref_id'), 'msg': 'Field required', 'input': {'id_org_image': 0, 'org_image_url': 'https://example.com/org.jpg'}}]
+_________ TestOrganisationEndpoints.test_update_organisation_not_found _________
+tests/integration/test_supplier_router.py:259: in test_update_organisation_not_found
+    assert response.status_code == 404
+E   assert 422 == 404
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+------------------------------ Captured log call -------------------------------
+WARNING  core.exceptions.handler:handler.py:61 Validation error: [{'type': 'missing', 'loc': ('body', 'org_image', 'org_ref_id'), 'msg': 'Field required', 'input': {'id_org_image': 0, 'org_image_url': 'https://example.com/org.jpg'}}]
+____________ TestSupplierResponseFormat.test_error_response_format _____________
+tests/integration/test_supplier_router.py:333: in test_error_response_format
+    assert data["status_code"] == 404
+E   assert 500 == 404
+------------------------------ Captured log call -------------------------------
+ERROR    storage.storage_broker:storage_broker.py:33 Storage error during get_records: Only 'unbound' loader options may be used with the Load.options() method
+WARNING  core.exceptions.handler:handler.py:47 API Exception: ErrorCode.DATABASE_ERROR - Database operation failed: get_records
+=========================== short test summary info ============================
+FAILED tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_get_all_suppliers_success - assert 500 == 200
+ +  where 500 = <Response [500 Internal Server Error]>.status_code
+FAILED tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_get_all_suppliers_with_filters - assert 500 == 200
+ +  where 500 = <Response [500 Internal Server Error]>.status_code
+FAILED tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_get_supplier_by_id_not_found - assert 500 == 404
+ +  where 500 = <Response [500 Internal Server Error]>.status_code
+FAILED tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_create_supplier_success - assert 422 == 201
+ +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+FAILED tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_update_supplier_not_found - assert 422 == 404
+ +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+FAILED tests/integration/test_supplier_router.py::TestSupplierEndpoints::test_delete_supplier_not_found - assert 500 == 404
+ +  where 500 = <Response [500 Internal Server Error]>.status_code
+FAILED tests/integration/test_supplier_router.py::TestOrganisationEndpoints::test_create_organisation_success - assert 422 == 201
+ +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+FAILED tests/integration/test_supplier_router.py::TestOrganisationEndpoints::test_update_organisation_not_found - assert 422 == 404
+ +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+FAILED tests/integration/test_supplier_router.py::TestSupplierResponseFormat::test_error_response_format - assert 500 == 404
+=================== 9 failed, 14 passed, 4 warnings in 1.79s ===================
