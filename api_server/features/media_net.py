@@ -5,7 +5,7 @@
 import io
 import base64
 
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from communication.communication_broker import send_post_request, send_get_request, send_delete_request
 from constants import (

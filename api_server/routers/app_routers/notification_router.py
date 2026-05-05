@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
 from core.api_models import Notification_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from services.notification_service import NotificationService
 from services.helpers.notification_builder_service import NotificationBuilderService

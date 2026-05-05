@@ -2,7 +2,7 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from core.api_models import Payment_API, Deposit_API, AdditionalFee_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from core.models import Payment, Deposit, AdditionalFee
 from repositories.cart_repository import FinancialRepository

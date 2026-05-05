@@ -6,7 +6,7 @@ from typing import Optional
 from fastapi import Depends,  status
 from sqlalchemy.orm import Session
 from core.messages import *
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from constants import ALGORITHM, SECRET_KEY
 from features.app.user.user_fetch import fetch_user_by_name
 

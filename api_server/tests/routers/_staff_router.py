@@ -62,7 +62,7 @@
 #             "management_rule_expiry": (datetime.now() + timedelta(days=30)).isoformat()
 #         }
         
-#         url = f"{BASE_URL}/staff/add"
+#         url = f"{BASE_URL}/staff"
 #         response = requests.post(url, json=staff_data, headers=HEADERS)
         
 #         success = response.status_code == 200
@@ -149,7 +149,7 @@
 #             "management_rule_status": "pending"
 #             # Missing required fields like rule_ref_org, rule_ref_provider, etc.
 #         }
-#         url = f"{BASE_URL}/staff/add"
+#         url = f"{BASE_URL}/staff"
 #         response = requests.post(url, json=invalid_data, headers=HEADERS)
         
 #         # Should probably return 422 (validation error) or 400
@@ -195,7 +195,7 @@
 #         "management_rule_expiry": (datetime.now() + timedelta(days=30)).isoformat()
 #     }
     
-#     create_response = requests.post(f"{BASE_URL}/staff/add", json=staff_data, headers=HEADERS)
+#     create_response = requests.post(f"{BASE_URL}/staff", json=staff_data, headers=HEADERS)
 #     if create_response.status_code != 200:
 #         print("❌ Workflow failed at creation step")
 #         return False

@@ -1,15 +1,30 @@
+# services/user_service.py
 import logging
 import datetime
 from typing import Optional
+
 from core.api_models import AppUser_API, Person_API, Location_API, AppUserUpdate_API
-from core.exception_handler import APIException
-from core.messages import *
+from core.exceptions.handler import (
+    APIException,
+    UserNotFoundException,
+    # Add these specific exceptions to your core/exceptions.py
+)
 from core.models import AppUser
 from repositories.user_repository import UserRepository
 from repositories.person_repository import PersonRepository
 from repositories.location_repository import LocationRepository
 from services.auth_service import AuthService
 from services.person_service import PersonService
+
+# Import from your new structure
+from core.messages.error_codes import ErrorCode
+from core.messages.http_status import (
+    HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
+    HTTP_409_CONFLICT,
+    HTTP_410_GONE,
+    HTTP_417_EXPECTATION_FAILED
+)
 
 logger = logging.getLogger("FastAPIApp")
 
@@ -31,11 +46,7 @@ class UserService:
         """Get user by ID with optional full details"""
         user = self.user_repo.get_by_id(user_id, eager_load=full)
         if not user:
-            raise APIException(
-                status=HTTP_404_NOT_FOUND,
-                code=APPUSER_NOT_EXISTS,
-                details=f"{APPUSER_NOT_EXISTS}: {user_id}"
-            )
+            raise UserNotFoundException(user_id=user_id)
         return user
     
     async def create_user(
@@ -50,18 +61,18 @@ class UserService:
         # Check if user already exists
         if self.user_repo.get_by_name(user_data.app_user_name):
             raise APIException(
-                status=HTTP_409_CONFLICT,
-                code=APPUSER_ALREADY_EXISTS,
-                details=f"User '{user_data.app_user_name}' already exists."
+                status_code=HTTP_409_CONFLICT,
+                error_code=ErrorCode.APPUSER_ALREADY_EXISTS,
+                details={"username": user_data.app_user_name}
             )
         
         # Validate user type
         user_type = self.user_repo.get_user_type(user_data.app_user_type_id)
         if not user_type:
             raise APIException(
-                status=HTTP_400_BAD_REQUEST,
-                code=APPUSERTYPE_NOT_EXISTS,
-                details=f"Invalid user type ID: {user_data.app_user_type_id}"
+                status_code=HTTP_400_BAD_REQUEST,
+                error_code=ErrorCode.APPUSERTYPE_NOT_EXISTS,
+                details={"user_type_id": user_data.app_user_type_id}
             )
         
         # Build AppUser object
@@ -92,9 +103,9 @@ class UserService:
         except Exception as e:
             logger.error(f"Failed to insert AppUser: {e}")
             raise APIException(
-                status=HTTP_417_EXPECTATION_FAILED,
-                code=USER_INSERT_FAILED,
-                details=f"Failed to insert AppUser: {e}"
+                status_code=HTTP_417_EXPECTATION_FAILED,
+                error_code=ErrorCode.USER_INSERT_FAILED,
+                details={"error": str(e)}
             )
         
         # Handle authentication for non-OAuth users
@@ -115,12 +126,12 @@ class UserService:
             self.update_user_password(user, user_auth_record["hashed_password"])
         except APIException as e:
             logger.error(f"Failed to create/update auth record: {e}")
-            if e.status == HTTP_417_EXPECTATION_FAILED:
+            if e.status_code == HTTP_417_EXPECTATION_FAILED:
                 self.user_repo.delete(user)
             raise APIException(
-                status=HTTP_410_GONE,
-                code=USER_AUTH_CREATION_FAILED,
-                details=str(e)
+                status_code=HTTP_410_GONE,
+                error_code=ErrorCode.USER_AUTH_CREATION_FAILED,
+                details={"auth_error": str(e), "user_id": user.id_app_user}
             )
         
         return user
@@ -142,9 +153,9 @@ class UserService:
         user_type = self.user_repo.get_user_type(user_data.app_user_type_id)
         if not user_type:
             raise APIException(
-                status=HTTP_400_BAD_REQUEST,
-                code=APPUSERTYPE_NOT_EXISTS,
-                details=f"{APPUSERTYPE_NOT_EXISTS}: {user_data.app_user_type_id}"
+                status_code=HTTP_400_BAD_REQUEST,
+                error_code=ErrorCode.APPUSERTYPE_NOT_EXISTS,
+                details={"user_type_id": user_data.app_user_type_id}
             )
         
         # Update allowed fields
@@ -167,10 +178,9 @@ class UserService:
             return self.user_repo.update(user)
         except Exception as e:
             raise APIException(
-                status=HTTP_417_EXPECTATION_FAILED,
-                code=USER_UPDATE_FAILED,
-                message=f"{USER_UPDATE_FAILED}: {user.id_app_user}",
-                details=str(e)
+                status_code=HTTP_417_EXPECTATION_FAILED,
+                error_code=ErrorCode.USER_UPDATE_FAILED,
+                details={"user_id": user.id_app_user, "error": str(e)}
             )
     
     def update_user_password(self, user_record, hashed_password: str):
@@ -182,10 +192,9 @@ class UserService:
             return self.user_repo.update(user)
         except Exception as e:
             raise APIException(
-                status=HTTP_417_EXPECTATION_FAILED,
-                code=USER_UPDATE_FAILED,
-                message=f"{USER_UPDATE_FAILED}: {user.id_app_user}",
-                details=str(e)
+                status_code=HTTP_417_EXPECTATION_FAILED,
+                error_code=ErrorCode.USER_UPDATE_FAILED,
+                details={"user_id": user.id_app_user, "error": str(e)}
             )
     
     def update_user_image_url(self, user_record, image_url: str):
@@ -197,10 +206,9 @@ class UserService:
             return self.user_repo.update(user)
         except Exception as e:
             raise APIException(
-                status=HTTP_417_EXPECTATION_FAILED,
-                code=USER_UPDATE_FAILED,
-                message=f"{USER_UPDATE_FAILED}: {user.id_app_user}",
-                details=str(e)
+                status_code=HTTP_417_EXPECTATION_FAILED,
+                error_code=ErrorCode.USER_UPDATE_FAILED,
+                details={"user_id": user.id_app_user, "error": str(e)}
             )
     
     def delete_user(self, user_data: AppUser_API):
@@ -228,7 +236,8 @@ class UserService:
             return self.update_user_password(user_data, new_password_hash)
         except APIException as e:
             raise APIException(
-                status=e.status,
-                code=e.code,
-                message=e.message
+                status_code=e.status_code,
+                error_code=e.error_code,
+                message=e.message,
+                details=e.details
             )

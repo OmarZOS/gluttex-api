@@ -8,7 +8,7 @@ from typing import Dict, Any, Optional
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 from core.api_models import AppUser_API, AuthData_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException, OAuthException, OAuthProviderNotSupportedException
 from core.messages import *
 from constants import *
 # from services.user_service import UserService
@@ -128,17 +128,47 @@ class AuthService:
         try:
             redirect_uri = f"{BASE_URL}/auth/{provider}"
             return await oauth_client.authorize_redirect(request, redirect_uri)
-        except AttributeError:
-            raise APIException(
-                status=HTTP_500_INTERNAL_SERVER_ERROR,
-                code=INTERFACE_ERROR,
-                details=f"OAuth provider '{provider}' not properly configured"
+        
+        except AttributeError as e:
+            # Provider not properly configured (missing methods/attributes)
+            raise OAuthProviderNotSupportedException(
+                provider=provider,
+                supported_providers=self.get_supported_providers()  # Optional
             )
+        
+        except ConnectionError as e:
+            # Network-related errors
+            raise OAuthException(
+                error=f"Connection failed: {str(e)}",
+                provider=provider,
+                details={"error_type": "connection_error"}
+            )
+        
+        except TimeoutError as e:
+            # Timeout errors
+            raise OAuthException(
+                error=f"Timeout: {str(e)}",
+                provider=provider,
+                details={"error_type": "timeout"}
+            )
+        
+        except ValueError as e:
+            # Configuration value errors
+            raise OAuthException(
+                error=f"Configuration error: {str(e)}",
+                provider=provider,
+                details={"error_type": "configuration_error"}
+            )
+        
         except Exception as e:
-            raise APIException(
-                status=HTTP_500_INTERNAL_SERVER_ERROR,
-                code=INTERFACE_ERROR,
-                details=f"OAuth error: {str(e)}"
+            # Catch-all for unexpected errors
+            raise OAuthException(
+                error=str(e),
+                provider=provider,
+                details={
+                    "error_type": "unexpected_error",
+                    "exception_type": e.__class__.__name__
+                }
             )
     
     async def handle_oauth_callback(self, provider: str, request: Request, oauth_client) -> RedirectResponse:

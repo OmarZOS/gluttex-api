@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from fastapi import BackgroundTasks
 from core.api_models import Delivery_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from core.models import Delivery, Address
 from repositories.delivery_repository import DeliveryRepository
@@ -180,7 +180,7 @@ class DeliveryService:
                     details=f"Address with ID {delivery_data.delivery_address_id} does not exist"
                 )
             delivery.delivery_address_id = delivery_data.delivery_address_id
-        elif delivery_data.delivery_address_id == 0 and delivery_data.delivery_address:
+        elif delivery_data.delivery_address_id == 0 :
             # Create new address from delivery data
             address = self.location_service.build_address_from_delivery(delivery_data)
             created_address = self.address_repo.create_address(address)

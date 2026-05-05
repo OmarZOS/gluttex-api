@@ -1,614 +1,751 @@
-# tests/conftest.py (additional database-specific fixtures)
-from fastapi.testclient import TestClient
+# tests/services/test_cart_service.py
 import pytest
-from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
-from sqlalchemy.orm import relationship, sessionmaker
-from sqlalchemy.pool import StaticPool
-from api_server.server import app
-import tempfile
-import os
+from unittest.mock import Mock, patch, MagicMock, ANY
+from datetime import datetime, timedelta
+from decimal import Decimal
+from typing import List, Dict, Any, Optional
 
-
-# Base = declarative_base()
-
-
-# tests/conftest.py
-import pytest
-import tempfile
-import os
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, scoped_session
-from sqlalchemy.pool import StaticPool
-from unittest.mock import MagicMock, patch
-import sys
-
-# Import your actual models
-from core.persistent_models import Base, metadata
+from services.cart_service import CartService
+from core.api_models import (
+    Cart_API, OrderedItem_API, OrderedService_API, Delivery_API,
+    Person_API, Payment_API
+)
+from core.exceptions.handler import APIException
+from core.messages import *
 from core.models import (
-    Address, AppUserType, BloodType, Cart, Delivery, DiseaseSeverity,
-    Ingredient, Invoice, Payment, PersonDetails, PlacedOrder, Plan,
-    ProductCategory, ProductProviderType, ProvidedServiceCategory,
-    ProviderDetails, Reaction, Receipt, RecipeCategory, SerologyIndicator,
-    Symptom, Wallet, DeliveryBroker, Deposit, Iproduct, MoneyTransaction,
-    ProviderOrganisation, LocationImage, OrganisationImage, Person,
-    AppUser, Patient, Comment, Notification, ProductProvider, Recipe,
-    Report, Serology, SymptomsOccurence, AdditionalFee, CommentReaction,
-    Conversation, ManagementRule, PresentedSymptom, Product, ProvidedService,
-    ProviderImage, ProviderReaction, RecipeContainsIngredient, RecipeImage,
-    RecipeReaction, ServicePackage, OrderedItem, OrderedService,
-    ProductImage, ProductReaction, ServiceContribution, ServicePackageItem,
-    ServiceResourceRequirement, ServiceStaffRequirement, Location,
-    
+    Cart, Delivery, OrderedItem, OrderedService, Product, Invoice, 
+    Payment, Receipt, Deposit, AppUser, Person, ProductProvider
 )
 
-# Fixture for TestClient
-@pytest.fixture()
-def client():
-    with TestClient(app) as c:
-        yield c
 
-# Create test database in memory
-@pytest.fixture(scope="session")
-def test_engine():
-    """Create an in-memory SQLite database for testing."""
-    # Use SQLite for testing (no PostGIS support, but that's okay for unit tests)
-    engine = create_engine(
-        'sqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool
-    )
+class TestCartService:
+    """Test suite for CartService with database integration"""
     
-    # Create all tables
-    Base.metadata.create_all(bind=engine)
+    @pytest.fixture
+    def cart_service(self, db_session):
+        """Create CartService instance with mocked repositories"""
+        with patch('services.cart_service.CartRepository') as mock_cart_repo_class, \
+             patch('services.cart_service.FinancialRepository') as mock_financial_repo_class, \
+             patch('services.cart_service.ProductRepository') as mock_product_repo_class, \
+             patch('services.cart_service.UserRepository') as mock_user_repo_class, \
+             patch('services.cart_service.SupplierRepository') as mock_supplier_repo_class, \
+             patch('services.cart_service.OrderService') as mock_order_service_class, \
+             patch('services.cart_service.DeliveryService') as mock_delivery_service_class, \
+             patch('services.cart_service.PersonService') as mock_person_service_class:
+            
+            service = CartService()
+            
+            # Store mocks for access in tests
+            service.mock_cart_repo = mock_cart_repo_class.return_value
+            service.mock_financial_repo = mock_financial_repo_class.return_value
+            service.mock_product_repo = mock_product_repo_class.return_value
+            service.mock_user_repo = mock_user_repo_class.return_value
+            service.mock_supplier_repo = mock_supplier_repo_class.return_value
+            service.mock_order_service = mock_order_service_class.return_value
+            service.mock_delivery_service = mock_delivery_service_class.return_value
+            service.mock_person_service = mock_person_service_class.return_value
+            
+            yield service
     
-    yield engine
+    @pytest.fixture
+    def sample_cart(self, populated_db):
+        """Get a sample cart from populated database"""
+        return populated_db['cart']
     
-    # Cleanup
-    Base.metadata.drop_all(bind=engine)
-
-@pytest.fixture
-def db_session(test_engine):
-    """Create a fresh database session for each test."""
-    Session = sessionmaker(bind=test_engine)
-    session = Session()
+    @pytest.fixture
+    def sample_product(self, populated_db):
+        """Get a sample product from populated database"""
+        return populated_db['product']
     
-    try:
-        yield session
-    finally:
-        session.rollback()
-        session.close()
-
-
-@pytest.fixture(scope="session")
-def test_engine():
-    """Create an in-memory SQLite database with geometry mocking."""
-    engine = create_engine(
-        'sqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool
-    )
+    @pytest.fixture
+    def sample_app_user(self, populated_db):
+        """Get a sample app user from populated database"""
+        return populated_db['app_user']
     
-    # Mock PostGIS functions for SQLite
-    @event.listens_for(engine, "connect")
-    def setup_spatialite(dbapi_connection, connection_record):
-        # Try to load SpatiaLite if available
-        try:
-            dbapi_connection.enable_load_extension(True)
-            dbapi_connection.load_extension('mod_spatialite')
-        except Exception:
-            # If SpatiaLite not available, create dummy geometry column function
-            dbapi_connection.create_function("RecoverGeometryColumn", 5, lambda *args: 1)
-            dbapi_connection.create_function("ST_Distance", 2, lambda *args: 0.0)
-            dbapi_connection.create_function("ST_DWithin", 3, lambda *args: 1)
-            dbapi_connection.create_function("ST_GeomFromText", 2, lambda *args: "POINT(0 0)")
+    @pytest.fixture
+    def sample_product_provider(self, populated_db):
+        """Get a sample product provider from populated database"""
+        return populated_db['product_provider']
     
-    # Create tables without geometry columns for testing
-    from core.persistent_models import Base
-    from sqlalchemy import Column, String, Float
+    @pytest.fixture
+    def sample_ordered_item_api(self):
+        """Create sample ordered item API data"""
+        return OrderedItem_API(
+            ordered_product_id=1,
+            ordered_quantity=2,
+            applied_vat=0.2,
+            ordered_product_notes='Test notes'
+        )
     
-    # Temporarily modify Location model for testing
-    with patch('core.persistent_models.Location.location_position', 
-               Column(String(255), nullable=True)):
-        Base.metadata.create_all(bind=engine)
+    @pytest.fixture
+    def sample_cart_api(self):
+        """Create sample cart API data"""
+        return Cart_API(
+            cart_status='pending',
+            cart_total_amount=500.00,
+            cart_notes='Test cart',
+            cart_due_date=datetime.now().date() + timedelta(days=30),
+            cart_invoice=True,
+            cart_payment=True,
+            cart_receipt=True,
+            cart_deposit=False,
+            cart_paid_money=500.00
+        )
     
-    yield engine
+    @pytest.fixture
+    def sample_delivery_api(self):
+        """Create sample delivery API data"""
+        return Delivery_API(
+            delivery_address="123 Test St",
+            delivery_city="Test City",
+            delivery_postal_code="12345",
+            delivery_country="Test Country",
+            delivery_notes="Leave at door"
+        )
     
-    Base.metadata.drop_all(bind=engine)
-
-@pytest.fixture
-def db_session(test_engine):
-    """Create a fresh database session for each test."""
-    Session = sessionmaker(bind=test_engine)
-    session = Session()
+    @pytest.fixture
+    def sample_person_api(self):
+        """Create sample person API data"""
+        return Person_API(
+            id_person=0,
+            first_name="John",
+            last_name="Doe",
+            email="john@example.com",
+            phone="+1234567890"
+        )
     
-    try:
-        yield session
-    finally:
-        session.rollback()
-        session.close()
-
-@pytest.fixture
-def populated_db(db_session):
-    """Populate the database with sample data for testing."""
-    # Create basic reference data
-    blood_type_a = BloodType(blood_type_desc="A")
-    blood_type_b = BloodType(blood_type_desc="B")
-    db_session.add_all([blood_type_a, blood_type_b])
+    def test_get_cart_by_id_success(self, cart_service, sample_cart):
+        """Test successful retrieval of cart by ID"""
+        cart_service.mock_cart_repo.get_cart_by_id.return_value = sample_cart
+        
+        result = cart_service.get_cart_by_id(sample_cart.cart_id)
+        
+        assert result == sample_cart
+        cart_service.mock_cart_repo.get_cart_by_id.assert_called_once_with(sample_cart.cart_id)
     
-    # Create app user types
-    admin_type = AppUserType(app_user_type_desc="Admin")
-    user_type = AppUserType(app_user_type_desc="User")
-    db_session.add_all([admin_type, user_type])
+    def test_get_cart_by_id_not_found(self, cart_service):
+        """Test getting non-existent cart raises exception"""
+        cart_service.mock_cart_repo.get_cart_by_id.return_value = None
+        
+        with pytest.raises(APIException) as exc_info:
+            cart_service.get_cart_by_id(999)
+        
+        assert exc_info.value.status == HTTP_404_NOT_FOUND
+        assert exc_info.value.code == CART_NOT_EXISTS
+        assert "Cart #999 does not exist" in exc_info.value.details
     
-    # Create product categories
-    category1 = ProductCategory(product_category_desc="Food", product_category_icon="food.png")
-    category2 = ProductCategory(product_category_desc="Electronics", product_category_icon="electronics.png")
-    db_session.add_all([category1, category2])
+    def test_get_carts_by_provider(self, cart_service, sample_cart):
+        """Test getting carts by provider"""
+        expected_carts = [sample_cart]
+        provider_id = sample_cart.cart_product_provider_id
+        cart_service.mock_cart_repo.get_carts_by_provider.return_value = expected_carts
+        
+        result = cart_service.get_carts_by_provider(provider_id, offset=0, limit=50)
+        
+        assert result == expected_carts
+        cart_service.mock_cart_repo.get_carts_by_provider.assert_called_once_with(provider_id, 0, 50)
     
-    # Create recipe categories
-    recipe_cat1 = RecipeCategory(recipe_category_desc="Dessert", recipe_category_icon="dessert.png")
-    recipe_cat2 = RecipeCategory(recipe_category_desc="Main Course", recipe_category_icon="main.png")
-    db_session.add_all([recipe_cat1, recipe_cat2])
+    def test_get_carts_by_seller(self, cart_service, sample_cart, sample_app_user):
+        """Test getting carts by seller"""
+        expected_carts = [sample_cart]
+        seller_id = sample_app_user.id_app_user
+        cart_service.mock_cart_repo.get_carts_by_seller.return_value = expected_carts
+        
+        result = cart_service.get_carts_by_seller(seller_id, offset=10, limit=20)
+        
+        assert result == expected_carts
+        cart_service.mock_cart_repo.get_carts_by_seller.assert_called_once_with(seller_id, 10, 20)
     
-    # Create reaction types
-    like_reaction = Reaction(reaction_type="like")
-    dislike_reaction = Reaction(reaction_type="dislike")
-    db_session.add_all([like_reaction, dislike_reaction])
+    def test_get_carts_by_buyer(self, cart_service, sample_cart, sample_app_user):
+        """Test getting carts by buyer"""
+        expected_carts = [sample_cart]
+        buyer_id = sample_app_user.id_app_user
+        cart_service.mock_cart_repo.get_carts_by_buyer.return_value = expected_carts
+        
+        result = cart_service.get_carts_by_buyer(buyer_id, offset=5, limit=15)
+        
+        assert result == expected_carts
+        cart_service.mock_cart_repo.get_carts_by_buyer.assert_called_once_with(buyer_id, 5, 15)
     
-    # Create disease severity levels
-    mild = DiseaseSeverity(disease_severity_desc="Mild")
-    severe = DiseaseSeverity(disease_severity_desc="Severe")
-    db_session.add_all([mild, severe])
+    def test_create_invoice_for_cart(self, cart_service, sample_cart):
+        """Test invoice creation for a cart"""
+        total_amount = 500.00
+        expected_invoice = Invoice(
+            invoice_cart_id=sample_cart.cart_id,
+            invoice_number=f"INV-{datetime.now().strftime('%Y%m%d')}-{sample_cart.cart_id:04d}",
+            invoice_total_amount=total_amount,
+            invoice_status='unpaid',
+            invoice_issue_date=datetime.now().date(),
+            invoice_due_date=(datetime.now() + timedelta(days=30)).date(),
+            invoice_notes=f"Invoice for Cart #{sample_cart.cart_id}"
+        )
+        
+        cart_service.mock_financial_repo.create_invoice.return_value = expected_invoice
+        
+        result = cart_service._create_invoice_for_cart(sample_cart, total_amount)
+        
+        assert result == expected_invoice
+        assert result.invoice_total_amount == total_amount
+        assert result.invoice_status == 'unpaid'
+        cart_service.mock_financial_repo.create_invoice.assert_called_once()
     
-    # Create symptoms
-    headache = Symptom(symptom_name="Headache", symptom_desc="Pain in head")
-    fever = Symptom(symptom_name="Fever", symptom_desc="Elevated body temperature")
-    db_session.add_all([headache, fever])
+    def test_create_payment_without_invoice(self, cart_service):
+        """Test payment creation without invoice"""
+        amount = 500.00
+        status = 'completed'
+        
+        expected_payment = Payment(
+            payment_id=1,
+            payment_amount=amount,
+            payment_status=status,
+            payment_method='cash',
+            payment_reference=ANY
+        )
+        
+        cart_service.mock_financial_repo.create_payment.return_value = expected_payment
+        
+        result = cart_service._create_payment(amount, status)
+        
+        assert result.payment_amount == amount
+        assert result.payment_status == status
+        cart_service.mock_financial_repo.create_payment.assert_called_once()
     
-    # Create serology indicators
-    indicator1 = SerologyIndicator(serology_indicator_name="Gluten Antibody", serology_indicator_desc="Gluten sensitivity indicator")
-    indicator2 = SerologyIndicator(serology_indicator_name="Celiac Marker", serology_indicator_desc="Celiac disease marker")
-    db_session.add_all([indicator1, indicator2])
+    def test_create_payment_for_invoice_full_payment(self, cart_service):
+        """Test creating payment that fully pays an invoice"""
+        invoice = Invoice(
+            invoice_id=1,
+            invoice_total_amount=500.00,
+            invoice_status='unpaid',
+            invoice_number='INV-001'
+        )
+        amount = 500.00
+        
+        expected_payment = Payment(
+            payment_id=1,
+            payment_amount=amount,
+            payment_status='completed'
+        )
+        
+        cart_service.mock_financial_repo.create_payment.return_value = expected_payment
+        cart_service.mock_financial_repo.update_invoice.return_value = invoice
+        
+        result = cart_service._create_payment_for_invoice(invoice, amount)
+        
+        assert invoice.invoice_status == 'paid'
+        assert result.payment_status == 'completed'
+        cart_service.mock_financial_repo.update_invoice.assert_called_once_with(invoice)
+        cart_service.mock_financial_repo.create_payment.assert_called_once()
     
-    # Create plan
-    basic_plan = Plan(
-        plan_name="Basic",
-        plan_price=9.99,
-        billing_cycle="monthly",
-        plan_type="individual"
-    )
-    db_session.add(basic_plan)
+    def test_create_payment_for_invoice_partial_payment(self, cart_service):
+        """Test creating partial payment for an invoice"""
+        invoice = Invoice(
+            invoice_id=1,
+            invoice_total_amount=500.00,
+            invoice_status='unpaid',
+            invoice_number='INV-001'
+        )
+        amount = 200.00
+        
+        expected_payment = Payment(
+            payment_id=1,
+            payment_amount=amount,
+            payment_status='partial'
+        )
+        
+        cart_service.mock_financial_repo.create_payment.return_value = expected_payment
+        
+        result = cart_service._create_payment_for_invoice(invoice, amount)
+        
+        assert invoice.invoice_status == 'unpaid'  # Not fully paid
+        assert result.payment_amount == amount
+        assert result.payment_status == 'partial'
+        cart_service.mock_financial_repo.update_invoice.assert_not_called()
     
-    # Create address
-    address = Address(
-        address_street="123 Main St",
-        address_city="Test City",
-        address_postal_code="12345",
-        address_country="Test Country"
-    )
-    db_session.add(address)
+    def test_create_receipt_for_payment(self, cart_service, sample_cart):
+        """Test receipt creation for a payment"""
+        payment = Payment(
+            payment_id=1,
+            payment_amount=500.00,
+            payment_status='completed'
+        )
+        
+        expected_receipt = Receipt(
+            receipt_id=1,
+            receipt_payment_id=payment.payment_id,
+            receipt_number=f"RCPT-{datetime.now().strftime('%Y%m%d')}-{sample_cart.cart_id:04d}",
+            receipt_amount=payment.payment_amount,
+            receipt_cart_ref=sample_cart.cart_id,
+            receipt_notes=f"Receipt for Payment #{payment.payment_id}"
+        )
+        
+        cart_service.mock_financial_repo.create_receipt.return_value = expected_receipt
+        
+        result = cart_service._create_receipt_for_payment(payment, sample_cart)
+        
+        assert result == expected_receipt
+        cart_service.mock_financial_repo.create_receipt.assert_called_once()
     
-    # Create location
-    location = Location(
-        location_name="Test Location",
-        location_address=address,
-        location_postal_code=12345
-    )
-    db_session.add(location)
+    def test_create_deposit_for_cart(self, cart_service, sample_cart):
+        """Test deposit creation for a cart"""
+        amount = 200.00
+        
+        expected_deposit = Deposit(
+            deposit_id=1,
+            deposit_cart_id=sample_cart.cart_id,
+            deposit_amount=amount,
+            deposit_method='cash',
+            deposit_reference=f"DEP-{datetime.now().strftime('%Y%m%d%H%M%S')}",
+            deposit_notes=f"Deposit for Cart #{sample_cart.cart_id}"
+        )
+        
+        cart_service.mock_financial_repo.create_deposit.return_value = expected_deposit
+        
+        result = cart_service._create_deposit_for_cart(sample_cart, amount)
+        
+        assert result == expected_deposit
+        cart_service.mock_financial_repo.create_deposit.assert_called_once()
     
-    # Create person details
-    person_details = PersonDetails(
-        person_first_name="John",
-        person_last_name="Doe",
-        person_gender="Male",
-        person_phone="+1234567890"
-    )
-    db_session.add(person_details)
+    def test_update_cart_status_completed_from_payment(self, cart_service, sample_cart):
+        """Test updating cart status to completed when fully paid"""
+        api_cart = Cart_API(cart_status='pending')
+        financial_docs = {
+            'payment': Payment(payment_status='completed', payment_amount=500.00)
+        }
+        sample_cart.cart_total_amount = 500.00
+        
+        cart_service.mock_cart_repo.update_cart.return_value = sample_cart
+        
+        cart_service._update_cart_status(sample_cart, api_cart, financial_docs)
+        
+        assert sample_cart.cart_status == 'completed'
+        cart_service.mock_cart_repo.update_cart.assert_called_once_with(sample_cart)
     
-    # Create person
-    person = Person(
-        person_details=person_details,
-        person_blood_type=blood_type_a,
-        person_location=location
-    )
-    db_session.add(person)
+    def test_update_cart_status_partial_from_payment(self, cart_service, sample_cart):
+        """Test updating cart status to partial when partially paid"""
+        api_cart = Cart_API(cart_status='pending')
+        financial_docs = {
+            'payment': Payment(payment_status='partial', payment_amount=200.00)
+        }
+        sample_cart.cart_total_amount = 500.00
+        sample_cart.cart_status = 'pending'
+        
+        cart_service._update_cart_status(sample_cart, api_cart, financial_docs)
+        
+        assert sample_cart.cart_status == 'pending'
     
-    # Create wallet
-    wallet = Wallet(
-        wallet_type="personal",
-        wallet_currency="USD",
-        wallet_balance=1000.00,
-        wallet_status="active"
-    )
-    db_session.add(wallet)
+    def test_update_cart_status_from_deposit(self, cart_service, sample_cart):
+        """Test updating cart status to deposit_paid when deposit is made"""
+        api_cart = Cart_API(cart_status='pending')
+        financial_docs = {
+            'deposit': Deposit(deposit_amount=200.00)
+        }
+        sample_cart.cart_status = 'pending'
+        
+        cart_service._update_cart_status(sample_cart, api_cart, financial_docs)
+        
+        assert sample_cart.cart_status == 'deposit_paid'
     
-    # Create app user
-    app_user = AppUser(
-        app_user_name="johndoe",
-        app_user_password="hashed_password",
-        app_user_person=person,
-        app_user_type=admin_type,
-        app_user_email="john@example.com",
-        app_user_wallet=wallet,
-        plan=basic_plan
-    )
-    db_session.add(app_user)
+    def test_create_cart_success(self, cart_service, sample_cart_api, sample_ordered_item_api, 
+                                  sample_product, sample_app_user, sample_product_provider, 
+                                  sample_person_api):
+        """Test successful cart creation with all documents"""
+        # Setup mocks
+        supplier = ProductProvider(
+            product_provider_id=sample_product_provider.product_provider_id,
+            provider_details=MagicMock(provider_name="Test Provider")
+        )
+        selling_user = sample_app_user
+        buyer_user = sample_app_user
+        person = Person(id_person=1, person_details=MagicMock(first_name="John", last_name="Doe"))
+        
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = supplier
+        cart_service.mock_user_repo.get_by_id.side_effect = [selling_user, buyer_user]
+        cart_service.mock_person_service.create_person.return_value = person
+        cart_service.mock_person_service.get_person_by_id.return_value = person
+        
+        # Mock product validation
+        cart_service.mock_product_repo.get_product_by_id.return_value = sample_product
+        cart_service.mock_product_repo.update_product.return_value = sample_product
+        
+        # Mock ordered item building
+        ordered_item_model = OrderedItem(
+            ordered_product_id=sample_product.product_id,
+            ordered_quantity=2,
+            applied_vat=0.2
+        )
+        cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
+        
+        # Mock cart creation
+        new_cart = Cart(
+            cart_id=1,
+            cart_product_provider_id=sample_product_provider.product_provider_id,
+            cart_selling_user=selling_user.id_app_user,
+            cart_status=sample_cart_api.cart_status,
+            cart_total_amount=sample_cart_api.cart_total_amount,
+            cart_notes=sample_cart_api.cart_notes
+        )
+        cart_service.mock_cart_repo.create_cart.return_value = new_cart
+        
+        # Mock financial documents
+        cart_service.mock_financial_repo.create_invoice.return_value = Invoice(invoice_id=1)
+        cart_service.mock_financial_repo.create_payment.return_value = Payment(payment_id=1)
+        cart_service.mock_financial_repo.create_receipt.return_value = Receipt(receipt_id=1)
+        
+        ordered_items = [sample_ordered_item_api]
+        ordered_services = []
+        
+        financial_docs, cart = cart_service.create_cart(
+            ordered_items=ordered_items,
+            ordered_services=ordered_services,
+            cart_data=sample_cart_api,
+            delivery=None,
+            client=sample_person_api,
+            provider_id=sample_product_provider.product_provider_id,
+            seller_user_id=selling_user.id_app_user,
+            buyer_user_id=buyer_user.id_app_user
+        )
+        
+        assert 'invoice' in financial_docs
+        assert 'payment' in financial_docs
+        assert 'receipt' in financial_docs
+        assert cart is not None
+        cart_service.mock_cart_repo.create_cart.assert_called_once()
     
-    # Create provider details
-    provider_details = ProviderDetails(
-        provider_name="Test Provider Inc.",
-        provider_contact_info="contact@testprovider.com"
-    )
-    db_session.add(provider_details)
+    def test_create_cart_with_delivery(self, cart_service, sample_cart_api, sample_ordered_item_api,
+                                        sample_product, sample_app_user, sample_product_provider,
+                                        sample_delivery_api):
+        """Test cart creation with delivery information"""
+        # Setup mocks
+        supplier = ProductProvider(product_provider_id=sample_product_provider.product_provider_id)
+        selling_user = sample_app_user
+        
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = supplier
+        cart_service.mock_user_repo.get_by_id.return_value = selling_user
+        cart_service.mock_product_repo.get_product_by_id.return_value = sample_product
+        cart_service.mock_product_repo.update_product.return_value = sample_product
+        
+        ordered_item_model = OrderedItem(
+            ordered_product_id=sample_product.product_id,
+            ordered_quantity=2
+        )
+        cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
+        
+        delivery_model = Delivery(
+            delivery_address=sample_delivery_api.delivery_address,
+            delivery_status="pending"
+        )
+        cart_service.mock_delivery_service._build_delivery_model.return_value = delivery_model
+        
+        new_cart = Cart(cart_id=1)
+        cart_service.mock_cart_repo.create_cart.return_value = new_cart
+        
+        ordered_items = [sample_ordered_item_api]
+        ordered_services = []
+        
+        financial_docs, cart = cart_service.create_cart(
+            ordered_items=ordered_items,
+            ordered_services=ordered_services,
+            cart_data=sample_cart_api,
+            delivery=sample_delivery_api,
+            client=None,
+            provider_id=sample_product_provider.product_provider_id,
+            seller_user_id=selling_user.id_app_user,
+            buyer_user_id=0
+        )
+        
+        assert cart is not None
+        cart_service.mock_delivery_service._build_delivery_model.assert_called_once_with(sample_delivery_api)
     
-    # Create provider type
-    provider_type = ProductProviderType(
-        product_provider_type_desc="Retail Store"
-    )
-    db_session.add(provider_type)
+    def test_create_cart_supplier_not_found(self, cart_service, sample_cart_api):
+        """Test cart creation with non-existent supplier"""
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = None
+        
+        with pytest.raises(APIException) as exc_info:
+            cart_service.create_cart(
+                ordered_items=[],
+                ordered_services=[],
+                cart_data=sample_cart_api,
+                provider_id=999,
+                seller_user_id=200,
+                buyer_user_id=0
+            )
+        
+        assert exc_info.value.status == HTTP_404_NOT_FOUND
+        assert exc_info.value.code == SUPPLIER_NOT_EXISTS
     
-    # Create provider wallet
-    provider_wallet = Wallet(
-        wallet_type="business",
-        wallet_currency="USD",
-        wallet_balance=5000.00,
-        wallet_status="active"
-    )
-    db_session.add(provider_wallet)
+    def test_create_cart_seller_not_found(self, cart_service, sample_cart_api, sample_product_provider):
+        """Test cart creation with non-existent seller"""
+        supplier = ProductProvider(product_provider_id=sample_product_provider.product_provider_id)
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = supplier
+        cart_service.mock_user_repo.get_by_id.return_value = None
+        
+        with pytest.raises(APIException) as exc_info:
+            cart_service.create_cart(
+                ordered_items=[],
+                ordered_services=[],
+                cart_data=sample_cart_api,
+                provider_id=sample_product_provider.product_provider_id,
+                seller_user_id=999,
+                buyer_user_id=0
+            )
+        
+        assert exc_info.value.status == HTTP_404_NOT_FOUND
+        assert exc_info.value.code == APPUSER_NOT_EXISTS
     
-    # Create provider organisation
-    provider_org = ProviderOrganisation(
-        provider_organisation_name="Test Org",
-        provider_organisation_desc="Test organisation for providers"
-    )
-    db_session.add(provider_org)
+    def test_create_cart_product_not_found(self, cart_service, sample_cart_api, 
+                                            sample_ordered_item_api, sample_app_user, 
+                                            sample_product_provider):
+        """Test cart creation with non-existent product"""
+        supplier = ProductProvider(product_provider_id=sample_product_provider.product_provider_id)
+        selling_user = sample_app_user
+        
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = supplier
+        cart_service.mock_user_repo.get_by_id.return_value = selling_user
+        cart_service.mock_product_repo.get_product_by_id.return_value = None
+        
+        ordered_item_model = OrderedItem(
+            ordered_product_id=999,
+            ordered_quantity=2
+        )
+        cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
+        
+        with pytest.raises(APIException) as exc_info:
+            cart_service.create_cart(
+                ordered_items=[sample_ordered_item_api],
+                ordered_services=[],
+                cart_data=sample_cart_api,
+                provider_id=sample_product_provider.product_provider_id,
+                seller_user_id=selling_user.id_app_user,
+                buyer_user_id=0
+            )
+        
+        assert exc_info.value.status == HTTP_404_NOT_FOUND
+        assert exc_info.value.code == PRODUCT_NOT_EXISTS
     
-    # Create product provider
-    product_provider = ProductProvider(
-        product_provider_details=provider_details,
-        product_provider_type=provider_type,
-        product_provider_location=location,
-        product_provider_org=provider_org,
-        product_provider_owner=app_user,
-        product_provider_wallet=provider_wallet
-    )
-    db_session.add(product_provider)
+    def test_create_cart_insufficient_stock(self, cart_service, sample_cart_api, 
+                                             sample_ordered_item_api, sample_product, 
+                                             sample_app_user, sample_product_provider):
+        """Test cart creation with insufficient product stock"""
+        supplier = ProductProvider(product_provider_id=sample_product_provider.product_provider_id)
+        selling_user = sample_app_user
+        
+        # Set product stock to low quantity
+        sample_product.product_quantity = 1
+        
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = supplier
+        cart_service.mock_user_repo.get_by_id.return_value = selling_user
+        cart_service.mock_product_repo.get_product_by_id.return_value = sample_product
+        
+        ordered_item_model = OrderedItem(
+            ordered_product_id=sample_product.product_id,
+            ordered_quantity=5  # More than available
+        )
+        cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
+        
+        with pytest.raises(APIException) as exc_info:
+            cart_service.create_cart(
+                ordered_items=[sample_ordered_item_api],
+                ordered_services=[],
+                cart_data=sample_cart_api,
+                provider_id=sample_product_provider.product_provider_id,
+                seller_user_id=selling_user.id_app_user,
+                buyer_user_id=0
+            )
+        
+        assert exc_info.value.status == HTTP_416_REQUESTED_RANGE_NOT_SATISFIABLE
+        assert exc_info.value.code == PRODUCT_QUANTITY_NOT_ENOUGH
     
-    # Create ingredient
-    ingredient = Ingredient(
-        ingredient_name="Flour",
-        ingredient_icon_url="flour.png",
-        ingredient_quantifier="grams"
-    )
-    db_session.add(ingredient)
+    def test_create_cart_database_error_rollback(self, cart_service, sample_cart_api, 
+                                                   sample_ordered_item_api, sample_product, 
+                                                   sample_app_user, sample_product_provider):
+        """Test rollback of product stock when cart creation fails"""
+        supplier = ProductProvider(product_provider_id=sample_product_provider.product_provider_id)
+        selling_user = sample_app_user
+        original_quantity = sample_product.product_quantity
+        
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = supplier
+        cart_service.mock_user_repo.get_by_id.return_value = selling_user
+        cart_service.mock_product_repo.get_product_by_id.return_value = sample_product
+        cart_service.mock_product_repo.update_product.return_value = sample_product
+        
+        ordered_item_model = OrderedItem(
+            ordered_product_id=sample_product.product_id,
+            ordered_quantity=2
+        )
+        cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
+        
+        # Simulate database error on cart creation
+        cart_service.mock_cart_repo.create_cart.side_effect = Exception("Database connection error")
+        
+        with pytest.raises(APIException) as exc_info:
+            cart_service.create_cart(
+                ordered_items=[sample_ordered_item_api],
+                ordered_services=[],
+                cart_data=sample_cart_api,
+                provider_id=sample_product_provider.product_provider_id,
+                seller_user_id=selling_user.id_app_user,
+                buyer_user_id=0
+            )
+        
+        assert exc_info.value.status == HTTP_417_EXPECTATION_FAILED
+        assert exc_info.value.code == CART_INSERT_FAILED
+        # Verify stock was restored (called for rollback)
+        assert cart_service.mock_product_repo.update_product.call_count >= 2
     
-    # Create recipe
-    recipe = Recipe(
-        recipe_owner=app_user,
-        recipe_category=recipe_cat1,
-        recipe_name="Gluten Free Cake",
-        recipe_description="Delicious gluten free cake recipe",
-        recipe_preparation_time="60 minutes",
-        recipe_instructions="Mix all ingredients and bake at 350F for 45 minutes."
-    )
-    db_session.add(recipe)
+    def test_create_cart_with_services(self, cart_service, sample_cart_api, 
+                                        sample_app_user, sample_product_provider):
+        """Test cart creation with ordered services"""
+        supplier = ProductProvider(product_provider_id=sample_product_provider.product_provider_id)
+        selling_user = sample_app_user
+        
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = supplier
+        cart_service.mock_user_repo.get_by_id.return_value = selling_user
+        
+        ordered_service_api = OrderedService_API(
+            ordered_service_quantity=3,
+            ordered_service_unit_price=100.00,
+            ordered_service_total_price=300.00,
+            ordered_service_notes="Test service",
+            ordered_service_scheduled_at=datetime.now() + timedelta(days=7)
+        )
+        
+        new_cart = Cart(cart_id=1)
+        cart_service.mock_cart_repo.create_cart.return_value = new_cart
+        
+        financial_docs, cart = cart_service.create_cart(
+            ordered_items=[],
+            ordered_services=[ordered_service_api],
+            cart_data=sample_cart_api,
+            delivery=None,
+            client=None,
+            provider_id=sample_product_provider.product_provider_id,
+            seller_user_id=selling_user.id_app_user,
+            buyer_user_id=0
+        )
+        
+        assert cart is not None
     
-    # Create recipe contains ingredient
-    recipe_ingredient = RecipeContainsIngredient(
-        containing_recipe=recipe,
-        contained_ingredient=ingredient,
-        contained_quantity="200g"
-    )
-    db_session.add(recipe_ingredient)
+    def test_update_cart_status_success(self, cart_service, sample_cart):
+        """Test successful cart status update"""
+        cart_service.mock_cart_repo.get_cart_by_id.return_value = sample_cart
+        cart_service.mock_cart_repo.update_cart.return_value = sample_cart
+        
+        result = cart_service.update_cart_status(sample_cart.cart_id, 'completed')
+        
+        assert result.cart_status == 'completed'
+        cart_service.mock_cart_repo.get_cart_by_id.assert_called_once_with(sample_cart.cart_id)
+        cart_service.mock_cart_repo.update_cart.assert_called_once()
     
-    # Create product
-    product = Product(
-        product_name="Gluten Free Bread",
-        product_brand="HealthyBake",
-        product_provider=product_provider,
-        product_category=category1,
-        product_description="Freshly baked gluten free bread",
-        product_price=5.99,
-        product_quantity=50,
-        product_quantifier="loaf",
-        product_owner=app_user
-    )
-    db_session.add(product)
+    def test_delete_cart_success(self, cart_service, sample_cart, sample_product):
+        """Test successful cart deletion with stock restoration"""
+        sample_cart.ordered_item = [
+            OrderedItem(ordered_product_id=sample_product.product_id, ordered_quantity=2)
+        ]
+        cart_service.mock_cart_repo.get_cart_by_id.return_value = sample_cart
+        cart_service.mock_product_repo.get_product_by_id.return_value = sample_product
+        cart_service.mock_product_repo.update_product.return_value = sample_product
+        cart_service.mock_cart_repo.delete_cart.return_value = True
+        
+        result = cart_service.delete_cart(sample_cart.cart_id)
+        
+        assert result is True
+        # Verify stock was restored
+        assert sample_product.product_quantity == sample_product.product_quantity
+        cart_service.mock_product_repo.update_product.assert_called_once_with(sample_product)
+        cart_service.mock_cart_repo.delete_cart.assert_called_once_with(sample_cart)
     
-    # Create cart
-    cart = Cart(
-        cart_product_provider=product_provider,
-        cart_selling_user=app_user.id_app_user,
-        cart_client_user=app_user.id_app_user,
-        cart_status="open",
-        cart_total_amount=11.98,
-        cart_person_ref=person.id_person
-    )
-    db_session.add(cart)
+    def test_build_ordered_service_model(self, cart_service):
+        """Test building ordered service model from API data"""
+        scheduled_date = datetime.now() + timedelta(days=7)
+        api_service = OrderedService_API(
+            ordered_service_quantity=3,
+            ordered_service_unit_price=150.00,
+            ordered_service_total_price=450.00,
+            ordered_service_notes="Test service",
+            ordered_service_scheduled_at=scheduled_date
+        )
+        
+        result = cart_service._build_ordered_service_model(api_service)
+        
+        assert result.ordered_service_quantity == 3
+        assert result.ordered_service_unit_price == 150.00
+        assert result.ordered_service_total_price == 450.00
+        assert result.ordered_service_notes == "Test service"
+        assert result.ordered_service_scheduled_at == scheduled_date
     
-    # Create invoice
-    invoice = Invoice(
-        invoice_cart=cart,
-        invoice_number="INV-001",
-        invoice_total_amount=11.98,
-        invoice_status="unpaid",
-        invoice_issue_date="2024-01-15",
-        invoice_due_date="2024-02-15"
-    )
-    db_session.add(invoice)
+    def test_create_cart_without_buyer(self, cart_service, sample_cart_api, sample_ordered_item_api,
+                                        sample_product, sample_app_user, sample_product_provider):
+        """Test cart creation without a buyer user"""
+        supplier = ProductProvider(product_provider_id=sample_product_provider.product_provider_id)
+        selling_user = sample_app_user
+        
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = supplier
+        cart_service.mock_user_repo.get_by_id.return_value = selling_user
+        cart_service.mock_product_repo.get_product_by_id.return_value = sample_product
+        cart_service.mock_product_repo.update_product.return_value = sample_product
+        
+        ordered_item_model = OrderedItem(
+            ordered_product_id=sample_product.product_id,
+            ordered_quantity=2
+        )
+        cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
+        
+        new_cart = Cart(cart_id=1)
+        cart_service.mock_cart_repo.create_cart.return_value = new_cart
+        
+        financial_docs, cart = cart_service.create_cart(
+            ordered_items=[sample_ordered_item_api],
+            ordered_services=[],
+            cart_data=sample_cart_api,
+            delivery=None,
+            client=None,
+            provider_id=sample_product_provider.product_provider_id,
+            seller_user_id=selling_user.id_app_user,
+            buyer_user_id=0
+        )
+        
+        assert cart is not None
+        # Verify that buyer_user is not set on cart (cart_client_user remains None)
+        assert getattr(cart, 'cart_client_user', None) is None
     
-    # Create payment
-    payment = Payment(
-        payment_invoice=invoice,
-        payment_amount=11.98,
-        payment_method="card",
-        payment_status="completed",
-        payment_reference="PAY-REF-001"
-    )
-    db_session.add(payment)
-    
-    # Create receipt
-    receipt = Receipt(
-        receipt_amount=11.98,
-        receipt_payment=payment,
-        receipt_number="REC-001",
-        cart=cart
-    )
-    db_session.add(receipt)
-    
-    # Create placed order
-    placed_order = PlacedOrder(
-        ordering_user=app_user,
-        total_price=11.98,
-        invoice=invoice,
-        receipt=receipt,
-        location=location
-    )
-    db_session.add(placed_order)
-    
-    # Create ordered item
-    ordered_item = OrderedItem(
-        ordered_product=product,
-        ordered_quantity=2,
-        unit_price=5.99,
-        placed_order=placed_order,
-        cart=cart
-    )
-    db_session.add(ordered_item)
-    
-    # Create delivery broker
-    delivery_broker_wallet = Wallet(
-        wallet_type="delivery",
-        wallet_currency="USD",
-        wallet_balance=1000.00,
-        wallet_status="active"
-    )
-    db_session.add(delivery_broker_wallet)
-    
-    delivery_broker = DeliveryBroker(
-        delivery_broker_name="Fast Delivery",
-        delivery_broker_label="FD",
-        delivery_broker_logo_url="fast-delivery.png",
-        delivery_broker_wallet=delivery_broker_wallet
-    )
-    db_session.add(delivery_broker)
-    
-    # Create delivery
-    delivery = Delivery(
-        delivery_address=address,
-        delivery_current_address=address,
-        delivery_status="PENDING",
-        delivery_fee=5.00,
-        delivery_placed_order=placed_order,
-        delivery_provider=product_provider,
-        delivery_broker=delivery_broker
-    )
-    db_session.add(delivery)
-    
-    # Add delivery reference to cart
-    cart.cart_delivery = delivery.id_delivery
-    
-    # Create product reaction
-    product_reaction = ProductReaction(
-        product_reacting_user=app_user,
-        product_reaction_ref=like_reaction,
-        reacted_on_product=product,
-        product_reaction_value=5.0
-    )
-    db_session.add(product_reaction)
-    
-    # Create provider reaction
-    provider_reaction = ProviderReaction(
-        product_reacting_user=app_user,
-        product_reaction_ref=like_reaction,
-        reacted_on_provider=product_provider,
-        provider_reaction_value=4.5
-    )
-    db_session.add(provider_reaction)
-    
-    # Create comment
-    comment = Comment(
-        comment_owner=app_user,
-        comment_content="Great product!",
-        comment_visibility=1
-    )
-    db_session.add(comment)
-    
-    # Create notification
-    notification = Notification(
-        notification_code="ORDER_COMPLETED",
-        notification_params='{"order_id": 1}',
-        notification_user_ref=app_user.id_app_user
-    )
-    db_session.add(notification)
-    
-    db_session.commit()
-    
-    return {
-        'blood_types': [blood_type_a, blood_type_b],
-        'user_types': [admin_type, user_type],
-        'categories': [category1, category2],
-        'person': person,
-        'app_user': app_user,
-        'product_provider': product_provider,
-        'product': product,
-        'cart': cart,
-        'invoice': invoice,
-        'payment': payment,
-        'receipt': receipt,
-        'placed_order': placed_order,
-        'ordered_item': ordered_item,
-        'delivery': delivery,
-        'recipe': recipe,
-        'ingredient': ingredient,
-        'comment': comment,
-        'notification': notification
-    }
-
-@pytest.fixture
-def db_engine_with_data(test_engine, populated_db):
-    """Return engine with populated data."""
-    return test_engine
-
-@pytest.fixture
-def db_module():
-    """Import the database module to test."""
-    # Mock the DB_URI constant
-    import storage.storage_service.StorageService as db_module
-    
-    # Mock the DB_URI to use SQLite for testing
-    with patch('storage.storage_service.StorageService.DB_URI', 'sqlite:///:memory:'):
-        yield db_module
-
-@pytest.fixture
-def mock_request():
-    """Create a mock request object."""
-    request = MagicMock()
-    request.session = {}
-    return request
-
-@pytest.fixture
-def sample_conditions():
-    """Sample conditions for testing."""
-    return {"product_name": "Gluten Free Bread"}
-
-@pytest.fixture
-def sample_eager_load_depth():
-    """Sample eager load depth configuration."""
-    return ["product_provider", "product_category"]
-
-@pytest.fixture
-def sample_join_tables():
-    """Sample join tables for testing."""
-    return [Product.product_provider]
-
-@pytest.fixture
-def sample_search_fields():
-    """Sample search fields for testing."""
-    return ["product_name", "product_description", "product_provider.provider_details.provider_name"]
-
-
-# Create test database in memory
-@pytest.fixture(scope="session")
-def test_engine():
-    """Create an in-memory SQLite database for testing."""
-    engine = create_engine(
-        'sqlite:///:memory:',
-        connect_args={'check_same_thread': False},
-        poolclass=StaticPool
-    )
-    
-    # Create all tables
-    Base.metadata.create_all(bind=engine)
-    
-    yield engine
-    
-    # Cleanup
-    Base.metadata.drop_all(bind=engine)
-
-@pytest.fixture
-def db_session(test_engine):
-    """Create a fresh database session for each test."""
-    Session = sessionmaker(bind=test_engine)
-    session = Session()
-    
-    try:
-        yield session
-    finally:
-        session.rollback()
-        session.close()
-
-@pytest.fixture
-def populated_db(test_engine, db_session):
-    """Populate the database with test data."""
-    # Create blood types
-    blood_type_a = BloodType(blood_type_name="A")
-    blood_type_b = BloodType(blood_type_name="B")
-    db_session.add_all([blood_type_a, blood_type_b])
-    
-    # Create persons
-    person1 = Person(
-        person_name="John Doe", 
-        person_email="john@example.com",
-        blood_type=blood_type_a
-    )
-    person2 = Person(
-        person_name="Jane Smith", 
-        person_email="jane@example.com",
-        blood_type=blood_type_b
-    )
-    db_session.add_all([person1, person2])
-    
-    # Create user types
-    admin_type = AppUserType(user_type_name="Admin")
-    user_type = AppUserType(user_type_name="User")
-    db_session.add_all([admin_type, user_type])
-    
-    # Create users
-    user1 = AppUser(
-        user_name="johndoe",
-        user_password="password123",
-        person=person1,
-        user_type=admin_type
-    )
-    user2 = AppUser(
-        user_name="janesmith",
-        user_password="password456",
-        person=person2,
-        user_type=user_type
-    )
-    db_session.add_all([user1, user2])
-    
-    # Create products
-    products = [
-        Product(product_name="Product A", product_code="PA001", product_price=1000),
-        Product(product_name="Product B", product_code="PB001", product_price=2000),
-        Product(product_name="Product C", product_code="PC001", product_price=3000),
-    ]
-    db_session.add_all(products)
-    
-    db_session.commit()
-    
-    return {
-        'blood_types': [blood_type_a, blood_type_b],
-        'persons': [person1, person2],
-        'user_types': [admin_type, user_type],
-        'users': [user1, user2],
-        'products': products
-    }
-
-@pytest.fixture
-def db_engine_with_data(test_engine, populated_db):
-    """Return engine with populated data."""
-    return test_engine
-
-@pytest.fixture
-def db_module():
-    """Import the database module to test."""
-    # Adjust import path based on your project structure
-    import sys
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-    
-    # Mock the DB_URI constant since we're using in-memory database
-    import storage.storage_service.StorageService as db_module
-    return db_module
+    def test_create_cart_with_existing_person(self, cart_service, sample_cart_api, 
+                                                sample_ordered_item_api, sample_product,
+                                                sample_app_user, sample_product_provider,
+                                                sample_person_api):
+        """Test cart creation with an existing person"""
+        supplier = ProductProvider(product_provider_id=sample_product_provider.product_provider_id)
+        selling_user = sample_app_user
+        existing_person = Person(id_person=1)
+        
+        # Set person ID to non-zero to indicate existing person
+        sample_person_api.id_person = 1
+        
+        cart_service.mock_supplier_repo.get_supplier_basic.return_value = supplier
+        cart_service.mock_user_repo.get_by_id.return_value = selling_user
+        cart_service.mock_person_service.get_person_by_id.return_value = existing_person
+        cart_service.mock_product_repo.get_product_by_id.return_value = sample_product
+        cart_service.mock_product_repo.update_product.return_value = sample_product
+        
+        ordered_item_model = OrderedItem(
+            ordered_product_id=sample_product.product_id,
+            ordered_quantity=2
+        )
+        cart_service.mock_order_service._build_ordered_item_model.return_value = ordered_item_model
+        
+        new_cart = Cart(cart_id=1)
+        cart_service.mock_cart_repo.create_cart.return_value = new_cart
+        
+        financial_docs, cart = cart_service.create_cart(
+            ordered_items=[sample_ordered_item_api],
+            ordered_services=[],
+            cart_data=sample_cart_api,
+            delivery=None,
+            client=sample_person_api,
+            provider_id=sample_product_provider.product_provider_id,
+            seller_user_id=selling_user.id_app_user,
+            buyer_user_id=0
+        )
+        
+        assert cart is not None
+        cart_service.mock_person_service.get_person_by_id.assert_called_once_with(1)
+        cart_service.mock_person_service.create_person.assert_not_called()

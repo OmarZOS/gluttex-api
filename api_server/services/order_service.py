@@ -3,7 +3,7 @@ from typing import List, Tuple, Dict, Any, Optional
 from datetime import datetime
 from fastapi import BackgroundTasks
 from core.api_models import OrderedItem_API, PlacedOrder_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from core.models import PlacedOrder, OrderedItem, Product
 from repositories.order_repository import OrderRepository, OrderItemRepository

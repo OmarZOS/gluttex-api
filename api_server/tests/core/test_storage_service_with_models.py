@@ -6,7 +6,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy import desc, and_, or_
 import sqlalchemy as sa
 from core.models import *
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 
 # Import your models
 

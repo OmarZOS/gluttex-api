@@ -1,7 +1,7 @@
 # services/social_service.py
 from typing import Optional
 from core.api_models import ReactionBase
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from services.reaction_service import ReactionService
 from repositories.person_repository import PersonRepository  # You'll need to create this

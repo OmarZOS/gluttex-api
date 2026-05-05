@@ -6,6 +6,8 @@ These values control the appearance and behavior
 import os
 from datetime import datetime
 from pathlib import Path
+from typing import List, Optional
+
 
 # ============ PATHS & DIRECTORIES ============
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -165,3 +167,8 @@ PROMETHEUS_ENABLED = False
 
 # Create backup directory
 BACKUP_DIR.mkdir(exist_ok=True)
+
+USE_VERSIONING: bool = True
+TRUSTED_HOSTS: List[str] = ["*"]  # Override in production
+CONTACT_EMAIL: Optional[str] = None
+WORKERS: int = 1

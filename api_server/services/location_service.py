@@ -4,7 +4,7 @@ from geoalchemy2.elements import WKTElement
 from core.api_models import Location_API, Delivery_API
 from core.models import Address
 from core.persistent_models import Location
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from repositories.location_repository import LocationRepository
 from repositories.address_repository import AddressRepository

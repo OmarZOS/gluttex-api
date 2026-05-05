@@ -1,12 +1,25 @@
 # services/person_service.py
-from typing import Optional, Dict, Any
+"""
+Service for person-related operations including person CRUD, blood types, and location management.
+"""
+
+import logging
+from typing import Optional, Dict, Any, List
+from datetime import datetime
+
+from core.exceptions.specific.person_exceptions import *
 from core.api_models import Person_API, Location_API
-from core.exception_handler import APIException
-from core.messages import *
+from core.exceptions.handler import (
+    DatabaseException
+)
 from core.models import Person, PersonDetails, BloodType
 from core.persistent_models import Location
 from repositories.person_repository import PersonRepository
 from services.location_service import LocationService
+
+logger = logging.getLogger(__name__)
+
+# ==================== Person Service ====================
 
 class PersonService:
     """Service for person-related operations"""
@@ -17,23 +30,56 @@ class PersonService:
     
     # ==================== Person Operations ====================
     
-    def get_person_by_id(self, person_id: str, full: bool = False) -> Optional[Person]:
-        """Get person by ID"""
+    def get_person_by_id(self, person_id: str, full: bool = False) -> Person:
+        """
+        Get person by ID.
+        
+        Args:
+            person_id: Person ID to retrieve
+            full: Whether to load all related data eagerly
+            
+        Returns:
+            Person object
+            
+        Raises:
+            PersonNotFoundException: If person not found
+        """
         person = self.person_repo.get_person_by_id(person_id, eager_load=full)
         if not person:
-            raise APIException(
-                status=HTTP_404_NOT_FOUND,
-                code=PERSON_NOT_EXISTS,
-                details=f"Person {person_id} not found"
+            logger.warning(f"Person not found with ID: {person_id}")
+            raise PersonNotFoundException(
+                person_id=person_id,
+                details={"search_type": "by_id", "full_load": full}
             )
+        
+        logger.debug(f"Retrieved person with ID: {person_id}")
         return person
     
     def get_person_basic(self, person_id: str) -> Optional[Person]:
-        """Get person with basic info"""
+        """
+        Get person with basic info only.
+        
+        Args:
+            person_id: Person ID to retrieve
+            
+        Returns:
+            Person object or None if not found
+        """
         return self.person_repo.get_person_basic(person_id)
     
     def create_person_details(self, person_data: Person_API) -> PersonDetails:
-        """Create person details"""
+        """
+        Create person details record.
+        
+        Args:
+            person_data: Person data containing details
+            
+        Returns:
+            Created PersonDetails object
+            
+        Raises:
+            PersonDetailsCreationException: If creation fails
+        """
         person_detail = PersonDetails(
             person_first_name=person_data.person_first_name,
             person_last_name=person_data.person_last_name,
@@ -43,21 +89,33 @@ class PersonService:
         )
         
         try:
-            return self.person_repo.create_person_details(person_detail)
+            result = self.person_repo.create_person_details(person_detail)
+            logger.info(f"Created person details for: {person_data.person_first_name} {person_data.person_last_name}")
+            return result
         except Exception as e:
-            raise APIException(
-                status=HTTP_417_EXPECTATION_FAILED,
-                code=PERSON_DETAIL_INSERT_FAILED,
-                details=f"Failed to insert person details: {str(e)}"
-            )
+            logger.error(f"Failed to create person details: {e}")
+            raise PersonDetailsCreationException(
+                f"Failed to insert person details: {str(e)}"
+            ) from e
     
     def generate_person_object(
         self,
         person_data: Person_API,
         location_data: Optional[Location_API] = None
     ) -> Person:
-        """Generate a Person ORM object without inserting to DB"""
+        """
+        Generate a Person ORM object without inserting to DB.
         
+        Args:
+            person_data: Person data
+            location_data: Optional location data
+            
+        Returns:
+            Person ORM object (not persisted)
+            
+        Raises:
+            BloodTypeNotFoundException: If blood type not found
+        """
         person = Person()
         
         # Handle blood type
@@ -65,9 +123,17 @@ class PersonService:
             blood_type = self.person_repo.get_blood_type_object(person_data.id_blood_type)
             if blood_type:
                 person.person_blood_type_id = blood_type.id_blood_type
+            else:
+                logger.warning(f"Blood type not found: {person_data.id_blood_type}")
+                raise BloodTypeNotFoundException(
+                    blood_type_id=person_data.id_blood_type,
+                    details={"operation": "generate_person_object"}
+                )
         
         # Handle person details
-        existing_details = self.person_repo.get_person_details_by_id(person_data.id_person_details)
+        existing_details = self.person_repo.get_person_details_by_id(
+            person_data.id_person_details
+        )
         if existing_details:
             person.person_details_id = existing_details.id_person_details
         else:
@@ -87,6 +153,7 @@ class PersonService:
             else:
                 person.person_location = self.location_service.build_location_model(location_data)
         
+        logger.debug(f"Generated person object for: {person_data.person_first_name} {person_data.person_last_name}")
         return person
     
     def refresh_or_insert_person(
@@ -94,8 +161,22 @@ class PersonService:
         person_data: Person_API,
         location_data: Location_API
     ) -> Person:
-        """Insert or update a person"""
+        """
+        Insert a new person or update an existing one.
         
+        Args:
+            person_data: Person data
+            location_data: Location data
+            
+        Returns:
+            Created or updated Person object
+            
+        Raises:
+            PersonNotFoundException: If person not found for update
+            BloodTypeNotFoundException: If blood type not found
+            PersonInsertFailedException: If insertion fails
+            PersonUpdateFailedException: If update fails
+        """
         # Get existing person
         existing_person = self.person_repo.get_person_basic(person_data.id_person)
         
@@ -104,25 +185,32 @@ class PersonService:
         if person_data.id_blood_type:
             blood_type = self.person_repo.get_blood_type_object(person_data.id_blood_type)
             if not blood_type:
-                raise APIException(
-                    status=HTTP_417_EXPECTATION_FAILED,
-                    code=BLOOD_TYPE_NOT_EXISTS,
-                    message=f"{BLOOD_TYPE_NOT_EXISTS}: {person_data.id_blood_type}"
+                logger.warning(f"Blood type not found: {person_data.id_blood_type}")
+                raise BloodTypeNotFoundException(
+                    blood_type_id=person_data.id_blood_type,
+                    details={"operation": "refresh_or_insert_person"}
                 )
         
         # Handle person details
-        existing_details = self.person_repo.get_person_details_by_id(person_data.id_person_details)
+        existing_details = self.person_repo.get_person_details_by_id(
+            person_data.id_person_details
+        )
         
         if existing_person:
             # Update existing person
+            logger.info(f"Updating existing person with ID: {person_data.id_person}")
+            
             if existing_details:
+                # Update existing details
                 existing_details.person_gender = person_data.person_gender
                 existing_details.person_first_name = person_data.person_first_name
                 existing_details.person_last_name = person_data.person_last_name
                 existing_details.person_nationality = person_data.person_nationality
                 existing_person.person_details = existing_details
             else:
-                existing_person.person_details_id = self.create_person_details(person_data).id_person_details
+                # Create new details
+                new_details = self.create_person_details(person_data)
+                existing_person.person_details_id = new_details.id_person_details
             
             if blood_type:
                 existing_person.person_blood_type_id = blood_type.id_blood_type
@@ -130,22 +218,30 @@ class PersonService:
             # Handle location
             location = self.location_service.get_location_object(location_data.id_location)
             if location:
-                location = self.location_service.update_location(location_data.id_location, location_data)
+                location = self.location_service.update_location(
+                    location_data.id_location, 
+                    location_data
+                )
                 existing_person.person_location_id = location.id_location
             else:
                 new_location = self.location_service.create_location(location_data)
                 existing_person.person_location_id = new_location.id_location
             
             try:
-                return self.person_repo.update_person(existing_person)
+                updated_person = self.person_repo.update_person(existing_person)
+                logger.info(f"Successfully updated person with ID: {person_data.id_person}")
+                return updated_person
             except Exception as e:
-                raise APIException(
-                    status=HTTP_417_EXPECTATION_FAILED,
-                    code=PERSON_INSERT_FAILED,
-                    details=str(e)
+                logger.error(f"Failed to update person {person_data.id_person}: {e}")
+                raise PersonUpdateFailedException(
+                    person_id=person_data.id_person,
+                    error=str(e),
+                    details={"operation": "refresh_or_insert_person"}
                 )
         else:
             # Create new person
+            logger.info(f"Creating new person: {person_data.person_first_name} {person_data.person_last_name}")
+            
             person = Person()
             
             if blood_type:
@@ -164,44 +260,241 @@ class PersonService:
                 person.person_location_id = self.location_service.create_location(location_data).id_location
             
             try:
-                return self.person_repo.create_person(person)
+                created_person = self.person_repo.create_person(person)
+                logger.info(f"Successfully created person with ID: {created_person.id_person}")
+                return created_person
             except Exception as e:
-                raise APIException(
-                    status=HTTP_417_EXPECTATION_FAILED,
-                    code=PERSON_INSERT_FAILED,
-                    details=str(e)
+                logger.error(f"Failed to create person: {e}")
+                raise PersonInsertFailedException(
+                    error=str(e),
+                    details={
+                        "first_name": person_data.person_first_name,
+                        "last_name": person_data.person_last_name
+                    }
                 )
     
     def delete_person(self, person_id: str) -> Dict[str, Any]:
-        """Delete a person"""
+        """
+        Delete a person by ID.
+        
+        Args:
+            person_id: ID of the person to delete
+            
+        Returns:
+            Dictionary with success message
+            
+        Raises:
+            PersonNotFoundException: If person not found
+            PersonDeleteFailedException: If deletion fails
+        """
         person = self.get_person_by_id(person_id)
-        success = self.person_repo.delete_person(person)
         
-        if not success:
-            raise APIException(
-                status=HTTP_500_INTERNAL_SERVER_ERROR,
-                code=PERSON_DELETE_FAILED,
-                details=f"Failed to delete person {person_id}"
+        try:
+            success = self.person_repo.delete_person(person)
+            
+            if not success:
+                raise PersonDeleteFailedException(
+                    person_id=person_id,
+                    error="Repository returned False",
+                    details={"operation": "delete_person"}
+                )
+            
+            logger.info(f"Successfully deleted person with ID: {person_id}")
+            return {
+                "success": True,
+                "message": "Person deleted successfully",
+                "person_id": person_id,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except PersonNotFoundException:
+            raise
+        except Exception as e:
+            logger.error(f"Failed to delete person {person_id}: {e}")
+            raise PersonDeleteFailedException(
+                person_id=person_id,
+                error=str(e),
+                details={"operation": "delete_person"}
             )
-        
-        return {
-            "message": "Person deleted successfully",
-            "person_id": person_id
-        }
     
     # ==================== Blood Type Operations ====================
     
     def get_blood_type_by_id(self, blood_type_id: str) -> BloodType:
-        """Get blood type by ID"""
+        """
+        Get blood type by ID.
+        
+        Args:
+            blood_type_id: Blood type ID to retrieve
+            
+        Returns:
+            BloodType object
+            
+        Raises:
+            BloodTypeNotFoundException: If blood type not found
+        """
         blood_type = self.person_repo.get_blood_type_by_id(blood_type_id)
         if not blood_type:
-            raise APIException(
-                status=HTTP_404_NOT_FOUND,
-                code=BLOOD_TYPE_NOT_EXISTS,
-                message=f"{BLOOD_TYPE_NOT_EXISTS}: {blood_type_id}"
+            logger.warning(f"Blood type not found with ID: {blood_type_id}")
+            raise BloodTypeNotFoundException(
+                blood_type_id=blood_type_id,
+                details={"operation": "get_blood_type_by_id"}
             )
+        
+        logger.debug(f"Retrieved blood type: {blood_type_id}")
         return blood_type
     
-    def get_all_blood_types(self) -> list:
-        """Get all blood types"""
-        return self.person_repo.get_all_blood_types()
+    def get_all_blood_types(self) -> List[BloodType]:
+        """
+        Get all blood types.
+        
+        Returns:
+            List of all BloodType objects
+        """
+        blood_types = self.person_repo.get_all_blood_types()
+        logger.debug(f"Retrieved {len(blood_types)} blood types")
+        return blood_types
+    
+    def get_blood_type_object(self, blood_type_id: str) -> Optional[BloodType]:
+        """
+        Get blood type ORM object without raising exception.
+        
+        Args:
+            blood_type_id: Blood type ID to retrieve
+            
+        Returns:
+            BloodType object or None if not found
+        """
+        return self.person_repo.get_blood_type_object(blood_type_id)
+    
+    # ==================== Person Details Operations ====================
+    
+    def get_person_details_by_id(self, details_id: int) -> Optional[PersonDetails]:
+        """
+        Get person details by ID.
+        
+        Args:
+            details_id: Person details ID to retrieve
+            
+        Returns:
+            PersonDetails object or None if not found
+        """
+        return self.person_repo.get_person_details_by_id(details_id)
+    
+    def update_person_details(
+        self, 
+        details_id: int, 
+        person_data: Person_API
+    ) -> PersonDetails:
+        """
+        Update person details.
+        
+        Args:
+            details_id: ID of the details to update
+            person_data: New person data
+            
+        Returns:
+            Updated PersonDetails object
+            
+        Raises:
+            PersonDetailsNotFoundException: If details not found
+            DatabaseException: If update fails
+        """
+        details = self.get_person_details_by_id(details_id)
+        if not details:
+            logger.warning(f"Person details not found with ID: {details_id}")
+            raise PersonDetailsNotFoundException(
+                details_id=details_id,
+                details={"operation": "update_person_details"}
+            )
+        
+        try:
+            details.person_first_name = person_data.person_first_name
+            details.person_last_name = person_data.person_last_name
+            details.person_birth_date = person_data.person_birth_date
+            details.person_gender = person_data.person_gender
+            details.person_nationality = person_data.person_nationality
+            
+            updated_details = self.person_repo.update_person_details(details)
+            logger.info(f"Updated person details with ID: {details_id}")
+            return updated_details
+            
+        except Exception as e:
+            logger.error(f"Failed to update person details {details_id}: {e}")
+            raise DatabaseException(
+                message="Failed to update person details",
+                details={
+                    "details_id": details_id,
+                    "error": str(e),
+                    "operation": "update_person_details"
+                }
+            )
+    
+    # ==================== Utility Methods ====================
+    
+    def person_exists(self, person_id: str) -> bool:
+        """
+        Check if a person exists.
+        
+        Args:
+            person_id: Person ID to check
+            
+        Returns:
+            True if person exists, False otherwise
+        """
+        person = self.person_repo.get_person_basic(person_id)
+        return person is not None
+    
+    def get_person_full_name(self, person_id: str) -> Optional[str]:
+        """
+        Get the full name of a person.
+        
+        Args:
+            person_id: Person ID
+            
+        Returns:
+            Full name string or None if person not found
+        """
+        person = self.get_person_basic(person_id)
+        if not person or not person.person_details:
+            return None
+        
+        details = person.person_details
+        return f"{details.person_first_name} {details.person_last_name}".strip()
+    
+    def search_persons(
+        self,
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0
+    ) -> List[Person]:
+        """
+        Search persons by name.
+        
+        Args:
+            first_name: First name to search for
+            last_name: Last name to search for
+            limit: Maximum number of results
+            offset: Pagination offset
+            
+        Returns:
+            List of matching Person objects
+        """
+        conditions = {}
+        if first_name:
+            conditions["person_first_name"] = first_name
+        if last_name:
+            conditions["person_last_name"] = last_name
+        
+        if not conditions:
+            return []
+        
+        try:
+            results = self.person_repo.get_persons_by_conditions(
+                conditions, limit=limit, offset=offset
+            )
+            logger.debug(f"Found {len(results)} persons matching search criteria")
+            return results
+        except Exception as e:
+            logger.error(f"Failed to search persons: {e}")
+            return []

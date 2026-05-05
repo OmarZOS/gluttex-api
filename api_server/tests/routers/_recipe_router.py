@@ -135,7 +135,7 @@
 #             "ingredient_fat": 2.0
 #         }
         
-#         url = f"{BASE_URL}/ingredient/add"
+#         url = f"{BASE_URL}/ingredient"
 #         response = requests.post(url, json=ingredient_data, headers=HEADERS)
         
 #         success = response.status_code == 200
@@ -192,7 +192,7 @@
 #             "image": image_data
 #         }
         
-#         url = f"{BASE_URL}/recipe/add"
+#         url = f"{BASE_URL}/recipe"
 #         response = requests.post(url, json=payload, headers=HEADERS)
         
 #         success = response.status_code == 200
@@ -291,7 +291,7 @@
 #             "recipe_name": "Incomplete Recipe"
 #             # Missing required fields like recipe_category_id
 #         }
-#         url = f"{BASE_URL}/recipe/add"
+#         url = f"{BASE_URL}/recipe"
 #         response = requests.post(url, json={"recipe": invalid_recipe}, headers=HEADERS)
 #         success = response.status_code in [400, 422]  # Validation error expected
 #         print_test_result("Create Recipe with Invalid Data", success, response)
@@ -344,7 +344,7 @@
 #     }
     
 #     create_response = requests.post(
-#         f"{BASE_URL}/recipe/add",
+#         f"{BASE_URL}/recipe",
 #         json={"recipe": recipe_data, "image": image_data},
 #         headers=HEADERS
 #     )

@@ -108921,7 +108921,7 @@ m3(a){return this.ag0(a)},
 ag0(a){var s=0,r=A.q(t.z),q,p=this
 var $async$m3=A.r(function(b,c){if(b===1)return A.n(c,r)
 while(true)switch(s){case 0:s=3
-return A.v(p.a.BG("https://gluttex.com/api/app_user/add",a),$async$m3)
+return A.v(p.a.BG("https://gluttex.com/api/app_user",a),$async$m3)
 case 3:q=c
 s=1
 break
@@ -108943,7 +108943,7 @@ Ei(a){var s=0,r=A.q(t.ET),q,p
 var $async$Ei=A.r(function(b,c){if(b===1)return A.n(c,r)
 while(true)switch(s){case 0:p=A
 s=3
-return A.v($.cQ().dr(t.C).j0(0,"https://gluttex.com/api/business/order/add",a),$async$Ei)
+return A.v($.cQ().dr(t.C).j0(0,"https://gluttex.com/api/business/order",a),$async$Ei)
 case 3:q=p.b1x(c)
 s=1
 break
@@ -109030,7 +109030,7 @@ aCN(a){var s=0,r=A.q(t.S7),q,p
 var $async$Ej=A.r(function(b,c){if(b===1)return A.n(c,r)
 while(true)switch(s){case 0:p=A
 s=3
-return A.v($.cQ().dr(t.C).j0(0,"https://gluttex.com/api/product/add",a.e3()),$async$Ej)
+return A.v($.cQ().dr(t.C).j0(0,"https://gluttex.com/api/product",a.e3()),$async$Ej)
 case 3:q=p.asu(c)
 s=1
 break
@@ -109134,7 +109134,7 @@ aCP(a){var s=0,r=A.q(t.p5),q,p
 var $async$El=A.r(function(b,c){if(b===1)return A.n(c,r)
 while(true)switch(s){case 0:p=A
 s=3
-return A.v($.cQ().dr(t.C).j0(0,"https://gluttex.com/api/recipe/add",a.e3()),$async$El)
+return A.v($.cQ().dr(t.C).j0(0,"https://gluttex.com/api/recipe",a.e3()),$async$El)
 case 3:q=p.aWH(c)
 s=1
 break
@@ -109277,7 +109277,7 @@ aCS(a){var s=0,r=A.q(t.eo),q,p
 var $async$Em=A.r(function(b,c){if(b===1)return A.n(c,r)
 while(true)switch(s){case 0:p=A
 s=3
-return A.v($.cQ().dr(t.C).j0(0,"https://gluttex.com/api/supplier/add",a.e3()),$async$Em)
+return A.v($.cQ().dr(t.C).j0(0,"https://gluttex.com/api/supplier",a.e3()),$async$Em)
 case 3:q=p.ay0(c)
 s=1
 break

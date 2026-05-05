@@ -1,6 +1,6 @@
 
 
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 import storage.storage_broker as storage_broker
 

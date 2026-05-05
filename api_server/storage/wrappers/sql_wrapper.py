@@ -1,5 +1,5 @@
 from sqlalchemy.inspection import inspect
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException, DatabaseException
 from core.messages import *
 from constants import *
 from storage.storage_service.StorageService import *
@@ -32,9 +32,7 @@ def get_engine(db_uri):
         engine = create_engine(db_uri)
         return engine
     except Exception as e:
-        raise APIException(status=HTTP_511_NETWORK_AUTHENTICATION_REQUIRED
-                           ,code=DATABASE_ERROR
-                           ,details=f'{str(e)}')
+        raise  DatabaseException()
 
 def get_session(engine, obj=None):
     Session = sessionmaker(bind=engine)

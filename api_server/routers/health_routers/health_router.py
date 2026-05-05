@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, status, Query
 from typing import Optional, List
 from core.api_models import Serology_API, Symptoms_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from services.medical_service import MedicalService
 
@@ -83,7 +83,7 @@ def get_serology_record(
     return medical_service.get_serology_by_id(serology_id)
 
 
-@health_router.post("/patient/serology/add")
+@health_router.post("/patient/serology")
 def add_serology_record(
     serology_record: Serology_API,
     medical_service: MedicalService = Depends(get_medical_service)
@@ -168,7 +168,7 @@ def get_symptom_by_id(
     return medical_service.get_symptom_by_id(symptom_id)
 
 
-@health_router.post("/patient/symptoms/add")
+@health_router.post("/patient/symptoms")
 def add_symptom_occurrence(
     symptoms: Symptoms_API,
     medical_service: MedicalService = Depends(get_medical_service)

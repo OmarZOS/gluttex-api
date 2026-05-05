@@ -3,7 +3,7 @@ import logging
 import datetime
 from typing import List, Optional, Dict, Any
 from core.api_models import Notification_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from core.models import Notification
 from repositories.notification_repository import NotificationRepository

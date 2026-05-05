@@ -141,7 +141,7 @@
 #     try:
 #         cart_data = generate_cart_data()
         
-#         url = f"{BASE_URL}/business/cart/add"
+#         url = f"{BASE_URL}/business/cart"
 #         print(f"URL: {url}")
 #         print(f"Payload preview: {json.dumps(cart_data, indent=2)}")
         
@@ -195,7 +195,7 @@
         
 #         cart_data["api_cart"]["cart_total_amount"] = round(items_total, 2)
         
-#         url = f"{BASE_URL}/business/cart/add"
+#         url = f"{BASE_URL}/business/cart"
 #         response = requests.post(url, json=cart_data, headers=HEADERS)
         
 #         success = response.status_code in [200, 201]
@@ -224,7 +224,7 @@
         
 #         cart_data["api_cart"]["cart_total_amount"] = round(services_total, 2)
         
-#         url = f"{BASE_URL}/business/cart/add"
+#         url = f"{BASE_URL}/business/cart"
 #         response = requests.post(url, json=cart_data, headers=HEADERS)
         
 #         success = response.status_code in [200, 201]
@@ -245,7 +245,7 @@
 #         # Ensure cart has person reference
 #         cart_data["api_cart"]["cart_person_ref"] = 1  # Existing person ID
         
-#         url = f"{BASE_URL}/business/cart/add"
+#         url = f"{BASE_URL}/business/cart"
 #         response = requests.post(url, json=cart_data, headers=HEADERS)
         
 #         success = response.status_code in [200, 201]
@@ -276,7 +276,7 @@
 #         # Update cart to reference new client (or should be 0?)
 #         cart_data["api_cart"]["cart_person_ref"] = 0  # Will be created
         
-#         url = f"{BASE_URL}/business/cart/add"
+#         url = f"{BASE_URL}/business/cart"
 #         response = requests.post(url, json=cart_data, headers=HEADERS)
         
 #         success = response.status_code in [200, 201]
@@ -351,7 +351,7 @@
     
 #     for test_case in test_cases:
 #         try:
-#             url = f"{BASE_URL}/business/cart/add"
+#             url = f"{BASE_URL}/business/cart"
 #             response = requests.post(url, json=test_case["data"], headers=HEADERS, timeout=10)
             
 #             expected = test_case.get("expected_status", [200, 201])
@@ -401,7 +401,7 @@
 #                 ]
 #                 cart_data["api_provided_services"] = []  # Bakeries might not have services
             
-#             url = f"{BASE_URL}/business/cart/add"
+#             url = f"{BASE_URL}/business/cart"
 #             response = requests.post(url, json=cart_data, headers=HEADERS)
             
 #             success = response.status_code in [200, 201]
@@ -416,7 +416,7 @@
     
 #     # First create a cart
 #     cart_data = generate_cart_data()
-#     url = f"{BASE_URL}/business/cart/add"
+#     url = f"{BASE_URL}/business/cart"
 #     create_response = requests.post(url, json=cart_data, headers=HEADERS)
     
 #     if create_response.status_code not in [200, 201]:
@@ -525,7 +525,7 @@
 #     cart_data["api_cart"]["cart_notes"] = "Complete workflow test cart"
     
 #     # Create the cart
-#     url = f"{BASE_URL}/business/cart/add"
+#     url = f"{BASE_URL}/business/cart"
 #     create_response = requests.post(url, json=cart_data, headers=HEADERS)
     
 #     if create_response.status_code not in [200, 201]:

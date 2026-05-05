@@ -3,7 +3,7 @@ import logging
 from typing import Union, Optional, Dict, Any
 from constants import ReactionType, PRODUCT_REACTION_IDS, RECIPE_REACTION_IDS, PROVIDER_REACTION_IDS, COMMENT_REACTION_IDS
 from core.api_models import ReactionBase
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from core.models import (
     ProductReaction, RecipeReaction, ProviderReaction, 

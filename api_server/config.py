@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     
     # Redis Settings (for caching)
     REDIS_URL: Optional[str] = None
+
+    USE_VERSIONING: bool = True
+    TRUSTED_HOSTS: List[str] = ["*"]  # Override in production
+    CONTACT_EMAIL: Optional[str] = None
+    WORKERS: int = 1
+    
     
     class Config:
         env_file = ".env"

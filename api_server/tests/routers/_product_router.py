@@ -46,7 +46,7 @@ def ensure_category_exists(base_url, headers, categories):
         
         # Try to create a category (adjust endpoint as needed)
         create_response = requests.post(
-            f"{base_url}/product/category/add",  # Check your actual endpoint
+            f"{base_url}/product/category",  # Check your actual endpoint
             json=category_data,
             headers=headers
         )
@@ -93,7 +93,7 @@ def created_product_id(base_url, headers, sample_product_data):
     }
     
     # Make API call
-    url = f"{base_url}/product/add"
+    url = f"{base_url}/product"
     response = requests.post(url, json={"product": product_data, "image": image_data}, headers=headers)
     
     if response.status_code == 200:
@@ -141,10 +141,10 @@ def test_get_all_products(base_url):
             print(f"✅ Response: {data}")
 
 def test_create_product(base_url, headers, sample_product_data):
-    """Test POST /product/add"""
+    """Test POST /product"""
     print(f"Using category ID: {sample_product_data['id_product_category']}")
     
-    url = f"{base_url}/product/add"
+    url = f"{base_url}/product"
     product_data = sample_product_data.copy()
     image_data = {
         "id_product_image": 0,
@@ -263,7 +263,7 @@ def test_product_workflow(base_url, headers, ensure_category_exists):
         "product_ref_id": 0
     }
     
-    create_url = f"{base_url}/product/add"
+    create_url = f"{base_url}/product"
     create_response = requests.post(
         create_url, 
         json={"product": product_data, "image": image_data}, 

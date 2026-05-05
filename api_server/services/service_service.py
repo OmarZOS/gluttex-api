@@ -1,7 +1,7 @@
 # services/service_service.py
 from typing import List, Optional
 from core.api_models import ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from core.models import ProvidedService, ServiceResourceRequirement, ServiceStaffRequirement
 from repositories.cart_repository import ServiceRepository

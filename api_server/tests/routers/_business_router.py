@@ -92,7 +92,7 @@ def test_create_order():
             "submitted_order": submitted_order
         }
         
-        url = f"{BASE_URL}/business/order/add"
+        url = f"{BASE_URL}/business/order"
         response = requests.post(url, json=request_data, headers=HEADERS)
         
         success = response.status_code == 200
@@ -213,7 +213,7 @@ def test_invalid_order_scenarios():
                 # Missing required fields
             }
         }
-        url = f"{BASE_URL}/business/order/add"
+        url = f"{BASE_URL}/business/order"
         response = requests.post(url, json=invalid_data, headers=HEADERS)
         
         success = response.status_code in [400, 422, 500]  # Expecting some error
@@ -258,7 +258,7 @@ def test_complete_order_workflow():
         "submitted_order": submitted_order
     }
     
-    create_response = requests.post(f"{BASE_URL}/business/order/add", json=request_data, headers=HEADERS)
+    create_response = requests.post(f"{BASE_URL}/business/order", json=request_data, headers=HEADERS)
     if create_response.status_code != 200:
         print("❌ Workflow failed at creation step")
         return False
@@ -427,7 +427,7 @@ def test_create_delivery():
     try:
         delivery_data = create_sample_delivery_data(order_id=0, provider_id=1, broker_id=1)
         
-        url = f"{BASE_URL}/business/delivery/add"
+        url = f"{BASE_URL}/business/delivery"
         response = requests.post(url, json=delivery_data, headers=HEADERS)
         
         success = response.status_code == 200
@@ -454,7 +454,7 @@ def test_create_delivery_with_order(order_id: int):
     try:
         delivery_data = create_sample_delivery_data(order_id=order_id, provider_id=1, broker_id=1)
         
-        url = f"{BASE_URL}/business/delivery/add"
+        url = f"{BASE_URL}/business/delivery"
         response = requests.post(url, json=delivery_data, headers=HEADERS)
         
         success = response.status_code == 200
@@ -581,7 +581,7 @@ def test_invalid_delivery_scenarios():
             "delivery_shipping_method": "",
             "delivery_address_id": 0      # Invalid - should be > 0
         }
-        url = f"{BASE_URL}/business/delivery/add"
+        url = f"{BASE_URL}/business/delivery"
         response = requests.post(url, json=invalid_delivery, headers=HEADERS)
         
         success = response.status_code in [400, 422, 500]  # Expecting some error
@@ -632,7 +632,7 @@ def test_invalid_delivery_scenarios():
     try:
         # First create a delivery
         delivery_data = create_sample_delivery_data()
-        create_response = requests.post(f"{BASE_URL}/business/delivery/add", json=delivery_data, headers=HEADERS)
+        create_response = requests.post(f"{BASE_URL}/business/delivery", json=delivery_data, headers=HEADERS)
         
         if create_response.status_code == 200:
             created_delivery = create_response.json()
@@ -661,7 +661,7 @@ def test_complete_delivery_workflow():
     # Step 1: Create a new delivery
     delivery_data = create_sample_delivery_data(order_id=0, provider_id=1, broker_id=1)
     
-    create_response = requests.post(f"{BASE_URL}/business/delivery/add", json=delivery_data, headers=HEADERS)
+    create_response = requests.post(f"{BASE_URL}/business/delivery", json=delivery_data, headers=HEADERS)
     if create_response.status_code != 200:
         print("❌ Workflow failed at creation step")
         return False

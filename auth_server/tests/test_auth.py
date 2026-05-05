@@ -226,7 +226,7 @@ def test_delete_user(client: TestClient, db_session: Session):
     # Use client.request() for DELETE with body
     response = client.request(
         "DELETE",
-        "/auth/users/delete",
+        "/auth/users",
         json=delete_data
     )
     

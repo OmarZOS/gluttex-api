@@ -1,20 +1,31 @@
-# main.py (using config)
-from fastapi import FastAPI, Request
+# main.py
+"""
+FastAPI application entry point for Gluttex API.
+Configures middleware, exception handlers, routers, and root endpoints.
+"""
+
+import time
+import logging
+from contextlib import asynccontextmanager
+from typing import Dict, Any
+
+from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from core.exceptions.handler import setup_exception_handlers_with_config
+from core.response_models import SuccessResponseModel
 from config import settings
 from constants import SECRET_KEY
-from core.exception_handler import APIException
-from core.api_models import API_Resolution
 
-# Import routers (same as above)
+# Import routers
 from routers.app_routers.user_router import app_user_router
 from routers.app_routers.auth_router import auth_router
 from routers.health_routers.person_router import person_router
-
 from routers.app_routers.notification_router import notification_router
 from routers.business_routers.product_router import product_router
 from routers.business_routers.supplier_router import supplier_router
@@ -24,7 +35,6 @@ from routers.business_routers.document_router import document_router
 from routers.health_routers.recipe_router import recipe_router
 from routers.health_routers.health_router import health_router
 from routers.search_router import search_router
-
 from routers.business_routers.order_router import order_router
 from routers.business_routers.cart_router import cart_router
 from routers.business_routers.delivery_router import delivery_router
@@ -32,219 +42,55 @@ from routers.business_routers.service_router import service_router
 from routers.business_routers.financial_router import financial_router
 from routers.business_routers.business_operation_router import business_operation_router
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO if not settings.DEBUG else logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
+# ==================== Lifespan Context Manager ====================
 
-# ==================== Exception Handlers ====================
-
-def setup_exception_handlers(app: FastAPI):
-    """Configure global exception handlers"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Handles startup and shutdown events.
+    """
+    # Startup
+    logger.info("Starting up Gluttex API...")
+    logger.info(f"Environment: {'Development' if settings.DEBUG else 'Production'}")
+    logger.info(f"API Version: {settings.API_VERSION}")
     
-    @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
-        """Handle all exceptions globally"""
-        
-        # Handle known APIException
-        if isinstance(exc, APIException):
-            resolution = API_Resolution(
-                status=exc.status,
-                error_code=exc.code,
-                message=str(exc.details) if exc.details else exc.message,
-            )
-            return JSONResponse(
-                status_code=exc.status,
-                content=resolution.dict(),
-            )
-        
-        # Handle unexpected internal errors
-        resolution = API_Resolution(
-            status=500,
-            error_code="INTERNAL_SERVER_ERROR",
-            message=str(exc),
+    # Initialize database connection pool if needed
+    # await init_db_pool()
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down Gluttex API...")
+    
+    # Clean up resources
+    # await close_db_pool()
+
+
+# ==================== Middleware Configuration ====================
+
+def setup_middleware(app: FastAPI) -> None:
+    """
+    Configure all middleware in the correct order.
+    Middleware order matters - they execute in reverse order of addition.
+    """
+    
+    # GZip compression (compress responses > 500 bytes)
+    app.add_middleware(GZipMiddleware, minimum_size=500)
+    
+    # Trusted Hosts (security)
+    if settings.TRUSTED_HOSTS:
+        app.add_middleware(
+            TrustedHostMiddleware,
+            allowed_hosts=settings.TRUSTED_HOSTS
         )
-        return JSONResponse(
-            status_code=500,
-            content=resolution.dict(),
-        )
-    
-    @app.exception_handler(404)
-    async def not_found_handler(request: Request, exc: Exception):
-        """Handle 404 errors"""
-        resolution = API_Resolution(
-            status=404,
-            error_code="NOT_FOUND",
-            message=f"Endpoint {request.url.path} not found",
-        )
-        return JSONResponse(
-            status_code=404,
-            content=resolution.dict(),
-        )
-    
-    @app.exception_handler(405)
-    async def method_not_allowed_handler(request: Request, exc: Exception):
-        """Handle method not allowed errors"""
-        resolution = API_Resolution(
-            status=405,
-            error_code="METHOD_NOT_ALLOWED",
-            message=f"Method {request.method} not allowed for {request.url.path}",
-        )
-        return JSONResponse(
-            status_code=405,
-            content=resolution.dict(),
-        )
-
-
-# ==================== Middleware Setup ====================
-
-def setup_middleware(app: FastAPI):
-    """Configure all middleware"""
-    
-    # Session middleware (must be added first)
-    app.add_middleware(
-        SessionMiddleware,
-        secret_key=SECRET_KEY,
-        max_age=3600,
-        same_site="lax",
-        https_only=False
-    )
-    
-    # CORS middleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],  # Configure appropriately for production
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-    
-    # Optional: Add custom middleware for request logging
-    @app.middleware("http")
-    async def log_requests(request: Request, call_next):
-        """Log incoming requests"""
-        import time
-        start_time = time.time()
-        
-        response = await call_next(request)
-        
-        process_time = time.time() - start_time
-        response.headers["X-Process-Time"] = str(process_time)
-        
-        # Log request details (optional)
-        print(f"{request.method} {request.url.path} - {response.status_code} - {process_time:.3f}s")
-        
-        return response
-
-
-# ==================== Router Setup ====================
-
-def setup_routers(app: FastAPI):
-    """Configure all API routers"""
-    
-    # Authentication and user routes
-    app.include_router(auth_router, prefix="/api", tags=["authentication"])
-    app.include_router(app_user_router, prefix="/api", tags=["users"])
-    
-    # Business routes
-    app.include_router(business_router, prefix="/api", tags=["business"])
-    app.include_router(product_router, prefix="/api", tags=["products"])
-    app.include_router(supplier_router, prefix="/api", tags=["suppliers"])
-    app.include_router(person_router, prefix="/api", tags=["people"])
-    app.include_router(staff_router, prefix="/api", tags=["staff"])
-    app.include_router(document_router, prefix="/api", tags=["documents"])
-    
-
-    # Attach all sub-routers
-    app.include_router(order_router, prefix="/business", tags=["business-orders"])
-    app.include_router(cart_router, prefix="/business", tags=["business-carts"])
-    app.include_router(delivery_router, prefix="/business", tags=["business-deliveries"])
-    app.include_router(service_router, prefix="/business", tags=["business-services"])
-    app.include_router(financial_router, prefix="/business", tags=["business-finance"])
-    app.include_router(business_operation_router, prefix="/business", tags=["business-operations"])
-
-
-    # Health routes
-    app.include_router(health_router, prefix="/api", tags=["health"])
-    app.include_router(recipe_router, prefix="/api", tags=["recipes"])
-    
-    # Notification routes
-    app.include_router(notification_router, prefix="/api", tags=["notifications"])
-    
-    # Search routes
-    app.include_router(search_router, prefix="/api", tags=["search"])
-    
-    # Note: Add authentication dependencies when needed
-    # app.include_router(supplier_router, prefix="/api", dependencies=[Depends(verify_token)])
-
-
-# ==================== Root Endpoints ====================
-
-def setup_root_endpoints(app: FastAPI):
-    """Configure root endpoints"""
-    
-    @app.get("/api")
-    async def home():
-        """Root endpoint"""
-        return {
-            'data': 'Hello from the other side',
-            'version': '1.0.0',
-            'docs': '/api/docs',
-            'redoc': '/api/redoc'
-        }
-    
-    @app.get("/api/health")
-    async def health_check():
-        """Health check endpoint"""
-        return {
-            'status': 'healthy',
-            'service': 'API',
-            'timestamp': '2024-01-01T00:00:00Z'  # You can use datetime.now()
-        }
-    
-    @app.get("/api/ready")
-    async def readiness_check():
-        """Readiness check for orchestration"""
-        return {
-            'status': 'ready',
-            'checks': {
-                'database': 'connected',  # Add actual DB check
-                'cache': 'connected',      # Add actual cache check
-            }
-        }
-
-
-def create_app() -> FastAPI:
-    """Create and configure the FastAPI application"""
-    
-    app = FastAPI(
-        title=settings.API_TITLE,
-        description=settings.API_DESCRIPTION,
-        version=settings.API_VERSION,
-        openapi_url="/api/openapi.json",
-        docs_url="/api/docs",
-        redoc_url="/api/redoc"
-    )
-    
-    # Setup instrumentation
-    if not settings.DEBUG:
-        Instrumentator().instrument(app).expose(app)
-    
-    # Setup exception handlers
-    setup_exception_handlers(app)
-    
-    # Setup middleware
-    setup_middleware(app)
-    
-    # Setup routers
-    setup_routers(app)
-    
-    # Setup root endpoints
-    setup_root_endpoints(app)
-    
-    return app
-
-
-def setup_middleware(app: FastAPI):
-    """Configure all middleware"""
     
     # Session middleware
     app.add_middleware(
@@ -262,19 +108,245 @@ def setup_middleware(app: FastAPI):
         allow_credentials=settings.CORS_CREDENTIALS,
         allow_methods=settings.CORS_METHODS,
         allow_headers=settings.CORS_HEADERS,
+        expose_headers=["X-Process-Time", "X-Request-ID"]
     )
+    
+    # Request logging middleware
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        """Log all incoming requests with timing information."""
+        request_id = request.headers.get("X-Request-ID", generate_request_id())
+        start_time = time.time()
+        
+        # Add request ID to request state
+        request.state.request_id = request_id
+        
+        # Process request
+        response = await call_next(request)
+        
+        # Calculate processing time
+        process_time = time.time() - start_time
+        
+        # Add custom headers
+        response.headers["X-Process-Time"] = f"{process_time:.4f}"
+        response.headers["X-Request-ID"] = request_id
+        
+        # Log request
+        logger.info(
+            f"{request.method} {request.url.path} - "
+            f"{response.status_code} - "
+            f"{process_time:.3f}s - "
+            f"ID: {request_id}"
+        )
+        
+        return response
 
 
-# Create app instance
+def generate_request_id() -> str:
+    """Generate a unique request ID."""
+    import uuid
+    return str(uuid.uuid4())[:8]
+
+
+# ==================== Router Configuration ====================
+
+def setup_routers(app: FastAPI) -> None:
+    """
+    Configure all API routers with their prefixes and tags.
+    """
+    
+    # Version 1 API group
+    api_version = "/api/v1" if settings.USE_VERSIONING else "/api"
+    
+    # Authentication and user routes
+    app.include_router(auth_router, prefix=api_version, tags=["Authentication"])
+    app.include_router(app_user_router, prefix=api_version, tags=["Users"])
+    
+    # Business core routes
+    app.include_router(business_router, prefix=api_version, tags=["Business"])
+    app.include_router(product_router, prefix=api_version, tags=["Products"])
+    app.include_router(supplier_router, prefix=api_version, tags=["Suppliers"])
+    app.include_router(person_router, prefix=api_version, tags=["People"])
+    app.include_router(staff_router, prefix=api_version, tags=["Staff"])
+    app.include_router(document_router, prefix=api_version, tags=["Documents"])
+    
+    # Business sub-modules
+    business_prefix = f"{api_version}/business"
+    app.include_router(order_router, prefix=business_prefix, tags=["Business Orders"])
+    app.include_router(cart_router, prefix=business_prefix, tags=["Business Carts"])
+    app.include_router(delivery_router, prefix=business_prefix, tags=["Business Deliveries"])
+    app.include_router(service_router, prefix=business_prefix, tags=["Business Services"])
+    app.include_router(financial_router, prefix=business_prefix, tags=["Business Finance"])
+    app.include_router(business_operation_router, prefix=business_prefix, tags=["Business Operations"])
+    
+    # Health and wellness routes
+    app.include_router(health_router, prefix=api_version, tags=["Health"])
+    app.include_router(recipe_router, prefix=api_version, tags=["Recipes"])
+    
+    # Notification routes
+    app.include_router(notification_router, prefix=api_version, tags=["Notifications"])
+    
+    # Search routes
+    app.include_router(search_router, prefix=api_version, tags=["Search"])
+
+
+# ==================== Root Endpoints ====================
+
+def setup_root_endpoints(app: FastAPI) -> None:
+    """
+    Configure root and health check endpoints.
+    """
+    
+    @app.get("/", tags=["Root"])
+    async def root():
+        """API root endpoint with service information."""
+        return SuccessResponseModel(
+            success=True,
+            message=f"Welcome to {settings.API_TITLE}",
+            data={
+                "service": settings.API_TITLE,
+                "version": settings.API_VERSION,
+                "environment": "development" if settings.DEBUG else "production",
+                "docs": "/api/docs",
+                "redoc": "/api/redoc",
+                "openapi": "/api/openapi.json"
+            }
+        )
+    
+    @app.get("/health", tags=["Health"])
+    async def health_check():
+        """Health check endpoint for load balancers and monitoring."""
+        return {
+            "status": "healthy",
+            "service": settings.API_TITLE,
+            "version": settings.API_VERSION,
+            "timestamp": get_current_timestamp()
+        }
+    
+    @app.get("/ready", tags=["Health"])
+    async def readiness_check():
+        """Readiness check for orchestration (Kubernetes, etc.)."""
+        # Perform actual dependency checks
+        checks = {
+            "database": check_database_connection(),
+            "cache": check_cache_connection(),
+        }
+        
+        all_ready = all(checks.values())
+        status = "ready" if all_ready else "not_ready"
+        
+        return JSONResponse(
+            status_code=status.HTTP_200_OK if all_ready else status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "status": status,
+                "checks": checks,
+                "timestamp": get_current_timestamp()
+            }
+        )
+    
+    @app.get("/metrics", tags=["Monitoring"])
+    async def metrics():
+        """Prometheus metrics endpoint handled by Instrumentator."""
+        # This is a placeholder - Instrumentator exposes its own endpoint
+        return {"message": "Metrics available at /metrics"}
+
+
+# ==================== Health Check Helpers ====================
+
+def get_current_timestamp() -> str:
+    """Get current timestamp in ISO format."""
+    from datetime import datetime
+    return datetime.utcnow().isoformat() + "Z"
+
+
+def check_database_connection() -> bool:
+    """
+    Check database connectivity.
+    Override with actual database check.
+    """
+    # TODO: Implement actual database health check
+    return True
+
+
+def check_cache_connection() -> bool:
+    """
+    Check cache connectivity.
+    Override with actual cache check.
+    """
+    # TODO: Implement actual cache health check
+    return True
+
+
+# ==================== Application Factory ====================
+
+def create_app() -> FastAPI:
+    """
+    Create and configure the FastAPI application using factory pattern.
+    """
+    
+    app = FastAPI(
+        title=settings.API_TITLE,
+        description=settings.API_DESCRIPTION,
+        version=settings.API_VERSION,
+        openapi_url="/api/openapi.json",
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        lifespan=lifespan,
+        contact={
+            "name": "API Support",
+            "email": settings.CONTACT_EMAIL if hasattr(settings, 'CONTACT_EMAIL') else None,
+        },
+        license_info={
+            "name": "Proprietary",
+        }
+    )
+    
+    # Setup instrumentation (Prometheus metrics)
+    if not settings.DEBUG:
+        instrumentator = Instrumentator(
+            should_group_status_codes=True,
+            should_ignore_untemplated=True,
+            should_respect_env_var=True,
+            should_instrument_requests_inprogress=True,
+            excluded_handlers=["/health", "/ready", "/metrics"],
+            env_var_name="ENABLE_METRICS",
+        )
+        instrumentator.instrument(app).expose(app, endpoint="/metrics")
+        logger.info("Prometheus metrics instrumentation enabled")
+    
+    # Setup exception handlers
+    setup_exception_handlers_with_config(app, debug=settings.DEBUG)
+    
+    # Setup middleware (order matters!)
+    setup_middleware(app)
+    
+    # Setup routers
+    setup_routers(app)
+    
+    # Setup root endpoints
+    setup_root_endpoints(app)
+    
+    logger.info("Application created successfully")
+    
+    return app
+
+
+# ==================== Application Instance ====================
+
 app = create_app()
 
 
+# ==================== Development Server ====================
+
 if __name__ == "__main__":
     import uvicorn
+    
     uvicorn.run(
         "main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,
-        log_level="info"
+        log_level="info" if not settings.DEBUG else "debug",
+        access_log=True,
+        workers=settings.WORKERS if hasattr(settings, 'WORKERS') else 1,
     )

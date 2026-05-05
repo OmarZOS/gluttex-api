@@ -146,7 +146,7 @@ def update_user_password(
     return crud.change_user_password(db=db, user=user)
 
 # In server.py, update the delete_user endpoint:
-@app.delete("/auth/users/delete", response_model=schemas.UserResponse)
+@app.delete("/auth/users", response_model=schemas.UserResponse)
 def delete_user(
         user: schemas.UserUpdate, 
         db: Session = Depends(dependencies.get_db)

@@ -7,7 +7,7 @@ from sqlalchemy.orm import InstrumentedAttribute
 import sqlalchemy as sa
 from core.models import AppUser, Product
 from core.persistent_models import Base
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 
 # class TestDatabaseUtilities:
 #     """Test suite for database utility functions."""

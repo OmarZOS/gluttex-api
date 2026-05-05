@@ -5,7 +5,7 @@ from datetime import datetime
 from unittest.mock import MagicMock, AsyncMock, patch
 from fastapi import BackgroundTasks
 from core.api_models import Product_API, ProductImage_API, Iproduct_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.models import Product, ProductImage, Iproduct
 from services.product_service import ProductService, subscribers
 

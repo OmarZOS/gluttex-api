@@ -2,7 +2,7 @@
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from core.api_models import Recipe_API, RecipeImage_API, Ingredient_API
-from core.exception_handler import APIException
+from core.exceptions.handler import APIException
 from core.messages import *
 from core.models import Recipe, RecipeContainsIngredient, RecipeImage, Ingredient
 from repositories.recipe_repository import RecipeRepository
