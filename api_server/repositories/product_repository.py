@@ -32,7 +32,8 @@ class ProductRepository:
         provider_id: int = 0,
         category_id: int = 0,
         offset: int = 0, 
-        limit: int = 10
+        limit: int = 10,
+        serialize : bool = False,
     ) -> List[Product]:
         """Get all products with filters"""
         conditions = {}
@@ -46,7 +47,7 @@ class ProductRepository:
         return storage_broker.get(
             Product,
             conditions=conditions,
-            join_tables=[ProductCategory],
+            join_tables=[],
             eager_load_depth=[
                 Product.product_category,
                 Product.product_provider,
@@ -56,7 +57,8 @@ class ProductRepository:
                 ]}
             ],
             offset=offset,
-            limit=limit
+            limit=limit,
+            serialize=serialize
         )
     
     def get_products_by_category(self, category_id: int, offset: int = 0, limit: int = 10) -> List[Product]:
@@ -68,7 +70,8 @@ class ProductRepository:
             [Product.product_image, Product.product_category, Product.product_provider],
             None,
             offset,
-            limit
+            limit,
+            serialize=True
         )
     
     def create_product(self, product: Product) -> Product:
@@ -88,7 +91,7 @@ class ProductRepository:
     
     def get_product_categories(self) -> List[ProductCategory]:
         """Get all product categories"""
-        return storage_broker.get(ProductCategory)
+        return storage_broker.get(ProductCategory,serialize=True)
     
     def get_product_category_by_id(self, category_id: str) -> Optional[ProductCategory]:
         """Get product category by ID"""

@@ -11,7 +11,7 @@ def get_recipe_service() -> RecipeService:
 
 # ==================== Recipe Endpoints ====================
 
-@recipe_router.get("/")
+@recipe_router.get("/recipes/")
 def get_all_recipes(
     user_id: int = Query(0, description="Filter by user ID"),
     category_id: int = Query(0, description="Filter by category ID"),
@@ -27,14 +27,14 @@ def get_all_recipes(
     else:
         return recipe_service.get_all_recipes(offset, limit)
 
-@recipe_router.get("/categories")
+@recipe_router.get("/recipes/categories")
 def get_recipe_categories(
     recipe_service: RecipeService = Depends(get_recipe_service)
 ):
     """Get all recipe categories"""
     return recipe_service.get_recipe_categories()
 
-@recipe_router.get("/{recipe_id}")
+@recipe_router.get("/recipes/{recipe_id}")
 def get_recipe(
     recipe_id: int,
     full: bool = Query(True, description="Include all related data"),
@@ -43,7 +43,7 @@ def get_recipe(
     """Get recipe by ID"""
     return recipe_service.get_recipe_by_id(recipe_id, full)
 
-@recipe_router.post("/")
+@recipe_router.post("/recipes/")
 async def create_recipe(
     recipe: Recipe_API,
     image: RecipeImage_API,
@@ -52,7 +52,7 @@ async def create_recipe(
     """Create a new recipe"""
     return await recipe_service.create_recipe(recipe, image)
 
-@recipe_router.put("/{recipe_id}")
+@recipe_router.put("/recipes/{recipe_id}")
 def update_recipe(
     recipe_id: int,
     recipe: Recipe_API,
@@ -62,7 +62,7 @@ def update_recipe(
     """Update an existing recipe"""
     return recipe_service.update_recipe(recipe_id, recipe, image)
 
-@recipe_router.delete("/{recipe_id}")
+@recipe_router.delete("/recipes/{recipe_id}")
 def delete_recipe(
     recipe_id: int,
     recipe_service: RecipeService = Depends(get_recipe_service)
@@ -72,7 +72,7 @@ def delete_recipe(
 
 # ==================== Ingredient Endpoints ====================
 
-@recipe_router.get("/ingredients/all")
+@recipe_router.get("/recipes/ingredients/all")
 def get_all_ingredients(
     offset: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
@@ -81,7 +81,7 @@ def get_all_ingredients(
     """Get all ingredients"""
     return recipe_service.get_all_ingredients(offset, limit)
 
-@recipe_router.get("/ingredients/{ingredient_id}")
+@recipe_router.get("/recipes/ingredients/{ingredient_id}")
 def get_ingredient(
     ingredient_id: int,
     recipe_service: RecipeService = Depends(get_recipe_service)
@@ -89,7 +89,7 @@ def get_ingredient(
     """Get ingredient by ID"""
     return recipe_service.get_ingredient_by_id(ingredient_id)
 
-@recipe_router.post("/ingredients")
+@recipe_router.post("/recipes/ingredients")
 async def create_ingredient(
     ingredient: Ingredient_API,
     recipe_service: RecipeService = Depends(get_recipe_service)
@@ -97,7 +97,7 @@ async def create_ingredient(
     """Create a new ingredient"""
     return await recipe_service.create_ingredient(ingredient)
 
-@recipe_router.delete("/ingredients/{ingredient_id}")
+@recipe_router.delete("/recipes/ingredients/{ingredient_id}")
 def delete_ingredient(
     ingredient_id: int,
     recipe_service: RecipeService = Depends(get_recipe_service)

@@ -61,7 +61,8 @@ class SupplierRepository:
         owner_id: int = 0,
         org_id: int = 0,
         offset: int = 0,
-        limit: int = 10
+        limit: int = 10,
+        
     ) -> List[ProductProvider]:
         """Get all suppliers with filters"""
         conditions = {}
@@ -90,7 +91,7 @@ class SupplierRepository:
             ],
             offset=offset,
             limit=limit,
-            serialize=True
+            # serialize=True
         )
     
     def get_supplier_by_type(self, type_id: str) -> List[ProductProvider]:

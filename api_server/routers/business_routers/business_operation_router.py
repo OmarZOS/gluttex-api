@@ -4,14 +4,10 @@ Business operation router for retrieving business operation data.
 """
 
 from fastapi import APIRouter, Depends, Query, status
-from typing import Optional
+from typing import Dict, Optional, List, Any
 import logging
 
-from core.response_models import (
-    SuccessResponseModel,
-    ErrorResponseModel,
-    get_crud_error_responses
-)
+from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.business_exceptions import (
     BusinessOperationNotFoundException,
     BusinessOperationServiceException
@@ -20,10 +16,7 @@ from services.business_operation_service import BusinessOperationService
 
 logger = logging.getLogger(__name__)
 
-business_operation_router = APIRouter(
-    # tags=["business-operations"],
-    # prefix="/business/operations"
-)
+business_operation_router = APIRouter()
 
 
 def get_business_operation_service() -> BusinessOperationService:
@@ -31,20 +24,18 @@ def get_business_operation_service() -> BusinessOperationService:
     return BusinessOperationService()
 
 
+# ==================== Response Model ====================
+
+
+
 @business_operation_router.get(
     "/",
-    response_model=SuccessResponseModel,
+    # response_model=BusinessOperationsResponse,
     summary="Get business operations",
     description="Get business operations with filters",
     responses={
-        200: {
-            "description": "Business operations retrieved successfully",
-            "model": SuccessResponseModel
-        },
-        400: {
-            "description": "Bad Request - Invalid filters",
-            "model": ErrorResponseModel
-        },
+        200: {"description": "Business operations retrieved successfully"},
+        400: {"model": ErrorResponseModel},
         **get_crud_error_responses(include_404=False, include_403=False)
     }
 )
@@ -71,7 +62,6 @@ def get_business_operations(
     """
     logger.info(f"Fetching business operations - supplier:{supplier_id}, order:{order_id}, cart:{cart_id}, client:{client_id}, seller:{seller_id}, offset:{offset}, limit:{limit}")
     
-    # Validate filters - at least one filter should be provided (optional, can be all 0 for all)
     filters_provided = any([
         supplier_id > 0,
         order_id > 0,
@@ -94,25 +84,21 @@ def get_business_operations(
             limit
         )
         
-        return SuccessResponseModel(
-            success=True,
-            data=result,
-            message=f"Found {len(result) if isinstance(result, list) else 0} business operations",
-            details={
-                "filters": {
-                    "supplier_id": supplier_id if supplier_id > 0 else None,
-                    "order_id": order_id if order_id > 0 else None,
-                    "cart_id": cart_id if cart_id > 0 else None,
-                    "client_id": client_id if client_id > 0 else None,
-                    "seller_id": seller_id if seller_id > 0 else None
-                },
-                "pagination": {
-                    "offset": offset,
-                    "limit": limit,
-                    "total": len(result) if isinstance(result, list) else 0
-                }
-            }
-        )
+        filters = {
+            "supplier_id": supplier_id if supplier_id > 0 else None,
+            "order_id": order_id if order_id > 0 else None,
+            "cart_id": cart_id if cart_id > 0 else None,
+            "client_id": client_id if client_id > 0 else None,
+            "seller_id": seller_id if seller_id > 0 else None
+        }
+        
+        pagination = {
+            "offset": offset,
+            "limit": limit,
+            "total": len(result) if isinstance(result, list) else 0
+        }
+        
+        return result
         
     except Exception as e:
         logger.error(f"Failed to fetch business operations: {e}")

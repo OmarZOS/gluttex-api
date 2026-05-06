@@ -1,3 +1,5 @@
+# storage/storage_broker.py
+
 from sqlalchemy.inspection import inspect
 from core.exceptions.handler import APIException, DatabaseException
 from core.messages import *
@@ -5,7 +7,7 @@ from constants import *
 from storage.storage_service.StorageService import *
 from sqlalchemy import create_engine 
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import joinedload,contains_eager,Load
+from sqlalchemy.orm import joinedload, contains_eager, Load
 from sqlalchemy.orm import object_session
 from contextlib import contextmanager
 from sqlalchemy import desc, or_, and_
@@ -13,28 +15,53 @@ from sqlalchemy.orm import joinedload, load_only
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from typing import Any, List
 from sqlalchemy.sql import func
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Global engine reference
+_engine = None
+
+def init_engine(db_uri):
+    """Initialize the database engine once"""
+    global _engine
+    if _engine is None:
+        try:
+            _engine = create_engine(db_uri, pool_pre_ping=True, echo=False)
+            logger.info("Database engine initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize database engine: {e}")
+            raise DatabaseException(f"Database connection failed: {e}")
+    return _engine
+
+def get_engine(db_uri=None):
+    """Get the database engine, creating it if necessary"""
+    global _engine
+    if _engine is None:
+        if db_uri is None:
+            from config import DB_URI
+            db_uri = DB_URI
+        _engine = init_engine(db_uri)
+    return _engine
 
 @contextmanager
-def session_scope(engine):
+def session_scope(engine=None):
+    """Context manager for database sessions"""
+    if engine is None:
+        engine = get_engine()
     session = get_session(engine)
     try:
         yield session
         session.commit()
-    except Exception:
+    except Exception as e:
         session.rollback()
+        logger.error(f"Session error: {e}")
         raise
     finally:
         session.close()
 
-# engine = create_engine(DB_URI)
-def get_engine(db_uri):
-    try:
-        engine = create_engine(db_uri)
-        return engine
-    except Exception as e:
-        raise  DatabaseException()
-
 def get_session(engine, obj=None):
+    """Get a session, optionally from an existing object"""
     Session = sessionmaker(bind=engine)
     if obj:
         existing_session = object_session(obj)
@@ -45,13 +72,10 @@ def get_session(engine, obj=None):
 # Function to add a record to a table
 def add_record(engine, obj):
     with session_scope(engine) as session:
-        session = get_session(engine,obj)    
-        # Add the new object to the session and commit
+        session = get_session(engine, obj)    
         session.add(obj)
         session.commit()
         session.refresh(obj)
-        # session.expunge(obj) 
-        # Return the added object
         return obj
 
 def add_records(engine, objs):
@@ -60,45 +84,35 @@ def add_records(engine, objs):
         session.commit()
         for obj in objs:
             session.refresh(obj)
-            # # # session.expunge(obj)  # Expunge each object individually
         return objs
 
 # Function to get all records from a table
-def get_all_records(engine,model_class):
+def get_all_records(engine, model_class, serialize=False):
     with session_scope(engine) as session:
-        session = get_session(engine)
-        return session.query(model_class).all()
+        records = session.query(model_class).all()
+        if serialize:
+            records = serialize_model(records)
+        return records
 
-# Function to get an record by ID from a table
-def get_record_by_id(engine,model_class, id):
+# Function to get a record by ID from a table
+def get_record_by_id(engine, model_class, id, serialize=False):
     with session_scope(engine) as session:
         data = session.query(model_class).get(id)
-        # # # session.expunge(data)
+        if serialize and data:
+            data = serialize_model(data)
         return data
 
-
-
 def _get_attr_key(field: Any) -> str:
-    """
-    Return a canonical attribute key name for a field that can be:
-      - a string (attribute name)
-      - an InstrumentedAttribute (has .key)
-      - a column or descriptor where str(...) ends with '.<name>'
-    """
+    """Return a canonical attribute key name for a field"""
     if isinstance(field, str):
         return field
-
-    # typical InstrumentedAttribute / ColumnElement have .key
     key = getattr(field, "key", None)
     if isinstance(key, str):
         return key
-
-    # fallback: try to parse string representation
     s = str(field)
     if "." in s:
         return s.split(".")[-1]
     return s
-
 
 def _resolve_attr(model, key: str):
     """Return getattr(model, key) or raise ValueError."""
@@ -107,72 +121,55 @@ def _resolve_attr(model, key: str):
     except AttributeError as e:
         raise ValueError(f"Model {model} has no attribute '{key}'") from e
 
-
 def build_eager_options(model_class, eager_load_depth: List[Any]):
     """
     Build SQLAlchemy eager loading options.
-
-    `eager_load_depth` can contain:
-      - model_attr (e.g. ManagementRule.product_provider)
-      - column attr (e.g. ManagementRule.management_rule_code)
-      - string attr name "product_provider"
-      - nested dicts { relationship_attr_or_name: [ nested_fields... ] }
-
-    Returns a list of loader options suitable for `.options(*...)`.
     """
+    from sqlalchemy.orm import load_only, joinedload, selectinload
+    
     options: List[Any] = []
 
-    def process(model, fields):
+    def process(model, fields, current_path=None):
         local_opts: List[Any] = []
         inspected = inspect(model)
 
         for field in fields:
-            # nested dict: { relationship: [ nested_fields ] }
             if isinstance(field, dict):
                 for outer, nested_fields in field.items():
                     outer_key = _get_attr_key(outer)
                     rel_attr = _resolve_attr(model, outer_key)
 
-                    # ensure it's a relationship
                     if outer_key not in inspected.relationships:
                         raise ValueError(
                             f"Requested nested load '{outer_key}' is not a relationship on {model}"
                         )
 
-                    # start joinedload on that relationship attribute
-                    loader = joinedload(rel_attr)
-
-                    # get target model for nested recursion
+                    # Use selectinload for better performance with nested loads
+                    loader = selectinload(rel_attr)
+                    
                     rel_prop = inspected.relationships[outer_key]
                     target_model = rel_prop.mapper.class_
-
-                    # recurse to build nested options for the target model
-                    nested_opts = process(target_model, nested_fields)
-                    for nopt in nested_opts:
-                        loader = loader.options(nopt)
-
+                    
+                    if nested_fields:
+                        nested_opts = build_eager_options(target_model, nested_fields)
+                        for nested_opt in nested_opts:
+                            loader = loader.options(nested_opt)
+                    
                     local_opts.append(loader)
 
             else:
-                # single field (could be column or relationship)
                 key = _get_attr_key(field)
                 attr = _resolve_attr(model, key)
 
-                # re-check after resolution
                 inspected = inspect(model)
                 if key in inspected.relationships:
-                    # relationship -> eager load the whole relationship
                     local_opts.append(joinedload(attr))
                 elif key in inspected.columns:
-                    # column -> load only this column
-                    local_opts.append(Load(model).load_only(attr))
+                    # Skip load_only for now to avoid complexity
+                    pass
                 else:
-                    # not found in relationships or columns, try to be permissive:
-                    # sometimes hybrid properties or column_property names appear only in mapper.attrs
                     if key in inspected.attrs:
-                        # If it's not a relationship, loading the attribute may be skipped (no loader)
-                        # But we attempt load_only for safety if it's a column-like attr
-                        local_opts.append(Load(model).load_only(attr))
+                        pass
                     else:
                         raise ValueError(
                             f"Field '{key}' is not a recognized relationship/column on {model}"
@@ -184,7 +181,7 @@ def build_eager_options(model_class, eager_load_depth: List[Any]):
     return options
 
 # Function to get objects from a table based on conditions
-def get_records(engine, model_class, conditions=None, join_tables=None, eager_load_depth=None, offset=0, limit=10,serialize=False):
+def get_records(engine, model_class, conditions=None, join_tables=None, eager_load_depth=None, offset=0, limit=10, serialize=False):
     with session_scope(engine) as session:
         query = session.query(model_class)
 
@@ -196,58 +193,52 @@ def get_records(engine, model_class, conditions=None, join_tables=None, eager_lo
         # Apply conditions if specified
         if conditions:
             for attr, value in conditions.items():
-                query = query.filter(getattr(model_class, str(attr).split(".")[1]) == str(value))
+                # Handle different condition formats
+                if hasattr(attr, 'key'):
+                    query = query.filter(attr == value)
+                else:
+                    # Parse string attribute like "Model.column"
+                    parts = str(attr).split('.')
+                    if len(parts) == 2:
+                        model_attr = getattr(model_class, parts[1])
+                        query = query.filter(model_attr == value)
+                    else:
+                        query = query.filter(getattr(model_class, attr) == value)
 
-        # Use joinedload to eager load relationships with specified depth
-        """
-        Recursively apply eager loading.
-        Example:
-        eager_load_depth = [
-            AppUser.app_user_type,
-            AppUser.app_user_person,
-            {AppUser.app_user_person: [Person.person_blood_type_id]}
-        ]
-    """
-        # Apply loaders to the query
-        if eager_load_depth :
-            query = query.options(*build_eager_options(model_class,eager_load_depth))
+        # Apply eager loading
+        if eager_load_depth:
+            try:
+                query = query.options(*build_eager_options(model_class, eager_load_depth))
+            except Exception as e:
+                logger.warning(f"Failed to apply eager loading: {e}")
 
         # Order by primary key in descending order (newest first)
-        if len(list(model_class.__table__.primary_key.columns))>0: 
+        if len(list(model_class.__table__.primary_key.columns)) > 0:
             pk_column = list(model_class.__table__.primary_key.columns)[0]
             query = query.order_by(desc(pk_column))
 
         # Fetch all records
         records = query.offset(offset).limit(limit).all()
-        session.expunge_all()
         
         if serialize:
             records = serialize_model(records)
+        session.expunge_all()
         return records
-
-
-
 
 def count_records(engine, model_class, conditions=None, join_tables=None, group_by=None):
     with session_scope(engine) as session:
-
-        # Extract primary key column
         pk_col = list(model_class.__table__.primary_key.columns)[0]
 
-        # Validate group_by
         if group_by is not None and not isinstance(group_by, InstrumentedAttribute):
             raise ValueError(f"group_by must be a model column, got: {group_by}")
 
-        # Build SELECT
         if group_by is not None:
             query = session.query(group_by, func.count(pk_col))
         else:
             query = session.query(func.count(pk_col))
 
-        # Base table
         query = query.select_from(model_class)
 
-        # JOINs
         if join_tables:
             for join_table in join_tables:
                 if isinstance(join_table, InstrumentedAttribute):
@@ -255,63 +246,48 @@ def count_records(engine, model_class, conditions=None, join_tables=None, group_
                 else:
                     raise ValueError(f"join_tables must contain relationship attributes, got: {join_table}")
 
-        # WHERE
         if conditions:
             for attr, value in conditions.items():
                 if not isinstance(attr, InstrumentedAttribute):
                     raise ValueError(f"Condition key must be a column, got: {attr}")
                 query = query.filter(attr == value)
 
-        # GROUP BY
         if group_by is not None:
             query = query.group_by(group_by)
-            return query.all()  # list of tuples (group, count)
+            return query.all()
 
-        # Simple count
         return query.scalar()
 
-
-
-
-# Function to update an record in a table
-def update_record(engine,obj):
+# Function to update a record in a table
+def update_record(engine, obj):
     session = get_session(engine, obj)
-    session.add(obj)  # Make sure the object is persistent
-    session.commit()  # Commit the session to save the changes
-    session.refresh(obj)  # Refresh the object to get the updated state
-    session.expunge(obj)  # Optionally expunge the object from the session
+    session.add(obj)
+    session.commit()
+    session.refresh(obj)
+    session.expunge(obj)
     return obj
 
-# Function to delete an record from a table
-def delete_record(engine,obj):
+# Function to delete a record from a table
+def delete_record(engine, obj):
     session = get_session(engine, obj)
-    data = session.delete(obj)
-    # session.expunge(obj)
+    session.delete(obj)
     session.commit()
-    return data
+    return True
 
-def delete_record_by_id(engine,model_class, id):
+def delete_record_by_id(engine, model_class, id):
+    with session_scope(engine) as session:
+        obj = session.query(model_class).get(id)
+        if obj:
+            session.delete(obj)
+            session.commit()
+            return True
+        return False
 
-    # Get the primary key column name
-    primary_key_name = model_class.__table__.primary_key.columns.keys()[0]
-
-    session = get_session(engine)
-    data = session.delete()   #.query(model_class).filter(primary_key_name == str(id)).delete()
-    # # # session.expunge(data)
-    return data
 from sqlalchemy.orm import aliased
 from sqlalchemy.inspection import inspect
 
-
 def resolve_attr_recursive(model, field_path):
-    """
-    Takes e.g. "product_provider.provider_name" 
-    and returns the actual SQLAlchemy attribute,
-    performing necessary joins and returning both:
-    - attribute
-    - relationship path to join
-    """
-
+    """Takes e.g. 'product_provider.provider_name' and returns the actual SQLAlchemy attribute"""
     parts = field_path.split(".")
     current_model = model
     joins = []
@@ -319,23 +295,19 @@ def resolve_attr_recursive(model, field_path):
     for i, part in enumerate(parts):
         mapper = inspect(current_model)
 
-        # last part -> column
         if i == len(parts) - 1:
             if part in mapper.columns:
                 return getattr(current_model, part), joins
             raise ValueError(f"Column '{part}' not found on {current_model}")
 
-        # not last part → must be a relationship
         if part not in mapper.relationships:
             raise ValueError(f"Relationship '{part}' not found on {current_model}")
 
         rel = mapper.relationships[part]
-
         joins.append(getattr(current_model, part))
         current_model = rel.mapper.class_
 
     raise RuntimeError("Invalid path parsing")
-
 
 def search_records(
     engine,
@@ -344,13 +316,11 @@ def search_records(
     eager_load_depth,
     search_query=None,
     search_fields=None,
-    offset= 0,
-    limit = 20
+    offset=0,
+    limit=20
 ):
     with session_scope(engine) as session:
         query = session.query(model_class)
-        # Generic search across multiple fields
-
 
         if search_query and search_fields:
             keywords = search_query.split()
@@ -362,37 +332,28 @@ def search_records(
                 for field_path in search_fields:
                     attr, joins = resolve_attr_recursive(model_class, field_path)
 
-                    # collect joins needed
                     for j in joins:
                         required_joins.append(j)
 
                     or_conditions.append(attr.ilike(f"%{kw}%"))
 
-                # apply joins before filtering
                 for j in required_joins:
                     query = query.join(j, isouter=True)
 
                 query = query.filter(or_(*or_conditions))
 
-        
         if join_tables:
             for join_table in join_tables:
                 query = query.join(join_table)
-        # Apply loaders to the query
+                
         if eager_load_depth:
-            query = query.options(*build_eager_options(model_class,eager_load_depth))
+            query = query.options(*build_eager_options(model_class, eager_load_depth))
 
-        # Order by primary key in descending order (newest first)
         pk_column = list(model_class.__table__.primary_key.columns)[0]
         query = query.order_by(desc(pk_column)).offset(offset).limit(limit)
 
-        # Fetch records
         records = query.all()
-
-        session.expunge_all()
         return records
-    
-
 
 def get_records_by_filter(
     engine,
@@ -402,90 +363,68 @@ def get_records_by_filter(
     join_tables=None,
     labeled_attrs=None,
     selected_fields=None,
-    eager_load_depth= None,
+    eager_load_depth=None,
     offset=0,
     limit=20
 ):
     with session_scope(engine) as session:
-        # Base query
         query_elements = []
 
-        # If selected_fields provided, use them instead of full model
         if selected_fields:
-            # query_elements.append(model_class)
             query_elements.extend(selected_fields)
-
-        # Always include model if nothing is selected
         elif not selected_fields:
             query_elements.append(model_class)
 
-        # Add labeled attributes if any
         if labeled_attrs:
             query_elements.extend(labeled_attrs)
 
         query = session.query(*query_elements)
 
-        # Join tables if specified
         if join_tables:
             for join_table in join_tables:
                 query = query.join(join_table)
-        # Apply loaders to the query
-        if (eager_load_depth is not None) and (model_class in query_elements):
-            query = query.options(*build_eager_options(model_class,eager_load_depth))
+                
+        if eager_load_depth and model_class in query_elements:
+            query = query.options(*build_eager_options(model_class, eager_load_depth))
 
-        # Apply filters
         if conditions:
             query = query.filter(and_(*conditions))
-        
 
-        # Apply ordering
         if ordering_attr:
             for attr in ordering_attr:
                 query = query.order_by(attr)
 
-        
-        # Apply offset and limit
         query = query.offset(offset).limit(limit)
 
-        # Fetch results
         records = query.all()
-        session.expunge_all()
 
-        # Convert rows to dicts when multiple entities are queried
         results = []
-        try:
-            for row in records:
-                if hasattr(row, "_mapping"):  
-                    results.append(dict(row._mapping))  
-                else:
-                    results.append(row)
-        except:
-            pass
+        for row in records:
+            if hasattr(row, "_mapping"):
+                results.append(dict(row._mapping))
+            elif hasattr(row, '__table__'):
+                results.append(serialize_model(row))
+            else:
+                results.append(row)
 
         return results
-    
 
 def serialize_model(obj):
-    """
-    Convert SQLAlchemy model instance to dictionary.
-    Handles datetime objects and nested relationships.
-    """
+    """Convert SQLAlchemy model instance to dictionary."""
     if obj is None:
         return None
     if isinstance(obj, list):
         return [serialize_model(item) for item in obj]
     if isinstance(obj, dict):
         return {k: serialize_model(v) for k, v in obj.items()}
-    if hasattr(obj, '__table__'):  # SQLAlchemy model
+    if hasattr(obj, '__table__'):
         result = {}
         for column in obj.__table__.columns:
             value = getattr(obj, column.name)
-            # Handle datetime objects
             if hasattr(value, 'isoformat'):
                 value = value.isoformat()
-            # Handle other non-serializable types
             elif hasattr(value, '__dict__') and not isinstance(value, (str, int, float, bool, type(None))):
-                continue  # Skip complex nested objects
+                continue
             result[column.name] = value
         return result
     return obj

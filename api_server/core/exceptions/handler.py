@@ -1258,3 +1258,82 @@ def get_exception_handler(exception_class):
         return func
     return decorator
 
+
+
+class LocationException(APIException):
+    """Base exception for location-related errors"""
+    
+    def __init__(
+        self,
+        message: str = "Location service error",
+        error_code: ErrorCode = ErrorCode.LOCATION_NOT_EXISTS,
+        status_code: int = HTTP_400_BAD_REQUEST,
+        details: Dict[str, Any] = None
+    ):
+        super().__init__(
+            status_code=status_code,
+            error_code=error_code,
+            message=message,
+            details=details or {}
+        )
+
+
+class LocationDeleteFailedException(LocationException):
+    """
+    Exception when location deletion fails.
+    
+    This can happen when:
+    - Location has references (e.g., used by deliveries, providers, etc.)
+    - Database constraint violations
+    - Location doesn't exist
+    - Force delete is required but not provided
+    """
+    
+    def __init__(
+        self,
+        location_id: str = None,
+        error: str = None,
+        has_references: bool = False,
+        reference_count: int = 0,
+        reference_tables: List[str] = None,
+        force_delete_required: bool = False,
+        details: Dict[str, Any] = None
+    ):
+        error_details = details or {}
+        
+        if location_id:
+            error_details["location_id"] = location_id
+        if error:
+            error_details["delete_error"] = error
+        if has_references:
+            error_details["has_references"] = has_references
+        if reference_count:
+            error_details["reference_count"] = reference_count
+        if reference_tables:
+            error_details["reference_tables"] = reference_tables
+        if force_delete_required:
+            error_details["force_delete_required"] = force_delete_required
+        
+        message = "Failed to delete location"
+        if location_id:
+            message = f"Failed to delete location with ID '{location_id}'"
+        
+        # Add specific reason if known
+        if has_references:
+            ref_msg = f"Location has {reference_count} reference(s)"
+            if reference_tables:
+                ref_msg += f" in tables: {', '.join(reference_tables)}"
+            message += f" - {ref_msg}. Use force_delete=true to delete anyway."
+        elif force_delete_required:
+            message += " - This location has dependencies. Use force_delete=true to delete."
+        elif error:
+            message += f" - {error}"
+        
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.LOCATION_DELETE_FAILED,
+            status_code=HTTP_500_INTERNAL_SERVER_ERROR,
+            details=error_details
+        )
+
+

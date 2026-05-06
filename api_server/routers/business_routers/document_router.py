@@ -395,7 +395,7 @@ def fetch_cart_receipt_pdf(
 
 @document_router.get(
     "/cart/data",
-    response_model=SuccessResponseModel,
+    # response_model=SuccessResponseModel,
     summary="Get cart data",
     description="Get cart data as JSON for debugging or API integration",
     responses={
@@ -440,16 +440,7 @@ def get_cart_data(
         if not cart_data:
             raise CartNotFoundException(cart_id=cart_id if cart_id > 0 else None)
         
-        return SuccessResponseModel(
-            success=True,
-            data=cart_data,
-            message="Cart data retrieved successfully",
-            details={
-                "provider_id": provider_id if provider_id > 0 else None,
-                "seller_id": seller_id if seller_id > 0 else None,
-                "cart_id": cart_id if cart_id > 0 else None
-            }
-        )
+        return cart_data
         
     except CartNotFoundException:
         raise

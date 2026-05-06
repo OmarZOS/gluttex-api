@@ -71,7 +71,8 @@ class ProductService:
         provider_id: int = 0,
         category_id: int = 0,
         offset: int = 0,
-        limit: int = 10
+        limit: int = 10,
+        serialize : bool = False
     ) -> List[Product]:
         """
         Get all products with filters.
@@ -87,7 +88,7 @@ class ProductService:
             List of Product objects
         """
         logger.debug(f"Fetching products - user:{user_id}, provider:{provider_id}, category:{category_id}, offset:{offset}, limit:{limit}")
-        return self.product_repo.get_all_products(user_id, provider_id, category_id, offset, limit)
+        return self.product_repo.get_all_products(user_id, provider_id, category_id, offset, limit,serialize)
     
     def get_products_by_category(self, category_id: int, offset: int = 0, limit: int = 10) -> List[Product]:
         """

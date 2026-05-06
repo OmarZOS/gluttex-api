@@ -27,11 +27,7 @@ from services.service_service import ServiceService
 
 logger = logging.getLogger(__name__)
 
-# Create router with tags and prefix
-service_router = APIRouter(
-    # tags=["business-services"],
-    # prefix="/business"
-)
+service_router = APIRouter()
 
 
 def get_service_service() -> ServiceService:
@@ -43,6 +39,7 @@ def get_service_service() -> ServiceService:
 
 @service_router.get(
     "/services",
+    # response_model=List[ProvidedService_API],
     summary="Get services with filters",
     description="Retrieve services filtered by category, provider, or active status"
 )
@@ -56,56 +53,21 @@ def get_services(
 ):
     """
     Get services with various filters.
-    
-    Args:
-        category_id: Filter by service category ID
-        provider_id: Filter by provider ID
-        active_only: Show only active services
-        offset: Pagination offset
-        limit: Maximum number of records
-        service_service: Injected service service
-        
-    Returns:
-        List of services matching the filters
     """
     logger.info(f"Fetching services with filters - category:{category_id}, provider:{provider_id}, active_only:{active_only}")
     
     try:
         if active_only:
             result = service_service.get_active_services(provider_id if provider_id > 0 else None)
-            filter_description = "active services"
-            if provider_id > 0:
-                filter_description += f" for provider {provider_id}"
-        
         elif category_id > 0:
             result = service_service.get_services_by_category(category_id, offset, limit)
-            filter_description = f"category {category_id}"
-        
         elif provider_id > 0:
             result = service_service.get_services_by_provider(provider_id, offset, limit)
-            filter_description = f"provider {provider_id}"
-        
         else:
-            # Return all services (paginated)
             result = service_service.get_services_by_provider(0, offset, limit)
-            filter_description = "all services"
         
-        logger.info(f"Found {len(result)} {filter_description}")
-        
-        return {
-            "success": True,
-            "data": result,
-            "filters": {
-                "category_id": category_id if category_id > 0 else None,
-                "provider_id": provider_id if provider_id > 0 else None,
-                "active_only": active_only
-            },
-            "pagination": {
-                "offset": offset,
-                "limit": limit,
-                "total": len(result)
-            }
-        }
+        logger.info(f"Found {len(result)} services")
+        return result
         
     except (ServiceCategoryNotFoundException, ServiceProviderNotFoundException) as e:
         raise
@@ -121,6 +83,7 @@ def get_services(
 
 @service_router.get(
     "/services/{service_id}",
+    # response_model=ProvidedService_API,
     summary="Get service by ID",
     description="Retrieve a specific service by its ID"
 )
@@ -130,29 +93,15 @@ def get_service(
 ):
     """
     Get service by ID.
-    
-    Args:
-        service_id: Service ID to fetch
-        service_service: Injected service service
-        
-    Returns:
-        Service object if found
     """
     logger.info(f"Fetching service with ID: {service_id}")
     
     try:
         service = service_service.get_service_by_id(service_id)
-        
         if not service:
-            logger.warning(f"Service with ID {service_id} not found")
             raise ServiceNotFoundException(service_id=service_id)
         
-        logger.info(f"Successfully retrieved service {service_id}")
-        return {
-            "success": True,
-            "data": service,
-            "service_id": service_id
-        }
+        return service
         
     except ServiceNotFoundException:
         raise
@@ -167,6 +116,7 @@ def get_service(
 @service_router.post(
     "/services",
     status_code=status.HTTP_201_CREATED,
+    # response_model=ProvidedService_API,
     summary="Create a new service",
     description="Creates a new service with resource and staff requirements"
 )
@@ -178,19 +128,9 @@ def create_service(
 ):
     """
     Create a new service.
-    
-    Args:
-        service: Service details
-        requirements: Resource requirements for the service
-        staff_requirements: Staff requirements for the service
-        service_service: Injected service service
-        
-    Returns:
-        Created service object
     """
     logger.info(f"Creating new service: {service.provided_service_name}")
     
-    # Validate service has required fields
     if not service.provided_service_name:
         raise ServiceCreationFailedException(
             error="Service name is required",
@@ -202,20 +142,8 @@ def create_service(
         created_service = service_service.create_service(
             service, requirements, staff_requirements
         )
-        
-        logger.info(f"Service created successfully with ID: {getattr(created_service, 'provided_service_id', 'unknown')}")
-        
-        return {
-            "success": True,
-            "message": "Service created successfully",
-            "data": created_service,
-            "summary": {
-                "service_name": service.provided_service_name,
-                "requirements_count": len(requirements),
-                "staff_requirements_count": len(staff_requirements),
-                "is_active": service.provided_service_is_active
-            }
-        }
+        logger.info(f"Service created with ID: {getattr(created_service, 'provided_service_id', 'unknown')}")
+        return created_service
         
     except (ServiceCreationFailedException, ServiceRequirementCreationException) as e:
         raise
@@ -230,6 +158,7 @@ def create_service(
 
 @service_router.put(
     "/services/{service_id}",
+    # response_model=ProvidedService_API,
     summary="Update a service",
     description="Update an existing service's details"
 )
@@ -240,41 +169,20 @@ def update_service(
 ):
     """
     Update an existing service.
-    
-    Args:
-        service_id: Service ID to update
-        service: Updated service details
-        service_service: Injected service service
-        
-    Returns:
-        Updated service object
     """
     logger.info(f"Updating service with ID: {service_id}")
     
     try:
-        # Check if service exists
         existing_service = service_service.get_service_by_id(service_id)
         if not existing_service:
             raise ServiceNotFoundException(service_id=service_id)
         
-        # Set the service ID
         if hasattr(service, 'provided_service_id'):
             service.provided_service_id = service_id
         
         updated_service = service_service.update_service(service_id, service)
-        
         logger.info(f"Service {service_id} updated successfully")
-        return {
-            "success": True,
-            "message": "Service updated successfully",
-            "data": updated_service,
-            "service_id": service_id,
-            "updated_fields": {
-                "name_changed": service.provided_service_name != getattr(existing_service, 'provided_service_name', None),
-                "price_changed": service.provided_service_base_price != getattr(existing_service, 'provided_service_base_price', None),
-                "active_status_changed": service.provided_service_is_active != getattr(existing_service, 'provided_service_is_active', None)
-            }
-        }
+        return updated_service
         
     except (ServiceNotFoundException, ServiceUpdateFailedException):
         raise
@@ -289,6 +197,7 @@ def update_service(
 
 @service_router.patch(
     "/services/{service_id}/toggle",
+    # response_model=ProvidedService_API,
     summary="Toggle service status",
     description="Activate or deactivate a service"
 )
@@ -299,28 +208,17 @@ def toggle_service(
 ):
     """
     Activate or deactivate a service.
-    
-    Args:
-        service_id: Service ID to toggle
-        is_active: Desired active status
-        service_service: Injected service service
-        
-    Returns:
-        Updated service with new status
     """
     action = "activate" if is_active else "deactivate"
     logger.info(f"Attempting to {action} service {service_id}")
     
     try:
-        # Check if service exists
         existing_service = service_service.get_service_by_id(service_id)
         if not existing_service:
             raise ServiceNotFoundException(service_id=service_id)
         
-        # Check if already in desired state
         current_status = getattr(existing_service, 'provided_service_is_active', False)
         if current_status == is_active:
-            logger.info(f"Service {service_id} is already {'active' if is_active else 'inactive'}")
             raise ServiceToggleStatusException(
                 service_id=service_id,
                 current_status=current_status,
@@ -328,18 +226,9 @@ def toggle_service(
                 error="Service already in requested state"
             )
         
-        # Toggle status
         updated_service = service_service.toggle_service_status(service_id, is_active)
-        
         logger.info(f"Service {service_id} {action}d successfully")
-        return {
-            "success": True,
-            "message": f"Service {action}d successfully",
-            "data": updated_service,
-            "service_id": service_id,
-            "is_active": is_active,
-            "previous_status": current_status
-        }
+        return updated_service
         
     except (ServiceNotFoundException, ServiceToggleStatusException, ServiceUpdateFailedException):
         raise
@@ -354,7 +243,7 @@ def toggle_service(
 
 @service_router.delete(
     "/services/{service_id}",
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete a service",
     description="Deletes a service and all its associated requirements"
 )
@@ -365,73 +254,42 @@ def delete_service(
 ):
     """
     Delete a service.
-    
-    Args:
-        service_id: Service ID to delete
-        force_delete: Whether to force delete even if service has requirements
-        service_service: Injected service service
-        
-    Returns:
-        Success message
     """
     logger.info(f"Deleting service with ID: {service_id} (force={force_delete})")
     
     try:
-        # Check if service exists
         existing_service = service_service.get_service_by_id(service_id)
         if not existing_service:
-            logger.warning(f"Service with ID {service_id} not found")
             raise ServiceNotFoundException(service_id=service_id)
         
-        # Check for associated requirements
         has_requirements = hasattr(existing_service, 'requirements') and existing_service.requirements
         has_staff_requirements = hasattr(existing_service, 'staff_requirements') and existing_service.staff_requirements
         
         if (has_requirements or has_staff_requirements) and not force_delete:
-            logger.warning(f"Service {service_id} has requirements. Use force_delete=true to delete.")
-            return {
-                "success": False,
-                "message": "Service has associated requirements. Use force_delete=true to delete anyway.",
-                "service_id": service_id,
-                "has_resource_requirements": bool(has_requirements),
-                "has_staff_requirements": bool(has_staff_requirements)
-            }
-        
-        # Delete service
-        success = service_service.delete_service(service_id)
-        
-        if not success:
             raise ServiceDeleteFailedException(
                 service_id=service_id,
-                error="Service returned False"
+                error="Service has associated requirements. Use force_delete=true to delete."
             )
         
+        success = service_service.delete_service(service_id)
+        if not success:
+            raise ServiceDeleteFailedException(service_id=service_id, error="Service returned False")
+        
         logger.info(f"Service {service_id} deleted successfully")
-        return {
-            "success": True,
-            "message": f"Service #{service_id} deleted successfully",
-            "service_id": service_id,
-            "force_deleted": force_delete,
-            "deleted_requirements": {
-                "resource_requirements": bool(has_requirements),
-                "staff_requirements": bool(has_staff_requirements)
-            }
-        }
+        return None  # 204 No Content
         
     except (ServiceNotFoundException, ServiceDeleteFailedException):
         raise
     except Exception as e:
         logger.error(f"Failed to delete service {service_id}: {e}")
-        raise ServiceDeleteFailedException(
-            service_id=service_id,
-            error=str(e)
-        )
+        raise ServiceDeleteFailedException(service_id=service_id, error=str(e))
 
 
 # ==================== Additional Service Endpoints ====================
 
 @service_router.get(
     "/services/category/{category_id}",
+    # response_model=List[ProvidedService_API],
     summary="Get services by category",
     description="Retrieve all services in a specific category"
 )
@@ -443,31 +301,12 @@ def get_services_by_category(
 ):
     """
     Get all services in a specific category.
-    
-    Args:
-        category_id: Category ID to filter by
-        offset: Pagination offset
-        limit: Maximum number of records
-        service_service: Injected service service
-        
-    Returns:
-        List of services in the category
     """
     logger.info(f"Fetching services for category {category_id}")
     
     try:
         services = service_service.get_services_by_category(category_id, offset, limit)
-        
-        return {
-            "success": True,
-            "data": services,
-            "category_id": category_id,
-            "pagination": {
-                "offset": offset,
-                "limit": limit,
-                "total": len(services)
-            }
-        }
+        return services
         
     except ServiceCategoryNotFoundException as e:
         raise
@@ -481,6 +320,7 @@ def get_services_by_category(
 
 @service_router.get(
     "/services/provider/{provider_id}",
+    # response_model=List[ProvidedService_API],
     summary="Get services by provider",
     description="Retrieve all services offered by a specific provider"
 )
@@ -493,16 +333,6 @@ def get_services_by_provider(
 ):
     """
     Get all services offered by a specific provider.
-    
-    Args:
-        provider_id: Provider ID to filter by
-        active_only: Show only active services
-        offset: Pagination offset
-        limit: Maximum number of records
-        service_service: Injected service service
-        
-    Returns:
-        List of services from the provider
     """
     logger.info(f"Fetching services for provider {provider_id} (active_only={active_only})")
     
@@ -512,17 +342,7 @@ def get_services_by_provider(
         else:
             services = service_service.get_services_by_provider(provider_id, offset, limit)
         
-        return {
-            "success": True,
-            "data": services,
-            "provider_id": provider_id,
-            "active_only": active_only,
-            "pagination": {
-                "offset": offset,
-                "limit": limit,
-                "total": len(services)
-            }
-        }
+        return services
         
     except ServiceProviderNotFoundException as e:
         raise
@@ -536,6 +356,7 @@ def get_services_by_provider(
 
 @service_router.get(
     "/services/{service_id}/requirements",
+    # response_model=List[ServiceResourceRequirement_API],
     summary="Get service requirements",
     description="Retrieve all resource requirements for a service"
 )
@@ -545,31 +366,16 @@ def get_service_requirements(
 ):
     """
     Get all resource requirements for a service.
-    
-    Args:
-        service_id: Service ID to fetch requirements for
-        service_service: Injected service service
-        
-    Returns:
-        List of resource requirements
     """
     logger.info(f"Fetching requirements for service {service_id}")
     
     try:
-        # Check if service exists
         service = service_service.get_service_by_id(service_id)
         if not service:
             raise ServiceNotFoundException(service_id=service_id)
         
         requirements = service_service.get_service_requirements(service_id)
-        
-        return {
-            "success": True,
-            "data": requirements,
-            "service_id": service_id,
-            "service_name": getattr(service, 'provided_service_name', None),
-            "total_requirements": len(requirements)
-        }
+        return requirements
         
     except ServiceNotFoundException:
         raise
@@ -583,6 +389,7 @@ def get_service_requirements(
 
 @service_router.get(
     "/services/{service_id}/staff-requirements",
+    # response_model=List[ServiceStaffRequirement_API],
     summary="Get service staff requirements",
     description="Retrieve all staff requirements for a service"
 )
@@ -592,31 +399,16 @@ def get_service_staff_requirements(
 ):
     """
     Get all staff requirements for a service.
-    
-    Args:
-        service_id: Service ID to fetch staff requirements for
-        service_service: Injected service service
-        
-    Returns:
-        List of staff requirements
     """
     logger.info(f"Fetching staff requirements for service {service_id}")
     
     try:
-        # Check if service exists
         service = service_service.get_service_by_id(service_id)
         if not service:
             raise ServiceNotFoundException(service_id=service_id)
         
         staff_requirements = service_service.get_service_staff_requirements(service_id)
-        
-        return {
-            "success": True,
-            "data": staff_requirements,
-            "service_id": service_id,
-            "service_name": getattr(service, 'provided_service_name', None),
-            "total_staff_requirements": len(staff_requirements)
-        }
+        return staff_requirements
         
     except ServiceNotFoundException:
         raise
