@@ -214,12 +214,14 @@ async def login_user(
     - **password**: User's password
     """
     result = await auth_service.login_user(user)
+    print(result)
+    
     return TokenResponse(
         access_token=result["access_token"],
         token_type="bearer",
         expires_in=result.get("expires_in", 3600),
-        user_id=result["user_id"],
-        username=result["username"]
+        app_user_id=result["app_user_id"],
+        username=user.app_user_name
     )
 
 

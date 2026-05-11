@@ -121,7 +121,7 @@ class AuthClient:
             response = await send_post_request(
                 url, 
                 json_data=user_data,
-                timeout=self.timeout
+                # timeout=self.timeout
             )
             response.raise_for_status()
             
@@ -205,7 +205,7 @@ class AuthClient:
                 url,
                 payload_data=form_data,
                 flags=headers,
-                timeout=self.timeout
+                # timeout=self.timeout
             )
             
             result = response.json()
@@ -292,7 +292,7 @@ class AuthClient:
                 url,
                 json_data=user_update,
                 headers=headers,
-                timeout=self.timeout
+                # timeout=self.timeout
             )
             response.raise_for_status()
             
@@ -377,7 +377,7 @@ class AuthClient:
             response = await send_delete_request(
                 url,
                 input_data=user_data,
-                timeout=self.timeout
+                # timeout=self.timeout
             )
             response.raise_for_status()
             

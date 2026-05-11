@@ -91,7 +91,7 @@ class UserService:
         
         # Attach Person if provided
         if person_data:
-            existing_person = self.person_repo.get_by_id(person_data.id_person)
+            existing_person = self.person_repo.get_person_by_id(person_data.id_person)
             if existing_person:
                 app_user.app_user_person_id = existing_person.id_person
             else:
