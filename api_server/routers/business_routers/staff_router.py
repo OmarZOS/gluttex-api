@@ -35,47 +35,90 @@ def get_management_rule_service() -> ManagementRuleService:
 # ==================== Staff Listing Endpoints ====================
 
 @staff_router.get(
-    "/staff/{org_id}/{provider_id}/{user_id}/{rule_id}/{offset}/{limit}",
+    "/staff",
     # response_model=List[ManagementRule_API],
     summary="Get staff members",
     description="Fetch staff members with pagination and filters",
     responses={
-        200: {"description": "Staff members retrieved successfully"},
+        # 200: {"description": "Staff members retrieved successfully"},
         **get_crud_error_responses(include_404=True)
     }
 )
 def get_staff(
-    org_id: int,
-    provider_id: int,
-    user_id: int,
-    rule_id: int,
-    offset: int,
-    limit: int,
+    org_id: Optional[int] = Query(
+        default=None,
+        description="Filter by organisation ID",
+        ge=0
+    ),
+    provider_id: Optional[int] = Query(
+        default=None,
+        description="Filter by provider ID",
+        ge=0
+    ),
+    user_id: Optional[int] = Query(
+        default=None,
+        description="Filter by user ID",
+        ge=0
+    ),
+    rule_id: Optional[int] = Query(
+        default=None,
+        description="Filter by specific rule ID",
+        ge=0
+    ),
+    status: Optional[str] = Query(
+        default=None,
+        description="Filter by status (ACTIVE, PENDING, REJECTED, EXPIRED)",
+        pattern="^(ACTIVE|PENDING|REJECTED|EXPIRED)$"
+    ),
+    offset: int = Query(
+        default=0,
+        description="Pagination offset",
+        ge=0
+    ),
+    limit: int = Query(
+        default=50,
+        description="Maximum number of records to return (max 100)",
+        ge=1,
+        le=100
+    ),
     rule_service: ManagementRuleService = Depends(get_management_rule_service)
 ):
     """
-    Fetch staff members with pagination.
+    Fetch staff members with pagination and filters.
     
-    - **org_id**: Organisation ID filter (use 0 to ignore)
-    - **provider_id**: Provider ID filter (use 0 to ignore)
-    - **user_id**: User ID filter (use 0 to ignore)
-    - **rule_id**: Rule ID filter (use 0 to ignore)
+    - **org_id**: Organisation ID filter
+    - **provider_id**: Provider ID filter
+    - **user_id**: User ID filter
+    - **rule_id**: Specific rule ID filter
+    - **status**: Filter by status (ACTIVE, PENDING, REJECTED, EXPIRED)
     - **offset**: Pagination offset
     - **limit**: Pagination limit (max 100)
     """
-    if limit > 100:
-        limit = 100
+    logger.info(
+        f"Fetching staff - org_id:{org_id}, provider_id:{provider_id}, "
+        f"user_id:{user_id}, rule_id:{rule_id}, status:{status}, "
+        f"offset:{offset}, limit:{limit}"
+    )
     
-    logger.info(f"Fetching staff - org_id:{org_id}, provider_id:{provider_id}, user_id:{user_id}, rule_id:{rule_id}, offset:{offset}, limit:{limit}")
-    
-    return rule_service.get_all_rules(
-        org_id=org_id if org_id > 0 else None,
-        supplier_id=provider_id if provider_id > 0 else None,
-        user_id=user_id if user_id > 0 else None,
-        rule_id=rule_id if rule_id > 0 else None,
+    # Get staff members
+    staff_members = rule_service.get_all_rules(
+        org_id=org_id,
+        supplier_id=provider_id,
+        user_id=user_id,
+        rule_id=rule_id,
         offset=offset,
         limit=limit
     )
+    
+    # Filter by status if provided
+    if status and staff_members:
+        staff_members = [
+            member for member in staff_members 
+            if getattr(member, 'management_rule_status', None) == status
+        ]
+    
+    return staff_members
+
 
 
 @staff_router.get(

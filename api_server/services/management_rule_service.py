@@ -8,6 +8,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from fastapi import BackgroundTasks
 
+from repositories.user_repository import UserRepository
 from core.api_models import ManagementRule_API, Notification_API
 from core.exceptions.specific.staff_exceptions import (
     StaffException,
@@ -46,6 +47,7 @@ class ManagementRuleService:
     
     def __init__(self):
         self.rule_repo = ManagementRuleRepository()
+        self.user_repo = UserRepository()
         self.supplier_repo = SupplierRepository()
         self.notification_service = NotificationService()
     
@@ -123,7 +125,7 @@ class ManagementRuleService:
         """
         # Validate user (if provided)
         if rule_data.rule_ref_user:
-            user = self.rule_repo.get_user_by_id(rule_data.rule_ref_user)
+            user = self.user_repo.get_by_id(rule_data.rule_ref_user)
             if not user:
                 logger.warning(f"User not found: {rule_data.rule_ref_user}")
                 raise UserNotFoundExceptionForStaff(user_id=rule_data.rule_ref_user)
@@ -213,7 +215,7 @@ class ManagementRuleService:
             rule: Created rule
         """
         try:
-            from features.app.notification.builders.notification_builder import NotificationFactory
+            from services.helpers.notification import NotificationFactory
             
             notification = NotificationFactory.personnel.work_invitation(
                 rule_id=rule.id_management_rule,
@@ -351,10 +353,10 @@ class ManagementRuleService:
     
     def get_all_rules(
         self,
-        org_id: int = 0,
-        supplier_id: int = 0,
-        user_id: int = 0,
-        rule_id: int = 0,
+        org_id: Optional[int] = None,
+        supplier_id: Optional[int] = None,
+        user_id: Optional[int] = None,
+        rule_id: Optional[int] = None,
         offset: int = 0,
         limit: int = 100
     ) -> List[ManagementRule]:
@@ -362,18 +364,33 @@ class ManagementRuleService:
         Get all management rules with filters.
         
         Args:
-            org_id: Filter by organisation ID
-            supplier_id: Filter by supplier/provider ID
-            user_id: Filter by user ID
-            rule_id: Filter by rule ID
+            org_id: Filter by organisation ID (None or 0 means no filter)
+            supplier_id: Filter by supplier/provider ID (None or 0 means no filter)
+            user_id: Filter by user ID (None or 0 means no filter)
+            rule_id: Filter by rule ID (None or 0 means no filter)
             offset: Pagination offset
             limit: Maximum number of records
             
         Returns:
             List of ManagementRule objects
         """
-        logger.debug(f"Fetching rules - org:{org_id}, supplier:{supplier_id}, user:{user_id}, offset:{offset}, limit:{limit}")
-        return self.rule_repo.get_all(org_id, supplier_id, user_id, rule_id, offset, limit)
+        logger.debug(f"Fetching rules - org:{org_id}, supplier:{supplier_id}, user:{user_id}, rule_id:{rule_id}, offset:{offset}, limit:{limit}")
+        
+        # Convert 0 to None for proper filtering
+        org_filter = org_id if org_id and org_id > 0 else None
+        supplier_filter = supplier_id if supplier_id and supplier_id > 0 else None
+        user_filter = user_id if user_id and user_id > 0 else None
+        rule_filter = rule_id if rule_id and rule_id > 0 else None
+        
+        return self.rule_repo.get_all(
+            org_id=org_filter,
+            supplier_id=supplier_filter,
+            user_id=user_filter,
+            rule_id=rule_filter,
+            offset=offset,
+            limit=limit
+        )
+
     
     def create_rule(self, rule_data: ManagementRule_API) -> ManagementRule:
         """
@@ -590,7 +607,7 @@ class ManagementRuleService:
         logger.debug(f"Fetching rules for user {user_id} (status={status})")
         
         # Validate user exists
-        user = self.rule_repo.get_user_by_id(user_id)
+        user = self.user_repo.get_by_id(user_id)
         if not user:
             logger.warning(f"User not found: {user_id}")
             raise UserNotFoundExceptionForStaff(user_id=user_id)
@@ -635,7 +652,7 @@ class ManagementRuleService:
         logger.debug(f"Fetching pending invitations for user {user_id}")
         
         # Validate user exists
-        user = self.rule_repo.get_user_by_id(user_id)
+        user = self.user_repo.get_by_id(user_id)
         if not user:
             logger.warning(f"User not found: {user_id}")
             raise UserNotFoundExceptionForStaff(user_id=user_id)
