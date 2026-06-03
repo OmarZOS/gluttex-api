@@ -340,7 +340,7 @@ def update_product_details(
     summary="Create product",
     description="Insert a new product",
     responses={
-        201: {"description": "Product created successfully"},
+        # 201: {"description": "Product created successfully"},
         400: {"model": ErrorResponseModel},
         409: {"model": ErrorResponseModel}
     }

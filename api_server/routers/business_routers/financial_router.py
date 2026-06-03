@@ -35,7 +35,6 @@ def get_financial_service() -> FinancialService:
 @financial_router.post(
     "/payments",
     status_code=status.HTTP_201_CREATED,
-    # response_model=Payment_API,
     summary="Create payment",
     description="Create a payment",
     responses={

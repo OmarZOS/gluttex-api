@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 person_router = APIRouter(
     # tags=["People"],
-    # prefix="/api/v1/people"
+    # prefix="/people/api/v1/people"
 )
 
 
@@ -35,7 +35,7 @@ def get_person_service() -> PersonService:
 # ==================== Person Endpoints ====================
 
 @person_router.get(
-    "/{person_id}",
+    "/people/{person_id}",
     response_model=SuccessResponseModel[PersonResponseModel],
     summary="Get person by ID",
     description="Retrieve a person by their ID",
@@ -71,7 +71,7 @@ def get_person(
 
 
 @person_router.post(
-    "/",
+    "/people",
     status_code=status.HTTP_201_CREATED,
     response_model=SuccessResponseModel[PersonResponseModel],
     summary="Create or update person",
@@ -126,7 +126,7 @@ def create_or_update_person(
 
 
 @person_router.delete(
-    "/{person_id}",
+    "/people/{person_id}",
     status_code=status.HTTP_200_OK,
     response_model=SuccessResponseModel,
     summary="Delete person",
@@ -169,7 +169,7 @@ def delete_person(
 # ==================== Blood Type Endpoints ====================
 
 @person_router.get(
-    "/blood-types/all",
+    "/people/blood-types/all",
     response_model=SuccessResponseModel[List[BloodTypeResponseModel]],
     summary="Get all blood types",
     description="Retrieve all available blood types",
@@ -200,7 +200,7 @@ def get_blood_types(
 
 
 @person_router.get(
-    "/blood-type/{blood_type_id}",
+    "/people/blood-type/{blood_type_id}",
     response_model=SuccessResponseModel[BloodTypeResponseModel],
     summary="Get blood type by ID",
     description="Retrieve a specific blood type by its ID",
@@ -235,7 +235,7 @@ def get_blood_type(
 # ================= Additional Person Endpoints =================
 
 @person_router.get(
-    "/",
+    "/people",
     response_model=SuccessResponseModel[List[PersonResponseModel]],
     summary="Get all persons",
     description="Retrieve all persons with pagination",
@@ -278,7 +278,7 @@ def get_all_persons(
 
 
 @person_router.get(
-    "/search/name",
+    "/people/search/name",
     response_model=SuccessResponseModel[List[PersonResponseModel]],
     summary="Search persons by name",
     description="Search for persons by first name or last name",

@@ -11,7 +11,7 @@ def get_recipe_service() -> RecipeService:
 
 # ==================== Recipe Endpoints ====================
 
-@recipe_router.get("/recipes/")
+@recipe_router.get("/recipes")
 def get_all_recipes(
     user_id: int = Query(0, description="Filter by user ID"),
     category_id: int = Query(0, description="Filter by category ID"),
@@ -43,7 +43,7 @@ def get_recipe(
     """Get recipe by ID"""
     return recipe_service.get_recipe_by_id(recipe_id, full)
 
-@recipe_router.post("/recipes/")
+@recipe_router.post("/recipes")
 async def create_recipe(
     recipe: Recipe_API,
     image: RecipeImage_API,

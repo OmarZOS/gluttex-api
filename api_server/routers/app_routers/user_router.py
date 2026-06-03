@@ -45,14 +45,14 @@ def get_social_service() -> SocialService:
 
 @app_user_router.get(
     "/app_user",
-    response_model=SuccessResponseModel[List[UserResponseModel]],
+    # response_model=SuccessResponseModel[List[UserResponseModel]],
     summary="Get all users",
     description="Retrieve all users",
     responses={
-        200: {
-            "description": "Users retrieved successfully",
-            "model": SuccessResponseModel[List[UserResponseModel]]
-        },
+        # 200: {
+        #     "description": "Users retrieved successfully",
+        #     "model": SuccessResponseModel[List[UserResponseModel]]
+        # },
         **get_crud_error_responses(include_404=False)
     }
 )
@@ -71,30 +71,19 @@ def get_all_users(
     
     result = user_service.get_all_users(offset, limit)
     
-    return SuccessResponseModel(
-        success=True,
-        data=result,
-        message=f"Found {len(result) if isinstance(result, list) else 0} users",
-        details={
-            "pagination": {
-                "offset": offset,
-                "limit": limit,
-                "total": len(result) if isinstance(result, list) else 0
-            }
-        }
-    )
+    return result
 
 
 @app_user_router.get(
     "/app_user/{user_id}",
-    response_model=SuccessResponseModel[UserResponseModel],
+    # response_model=SuccessResponseModel[UserResponseModel],
     summary="Get user by ID",
     description="Retrieve a user by their ID",
     responses={
-        200: {
-            "description": "User retrieved successfully",
-            "model": SuccessResponseModel[UserResponseModel]
-        },
+        # 200: {
+        #     "description": "User retrieved successfully",
+        #     "model": SuccessResponseModel[UserResponseModel]
+        # },
         **get_crud_error_responses(include_404=True)
     }
 )
@@ -113,24 +102,19 @@ def get_user_by_id(
     
     result = user_service.get_user_by_id(user_id, full)
     
-    return SuccessResponseModel(
-        success=True,
-        data=result,
-        message=f"User {user_id} retrieved successfully",
-        details={"full_data": full}
-    )
+    return result
 
 
 @app_user_router.get(
     "/person/{person_id}",
-    response_model=SuccessResponseModel,
+    # response_model=SuccessResponseModel,
     summary="Get person by ID",
     description="Retrieve a person by their ID",
     responses={
-        200: {
-            "description": "Person retrieved successfully",
-            "model": SuccessResponseModel
-        },
+        # 200: {
+        #     "description": "Person retrieved successfully",
+        #     "model": SuccessResponseModel
+        # },
         **get_crud_error_responses(include_404=True)
     }
 )
@@ -147,24 +131,20 @@ def get_person_by_id(
     
     result = social_service.get_person_by_id(person_id)
     
-    return SuccessResponseModel(
-        success=True,
-        data=result,
-        message=f"Person {person_id} retrieved successfully"
-    )
+    return result
 
 
 @app_user_router.post(
     "/app_user",
     status_code=status.HTTP_201_CREATED,
-    response_model=SuccessResponseModel,
+    # response_model=SuccessResponseModel,
     summary="Create user",
     description="Insert a new user",
     responses={
-        201: {
-            "description": "User created successfully",
-            "model": SuccessResponseModel
-        },
+        # 201: {
+        #     "description": "User created successfully",
+        #     "model": SuccessResponseModel
+        # },
         400: {
             "description": "Bad Request - Invalid data",
             "model": ErrorResponseModel
@@ -195,33 +175,22 @@ async def insert_user_endpoint(
     
     result = await user_service.create_user(user, person, location, provider)
     
-    user_id = getattr(result, 'id_app_user', None)
+    # user_id = getattr(result, 'id_app_user', None)
     
-    return SuccessResponseModel(
-        success=True,
-        message="User created successfully",
-        data=result,
-        details={
-            "user_id": user_id,
-            "username": user.app_user_name,
-            "has_person": person is not None,
-            "has_location": location is not None,
-            "provider": provider
-        }
-    )
+    return result
 
 
 @app_user_router.delete(
     "/app_user",
     status_code=status.HTTP_200_OK,
-    response_model=SuccessResponseModel,
+    # response_model=SuccessResponseModel,
     summary="Delete user",
     description="Delete a user",
     responses={
-        200: {
-            "description": "User deleted successfully",
-            "model": SuccessResponseModel
-        },
+        # 200: {
+        #     "description": "User deleted successfully",
+        #     "model": SuccessResponseModel
+        # },
         400: {
             "description": "Bad Request - Cannot delete user with dependencies",
             "model": ErrorResponseModel
@@ -244,24 +213,19 @@ def delete_user_endpoint(
     
     result = user_service.delete_user(user)
     
-    return SuccessResponseModel(
-        success=True,
-        message=f"User {user.id_app_user} deleted successfully",
-        data=result,
-        details={"force_deleted": force_delete}
-    )
+    return result
 
 
 @app_user_router.put(
     "/app_user/update_password",
-    response_model=SuccessResponseModel,
+    # response_model=SuccessResponseModel,
     summary="Update user password",
     description="Update the user password",
     responses={
-        200: {
-            "description": "Password updated successfully",
-            "model": SuccessResponseModel
-        },
+        # 200: {
+        #     "description": "Password updated successfully",
+        #     "model": SuccessResponseModel
+        # },
         400: {
             "description": "Bad Request - Invalid password",
             "model": ErrorResponseModel
@@ -298,14 +262,14 @@ async def update_user_password_endpoint(
 
 @app_user_router.put(
     "/app_user/update_image_url",
-    response_model=SuccessResponseModel,
+    # response_model=SuccessResponseModel,
     summary="Update user image URL",
     description="Update the user image URL",
     responses={
-        200: {
-            "description": "Image URL updated successfully",
-            "model": SuccessResponseModel
-        },
+        # 200: {
+        #     "description": "Image URL updated successfully",
+        #     "model": SuccessResponseModel
+        # },
         **get_crud_error_responses(include_404=True)
     }
 )
@@ -337,14 +301,14 @@ def update_user_image_url_endpoint(
 
 @app_user_router.put(
     "/app_user",
-    response_model=SuccessResponseModel,
+    # response_model=SuccessResponseModel,
     summary="Update user record",
     description="Update the user record",
     responses={
-        200: {
-            "description": "User updated successfully",
-            "model": SuccessResponseModel
-        },
+        # 200: {
+        #     "description": "User updated successfully",
+        #     "model": SuccessResponseModel
+        # },
         400: {
             "description": "Bad Request - Invalid data",
             "model": ErrorResponseModel
@@ -386,7 +350,7 @@ def update_user_record_endpoint(
 @app_user_router.post(
     "/reaction",
     status_code=status.HTTP_201_CREATED,
-    response_model=SuccessResponseModel[ReactionResponseModel],
+    # response_model=SuccessResponseModel[ReactionResponseModel],
     summary="Add or update reaction",
     description="Insert a reaction or update an existing one",
     responses={
@@ -435,14 +399,14 @@ def reaction_endpoint(
 
 @app_user_router.get(
     "/app_user/search",
-    response_model=SuccessResponseModel[List[UserResponseModel]],
+    # response_model=SuccessResponseModel[List[UserResponseModel]],
     summary="Search users",
     description="Search users by username or email",
     responses={
-        200: {
-            "description": "Users found successfully",
-            "model": SuccessResponseModel[List[UserResponseModel]]
-        },
+        # 200: {
+        #     "description": "Users found successfully",
+        #     "model": SuccessResponseModel[List[UserResponseModel]]
+        # },
         **get_crud_error_responses(include_404=False)
     }
 )
@@ -475,14 +439,14 @@ def search_users(
 
 @app_user_router.get(
     "/app_user/by-email/{email}",
-    response_model=SuccessResponseModel[UserResponseModel],
+    # response_model=SuccessResponseModel[UserResponseModel],
     summary="Get user by email",
     description="Retrieve a user by their email address",
     responses={
-        200: {
-            "description": "User retrieved successfully",
-            "model": SuccessResponseModel[UserResponseModel]
-        },
+        # 200: {
+        #     "description": "User retrieved successfully",
+        #     "model": SuccessResponseModel[UserResponseModel]
+        # },
         **get_crud_error_responses(include_404=True)
     }
 )

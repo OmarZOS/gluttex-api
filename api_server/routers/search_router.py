@@ -9,7 +9,7 @@ def get_search_service() -> SearchService:
     return SearchService()
 
 
-@search_router.get("/product/{token}/{offset}/{limit}")
+@search_router.get("/search/product/{token}/{offset}/{limit}")
 def search_for_product(
     token: str,
     offset: int,
@@ -30,7 +30,7 @@ def search_for_product(
     return search_service.search_products(token, offset, limit)
 
 
-@search_router.get("/recipe/{token}/{offset}/{limit}")
+@search_router.get("/search/recipe/{token}/{offset}/{limit}")
 def search_for_recipe(
     token: str,
     offset: int,
@@ -51,7 +51,7 @@ def search_for_recipe(
     return search_service.search_recipes(token, offset, limit)
 
 
-@search_router.get("/personnel/{token}/{offset}/{limit}")
+@search_router.get("/search/personnel/{token}/{offset}/{limit}")
 def search_for_user(
     token: str,
     offset: int,
@@ -72,7 +72,7 @@ def search_for_user(
     return search_service.search_users(token, offset, limit)
 
 
-@search_router.get("/people/{token}/{offset}/{limit}")
+@search_router.get("/search/people/{token}/{offset}/{limit}")
 def search_for_people(
     token: str,
     offset: int,
@@ -93,7 +93,7 @@ def search_for_people(
     return search_service.search_people(token, offset, limit)
 
 
-@search_router.get("/supplier/{token}/{offset}/{limit}")
+@search_router.get("/search/supplier/{token}/{offset}/{limit}")
 def search_supplier(
     token: str,
     offset: int,
@@ -114,7 +114,7 @@ def search_supplier(
     return search_service.search_suppliers(token, offset, limit)
 
 
-@search_router.get("/position/supplier/{longitude}/{latitude}/{distance_km}/{offset}/{limit}")
+@search_router.get("/search/position/supplier/{longitude}/{latitude}/{distance_km}/{offset}/{limit}")
 def search_supplier_by_position(
     longitude: float,
     latitude: float,
@@ -143,7 +143,7 @@ def search_supplier_by_position(
 
 # ==================== Enhanced Search Endpoints ====================
 
-@search_router.get("/multi")
+@search_router.get("/search/multi")
 def multi_search(
     token: str = Query(..., description="Search query string"),
     entities: List[str] = Query(
@@ -169,7 +169,7 @@ def multi_search(
     return search_service.multi_search(token, entities, offset, limit)
 
 
-@search_router.get("/quick/{token}")
+@search_router.get("/search/quick/{token}")
 def quick_search(
     token: str,
     limit: int = Query(5, ge=1, le=20),
