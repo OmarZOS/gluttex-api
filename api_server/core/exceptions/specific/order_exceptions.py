@@ -741,3 +741,34 @@ class OrderTotalMismatchException(OrderValidationException):
             errors={"total_amount": [message]},
             details=error_details
         )
+
+
+class OrderInsertFailedException(APIException):
+    """Exception raised when order creation fails."""
+    
+    def __init__(self, error: str, user_id: int = None):
+        details = {"error": error}
+        if user_id:
+            details["user_id"] = user_id
+        
+        super().__init__(
+            status=HTTP_417_EXPECTATION_FAILED,
+            code=ErrorCode.ORDER_INSERT_FAILED,
+            message="Failed to create order",
+            details=details
+        )
+
+class OrderStatusTransitionException(APIException):
+    """Exception raised when an invalid status transition is attempted."""
+    
+    def __init__(self, current_status: str, new_status: str, allowed_transitions: list):
+        super().__init__(
+            status=HTTP_422_UNPROCESSABLE_ENTITY,
+            code=ErrorCode.INVALID_ORDER_STATUS,
+            message=f"Cannot transition order from {current_status} to {new_status}",
+            details={
+                "current_status": current_status,
+                "new_status": new_status,
+                "allowed_transitions": allowed_transitions
+            }
+        )

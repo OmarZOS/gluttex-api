@@ -8,6 +8,7 @@ import logging
 from typing import List, Tuple, Dict, Any, Optional
 from datetime import datetime, timedelta
 
+from services.helpers.stock_manager import StockManager, StockTransaction
 from core.api_models import (
     Cart_API, OrderedItem_API, OrderedService_API, Delivery_API,
     Person_API, Payment_API
@@ -54,6 +55,7 @@ class CartService:
         self.order_service = OrderService()
         self.delivery_service = DeliveryService()
         self.person_service = PersonService()
+        self.stock_manager = StockManager(self.product_repo)
     
     # ==================== Cart Retrieval Methods ====================
     
@@ -360,23 +362,19 @@ class CartService:
         ordered_services: List[OrderedService_API]
     ) -> Tuple[List[OrderedItem], List[Product], float, float]:
         """
-        Process cart items, update stock, and calculate totals.
-        
-        Returns:
-            Tuple of (ordered_items_models, ordered_products, order_total_price, service_total_price)
+        Process cart items, update stock using StockManager, and calculate totals.
         """
         ordered_items_models = []
         ordered_products = []
         order_total_price = 0.0
         
-        # Process products
+        # Process products using StockManager
         for product, api_item in validated_products:
             # Build ordered item
             ordered_item = self.order_service._build_ordered_item_model(api_item)
             
-            # Update stock
-            product.product_quantity -= ordered_item.ordered_quantity
-            self.product_repo.update_product(product)
+            # Decrease stock using StockManager
+            self.stock_manager.decrease_stock(product, ordered_item.ordered_quantity)
             
             ordered_items_models.append(ordered_item)
             ordered_products.append(product)
@@ -394,7 +392,131 @@ class CartService:
         )
         
         return ordered_items_models, ordered_products, order_total_price, service_total_price
-    
+
+
+    def _build_cart_object(
+        self,
+        cart_data: Cart_API,
+        provider_id: int,
+        selling_user_id: int,
+        buyer_user_id: Optional[int],
+        person_ref_id: Optional[int],
+        ordered_items_models: List[OrderedItem],
+        ordered_services: List[OrderedService],
+        delivery: Optional[Delivery],
+        final_total_price: float
+    ) -> Cart:
+        """
+        Build a Cart object from all the validated data.
+        
+        Args:
+            cart_data: API cart data
+            provider_id: Provider ID
+            selling_user_id: Seller user ID
+            buyer_user_id: Buyer user ID (can be None)
+            person_ref_id: Person reference ID (can be None)
+            ordered_items_models: List of ordered items
+            ordered_services: List of ordered services
+            delivery: Delivery object (can be None)
+            final_total_price: Calculated final total price
+            
+        Returns:
+            Built Cart object
+        """
+        from core.models import Cart
+        
+        now = datetime.now()
+        
+        # Create cart object
+        cart = Cart(
+            cart_product_provider_id=provider_id,
+            cart_selling_user=selling_user_id,
+            cart_person_ref=person_ref_id,
+            cart_status=cart_data.cart_status or 'PENDING',
+            cart_total_amount=final_total_price,
+            cart_notes=cart_data.cart_notes or '',
+            cart_created_at=now,
+            cart_updated_at=now,
+        )
+        if buyer_user_id and buyer_user_id>0:
+            cart.cart_client_user=buyer_user_id
+        
+        # Set due date if provided
+        if cart_data.cart_due_date:
+            cart.cart_due_date = cart_data.cart_due_date
+        
+        # Add ordered items (relationship will be set automatically)
+        if ordered_items_models:
+            cart.ordered_item = ordered_items_models
+        
+        # Add ordered services
+        if ordered_services:
+            cart.ordered_service = ordered_services
+        
+        # Handle delivery
+        if delivery:
+            cart.delivery = delivery
+        else:
+            # Create default empty delivery
+            from core.models import Delivery
+            cart.delivery = Delivery()
+        
+        # Add financial flags
+        cart.cart_invoice = cart_data.cart_invoice or False
+        cart.cart_receipt = cart_data.cart_receipt or False
+        cart.cart_deposit = cart_data.cart_deposit or False
+        cart.cart_payment = cart_data.cart_payment or False
+        cart.cart_paid_money = cart_data.cart_paid_money or 0.0
+        
+        # Add payment method
+        if hasattr(cart_data, 'cart_payment_method') and cart_data.cart_payment_method:
+            cart.cart_payment_method = cart_data.cart_payment_method
+        
+        # Add card details
+        if hasattr(cart_data, 'cart_card_type') and cart_data.cart_card_type:
+            cart.cart_card_type = cart_data.cart_card_type
+        
+        if hasattr(cart_data, 'cart_card_details') and cart_data.cart_card_details:
+            cart.cart_card_details = cart_data.cart_card_details
+        
+        # Add bank details
+        if hasattr(cart_data, 'cart_bank_details') and cart_data.cart_bank_details:
+            cart.cart_bank_details = cart_data.cart_bank_details
+        
+        # Add mobile provider
+        if hasattr(cart_data, 'cart_mobile_provider') and cart_data.cart_mobile_provider:
+            cart.cart_mobile_provider = cart_data.cart_mobile_provider
+        
+        # Add delivery type
+        if hasattr(cart_data, 'cart_delivery_type') and cart_data.cart_delivery_type:
+            cart.cart_delivery_type = cart_data.cart_delivery_type
+        
+        # Add deposit amount
+        if hasattr(cart_data, 'cart_deposit_amount') and cart_data.cart_deposit_amount:
+            cart.cart_deposit_amount = cart_data.cart_deposit_amount
+        
+        # Add VAT fields
+        if hasattr(cart_data, 'cart_vat_amount') and cart_data.cart_vat_amount:
+            cart.cart_vat_amount = cart_data.cart_vat_amount
+        
+        if hasattr(cart_data, 'cart_subtotal') and cart_data.cart_subtotal:
+            cart.cart_subtotal = cart_data.cart_subtotal
+        
+        if hasattr(cart_data, 'cart_vat_rate') and cart_data.cart_vat_rate:
+            cart.cart_vat_rate = cart_data.cart_vat_rate
+        
+        if hasattr(cart_data, 'cart_apply_vat') and cart_data.cart_apply_vat is not None:
+            cart.cart_apply_vat = cart_data.cart_apply_vat
+        
+        # Add custom parameters as JSON
+        if hasattr(cart_data, 'cart_parameters') and cart_data.cart_parameters:
+            import json
+            cart.cart_parameters = json.dumps(cart_data.cart_parameters, ensure_ascii=False)
+        
+        logger.debug(f"Built cart object for provider {provider_id}, total: {final_total_price}")
+        
+        return cart
+
     def create_cart(
         self,
         ordered_items: List[OrderedItem_API],
@@ -408,22 +530,7 @@ class CartService:
     ) -> Tuple[Dict[str, Any], Cart]:
         """
         Create a new cart with financial documents.
-        
-        Args:
-            ordered_items: List of items to add to cart
-            ordered_services: List of services to add to cart
-            cart_data: Cart details
-            delivery: Optional delivery information
-            client: Optional client information
-            provider_id: Provider ID
-            seller_user_id: Seller user ID
-            buyer_user_id: Buyer user ID (0 for anonymous)
-            
-        Returns:
-            Tuple of (financial_documents, created_cart)
-            
-        Raises:
-            Various cart-related exceptions
+        Uses StockManager for atomic stock operations.
         """
         logger.info(f"Creating cart for provider {provider_id}, seller {seller_user_id}")
         
@@ -435,96 +542,69 @@ class CartService:
                 seller_id=seller_user_id
             )
         
-        # Validate all entities
-        supplier, selling_user, validated_products = self._validate_cart_creation(
-            provider_id, seller_user_id, ordered_items
-        )
-        
-        # Validate buyer (optional)
-        buyer_user = None
-        if buyer_user_id != 0:
-            buyer_user = self.user_repo.get_by_id(buyer_user_id)
-            if not buyer_user:
-                logger.warning(f"Buyer not found with ID: {buyer_user_id}")
-                raise CartBuyerNotFoundException(buyer_id=buyer_user_id)
-        
-        # Handle client/person
-        person_obj = None
-        if client:
-            if client.id_person == 0:
-                person_obj = self.person_service.create_person(client)
-            else:
-                person_obj = self.person_service.get_person_by_id(client.id_person)
-        
-        # Process items and calculate totals
-        ordered_items_models, ordered_products, order_total_price, service_total_price = self._process_cart_items(
-            validated_products, ordered_services
-        )
-        
-        # Calculate final total
-        final_total_price = order_total_price + service_total_price
-        if cart_data.cart_total_amount:
-            final_total_price = cart_data.cart_total_amount
-        
-        # Create cart object
-        cart = Cart(
-            cart_product_provider_id=provider_id,
-            cart_selling_user=selling_user.id_app_user,
-            cart_status=cart_data.cart_status,
-            cart_total_amount=final_total_price,
-            cart_notes=cart_data.cart_notes,
-        )
-        
-        if cart_data.cart_due_date:
-            cart.cart_due_date = cart_data.cart_due_date
-        
-        # Set relationships
-        if buyer_user:
-            cart.cart_client_user = buyer_user.id_app_user
-        if person_obj:
-            cart.cart_person_ref = person_obj.id_person
-        if ordered_services:
-            cart.ordered_service = [self._build_ordered_service_model(s) for s in ordered_services]
-        if ordered_items_models:
-            cart.ordered_item = ordered_items_models
-        
-        # Handle delivery
-        if delivery:
-            delivery_obj = self.delivery_service._build_delivery_model(delivery)
-            cart.delivery = delivery_obj
-        else:
-            cart.delivery = Delivery()
-        
-        # Save cart
-        try:
-            cart = self.cart_repo.create_cart(cart)
-            logger.info(f"Cart created with ID: {cart.cart_id}")
-        except Exception as e:
-            # Rollback product stock changes
-            logger.error(f"Failed to create cart, rolling back stock: {e}")
-            for product in ordered_products:
-                try:
-                    product.product_quantity += 1
-                    self.product_repo.update_product(product)
-                except Exception as rollback_error:
-                    logger.error(f"Failed to rollback stock for product {product.id_product}: {rollback_error}")
-            
-            raise CartCreationFailedException(
-                error=str(e),
-                provider_id=provider_id,
-                seller_id=seller_user_id,
-                buyer_id=buyer_user_id if buyer_user_id > 0 else None
+        # Start a stock transaction for atomic operations
+        with StockTransaction(self.stock_manager) as tx:
+            # Validate all entities
+            supplier, selling_user, validated_products = self._validate_cart_creation(
+                provider_id, seller_user_id, ordered_items
             )
-        
-        # Create financial documents
-        financial_documents = self._create_financial_documents(cart, cart_data, final_total_price)
-        
-        # Update cart status
-        self._update_cart_status(cart, cart_data, financial_documents)
-        
-        logger.info(f"Cart {cart.cart_id} creation completed with financial docs: {list(financial_documents.keys())}")
-        return financial_documents, cart
-    
+            
+            # Validate buyer (optional)
+            buyer_user = None
+            if buyer_user_id != 0:
+                buyer_user = self.user_repo.get_by_id(buyer_user_id)
+                if not buyer_user:
+                    raise CartBuyerNotFoundException(buyer_id=buyer_user_id)
+            
+            # Handle client/person
+            person_obj = None
+            if client:
+                if client.id_person == 0:
+                    person_obj = self.person_service.refresh_or_insert_person(client)
+                else:
+                    person_obj = self.person_service.get_person_by_id(client.id_person)
+            
+            # Process items and calculate totals (stock is decreased here)
+            ordered_items_models, ordered_products, order_total_price, service_total_price = self._process_cart_items(
+                validated_products, ordered_services
+            )
+            
+            # Calculate final total
+            final_total_price = order_total_price + service_total_price
+            if cart_data.cart_total_amount:
+                final_total_price = cart_data.cart_total_amount
+            
+            # Create cart object
+            cart = self._build_cart_object(
+                cart_data, provider_id, seller_user_id, buyer_user, 
+                person_obj, ordered_items_models, ordered_services, 
+                delivery, final_total_price
+            )
+            
+            # Save cart
+            try:
+                cart = self.cart_repo.create_cart(cart)
+                logger.info(f"Cart created with ID: {cart.cart_id}")
+            except Exception as e:
+                # StockManager will auto-rollback due to exception
+                logger.error(f"Failed to create cart: {e}")
+                raise CartCreationFailedException(
+                    error=str(e),
+                    provider_id=provider_id,
+                    seller_id=seller_user_id,
+                    buyer_id=buyer_user_id if buyer_user_id > 0 else None
+                )
+            
+            # Create financial documents
+            financial_documents = self._create_financial_documents(cart, cart_data, final_total_price)
+            
+            # Update cart status
+            self._update_cart_status(cart, cart_data, financial_documents)
+            
+            logger.info(f"Cart {cart.cart_id} creation completed")
+            return financial_documents, cart
+
+
     def _create_financial_documents(
         self,
         cart: Cart,
@@ -618,6 +698,27 @@ class CartService:
             )
     
     def delete_cart(self, cart_id: int) -> bool:
+        """
+        Delete a cart and restore product stock using StockManager.
+        """
+        logger.info(f"Deleting cart {cart_id}")
+        cart = self.get_cart_by_id(cart_id)
+        
+        # Use StockManager to restore stock
+        with StockTransaction(self.stock_manager) as tx:
+            for item in cart.ordered_item or []:
+                product = self.product_repo.get_product_by_id(item.ordered_product_id)
+                if product:
+                    self.stock_manager.increase_stock(product, item.ordered_quantity)
+            
+            try:
+                result = self.cart_repo.delete_cart(cart)
+                logger.info(f"Cart {cart_id} deleted successfully")
+                return result
+            except Exception as e:
+                logger.error(f"Failed to delete cart {cart_id}: {e}")
+                raise CartDeleteFailedException(cart_id=cart_id, error=str(e))
+
         """
         Delete a cart and restore product stock.
         

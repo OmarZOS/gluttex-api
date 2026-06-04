@@ -222,7 +222,7 @@ class PlacedOrder(Base):
     total_price = Column(Float(asdecimal=True))
     ordering_user_id = Column(Integer)
     placed_order_location_ref = Column(Integer)
-    placed_order_state_ref = Column(Integer)
+    placed_order_state = Column(Enum('PENDING','PROCESSING','SHIPPED','DELIVERED','CANCELLED','REFUNDED'), server_default=text("'PENDING'"))
     placed_order_last_mod = Column(TIMESTAMP)
     placed_order_invoice_ref = Column(Integer)
     placed_order_receipt_ref = Column(Integer)

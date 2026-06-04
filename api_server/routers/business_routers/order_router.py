@@ -46,7 +46,7 @@ def get_order_service() -> OrderService:
         **get_crud_error_responses(include_404=True, include_409=True)
     }
 )
-def create_order(
+async def create_order(
     ordered_items: List[OrderedItem_API],
     submitted_order: PlacedOrder_API,
     background_tasks: BackgroundTasks,
@@ -64,15 +64,8 @@ def create_order(
         )
     
     try:
-        quantities, order = order_service.create_order(ordered_items, submitted_order)
+        quantities, order = await order_service.create_order(ordered_items, submitted_order)
         
-        for index, item in enumerate(ordered_items):
-            if index < len(quantities):
-                background_tasks.add_task(
-                    order_service._notify_product_subscribers,
-                    item.ordered_product_id,
-                    {"product_quantity": quantities[index]}
-                )
         
         logger.info(f"Order created successfully with ID: {order.id_placed_order}")
         return order

@@ -191,7 +191,7 @@ def get_cart(
     summary="Create a new cart",
     description="Creates a new cart with items, services, and delivery information",
     responses={
-        201: {"description": "Cart created successfully"},
+        # 201: {"description": "Cart created successfully"},
         400: {"model": ErrorResponseModel},
         404: {"model": ErrorResponseModel},
         409: {"model": ErrorResponseModel},
@@ -200,9 +200,9 @@ def get_cart(
     }
 )
 def create_cart(
-    ordered_items: List[OrderedItem_API],
-    ordered_services: List[OrderedService_API],
-    cart: Cart_API,
+    ordered_items: List[OrderedItem_API] = None,
+    ordered_services: List[OrderedService_API]= None,
+    cart: Cart_API = None,
     delivery: Optional[Delivery_API] = None,
     client: Optional[Person_API] = None,
     provider_id: int = Query(..., description="Provider ID"),
@@ -231,26 +231,26 @@ def create_cart(
         
         logger.info(f"Cart created successfully with ID: {created_cart.cart_id}")
         
-        response = CreateCartResponse(
-            cart_id=created_cart.cart_id,
-            financial_documents={
-                "has_invoice": 'invoice' in financial_docs,
-                "has_payment": 'payment' in financial_docs,
-                "has_receipt": 'receipt' in financial_docs,
-                "has_deposit": 'deposit' in financial_docs
-            },
-            cart=created_cart,
-            summary={
-                "items_count": len(ordered_items),
-                "services_count": len(ordered_services),
-                "total_amount": getattr(created_cart, 'cart_total_amount', 0)
-            }
-        )
+        # response = CreateCartResponse(
+        #     cart_id=created_cart.cart_id,
+        #     financial_documents={
+        #         "has_invoice": 'invoice' in financial_docs,
+        #         "has_payment": 'payment' in financial_docs,
+        #         "has_receipt": 'receipt' in financial_docs,
+        #         "has_deposit": 'deposit' in financial_docs
+        #     },
+        #     cart=created_cart,
+        #     summary={
+        #         "items_count": len(ordered_items),
+        #         "services_count": len(ordered_services),
+        #         "total_amount": getattr(created_cart, 'cart_total_amount', 0)
+        #     }
+        # )
         
-        if financial_docs.get('payment_required'):
-            response.warning = "Payment required to complete cart"
+        # if financial_docs.get('payment_required'):
+        #     response.warning = "Payment required to complete cart"
         
-        return response
+        return created_cart
         
     except (CartCreationFailedException, CartPaymentRequiredException):
         raise

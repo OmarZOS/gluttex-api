@@ -364,7 +364,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`placed_order` (
   `total_price` DOUBLE NULL DEFAULT NULL,
   `ordering_user_id` INT NULL DEFAULT NULL,
   `placed_order_location_ref` INT NULL DEFAULT NULL,
-  `placed_order_state_ref` INT NULL DEFAULT NULL,
+  `placed_order_state` ENUM("PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED") NULL DEFAULT 'PENDING',
   `placed_order_last_mod` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `placed_order_invoice_ref` INT NULL,
   `placed_order_receipt_ref` INT NULL,
