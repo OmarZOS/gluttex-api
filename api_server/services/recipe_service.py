@@ -9,6 +9,7 @@ from typing import List, Optional, Dict, Any
 
 from core.api_models import Recipe_API, RecipeImage_API, Ingredient_API
 from core.exceptions.specific.recipe_exceptions import (
+    IngredientUpdateFailedException,
     RecipeNotFoundException,
     RecipeAlreadyExistsException,
     RecipeInsertFailedException,
@@ -602,14 +603,14 @@ class RecipeService:
         logger.info(f"Updating ingredient with ID: {ingredient_id}")
         
         # Get existing ingredient
-        existing_ingredient = self.ingredient_repo.get_ingredient_by_id(ingredient_id)
+        existing_ingredient = self.recipe_repo.get_ingredient_by_id(ingredient_id)
         if not existing_ingredient:
             logger.warning(f"Ingredient not found with ID: {ingredient_id}")
             raise IngredientNotFoundException(ingredient_id=ingredient_id)
         
         # Check if name is being changed and if it already exists
         if ingredient.ingredient_name != existing_ingredient.ingredient_name:
-            existing_by_name = self.ingredient_repo.get_ingredient_by_name(ingredient.ingredient_name)
+            existing_by_name = self.recipe_repo.get_ingredient_by_name(ingredient.ingredient_name)
             if existing_by_name and existing_by_name.id_ingredient != ingredient_id:
                 logger.warning(f"Ingredient name already exists: {ingredient.ingredient_name}")
                 raise IngredientAlreadyExistsException(ingredient_name=ingredient.ingredient_name)
@@ -618,10 +619,9 @@ class RecipeService:
         existing_ingredient.ingredient_name = ingredient.ingredient_name
         existing_ingredient.ingredient_icon_url = ingredient.ingredient_icon_url
         existing_ingredient.ingredient_quantifier = ingredient.ingredient_quantifier
-        existing_ingredient.last_updated = datetime.now()
         
         try:
-            updated_ingredient = self.ingredient_repo.update_ingredient(existing_ingredient)
+            updated_ingredient = self.recipe_repo.update_ingredient(existing_ingredient)
             logger.info(f"Ingredient {ingredient_id} updated successfully")
             return updated_ingredient
         except Exception as e:

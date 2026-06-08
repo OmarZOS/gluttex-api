@@ -476,7 +476,7 @@ class OrganisationService:
         # Save to database
         try:
             result = self.org_repo.create_org(model_org)
-            logger.info(f"Organisation created successfully with ID: {result.id_provider_organisation}")
+            logger.info(f"Organisation created successfully with ID: {result.idprovider_organisation}")
             return result
         except Exception as e:
             logger.error(f"Failed to create organisation: {e}")
@@ -487,7 +487,7 @@ class OrganisationService:
     
     def update_organisation(
         self,
-        org: ProviderOrganisation_API,
+        organisation: ProviderOrganisation_API,
         image: Optional[OrganisationImage_API] = None
     ) -> ProviderOrganisation:
         """
@@ -505,21 +505,21 @@ class OrganisationService:
             OrganisationNameAlreadyUsedException: If new name is taken
             OrganisationUpdateFailedException: If update fails
         """
-        logger.info(f"Updating organisation with ID: {org.id_provider_organisation}")
+        logger.info(f"Updating organisation with ID: {organisation.id_provider_organisation}")
         
         # Get existing organisation
-        org_old = self.get_org_by_id(org.id_provider_organisation)
+        org_old = self.get_org_by_id(organisation.id_provider_organisation)
         
         # Check if name is taken (if changed)
-        if org_old.provider_organisation_name != org.provider_organisation_name:
-            existing = self.get_org_by_name(org.provider_organisation_name)
+        if org_old.provider_organisation_name != organisation.provider_organisation_name:
+            existing = self.get_org_by_name(organisation.provider_organisation_name)
             if existing:
-                logger.warning(f"Organisation name already exists: {org.provider_organisation_name}")
-                raise OrganisationNameAlreadyUsedException(org_name=org.provider_organisation_name)
+                logger.warning(f"Organisation name already exists: {organisation.provider_organisation_name}")
+                raise OrganisationNameAlreadyUsedException(org_name=organisation.provider_organisation_name)
         
         # Update fields
-        org_old.provider_organisation_name = org.provider_organisation_name
-        org_old.provider_organisation_desc = org.provider_organisation_desc
+        org_old.provider_organisation_name = organisation.provider_organisation_name
+        org_old.provider_organisation_desc = organisation.provider_organisation_desc
         
         # Handle image
         if image and image.org_image_url:
@@ -528,12 +528,12 @@ class OrganisationService:
         # Save changes
         try:
             result = self.org_repo.update_org(org_old)
-            logger.info(f"Organisation updated successfully with ID: {result.id_provider_organisation}")
+            logger.info(f"Organisation updated successfully with ID: {result.idprovider_organisation}")
             return result
         except Exception as e:
-            logger.error(f"Failed to update organisation {org.id_provider_organisation}: {e}")
+            logger.error(f"Failed to update organisation {organisation.id_provider_organisation}: {e}")
             raise OrganisationUpdateFailedException(
-                org_id=org.id_provider_organisation,
+                org_id=organisation.id_provider_organisation,
                 error=str(e)
             )
     

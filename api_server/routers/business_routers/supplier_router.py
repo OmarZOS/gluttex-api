@@ -301,15 +301,15 @@ def get_organisation(
     }
 )
 def create_organisation(
-    org: ProviderOrganisation_API,
+    organisation: ProviderOrganisation_API,
     org_image: Optional[OrganisationImage_API] = None,
     organisation_service: OrganisationService = Depends(get_organisation_service)
 ):
     """
     Create a new organisation.
     """
-    logger.info(f"Creating new organisation: {org.provider_organisation_name}")
-    return organisation_service.create_organisation(org, org_image)
+    logger.info(f"Creating new organisation: {organisation.provider_organisation_name}")
+    return organisation_service.create_organisation(organisation, org_image)
 
 
 @supplier_router.put(
@@ -326,7 +326,7 @@ def create_organisation(
 )
 def update_organisation(
     org_id: str,
-    org: ProviderOrganisation_API,
+    organisation: ProviderOrganisation_API,
     org_image: Optional[OrganisationImage_API] = None,
     organisation_service: OrganisationService = Depends(get_organisation_service)
 ):
@@ -334,8 +334,8 @@ def update_organisation(
     Update an existing organisation.
     """
     logger.info(f"Updating organisation with ID: {org_id}")
-    org.id_provider_organisation = org_id
-    return organisation_service.update_organisation(org, org_image)
+    organisation.id_provider_organisation = org_id
+    return organisation_service.update_organisation(organisation, org_image)
 
 
 @supplier_router.delete(
