@@ -182,7 +182,7 @@ class AuthClient:
             password: User's password
             
         Returns:
-            Authentication response with token and hashed password
+            Authentication response with token and user data
             
         Raises:
             AuthLoginException: If login fails
@@ -190,10 +190,11 @@ class AuthClient:
         """
         url = self._get_endpoint_url(AuthEndpoint.LOGIN)
         
+        # OAuth2 password flow expects form data
         form_data = {
             "username": username,
-            "app_user_id": user_id,
             "password": password,
+            "grant_type": "password",
         }
         
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -205,22 +206,107 @@ class AuthClient:
                 url,
                 payload_data=form_data,
                 flags=headers,
-                # timeout=self.timeout
             )
             
             result = response.json()
             
-            # Check for error response
-            if response.status_code != 200:
-                error_msg = result.get("detail", "Authentication failed")
+            # Check for successful authentication
+            if response.status_code == 200:
+                # Extract token and user data from response
+                # token_data = {
+                #     "access_token": result.get("access_token"),
+                #     "token_type": result.get("token_type", "bearer"),
+                #     "expires_in": result.get("expires_in"),
+                #     "expires_at": result.get("expires_at"),
+                #     "iat": result.get("iat"),
+                #     "iss": result.get("iss"),
+                #     "app_user_id": result.get("app_user_id"),
+                #     "username": result.get("username"),
+                #     "email": result.get("email"),
+                #     "first_name": result.get("first_name"),
+                #     "last_name": result.get("last_name"),
+                # }
+                
+                logger.info(f"Successfully authenticated user '{username}'")
+                return result
+            
+            # Handle authentication errors (401)
+            elif response.status_code == 401:
+                error_code = result.get("error_code", "INVALID_CREDENTIALS")
+                error_message = result.get("message", "Invalid username or password")
+                details = result.get("details", {})
+                
+                logger.warning(f"Authentication failed for '{username}': {error_code} - {error_message}")
+                
                 raise AuthLoginException(
-                    error=error_msg,
+                    error=error_message,
+                    username=username,
+                    details={
+                        "status_code": response.status_code,
+                        "error_code": error_code,
+                        "details": details
+                    }
+                )
+            
+            # Handle account locked (403)
+            elif response.status_code == 403:
+                error_code = result.get("error_code", "ACCOUNT_LOCKED")
+                error_message = result.get("message", "Account is locked")
+                
+                logger.warning(f"Account locked for '{username}': {error_code}")
+                
+                raise AuthLoginException(
+                    error=error_message,
+                    username=username,
+                    details={
+                        "status_code": response.status_code,
+                        "error_code": error_code,
+                        "account_locked": True
+                    }
+                )
+            
+            # Handle other client errors (400, 404, 409, 422, etc.)
+            elif 400 <= response.status_code < 500:
+                error_code = result.get("error_code", "CLIENT_ERROR")
+                error_message = result.get("message", f"Request failed with status {response.status_code}")
+                
+                logger.warning(f"Client error for '{username}': {response.status_code} - {error_code}")
+                
+                raise AuthLoginException(
+                    error=error_message,
+                    username=username,
+                    details={
+                        "status_code": response.status_code,
+                        "error_code": error_code,
+                        "response": result
+                    }
+                )
+            
+            # Handle server errors (500, 502, 503, 504)
+            elif response.status_code >= 500:
+                error_message = result.get("message", "Authentication service temporarily unavailable")
+                
+                logger.error(f"Server error during login for '{username}': {response.status_code}")
+                
+                raise AuthServiceUnavailableException(
+                    service="authentication",
+                    error=error_message,
+                    details={
+                        "status_code": response.status_code,
+                        "endpoint": "login",
+                        "username": username
+                    }
+                )
+            
+            # Handle unexpected status codes
+            else:
+                logger.error(f"Unexpected status code {response.status_code} for '{username}'")
+                
+                raise AuthLoginException(
+                    error=f"Unexpected authentication response: {response.status_code}",
                     username=username,
                     details={"status_code": response.status_code}
                 )
-            
-            logger.info(f"Successfully authenticated user '{username}'")
-            return result
             
         except TimeoutError as e:
             logger.error(f"Timeout during login for '{username}': {e}")
@@ -234,19 +320,24 @@ class AuthClient:
             logger.error(f"Connection error during login for '{username}': {e}")
             raise AuthServiceUnavailableException(
                 service="authentication",
-                error=f"Connection failed: {str(e)}"
+                error=f"Connection failed: {str(e)}",
+                details={"username": username}
             )
         
         except AuthLoginException:
             # Re-raise as-is
             raise
         
+        except AuthServiceUnavailableException:
+            # Re-raise as-is
+            raise
+        
         except Exception as e:
-            logger.error(f"Login failed for '{username}': {e}")
+            logger.error(f"Unexpected error during login for '{username}': {e}", exc_info=True)
             raise AuthLoginException(
-                error=str(e),
+                error=f"Authentication failed: {str(e)}",
                 username=username,
-                details={"endpoint": "login"}
+                details={"endpoint": "login", "error_type": type(e).__name__}
             )
     
     async def change_password(
