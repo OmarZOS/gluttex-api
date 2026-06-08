@@ -97,6 +97,15 @@ async def create_ingredient(
     """Create a new ingredient"""
     return await recipe_service.create_ingredient(ingredient)
 
+@recipe_router.put("/recipes/ingredients/{ingredient_id}")
+def update_ingredient(
+    ingredient_id: int,
+    ingredient: Ingredient_API,
+    recipe_service: RecipeService = Depends(get_recipe_service)
+):
+    """Update an existing ingredient"""
+    return recipe_service.update_ingredient(ingredient_id, ingredient)
+
 @recipe_router.delete("/recipes/ingredients/{ingredient_id}")
 def delete_ingredient(
     ingredient_id: int,

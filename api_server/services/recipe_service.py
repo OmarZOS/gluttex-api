@@ -581,3 +581,52 @@ class RecipeService:
                 ingredient_id=ingredient_id,
                 error=str(e)
             )
+        
+
+    def update_ingredient(self, ingredient_id: int, ingredient: Ingredient_API) -> Ingredient:
+        """
+        Update an existing ingredient.
+        
+        Args:
+            ingredient_id: ID of the ingredient to update
+            ingredient: Updated ingredient data
+            
+        Returns:
+            Updated Ingredient object
+            
+        Raises:
+            IngredientNotFoundException: If ingredient not found
+            IngredientAlreadyExistsException: If ingredient name already exists
+            IngredientUpdateFailedException: If update fails
+        """
+        logger.info(f"Updating ingredient with ID: {ingredient_id}")
+        
+        # Get existing ingredient
+        existing_ingredient = self.ingredient_repo.get_ingredient_by_id(ingredient_id)
+        if not existing_ingredient:
+            logger.warning(f"Ingredient not found with ID: {ingredient_id}")
+            raise IngredientNotFoundException(ingredient_id=ingredient_id)
+        
+        # Check if name is being changed and if it already exists
+        if ingredient.ingredient_name != existing_ingredient.ingredient_name:
+            existing_by_name = self.ingredient_repo.get_ingredient_by_name(ingredient.ingredient_name)
+            if existing_by_name and existing_by_name.id_ingredient != ingredient_id:
+                logger.warning(f"Ingredient name already exists: {ingredient.ingredient_name}")
+                raise IngredientAlreadyExistsException(ingredient_name=ingredient.ingredient_name)
+        
+        # Update fields
+        existing_ingredient.ingredient_name = ingredient.ingredient_name
+        existing_ingredient.ingredient_icon_url = ingredient.ingredient_icon_url
+        existing_ingredient.ingredient_quantifier = ingredient.ingredient_quantifier
+        existing_ingredient.last_updated = datetime.now()
+        
+        try:
+            updated_ingredient = self.ingredient_repo.update_ingredient(existing_ingredient)
+            logger.info(f"Ingredient {ingredient_id} updated successfully")
+            return updated_ingredient
+        except Exception as e:
+            logger.error(f"Failed to update ingredient {ingredient_id}: {e}")
+            raise IngredientUpdateFailedException(
+            ingredient_id=ingredient_id,
+            error=str(e)
+        )

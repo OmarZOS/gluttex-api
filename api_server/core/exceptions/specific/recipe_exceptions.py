@@ -516,6 +516,54 @@ class IngredientUpdateFailedException(RecipeIngredientException):
     def __init__(
         self,
         ingredient_id: int = None,
+        ingredient_name: str = None,
+        error: str = None,
+        name_conflict: bool = False,
+        conflicting_ingredient_id: int = None,
+        conflicting_ingredient_name: str = None,
+        details: Dict[str, Any] = None
+    ):
+        error_details = details or {}
+        
+        if ingredient_id:
+            error_details["ingredient_id"] = ingredient_id
+        if ingredient_name:
+            error_details["ingredient_name"] = ingredient_name
+        if error:
+            error_details["update_error"] = error
+        if name_conflict:
+            error_details["name_conflict"] = name_conflict
+        if conflicting_ingredient_id:
+            error_details["conflicting_ingredient_id"] = conflicting_ingredient_id
+        if conflicting_ingredient_name:
+            error_details["conflicting_ingredient_name"] = conflicting_ingredient_name
+        
+        message = "Failed to update ingredient"
+        if ingredient_id:
+            message = f"Failed to update ingredient with ID '{ingredient_id}'"
+        elif ingredient_name:
+            message = f"Failed to update ingredient '{ingredient_name}'"
+        
+        if name_conflict:
+            if conflicting_ingredient_name:
+                message += f" - Ingredient name '{ingredient_name or conflicting_ingredient_name}' already exists."
+            else:
+                message += " - Ingredient name already exists."
+        
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.INGREDIENT_UPDATE_FAILED,
+            status_code=HTTP_409_CONFLICT if name_conflict else HTTP_500_INTERNAL_SERVER_ERROR,
+            details=error_details
+        )
+
+
+class IngredientUpdateFailedException(RecipeIngredientException):
+    """Exception when ingredient update fails"""
+    
+    def __init__(
+        self,
+        ingredient_id: int = None,
         error: str = None,
         details: Dict[str, Any] = None
     ):
