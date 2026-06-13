@@ -74,17 +74,19 @@ class SupplierRepository:
         return storage_broker.get(
             ProductProvider,
             conditions=conditions,
-            join_tables=None,
+            join_tables=[],
             eager_load_depth=[
                 {
                     ProductProvider.product_provider_location: [
                         Location.id_location,
-                        Location.location_address_id,
-                        Location.position_wkt,
+                        Location.location_address,
+                        Location.location_postal_code,
                         Location.location_name,
+                        Location.position_wkt,
                     ]
                 },
                 ProductProvider.product_provider_type,
+                
                 ProductProvider.product_provider_details,
                 ProductProvider.provider_image,
                 ProductProvider.product_provider_org

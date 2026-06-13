@@ -1,6 +1,6 @@
 # services/search_service.py
 from typing import List, Dict, Any, Optional, Tuple
-from core.models import Product, Recipe, AppUser, Person, ProviderDetails, ProductProvider
+from core.models import BloodType, Product, Recipe, AppUser, Person, ProviderDetails, ProductProvider
 from core.persistent_models import Location
 from core.models import PersonDetails
 from storage.storage_broker import search_records
@@ -36,9 +36,9 @@ class SearchService:
             Product,
             search_query=token,
             search_fields=[
-                Product.product_brand,
-                Product.product_name,
-                Product.product_description
+                'product_brand',
+                'product_name',
+                'product_description'
             ],
             offset=offset,
             limit=limit
@@ -68,9 +68,9 @@ class SearchService:
             Recipe,
             search_query=token,
             search_fields=[
-                Recipe.recipe_name,
-                Recipe.recipe_description,
-                Recipe.recipe_instructions
+                'recipe_name',
+                'recipe_description',
+                'recipe_instructions'
             ],
             offset=offset,
             limit=limit
@@ -133,8 +133,7 @@ class SearchService:
         """
         if not token or token.strip() == "":
             return []
-        
-        return search_records(
+        data = search_records(
             Person,
             search_query=token,
             search_fields=[
@@ -142,10 +141,13 @@ class SearchService:
                 'person_details.person_last_name',
                 'person_details.person_nationality'
             ],
-            eager_load_depth=[Person.person_details],
+            join_tables= [BloodType],
+            eager_load_depth=[Person.person_details,Person.person_blood_type],
             offset=offset,
-            limit=limit
+            limit=limit,
+            
         )
+        return data
     
     def search_suppliers(
         self,
@@ -171,8 +173,8 @@ class SearchService:
             ProviderDetails,
             [ProviderDetails.product_provider],
             search_fields=[
-                ProviderDetails.provider_name,
-                ProviderDetails.provider_contact_info
+                'provider_name',
+                'provider_contact_info'
             ],
             search_query=token,
             eager_load_depth=[{

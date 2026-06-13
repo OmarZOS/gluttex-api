@@ -58,7 +58,7 @@ class ProductRepository:
             ],
             offset=offset,
             limit=limit,
-            serialize=serialize
+            # serialize=serialize
         )
     
     def get_products_by_category(self, category_id: int, offset: int = 0, limit: int = 10) -> List[Product]:

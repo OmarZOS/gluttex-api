@@ -41,9 +41,9 @@ def get_organisation_service() -> OrganisationService:
     summary="Get all suppliers",
     description="Retrieve all suppliers with pagination and filters",
     responses={
-        200: {
-            "description": "Suppliers retrieved successfully"
-        },
+        # 200: {
+        #     "description": "Suppliers retrieved successfully"
+        # },
         **get_crud_error_responses(include_404=False)
     }
 )

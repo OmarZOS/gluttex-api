@@ -1,5 +1,7 @@
 # storage/storage_broker.py
 
+from functools import lru_cache
+
 from sqlalchemy.inspection import inspect
 from core.exceptions.handler import APIException, DatabaseException
 from core.messages import *
@@ -62,7 +64,7 @@ def session_scope(engine=None):
 
 def get_session(engine, obj=None):
     """Get a session, optionally from an existing object"""
-    Session = sessionmaker(bind=engine)
+    Session = sessionmaker(bind=engine, expire_on_commit=False)
     if obj:
         existing_session = object_session(obj)
         if existing_session:
@@ -121,13 +123,15 @@ def _resolve_attr(model, key: str):
     except AttributeError as e:
         raise ValueError(f"Model {model} has no attribute '{key}'") from e
 
-def build_eager_options(model_class, eager_load_depth: List[Any]):
+def build_eager_options(model_class, eager_load_depth: List[Any], already_joined: set = None):
     """
     Build SQLAlchemy eager loading options.
+    Uses contains_eager for relationships that were already joined.
     """
-    from sqlalchemy.orm import load_only, joinedload, selectinload
+    from sqlalchemy.orm import joinedload, selectinload, contains_eager
     
     options: List[Any] = []
+    already_joined = already_joined or set()
 
     def process(model, fields, current_path=None):
         local_opts: List[Any] = []
@@ -144,14 +148,17 @@ def build_eager_options(model_class, eager_load_depth: List[Any]):
                             f"Requested nested load '{outer_key}' is not a relationship on {model}"
                         )
 
-                    # Use selectinload for better performance with nested loads
-                    loader = selectinload(rel_attr)
+                    # Check if this relationship was already joined
+                    if rel_attr in already_joined:
+                        loader = contains_eager(rel_attr)
+                    else:
+                        loader = selectinload(rel_attr)
                     
                     rel_prop = inspected.relationships[outer_key]
                     target_model = rel_prop.mapper.class_
                     
                     if nested_fields:
-                        nested_opts = build_eager_options(target_model, nested_fields)
+                        nested_opts = process(target_model, nested_fields)
                         for nested_opt in nested_opts:
                             loader = loader.options(nested_opt)
                     
@@ -159,21 +166,18 @@ def build_eager_options(model_class, eager_load_depth: List[Any]):
 
             else:
                 key = _get_attr_key(field)
+                
+                # Skip if it's a column (not a relationship)
+                if key in inspect(model).columns:
+                    continue
+                
                 attr = _resolve_attr(model, key)
-
-                inspected = inspect(model)
-                if key in inspected.relationships:
-                    local_opts.append(joinedload(attr))
-                elif key in inspected.columns:
-                    # Skip load_only for now to avoid complexity
-                    pass
+                
+                # Check if this relationship was already joined
+                if attr in already_joined:
+                    local_opts.append(contains_eager(attr))
                 else:
-                    if key in inspected.attrs:
-                        pass
-                    else:
-                        raise ValueError(
-                            f"Field '{key}' is not a recognized relationship/column on {model}"
-                        )
+                    local_opts.append(selectinload(attr))
 
         return local_opts
 
@@ -286,8 +290,13 @@ def delete_record_by_id(engine, model_class, id):
 from sqlalchemy.orm import aliased
 from sqlalchemy.inspection import inspect
 
+@lru_cache(maxsize=128)
+def resolve_attr_recursive_cached(model_class, field_path):
+    """Cached version of resolve_attr_recursive"""
+    return resolve_attr_recursive(model_class, field_path)
+
 def resolve_attr_recursive(model, field_path):
-    """Takes e.g. 'product_provider.provider_name' and returns the actual SQLAlchemy attribute"""
+    """Takes e.g. 'person_details.person_first_name' and returns the actual SQLAlchemy attribute"""
     parts = field_path.split(".")
     current_model = model
     joins = []
@@ -321,37 +330,49 @@ def search_records(
 ):
     with session_scope(engine) as session:
         query = session.query(model_class)
-
+        
+        # Store resolved fields once to avoid repeated resolution
+        resolved_fields = []
+        all_joins = set()
+        
         if search_query and search_fields:
-            keywords = search_query.split()
+            # Resolve all fields once
+            for field_path in search_fields:
+                attr, joins = resolve_attr_recursive(model_class, field_path)
+                for j in joins:
+                    all_joins.add(j)  # Use set to avoid duplicates
+                resolved_fields.append(attr)
             
+            # Apply all joins once
+            for j in all_joins:
+                query = query.join(j, isouter=True)
+            
+            # Apply filters for each keyword
+            keywords = search_query.split()
             for kw in keywords:
-                or_conditions = []
-                required_joins = []
-
-                for field_path in search_fields:
-                    attr, joins = resolve_attr_recursive(model_class, field_path)
-
-                    for j in joins:
-                        required_joins.append(j)
-
-                    or_conditions.append(attr.ilike(f"%{kw}%"))
-
-                for j in required_joins:
-                    query = query.join(j, isouter=True)
-
+                or_conditions = [attr.ilike(f"%{kw}%") for attr in resolved_fields]
                 query = query.filter(or_(*or_conditions))
-
+        
+        # Apply additional join_tables (avoid duplicates)
         if join_tables:
             for join_table in join_tables:
-                query = query.join(join_table)
-                
+                if join_table not in all_joins:
+                    query = query.join(join_table)
+                    all_joins.add(join_table)
+        
+        # Apply eager loading - use selectinload for relationships already joined
         if eager_load_depth:
-            query = query.options(*build_eager_options(model_class, eager_load_depth))
-
+            eager_options = build_eager_options(model_class, eager_load_depth, already_joined=all_joins)
+            query = query.options(*eager_options)
+        
+        # CRITICAL: Add distinct to avoid pagination issues with duplicate rows
+        if all_joins:
+            query = query.distinct()
+        
+        # Order and paginate
         pk_column = list(model_class.__table__.primary_key.columns)[0]
         query = query.order_by(desc(pk_column)).offset(offset).limit(limit)
-
+        
         records = query.all()
         return records
 
