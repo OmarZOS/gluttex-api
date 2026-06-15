@@ -185,6 +185,19 @@ class ManagementRuleRepository:
             [ManagementRule.product_provider, ManagementRule.provider_organisation]
         )
     
+    def get_by_user_and_provider(self, user_id: int,provider_id:int, status: Optional[str] = None) -> List[ManagementRule]:
+        """Get rules by user with optional status filter"""
+        conditions = {ManagementRule.rule_ref_user: user_id,ManagementRule.rule_ref_provider: provider_id}
+        if status:
+            conditions[ManagementRule.management_rule_status] = status
+        
+        return storage_broker.get(
+            ManagementRule,
+            conditions,
+            None,
+            [ManagementRule.product_provider, ManagementRule.provider_organisation]
+        )
+    
     def get_by_provider(self, provider_id: int, status: Optional[str] = None) -> List[ManagementRule]:
         """Get rules by provider with optional status filter"""
         conditions = {ManagementRule.rule_ref_provider: provider_id}

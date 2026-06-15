@@ -106,7 +106,7 @@ def search_for_recipe(
 
 
 @search_router.get(
-    "/search/personnel/{token}/{offset}/{limit}",
+    "/search/personnel/{token}",
     summary="Search personnel/users",
     description="Search users (personnel) by token in person details and username",
     responses={
@@ -144,7 +144,7 @@ def search_for_user(
 
 
 @search_router.get(
-    "/search/people/{token}/{offset}/{limit}",
+    "/search/people/{token}",
     summary="Search people",
     description="Search people by token in person details (first name, last name, nationality)",
     responses={

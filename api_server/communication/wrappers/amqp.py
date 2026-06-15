@@ -30,7 +30,9 @@ class FlutterNotificationProducer:
         self._setup_user_queues()
     
     def _setup_user_queues(self):
-        """Setup exchanges and user-specific queues"""
+        """Setup exchanges, queues, and bindings for notifications"""
+        
+        # ========== EXCHANGES ==========
         # Direct exchange for user-specific notifications
         self.channel.exchange_declare(
             exchange='user_notifications',
@@ -51,58 +53,136 @@ class FlutterNotificationProducer:
             exchange_type='topic',
             durable=True
         )
+        
+        # ========== QUEUES AND BINDINGS ==========
+        # User-specific queues (these will be created dynamically when users subscribe)
+        # For now, create a dead letter queue for undelivered messages
+        self.channel.queue_declare(
+            queue='dead_letter_queue',
+            durable=True
+        )
+        
+        # Bind dead letter queue to all exchanges
+        self.channel.queue_bind(
+            exchange='user_notifications',
+            queue='dead_letter_queue',
+            routing_key='#'
+
+        )
+        self.channel.queue_bind(
+            exchange='broadcast_notifications',
+            queue='dead_letter_queue'
+        )
+        self.channel.queue_bind(
+            exchange='restrained_notifications',
+            queue='dead_letter_queue',
+            routing_key='#'
+        )
+
+
+    def ensure_user_queue(self, user_id: int):
+        """Ensure a queue exists for a specific user"""
+        queue_name = f'user.{user_id}.queue'
+        
+        # Declare queue for this user
+        self.channel.queue_declare(
+            queue=queue_name,
+            durable=True,
+            arguments={
+                'x-max-priority': 10,  # Enable message priority
+                'x-message-ttl': 604800000  # 7 days TTL (milliseconds)
+            }
+        )
+        
+        # Bind queue to user_notifications exchange
+        self.channel.queue_bind(
+            exchange='user_notifications',
+            queue=queue_name,
+            routing_key=f'user.{user_id}'
+        )
+        
+        # Also bind to restrained_notifications for topic-based messages
+        self.channel.queue_bind(
+            exchange='restrained_notifications',
+            queue=queue_name,
+            routing_key=f'user.{user_id}.#'
+        )
+        
+        return queue_name
     
     def send_to_user(self, user_id: int, notification_code: str, **params):
         """Send notification to a specific user's queue"""
+        
+        # Ensure user queue exists (create if not)
+        self.ensure_user_queue(user_id)
+        
         message = {
             'type': 'user_notification',
             'user_id': user_id,
             'notification_code': notification_code,
             'data': params,
             'timestamp': datetime.now().isoformat(),
-            # 'preformatted': self._preformat_notification(notification_code, params)
         }
         
-        self.channel.basic_publish(
-            exchange='user_notifications',
-            routing_key =f'user.{user_id}.',  # User-specific routing key
-            body=json.dumps(message),
-            properties=pika.BasicProperties(
-                delivery_mode=2,  # Persistent
-                content_type='application/json',
-                headers={
-                    'notification_type': notification_code,
-                    'user_id': str(user_id)
-                }
+        # Fix: Remove trailing dot from routing key
+        routing_key = f'user.{user_id}'  # Changed: removed trailing dot
+        
+        try:
+            self.channel.basic_publish(
+                exchange='user_notifications',
+                routing_key=routing_key,
+                body=json.dumps(message, ensure_ascii=False),
+                properties=pika.BasicProperties(
+                    delivery_mode=2,  # Persistent
+                    content_type='application/json',
+                    priority=params.get('priority', 5),
+                    headers={
+                        'notification_type': notification_code,
+                        'user_id': str(user_id)
+                    }
+                )
             )
-        )
-        print(f" [→] Sent {notification_code} to user.{user_id}.")
+            print(f" [✓] Sent {notification_code} to user {user_id}")
+            return True
+        except Exception as e:
+            print(f" [✗] Failed to send to user {user_id}: {e}")
+            return False
     
     def send_to_supplier(self, supplier_id: int, notification_code: str, **params):
         """Send notification to all users of a supplier"""
+        
         message = {
             'type': 'supplier_notification',
             'supplier_id': supplier_id,
             'notification_code': notification_code,
             'data': params,
             'timestamp': datetime.now().isoformat(),
-            # 'preformatted': self._preformat_notification(notification_code, params)
         }
 
-        routing_key = f"supplier.{supplier_id}."
+        routing_key = f"supplier.{supplier_id}"  # Changed: removed trailing dot
         
-        self.channel.basic_publish(
-            exchange='restrained_notifications',
-            routing_key=routing_key,  # Topic uses a routing key
-            body=json.dumps(message),
-            properties=pika.BasicProperties(
-                delivery_mode=2,
-                content_type='application/json'
+        try:
+            self.channel.basic_publish(
+                exchange='restrained_notifications',
+                routing_key=routing_key,
+                body=json.dumps(message, ensure_ascii=False),
+                properties=pika.BasicProperties(
+                    delivery_mode=2,
+                    content_type='application/json',
+                    headers={
+                        'notification_type': notification_code,
+                        'supplier_id': str(supplier_id)
+                    }
+                )
             )
-        )
-        print(f" [→] Broadcast {notification_code} to supplier_{supplier_id}")
+            print(f" [✓] Sent {notification_code} to supplier {supplier_id}")
+            return True
+        except Exception as e:
+            print(f" [✗] Failed to send to supplier {supplier_id}: {e}")
+            return False
 
     def send_to_org(self, org_id: int, notification_code: str, **params):
+        
         """Send notification to all users of an org"""
         message = {
             'type': 'org_notification',
@@ -223,21 +303,31 @@ class FlutterNotificationProducer:
 
 # Usage in your API endpoints
 
+# Global producer instance (singleton)
+_producer = None
 
+def get_producer() -> FlutterNotificationProducer:
+    """Get or create the global producer instance"""
+    global _producer
+    if _producer is None:
+        _producer = FlutterNotificationProducer()
+    return _producer
+
+# Modified decorator that uses the singleton
 def amqp_connection_manager(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        producer = None
+        producer = get_producer()  # Reuse existing connection
+        kwargs['producer'] = producer
         try:
-            # Instantiate the producer
-            producer = FlutterNotificationProducer()
-            # Pass the producer as a keyword argument
-            kwargs['producer'] = producer
             return func(*args, **kwargs)
-        finally:
-            # Ensure the connection is closed
-            if producer:
-                producer.close()
+        except Exception as e:
+            # If connection is broken, reconnect and retry once
+            if "connection" in str(e).lower():
+                producer.reconnect()
+                kwargs['producer'] = producer
+                return func(*args, **kwargs)
+            raise
     return wrapper
 
 

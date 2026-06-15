@@ -16,9 +16,17 @@ from fastapi.middleware.cors import CORSMiddleware
 # from prometheus_client import make_asgi_app
 from pydantic import  Field
 from pydantic_settings import BaseSettings
-from lib import OptimizedPikaConsumerThread, create_consumer, ConnectionManager, manager,logger
+from lib import OptimizedPikaConsumerThread, create_consumer, ConnectionManager, WebSocketConnectionManager, logger
 from binding_router import binding_router
 from prometheus_fastapi_instrumentator import Instrumentator
+
+
+
+# Use WebSocketConnectionManager for both (it has the binding methods)
+ws_manager = WebSocketConnectionManager()
+
+# Also keep the old manager for compatibility, or replace it
+manager = ws_manager  # Use the same instance
 
 def get_or_create_consumer(queue_name: str, incoming_q):
     if not manager.has_consumer(queue_name):
@@ -60,18 +68,25 @@ async def health_check():
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
     await websocket.accept()
 
-    # Always reuse the same queue
     queue_name = manager.get_or_create_queue(client_id)
-
     incoming_q = asyncio.Queue(maxsize=2000)
 
-    # create consumer if needed
-    get_or_create_consumer(queue_name, incoming_q)
+    # Get the current event loop
+    current_loop = asyncio.get_running_loop()
 
-    # Add this websocket to the client group
+    # Create consumer with the loop
+    if not manager.has_consumer(queue_name):
+        consumer = create_consumer(
+            queue_name=queue_name,
+            asyncio_queue=incoming_q,
+            loop=current_loop,  # Pass the current event loop
+            on_error=lambda exc: logger.error(exc),
+            prefetch_count=50
+        )
+        manager.register_consumer(queue_name, consumer)
+
     manager.add_websocket(client_id, websocket)
 
-    # Send connection info
     await websocket.send_text(json.dumps({
         "type": "connected",
         "queue": queue_name,
@@ -79,14 +94,10 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
     }))
 
     try:
-        # Main loop
         while True:
             msg = await incoming_q.get()
             await websocket.send_text(json.dumps(msg))
-
     except WebSocketDisconnect:
         pass
-
     finally:
-        # Remove only this socket, keep queue alive if others remain
         manager.remove_websocket(client_id, websocket)

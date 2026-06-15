@@ -251,7 +251,7 @@ def update_staff_details(
     summary="Answer staff invitation",
     description="Answer a staff invitation (accept or reject)",
     responses={
-        200: {"description": "Invitation answered successfully"},
+        # 200: {"description": "Invitation answered successfully"},
         400: {"model": ErrorResponseModel},
         404: {"model": ErrorResponseModel},
         **get_crud_error_responses(include_404=True)

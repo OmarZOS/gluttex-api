@@ -36,7 +36,7 @@ def get_notification(
     """
     return notification_service.get_notification_by_id(notification_id)
 
-@notification_router.get("/user/{user_ref}")
+@notification_router.get("/user/read-all/{user_ref}")
 def get_user_notifications(
     user_ref: int,
     offset: int = Query(0, ge=0),
@@ -48,7 +48,7 @@ def get_user_notifications(
     """
     return notification_service.get_user_notifications(user_ref, offset, limit)
 
-@notification_router.put("/{notification_id}/read")
+@notification_router.put("/read/{notification_id}")
 def mark_notification_as_read(
     notification_id: int,
     notification_service: NotificationService = Depends(get_notification_service)
@@ -58,7 +58,7 @@ def mark_notification_as_read(
     """
     return notification_service.mark_notification_as_read(notification_id)
 
-@notification_router.put("/user/{user_ref}/read-all")
+@notification_router.put("/user/read-all/{user_ref}")
 def mark_all_notifications_as_read(
     user_ref: int,
     notification_service: NotificationService = Depends(get_notification_service)

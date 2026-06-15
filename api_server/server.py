@@ -184,7 +184,7 @@ def setup_routers(app: FastAPI) -> None:
     app.include_router(recipe_router, prefix=api_version, tags=["Recipes"])
     
     # Notification routes
-    app.include_router(notification_router, prefix=api_version, tags=["Notifications"])
+    app.include_router(notification_router, prefix=f"{api_version}/notifications", tags=["Notifications"])
     
     # Search routes
     app.include_router(search_router, prefix=api_version, tags=["Search"])

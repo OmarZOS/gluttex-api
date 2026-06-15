@@ -53,20 +53,20 @@ def listen_local_connection():
 
     # 1. Exchange
     channel.exchange_declare(
-        exchange='restrained_notifications',
-        exchange_type='topic',
+        exchange='user_notifications',
+        exchange_type='direct',
         durable=True
     )
 
     # 2. Queue
-    queue_name = "user.1."
+    queue_name = "user.4"
     channel.queue_declare(queue=queue_name, durable=True)
 
     # 3. Bind queue to exchange
     channel.queue_bind(
         exchange='user_notifications',
         queue=queue_name,
-        routing_key="user.1."
+        routing_key="user.4"
     )
 
     # 4. Callback
