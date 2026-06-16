@@ -62,7 +62,7 @@ async def listen_for_notifications(user_id: int = 4, duration: int = 0):
                     # Format the received message nicely
                     print(f"\n📨 [{message_count}] Received at {datetime.now().strftime('%H:%M:%S')}")
                     print(f"   Type: {data.get('type', 'unknown')}")
-                    
+                    print(f"   Data: {data}")
                     if 'notification_code' in data:
                         print(f"   Code: {data['notification_code']}")
                     
