@@ -1,7 +1,7 @@
 # repositories/person_repository.py
 from typing import Optional, List
 from core.persistent_models import Location
-from core.models import Person, PersonDetails, BloodType
+from core.models import Person, PersonDetails
 import storage.storage_broker as storage_broker
 
 class PersonRepository:
@@ -79,24 +79,3 @@ class PersonRepository:
         from features.insertion import update_record_in_api
         return update_record_in_api(details)
     
-    # ==================== BloodType Operations ====================
-    
-    def get_blood_type_by_id(self, blood_type_id: str) -> Optional[BloodType]:
-        """Get blood type by ID"""
-        records = storage_broker.get(BloodType, {BloodType.id_blood_type: blood_type_id}, None, [])
-        return records[0] if records else None
-    
-    def get_blood_type_object(self, blood_type_id: str) -> Optional[BloodType]:
-        """Get blood type as object"""
-        record = storage_broker.get(BloodType, {BloodType.id_blood_type: blood_type_id}, None, [])
-        if not record:
-            return None
-        
-        return BloodType(
-            id_blood_type=record[0].id_blood_type,
-            blood_type_desc=record[0].blood_type_desc
-        )
-    
-    def get_all_blood_types(self) -> List[BloodType]:
-        """Get all blood types"""
-        return storage_broker.get(BloodType, {}, None, [])

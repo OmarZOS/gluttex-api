@@ -12,7 +12,7 @@ from core.api_models import Person_API, Location_API
 from core.exceptions.handler import (
     DatabaseException
 )
-from core.models import Person, PersonDetails, BloodType
+from core.models import Person, PersonDetails
 from core.persistent_models import Location
 from repositories.person_repository import PersonRepository
 from services.location_service import LocationService
@@ -113,22 +113,9 @@ class PersonService:
         Returns:
             Person ORM object (not persisted)
             
-        Raises:
-            BloodTypeNotFoundException: If blood type not found
         """
         person = Person()
         
-        # Handle blood type
-        if person_data.id_blood_type:
-            blood_type = self.person_repo.get_blood_type_object(person_data.id_blood_type)
-            if blood_type:
-                person.person_blood_type_id = blood_type.id_blood_type
-            else:
-                logger.warning(f"Blood type not found: {person_data.id_blood_type}")
-                raise BloodTypeNotFoundException(
-                    blood_type_id=person_data.id_blood_type,
-                    details={"operation": "generate_person_object"}
-                )
         
         # Handle person details
         existing_details = self.person_repo.get_person_details_by_id(
@@ -173,23 +160,12 @@ class PersonService:
             
         Raises:
             PersonNotFoundException: If person not found for update
-            BloodTypeNotFoundException: If blood type not found
             PersonInsertFailedException: If insertion fails
             PersonUpdateFailedException: If update fails
         """
         # Get existing person
         existing_person = self.person_repo.get_person_basic(person_data.id_person)
         
-        # Validate blood type
-        blood_type = None
-        if person_data.id_blood_type:
-            blood_type = self.person_repo.get_blood_type_object(person_data.id_blood_type)
-            if not blood_type:
-                logger.warning(f"Blood type not found: {person_data.id_blood_type}")
-                raise BloodTypeNotFoundException(
-                    blood_type_id=person_data.id_blood_type,
-                    details={"operation": "refresh_or_insert_person"}
-                )
         
         # Handle person details
         existing_details = self.person_repo.get_person_details_by_id(
@@ -205,15 +181,15 @@ class PersonService:
                 existing_details.person_gender = person_data.person_gender
                 existing_details.person_first_name = person_data.person_first_name
                 existing_details.person_last_name = person_data.person_last_name
-                existing_details.person_nationality = person_data.person_nationality
+                existing_details.person_country_code = person_data.person_country_code.value if person_data.person_country_code else None
                 existing_person.person_details = existing_details
             else:
                 # Create new details
                 new_details = self.create_person_details(person_data)
                 existing_person.person_details_id = new_details.id_person_details
             
-            if blood_type:
-                existing_person.person_blood_type_id = blood_type.id_blood_type
+
+            existing_person.person_blood_type = person_data.blood_type.value if person_data.blood_type else None
             
             # Handle location
             location = self.location_service.get_location_object(location_data.id_location)
@@ -244,8 +220,7 @@ class PersonService:
             
             person = Person()
             
-            if blood_type:
-                person.person_blood_type_id = blood_type.id_blood_type
+            person.person_blood_type = person_data.blood_type.value if person_data.blood_type else None
             
             if existing_details:
                 person.person_details_id = existing_details.id_person_details
@@ -317,54 +292,6 @@ class PersonService:
                 details={"operation": "delete_person"}
             )
     
-    # ==================== Blood Type Operations ====================
-    
-    def get_blood_type_by_id(self, blood_type_id: str) -> BloodType:
-        """
-        Get blood type by ID.
-        
-        Args:
-            blood_type_id: Blood type ID to retrieve
-            
-        Returns:
-            BloodType object
-            
-        Raises:
-            BloodTypeNotFoundException: If blood type not found
-        """
-        blood_type = self.person_repo.get_blood_type_by_id(blood_type_id)
-        if not blood_type:
-            logger.warning(f"Blood type not found with ID: {blood_type_id}")
-            raise BloodTypeNotFoundException(
-                blood_type_id=blood_type_id,
-                details={"operation": "get_blood_type_by_id"}
-            )
-        
-        logger.debug(f"Retrieved blood type: {blood_type_id}")
-        return blood_type
-    
-    def get_all_blood_types(self) -> List[BloodType]:
-        """
-        Get all blood types.
-        
-        Returns:
-            List of all BloodType objects
-        """
-        blood_types = self.person_repo.get_all_blood_types()
-        logger.debug(f"Retrieved {len(blood_types)} blood types")
-        return blood_types
-    
-    def get_blood_type_object(self, blood_type_id: str) -> Optional[BloodType]:
-        """
-        Get blood type ORM object without raising exception.
-        
-        Args:
-            blood_type_id: Blood type ID to retrieve
-            
-        Returns:
-            BloodType object or None if not found
-        """
-        return self.person_repo.get_blood_type_object(blood_type_id)
     
     # ==================== Person Details Operations ====================
     

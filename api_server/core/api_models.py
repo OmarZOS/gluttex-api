@@ -6,7 +6,7 @@ All models include proper types, default values, and validation.
 
 from datetime import datetime, date
 from typing import Optional, Dict, List, Any
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, validator
 from enum import Enum
 from constants import ReactionType
 
@@ -67,6 +67,268 @@ class API_Resolution(BaseModel):
 # PERSON & LOCATION MODELS
 # ============================================================================
 
+class Gender(str, Enum):
+    """Gender enum"""
+    MALE = "Male"
+    FEMALE = "Female"
+    OTHER = "Other"
+    PREFER_NOT_TO_SAY = "Prefer not to say"
+    
+    @classmethod
+    def from_db(cls, value: str) -> "Gender":
+        """Convert database value to enum"""
+        try:
+            return cls(value)
+        except ValueError:
+            return cls.PREFER_NOT_TO_SAY
+    
+    def to_db(self) -> str:
+        """Convert enum to database value"""
+        return self.value
+
+class BloodType(str, Enum):
+    """Blood type enum with Rh factor"""
+    A_POSITIVE = "A+"
+    A_NEGATIVE = "A-"
+    B_POSITIVE = "B+"
+    B_NEGATIVE = "B-"
+    AB_POSITIVE = "AB+"
+    AB_NEGATIVE = "AB-"
+    O_POSITIVE = "O+"
+    O_NEGATIVE = "O-"
+    UNKNOWN = "Unknown"
+    
+    @classmethod
+    def from_db(cls, value: str) -> "BloodType":
+        """Convert database value to enum"""
+        try:
+            return cls(value)
+        except ValueError:
+            return cls.UNKNOWN
+    
+    def to_db(self) -> str:
+        """Convert enum to database value"""
+        return self.value
+    
+    @property
+    def is_positive(self) -> bool:
+        """Check if blood type is Rh positive"""
+        return '+' in self.value
+    
+    @property
+    def is_negative(self) -> bool:
+        """Check if blood type is Rh negative"""
+        return '-' in self.value
+    
+    @property
+    def is_universal_donor(self) -> bool:
+        """O- is universal donor"""
+        return self == BloodType.O_NEGATIVE
+    
+    @property
+    def is_universal_recipient(self) -> bool:
+        """AB+ is universal recipient"""
+        return self == BloodType.AB_POSITIVE
+
+# ============ API MODELS ============
+
+class CountryCode(str, Enum):
+    """ISO 3166-1 alpha-2 country codes"""
+    AF = "AF"  # Afghanistan
+    AL = "AL"  # Albania
+    DZ = "DZ"  # Algeria
+    AD = "AD"  # Andorra
+    AO = "AO"  # Angola
+    AR = "AR"  # Argentina
+    AM = "AM"  # Armenia
+    AU = "AU"  # Australia
+    AT = "AT"  # Austria
+    AZ = "AZ"  # Azerbaijan
+    BS = "BS"  # Bahamas
+    BH = "BH"  # Bahrain
+    BD = "BD"  # Bangladesh
+    BB = "BB"  # Barbados
+    BY = "BY"  # Belarus
+    BE = "BE"  # Belgium
+    BZ = "BZ"  # Belize
+    BJ = "BJ"  # Benin
+    BT = "BT"  # Bhutan
+    BO = "BO"  # Bolivia
+    BA = "BA"  # Bosnia and Herzegovina
+    BW = "BW"  # Botswana
+    BR = "BR"  # Brazil
+    BN = "BN"  # Brunei
+    BG = "BG"  # Bulgaria
+    BF = "BF"  # Burkina Faso
+    BI = "BI"  # Burundi
+    KH = "KH"  # Cambodia
+    CM = "CM"  # Cameroon
+    CA = "CA"  # Canada
+    CV = "CV"  # Cape Verde
+    CF = "CF"  # Central African Republic
+    TD = "TD"  # Chad
+    CL = "CL"  # Chile
+    CN = "CN"  # China
+    CO = "CO"  # Colombia
+    KM = "KM"  # Comoros
+    CG = "CG"  # Congo
+    CD = "CD"  # Congo (DRC)
+    CR = "CR"  # Costa Rica
+    HR = "HR"  # Croatia
+    CU = "CU"  # Cuba
+    CY = "CY"  # Cyprus
+    CZ = "CZ"  # Czech Republic
+    DK = "DK"  # Denmark
+    DJ = "DJ"  # Djibouti
+    DM = "DM"  # Dominica
+    DO = "DO"  # Dominican Republic
+    EC = "EC"  # Ecuador
+    EG = "EG"  # Egypt
+    SV = "SV"  # El Salvador
+    GQ = "GQ"  # Equatorial Guinea
+    ER = "ER"  # Eritrea
+    EE = "EE"  # Estonia
+    SZ = "SZ"  # Eswatini
+    ET = "ET"  # Ethiopia
+    FJ = "FJ"  # Fiji
+    FI = "FI"  # Finland
+    FR = "FR"  # France
+    GA = "GA"  # Gabon
+    GM = "GM"  # Gambia
+    GE = "GE"  # Georgia
+    DE = "DE"  # Germany
+    GH = "GH"  # Ghana
+    GR = "GR"  # Greece
+    GD = "GD"  # Grenada
+    GT = "GT"  # Guatemala
+    GN = "GN"  # Guinea
+    GW = "GW"  # Guinea-Bissau
+    GY = "GY"  # Guyana
+    HT = "HT"  # Haiti
+    HN = "HN"  # Honduras
+    HU = "HU"  # Hungary
+    IS = "IS"  # Iceland
+    IN = "IN"  # India
+    ID = "ID"  # Indonesia
+    IR = "IR"  # Iran
+    IQ = "IQ"  # Iraq
+    IE = "IE"  # Ireland
+    IL = "IL"  # Israel
+    IT = "IT"  # Italy
+    JM = "JM"  # Jamaica
+    JP = "JP"  # Japan
+    JO = "JO"  # Jordan
+    KZ = "KZ"  # Kazakhstan
+    KE = "KE"  # Kenya
+    KI = "KI"  # Kiribati
+    KP = "KP"  # North Korea
+    KR = "KR"  # South Korea
+    KW = "KW"  # Kuwait
+    KG = "KG"  # Kyrgyzstan
+    LA = "LA"  # Laos
+    LV = "LV"  # Latvia
+    LB = "LB"  # Lebanon
+    LS = "LS"  # Lesotho
+    LR = "LR"  # Liberia
+    LY = "LY"  # Libya
+    LI = "LI"  # Liechtenstein
+    LT = "LT"  # Lithuania
+    LU = "LU"  # Luxembourg
+    MG = "MG"  # Madagascar
+    MW = "MW"  # Malawi
+    MY = "MY"  # Malaysia
+    MV = "MV"  # Maldives
+    ML = "ML"  # Mali
+    MT = "MT"  # Malta
+    MH = "MH"  # Marshall Islands
+    MR = "MR"  # Mauritania
+    MU = "MU"  # Mauritius
+    MX = "MX"  # Mexico
+    FM = "FM"  # Micronesia
+    MD = "MD"  # Moldova
+    MC = "MC"  # Monaco
+    MN = "MN"  # Mongolia
+    ME = "ME"  # Montenegro
+    MA = "MA"  # Morocco
+    MZ = "MZ"  # Mozambique
+    MM = "MM"  # Myanmar
+    NA = "NA"  # Namibia
+    NR = "NR"  # Nauru
+    NP = "NP"  # Nepal
+    NL = "NL"  # Netherlands
+    NZ = "NZ"  # New Zealand
+    NI = "NI"  # Nicaragua
+    NE = "NE"  # Niger
+    NG = "NG"  # Nigeria
+    MK = "MK"  # North Macedonia
+    NO = "NO"  # Norway
+    OM = "OM"  # Oman
+    PK = "PK"  # Pakistan
+    PW = "PW"  # Palau
+    PA = "PA"  # Panama
+    PG = "PG"  # Papua New Guinea
+    PY = "PY"  # Paraguay
+    PE = "PE"  # Peru
+    PH = "PH"  # Philippines
+    PL = "PL"  # Poland
+    PT = "PT"  # Portugal
+    QA = "QA"  # Qatar
+    RO = "RO"  # Romania
+    RU = "RU"  # Russia
+    RW = "RW"  # Rwanda
+    KN = "KN"  # Saint Kitts and Nevis
+    LC = "LC"  # Saint Lucia
+    VC = "VC"  # Saint Vincent and the Grenadines
+    WS = "WS"  # Samoa
+    SM = "SM"  # San Marino
+    ST = "ST"  # Sao Tome and Principe
+    SA = "SA"  # Saudi Arabia
+    SN = "SN"  # Senegal
+    RS = "RS"  # Serbia
+    SC = "SC"  # Seychelles
+    SL = "SL"  # Sierra Leone
+    SG = "SG"  # Singapore
+    SK = "SK"  # Slovakia
+    SI = "SI"  # Slovenia
+    SB = "SB"  # Solomon Islands
+    SO = "SO"  # Somalia
+    ZA = "ZA"  # South Africa
+    SS = "SS"  # South Sudan
+    ES = "ES"  # Spain
+    LK = "LK"  # Sri Lanka
+    SD = "SD"  # Sudan
+    SR = "SR"  # Suriname
+    SE = "SE"  # Sweden
+    CH = "CH"  # Switzerland
+    SY = "SY"  # Syria
+    TW = "TW"  # Taiwan
+    TJ = "TJ"  # Tajikistan
+    TZ = "TZ"  # Tanzania
+    TH = "TH"  # Thailand
+    TL = "TL"  # Timor-Leste
+    TG = "TG"  # Togo
+    TO = "TO"  # Tonga
+    TT = "TT"  # Trinidad and Tobago
+    TN = "TN"  # Tunisia
+    TR = "TR"  # Turkey
+    TM = "TM"  # Turkmenistan
+    TV = "TV"  # Tuvalu
+    UG = "UG"  # Uganda
+    UA = "UA"  # Ukraine
+    AE = "AE"  # United Arab Emirates
+    GB = "GB"  # United Kingdom
+    US = "US"  # United States
+    UY = "UY"  # Uruguay
+    UZ = "UZ"  # Uzbekistan
+    VU = "VU"  # Vanuatu
+    VA = "VA"  # Vatican City
+    VE = "VE"  # Venezuela
+    VN = "VN"  # Vietnam
+    YE = "YE"  # Yemen
+    ZM = "ZM"  # Zambia
+    ZW = "ZW"  # Zimbabwe
+    XK = "XK"  # Kosovo
+
 class Person_API(BaseModel):
     """Person information model"""
     id_person: int = Field(default=0, ge=0, description="Person ID")
@@ -78,11 +340,60 @@ class Person_API(BaseModel):
     person_last_name: Optional[str] = Field(default=None, max_length=100, description="Last name")
     person_birth_date: Optional[date] = Field(default=None, description="Birth date (YYYY-MM-DD)")
     person_gender: Optional[Gender] = Field(default=None, description="Gender")
-    person_nationality: Optional[str] = Field(default=None, max_length=50, description="Nationality")
+    person_country_code: Optional[CountryCode] = Field(default=None, description="Nationality (ISO 3166-1 alpha-2 country code)")
+
     
     # Blood type
-    id_blood_type: int = Field(default=0, ge=0, description="Blood type ID")
-
+    blood_type: BloodType = Field(default=BloodType.UNKNOWN, description="Blood type")
+    
+    # Optional: Full name helper
+    @property
+    def full_name(self) -> str:
+        """Get full name"""
+        parts = []
+        if self.person_first_name:
+            parts.append(self.person_first_name)
+        if self.person_last_name:
+            parts.append(self.person_last_name)
+        return " ".join(parts) if parts else "Unknown"
+    
+    @validator('person_birth_date')
+    def validate_birth_date(cls, v):
+        """Validate birth date is not in the future"""
+        if v and v > date.today():
+            raise ValueError('Birth date cannot be in the future')
+        return v
+    
+    @validator('person_gender')
+    def validate_gender(cls, v):
+        """Validate gender is valid"""
+        if v and v not in Gender:
+            raise ValueError(f'Invalid gender. Must be one of: {", ".join([g.value for g in Gender])}')
+        return v
+    
+    @validator('blood_type')
+    def validate_blood_type(cls, v):
+        """Validate blood type is valid"""
+        if v and v not in BloodType:
+            raise ValueError(f'Invalid blood type. Must be one of: {", ".join([b.value for b in BloodType])}')
+        return v
+    
+    class Config:
+        use_enum_values = True  # Serialize enums as strings
+        json_encoders = {
+            Gender: lambda v: v.value if v else None,
+            BloodType: lambda v: v.value if v else None
+        }
+    
+    def to_db_dict(self) -> dict:
+        """Convert to database dictionary"""
+        data = self.model_dump()
+        if 'person_gender' in data and data['person_gender']:
+            data['person_gender'] = data['person_gender'].value
+        if 'blood_type' in data and data['blood_type']:
+            data['blood_type'] = data['blood_type'].value
+        return data
+    
 class Location_API(BaseModel):
     """Location and address model"""
     id_location: int = Field(default=0, ge=0, description="Location ID")
@@ -141,7 +452,7 @@ class AppUser_API(BaseModel):
         description="User type: provider, customer, patient, guest"
     )
 
-    
+
 class AppUserUpdate_API(AppUser_API):
     """User update model with password change"""
     username: str = Field(..., min_length=3, max_length=50, description="New username")

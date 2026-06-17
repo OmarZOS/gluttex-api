@@ -1,6 +1,6 @@
 # services/search_service.py
 from typing import List, Dict, Any, Optional, Tuple
-from core.models import BloodType, Product, Recipe, AppUser, Person, ProviderDetails, ProductProvider
+from core.models import  Product, Recipe, AppUser, Person, ProviderDetails, ProductProvider
 from core.persistent_models import Location
 from core.models import PersonDetails
 from storage.storage_broker import search_records
@@ -141,7 +141,7 @@ class SearchService:
                 'person_details.person_last_name',
                 'person_details.person_nationality'
             ],
-            join_tables= [BloodType],
+            join_tables= [],
             eager_load_depth=[Person.person_details,Person.person_blood_type],
             offset=offset,
             limit=limit,
