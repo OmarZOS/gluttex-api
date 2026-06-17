@@ -102,17 +102,46 @@ class Location_API(BaseModel):
 # USER MODELS
 # ============================================================================
 
+class AppUserType(str, Enum):
+    """Application user types"""
+    PROVIDER = "provider"
+    CUSTOMER = "customer"
+    PATIENT = "patient"
+    GUEST = "guest"
+    
+    @classmethod
+    def get_default(cls) -> "AppUserType":
+        return cls.GUEST
+    
+    @classmethod
+    def from_db(cls, value: str) -> "AppUserType":
+        """Convert database value (string) to enum"""
+        try:
+            return cls(value.lower())
+        except ValueError:
+            return cls.GUEST
+    
+    def to_db(self) -> str:
+        """Convert enum to database value"""
+        return self.value
+
+# ============ API MODELS ============
+
 class AppUser_API(BaseModel):
     """Application user model"""
     id_app_user: int = Field(default=0, ge=0, description="User ID")
     app_user_name: Optional[str] = Field(default=None, min_length=3, max_length=50, description="Username")
     app_user_password: Optional[str] = Field(default=None, min_length=6, description="Password (hashed)")
     app_user_person_id: Optional[int] = Field(default=None, description="Person reference")
-    app_user_preferences: Optional[str] = Field(default=None, description="User preferences (JSON)")
+    app_user_preferences: Optional[dict] = Field(default=None, description="User preferences (JSON)")
     app_user_email: Optional[str] = Field(default=None, max_length=100, description="Email address")
     app_user_image_url: Optional[str] = Field(default=None, max_length=500, description="Profile image URL")
-    app_user_type_id: Optional[int] = Field(default=1, ge=1, description="User type ID")
+    app_user_type: AppUserType = Field(
+        default=AppUserType.GUEST,
+        description="User type: provider, customer, patient, guest"
+    )
 
+    
 class AppUserUpdate_API(AppUser_API):
     """User update model with password change"""
     username: str = Field(..., min_length=3, max_length=50, description="New username")

@@ -1,7 +1,8 @@
 # repositories/user_repository.py
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import joinedload, selectinload
-from core.models import AppUser, AppUserType, Person, Location
+from core.persistent_models import Location
+from core.models import AppUser,  Person
 import storage.storage_broker as storage_broker
 
 class UserRepository:
@@ -63,7 +64,3 @@ class UserRepository:
         from features.insertion import delete_record_from_api
         return delete_record_from_api(user)
     
-    def get_user_type(self, type_id: str) -> Optional[AppUserType]:
-        """Get user type by ID"""
-        records = storage_broker.get(AppUserType, {AppUserType.id_app_user_type: type_id})
-        return records[0] if records else None

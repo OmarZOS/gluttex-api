@@ -66,15 +66,6 @@ class UserService:
                 details={"username": user_data.app_user_name}
             )
         
-        # Validate user type
-        user_type = self.user_repo.get_user_type(user_data.app_user_type_id)
-        if not user_type:
-            raise APIException(
-                status_code=HTTP_400_BAD_REQUEST,
-                error_code=ErrorCode.APPUSERTYPE_NOT_EXISTS,
-                details={"user_type_id": user_data.app_user_type_id}
-            )
-        
         # Build AppUser object
         now = datetime.datetime.now()
         app_user = AppUser(
@@ -83,7 +74,7 @@ class UserService:
             app_user_preferences=user_data.app_user_preferences,
             app_user_email= user_data.app_user_email,
             app_user_image_url=user_data.app_user_image_url,
-            app_user_type_id=user_type.id_app_user_type,
+            app_user_type=user_data.app_user_type.value,
             app_user_last_active=str(now),
             app_user_last_updated=str(now),
             app_user_creation=str(now),
@@ -149,14 +140,6 @@ class UserService:
         # Update person information
         person = self.person_service.refresh_or_insert_person(person_data, location_data)
         
-        # Validate user type
-        user_type = self.user_repo.get_user_type(user_data.app_user_type_id)
-        if not user_type:
-            raise APIException(
-                status_code=HTTP_400_BAD_REQUEST,
-                error_code=ErrorCode.APPUSERTYPE_NOT_EXISTS,
-                details={"user_type_id": user_data.app_user_type_id}
-            )
         
         # Update allowed fields
         updatable_fields = [
@@ -164,7 +147,7 @@ class UserService:
             "app_user_last_active",
             "app_user_image_url",
             "app_user_email",
-            "app_user_type_id",
+            "app_user_type",
         ]
         
         for field in updatable_fields:
