@@ -340,7 +340,7 @@ class Person_API(BaseModel):
     person_last_name: Optional[str] = Field(default=None, max_length=100, description="Last name")
     person_birth_date: Optional[date] = Field(default=None, description="Birth date (YYYY-MM-DD)")
     person_gender: Optional[Gender] = Field(default=None, description="Gender")
-    person_country_code: Optional[CountryCode] = Field(default=None, description="Nationality (ISO 3166-1 alpha-2 country code)")
+    person_country_code: Optional[CountryCode] = Field(default=CountryCode.DZ, description="Nationality (ISO 3166-1 alpha-2 country code)")
 
     
     # Blood type

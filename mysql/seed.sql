@@ -1,25 +1,12 @@
 -- First, let's fix the foreign key issues by ensuring proper data flow
 
 -- Insert app_user_type first (this is referenced by app_user)
-INSERT INTO `gluttex`.`app_user_type` (`app_user_type_desc`) VALUES
-('Client'),
-('Admin'),
-('Cooking chef'),
-('Supplier');
 
--- Insert blood_type (referenced by person)
-INSERT INTO `gluttex`.`blood_type` (`blood_type_desc`) VALUES
-('O+'),
-('A+'),
-('B+'),
-('AB+'),
-('O-'),
-('A-'),
-('B-'),
-('AB-');
+
+
 
 -- Insert product_category (referenced by product)
-INSERT INTO `gluttex`.`product_category` (`product_category_desc`) VALUES
+INSERT INTO `gluttex`.`product_category` (`product_category_icon`) VALUES
 ('Baked Goods'),
 ('Spreads'),
 ('Cereals'),
@@ -32,7 +19,7 @@ INSERT INTO `gluttex`.`product_category` (`product_category_desc`) VALUES
 ('Canned & Packaged Goods ');
 
 -- Insert product_provider_type (referenced by product_provider)
-INSERT INTO `gluttex`.`product_provider_type` (`product_provider_type_desc`) VALUES
+INSERT INTO `gluttex`.`product_provider_type` (`product_provider_type_icon_url`) VALUES
 ('Restaurant'),
 ('Bakery'),
 ('Factory'),
@@ -41,7 +28,7 @@ INSERT INTO `gluttex`.`product_provider_type` (`product_provider_type_desc`) VAL
 ("Distributor");
 
 -- Insert recipe_category (just for completeness)
-INSERT INTO `gluttex`.`recipe_category` (`recipe_category_desc`) VALUES
+INSERT INTO `gluttex`.`recipe_category` (`recipe_category_icon_url`) VALUES
 ("Appetizers & Snacks"),
 ("Soups & Stews"),
 ("Salads"),
@@ -63,10 +50,6 @@ INSERT INTO `gluttex`.`recipe_category` (`recipe_category_desc`) VALUES
 ("One-Pan Recipes"),
 ("Grilling & BBQ");
 
--- Insert reaction types
-INSERT INTO `gluttex`.`reaction` (reaction_type) VALUES 
-('love'),('tasty'),('like'),('sick'),('danger'),('easy'),('long'),('unlike'),('safe'),('savy');
-
 -- Insert provider_details first (before product_provider)
 INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_info`) VALUES
 ('Magasin habibou sans gluten', 'Facebook: https://www.facebook.com/profile.php?id=100063549909208'),
@@ -74,6 +57,9 @@ INSERT INTO `gluttex`.`provider_details` (`provider_name`, `provider_contact_inf
 ('Superette université', 'N/A'),
 ('Corridors Shopping', 'N/A'),
 ('Caramel sans gluten', 'N/A');
+
+select * from provider_details;
+
 
 -- Insert product_provider with valid type IDs (1-6)
 INSERT INTO `gluttex`.`product_provider` (`product_provider_details_id`, `product_provider_type_id`) VALUES
@@ -87,23 +73,23 @@ INSERT INTO `gluttex`.`product_provider` (`product_provider_details_id`, `produc
 
 -- Insert person_details first (before person)
 INSERT INTO `gluttex`.`person_details` 
-    (person_first_name, person_last_name, person_birth_date, person_gender, person_nationality) 
+    (person_first_name, person_last_name, person_birth_date, person_gender, person_country_code) 
 VALUES 
-    ('Some', 'One', '2003-01-01', 'Male', 'Algerian');
+    ('Some', 'One', '2003-01-01', 'Male', '213');
 
 -- Insert person with valid blood_type_id (1-8)
 INSERT INTO `gluttex`.`person` 
-    (person_details_id, person_blood_type_id) 
+    (person_details_id, person_blood_type) 
 VALUES 
-    (1, 1); 
+    (1, "B+"); 
 
 -- Insert app_user with valid app_user_type_id (1-4) and person_id (1)
 INSERT INTO `gluttex`.`app_user` 
-    (app_user_name, app_user_password, app_user_person_id, app_user_type_id) 
+    (app_user_name, app_user_password, app_user_person_id, app_user_type) 
 VALUES 
-    ('SomeOne', 'password', 1, 1),
-    ('ProviderAdmin', 'password', 1, 4),  -- Supplier user
-    ('SellerUser', 'password', 1, 1);     -- Seller user
+    ('SomeOne', 'password', 1, "ADMIN"),
+    ('ProviderAdmin', 'password', 1, "provider"),  -- Supplier user
+    ('SellerUser', 'password', 1, "customer");     -- Seller user
 
 -- Insert products with valid product_provider_id (1-7) and product_category_id (1-10)
 -- Note: product_owner should reference valid app_user.id_app_user
@@ -203,7 +189,6 @@ INSERT INTO `gluttex`.`provided_service` (
 -- Insert service_staff_requirement with valid service_id (1-17)
 INSERT INTO `gluttex`.`service_staff_requirement` (
   `service_staff_requirement_service_id`,
-  `service_staff_requirement_role`,
   `service_staff_requirement_min_count`,
   `service_staff_requirement_max_count`,
   `service_staff_requirement_hourly_rate`,
@@ -211,73 +196,73 @@ INSERT INTO `gluttex`.`service_staff_requirement` (
   `service_staff_requirement_notes`
 ) VALUES
 -- Service 1 requirements
-(1, 'Medical Technologist', 1, 2, 35.0000, 0.75, 'Certified phlebotomist'),
-(1, 'Lab Assistant', 1, 1, 20.0000, 0.50, 'Prepare samples'),
+(1, 1, 2, 35.0000, 0.75, 'Certified phlebotomist'),
+(1, 1, 1, 20.0000, 0.50, 'Prepare samples'),
 
 -- Service 2 requirements
-(2, 'Medical Technologist', 1, 1, 35.0000, 1.00, 'Fasting blood specialist'),
-(2, 'Nurse', 1, 1, 30.0000, 0.25, 'Patient preparation'),
+(2, 1, 1, 35.0000, 1.00, 'Fasting blood specialist'),
+(2, 1, 1, 30.0000, 0.25, 'Patient preparation'),
 
 -- Service 3 requirements
-(3, 'Medical Assistant', 1, 1, 25.0000, 0.50, 'Glucose testing specialist'),
-(3, 'Receptionist', 1, 1, 18.0000, 0.25, 'Patient check-in'),
+(3, 1, 1, 25.0000, 0.50, 'Glucose testing specialist'),
+(3, 1, 1, 18.0000, 0.25, 'Patient check-in'),
 
 -- Service 4 requirements
-(4, 'Lab Technician', 1, 2, 32.0000, 1.00, 'Liver function specialist'),
-(4, 'Pathologist', 1, 1, 80.0000, 0.25, 'Results interpretation'),
+(4, 1, 2, 32.0000, 1.00, 'Liver function specialist'),
+(4, 1, 1, 80.0000, 0.25, 'Results interpretation'),
 
 -- Service 5 requirements
-(5, 'Endocrinology Technician', 1, 1, 38.0000, 1.00, 'Thyroid testing specialist'),
-(5, 'Medical Doctor', 1, 1, 100.0000, 0.50, 'Consultation and prescription'),
+(5, 1, 1, 38.0000, 1.00, 'Thyroid testing specialist'),
+(5, 1, 1, 100.0000, 0.50, 'Consultation and prescription'),
 
 -- Service 6 requirements
-(6, 'Radiologic Technologist', 1, 1, 40.0000, 0.75, 'Certified X-ray technician'),
-(6, 'Radiologist', 1, 1, 120.0000, 0.25, 'Image interpretation'),
+(6, 1, 1, 40.0000, 0.75, 'Certified X-ray technician'),
+(6, 1, 1, 120.0000, 0.25, 'Image interpretation'),
 
 -- Service 7 requirements
-(7, 'Ultrasound Technologist', 1, 1, 45.0000, 1.25, 'Registered sonographer'),
-(7, 'Radiologist', 1, 1, 120.0000, 0.50, 'Results interpretation'),
+(7, 1, 1, 45.0000, 1.25, 'Registered sonographer'),
+(7, 1, 1, 120.0000, 0.50, 'Results interpretation'),
 
 -- Service 8 requirements
-(8, 'MRI Technologist', 1, 2, 55.0000, 2.00, 'Certified MRI specialist'),
-(8, 'Radiologist', 1, 1, 150.0000, 1.00, 'Neuroradiology specialist'),
+(8, 1, 2, 55.0000, 2.00, 'Certified MRI specialist'),
+(8, 1, 1, 150.0000, 1.00, 'Neuroradiology specialist'),
 
 -- Service 9 requirements
-(9, 'CT Technologist', 1, 2, 50.0000, 1.00, 'CT scan specialist'),
-(9, 'Radiation Safety Officer', 1, 1, 45.0000, 0.25, 'Safety protocol'),
+(9, 1, 2, 50.0000, 1.00, 'CT scan specialist'),
+(9, 1, 1, 45.0000, 0.25, 'Safety protocol'),
 
 -- Service 10 requirements
-(10, 'Registered Nurse', 1, 2, 32.0000, 0.50, 'Vaccination administration'),
-(10, 'Pharmacist', 1, 1, 45.0000, 0.25, 'Vaccine preparation'),
+(10, 1, 2, 32.0000, 0.50, 'Vaccination administration'),
+(10, 1, 1, 45.0000, 0.25, 'Vaccine preparation'),
 
 -- Service 11 requirements
-(11, 'Public Health Nurse', 1, 3, 35.0000, 0.50, 'COVID-19 specialist'),
-(11, 'Administrative Staff', 1, 2, 22.0000, 0.50, 'Appointment scheduling'),
+(11, 1, 3, 35.0000, 0.50, 'COVID-19 specialist'),
+(11, 1, 2, 22.0000, 0.50, 'Appointment scheduling'),
 
 -- Service 12 requirements
-(12, 'Travel Medicine Specialist', 1, 1, 60.0000, 1.50, 'International expert'),
-(12, 'Nurse Practitioner', 1, 1, 55.0000, 0.75, 'Travel health assessment'),
+(12, 1, 1, 60.0000, 1.50, 'International expert'),
+(12, 1, 1, 55.0000, 0.75, 'Travel health assessment'),
 
 -- Service 13 requirements
-(13, 'Pediatric Nurse', 1, 1, 35.0000, 0.50, 'Adolescent vaccinations'),
-(13, 'Medical Doctor', 1, 1, 95.0000, 0.25, 'HPV vaccine prescription'),
+(13, 1, 1, 35.0000, 0.50, 'Adolescent vaccinations'),
+(13, 1, 1, 95.0000, 0.25, 'HPV vaccine prescription'),
 
 -- Service 14 requirements
-(14, 'Internal Medicine Physician', 1, 1, 150.0000, 3.00, 'Executive health specialist'),
-(14, 'Cardiologist', 1, 1, 180.0000, 0.50, 'Heart health consultation'),
-(14, 'Nurse', 2, 3, 32.0000, 4.00, 'Assist with tests'),
+(14, 1, 1, 150.0000, 3.00, 'Executive health specialist'),
+(14, 1, 1, 180.0000, 0.50, 'Heart health consultation'),
+(14,  2, 3, 32.0000, 4.00, 'Assist with tests'),
 
 -- Service 15 requirements
-(15, 'Family Physician', 1, 1, 120.0000, 1.50, 'Annual physical'),
-(15, 'Medical Assistant', 1, 1, 25.0000, 1.00, 'Vital signs'),
+(15, 1, 1, 120.0000, 1.50, 'Annual physical'),
+(15, 1, 1, 25.0000, 1.00, 'Vital signs'),
 
 -- Service 16 requirements
-(16, 'Dental Hygienist', 1, 1, 40.0000, 1.00, 'Teeth cleaning'),
-(16, 'Dentist', 1, 1, 80.0000, 0.50, 'Dental examination'),
+(16, 1, 1, 40.0000, 1.00, 'Teeth cleaning'),
+(16, 1, 1, 80.0000, 0.50, 'Dental examination'),
 
 -- Service 17 requirements
-(17, 'Pathologist', 1, 1, 100.0000, 2.00, 'Biopsy analysis'),
-(17, 'Lab Technician', 1, 2, 35.0000, 1.50, 'Sample processing');
+(17, 1, 1, 100.0000, 2.00, 'Biopsy analysis'),
+(17, 1, 2, 35.0000, 1.50, 'Sample processing');
 
 -- Insert service_resource_requirement with valid service_id (1-17) and product_ref (1-7)
 INSERT INTO `gluttex`.`service_resource_requirement` (
@@ -372,430 +357,7 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 (17, 'Cytology Fixative', 'Chemical', 1, 6.0000, 1, 'Preservative', NULL),
 (17, 'Microscope Slides', 'Lab Supply', 5, 1.0000, 1, 'Examination slides', 1);
 
--- Insert carts with valid references
-INSERT INTO `gluttex`.`cart` (
-  `cart_product_provider_id`,
-  `cart_selling_user`,
-  `cart_status`,
-  `cart_total_amount`,
-  `cart_notes`,
-  `cart_person_ref`
-) VALUES
--- Provider 2: Open carts (provider_id=2, selling_user=1, person_ref=1)
-(2, 1, 'open', 85.5000, 'Lab tests pending selection', 1),
-(2, 1, 'open', 120.0000, 'Follow-up tests needed', 1),
-
--- Provider 2: Pending/processing carts
-(2, 1, 'pending', 220.7500, 'Waiting for insurance approval', 1),
-(2, 1, 'pending', 95.2500, 'Payment processing', 1),
-
--- Provider 2: Completed carts
-(2, 1, 'completed', 65.0000, 'Annual blood work completed on 2024-01-15', 1),
-(2, 1, 'completed', 180.5000, 'Comprehensive health screening package', 1),
-(2, 1, 'completed', 45.7500, 'Flu vaccination and basic checkup', 1),
-
--- Provider 3: Various status carts
-(3, 1, 'open', 350.0000, 'MRI scan consultation', 1),
-(3, 1, 'pending', 420.5000, 'CT scan scheduled for next week', 1),
-(3, 1, 'completed', 280.0000, 'Ultrasound completed last month', 1),
-(3, 1, 'completed', 150.0000, 'X-ray services - sports injury', 1),
-
--- Provider 4: Carts for different services
-(4, 1, 'open', 600.0000, 'Executive health package under consideration', 1),
-(4, 1, 'pending', 450.0000, 'Physiotherapy session package - awaiting confirmation', 1),
-(4, 1, 'completed', 380.0000, 'Sports medicine consultation completed', 1),
-(4, 1, 'canceled', 220.0000, 'Patient rescheduled acupuncture sessions', 1),
-
--- Provider 5: Vaccination and wellness carts
-(5, 1, 'open', 0.0000, 'COVID-19 booster - free service', 1),
-(5, 1, 'pending', 200.0000, 'HPV vaccination series - first dose administered', 1),
-(5, 1, 'completed', 85.0000, 'Nutrition counseling - initial session', 1),
-(5, 1, 'completed', 75.0000, 'Electro-acupuncture therapy completed', 1),
-
--- Provider 6: Travel and specialized services
-(6, 1, 'open', 320.0000, 'Travel vaccination package for Europe trip', 1),
-(6, 1, 'pending', 130.0000, 'Couples counseling - session package', 1),
-(6, 1, 'completed', 79.0000, 'Ancestry DNA test results received', 1),
-(6, 1, 'completed', 200.0000, 'Senior citizen health assessment completed', 1),
-
--- Provider 7: Various medical services
-(7, 1, 'open', 95.0000, 'Dental cleaning appointment cart', 1),
-(7, 1, 'pending', 165.0000, 'Dental filling procedure scheduled', 1),
-(7, 1, 'completed', 40.0000, 'Dental X-ray completed', 1),
-(7, 1, 'canceled', 100.0000, 'Patient opted for different provider', 1),
-
--- Additional carts with different statuses
-(3, 1, 'open', 0.0000, 'Consultation cart - no services added yet', 1),
-(4, 1, 'pending', 750.0000, 'Comprehensive diagnostic package - awaiting lab results', 1),
-(5, 1, 'completed', 120.0000, 'Travel medicine consultation for Asia trip', 1),
-(6, 1, 'open', 45.0000, 'Basic urinalysis test selection', 1),
-(7, 1, 'pending', 300.0000, 'Dental crown procedure - mold taken', 1);
-
--- More varied cart examples
-INSERT INTO `gluttex`.`cart` (
-  `cart_product_provider_id`,
-  `cart_selling_user`,
-  `cart_status`,
-  `cart_total_amount`,
-  `cart_notes`,
-  `cart_person_ref`
-) VALUES
-(2, 1, 'completed', 560.0000, 'Full body checkup with specialist consultations', 1),
-(3, 1, 'completed', 680.0000, 'MRI and CT scan package for neurological assessment', 1),
-(4, 1, 'pending', 900.0000, 'Executive health screening with cardiology consult', 1),
-(5, 1, 'canceled', 150.0000, 'Canceled due to schedule conflict', 1),
-(6, 1, 'open', 250.0000, 'Genetic counseling and testing consideration', 1),
-(7, 1, 'completed', 480.0000, 'Complete dental work including cleaning, filling, and X-ray', 1),
-(2, 1, 'open', 35.0000, 'Single cholesterol test selection', 1),
-(3, 1, 'pending', 1500.0000, 'Advanced imaging package - payment plan requested', 1),
-(4, 1, 'completed', 320.0000, 'Physiotherapy sessions for back pain - completed course', 1),
-(5, 1, 'open', 0.0000, 'Flu shot reminder cart', 1);
-
--- Insert ordered_services with valid cart_id (1-42) and service_id (1-17)
-INSERT INTO `gluttex`.`ordered_service` (
-  `ordered_service_cart_id`,
-  `ordered_service_service_id`,
-  `ordered_service_quantity`,
-  `ordered_service_unit_price`,
-  `ordered_service_total_price`,
-  `ordered_service_notes`
-) VALUES
--- Cart 1-5: Blood Testing Services (services 1-3)
-(1, 1, 1, 20.0000, 20.0000, 'Complete Blood Count test'),
-(1, 2, 1, 28.0000, 28.0000, 'Lipid Profile with fasting'),
-(1, 3, 1, 12.0000, 12.0000, 'Random blood glucose test'),
-
-(2, 4, 1, 36.0000, 36.0000, 'Liver function test follow-up'),
-(2, 5, 1, 48.0000, 48.0000, 'Thyroid panel re-check'),
-
-(3, 1, 2, 20.0000, 40.0000, 'CBC for family - 2 persons'),
-(3, 2, 2, 28.0000, 56.0000, 'Lipid tests for couple'),
-(3, 3, 1, 12.0000, 12.0000, 'Single glucose test'),
-
-(4, 4, 1, 36.0000, 36.0000, 'Annual liver function'),
-(4, 5, 1, 48.0000, 48.0000, 'Thyroid monitoring'),
-
-(5, 1, 1, 20.0000, 20.0000, 'Routine CBC'),
-(5, 3, 1, 12.0000, 12.0000, 'Diabetes screening'),
-
--- Cart 6-10: Imaging Services (services 6-9)
-(6, 6, 1, 65.0000, 65.0000, 'Chest X-ray for cough'),
-(6, 7, 1, 95.0000, 95.0000, 'Abdominal ultrasound'),
-
-(7, 8, 1, 360.0000, 360.0000, 'Brain MRI for headaches'),
-(7, 9, 1, 240.0000, 240.0000, 'Follow-up CT scan'),
-
-(8, 6, 1, 65.0000, 65.0000, 'Pre-employment chest X-ray'),
-(8, 7, 1, 95.0000, 95.0000, 'Gallbladder ultrasound'),
-
-(9, 8, 1, 360.0000, 360.0000, 'Neurological assessment MRI'),
-(10, 9, 1, 240.0000, 240.0000, 'Chest CT for lung nodule'),
-
--- Cart 11-15: Vaccination Services (services 10-13)
-(11, 10, 1, 25.0000, 25.0000, 'Annual flu shot'),
-(11, 11, 1, 0.0000, 0.0000, 'COVID-19 booster'),
-
-(12, 12, 1, 120.0000, 120.0000, 'Travel vaccination package'),
-(12, 13, 1, 180.0000, 180.0000, 'HPV vaccine first dose'),
-
-(13, 10, 2, 25.0000, 50.0000, 'Flu shots for couple'),
-(13, 11, 2, 0.0000, 0.0000, 'COVID boosters for family'),
-
-(14, 12, 1, 120.0000, 120.0000, 'Business travel vaccinations'),
-(15, 13, 3, 180.0000, 540.0000, 'HPV vaccine for all 3 doses'),
-
--- Cart 16-20: Health Check-ups (services 14-15)
-(16, 14, 1, 400.0000, 400.0000, 'Executive health screening'),
-(16, 15, 1, 80.0000, 80.0000, 'Basic physical added'),
-
-(17, 15, 1, 80.0000, 80.0000, 'Annual physical exam'),
-(18, 14, 1, 400.0000, 400.0000, 'Corporate executive checkup'),
-
-(19, 15, 2, 80.0000, 160.0000, 'Family physical exams'),
-
--- Cart 21-25: Dental Care (services 16-17)
-(21, 16, 1, 65.0000, 65.0000, 'Teeth cleaning'),
-(22, 17, 2, 100.0000, 200.0000, 'Two fillings needed'),
-(22, 16, 1, 65.0000, 65.0000, 'Cleaning before fillings'),
-
-(24, 16, 1, 65.0000, 65.0000, '6-month cleaning'),
-(25, 17, 1, 100.0000, 100.0000, 'Single cavity filling'),
-
--- Cart 26-30: Pathology Tests (service 17)
-(26, 17, 1, 160.0000, 160.0000, 'Skin biopsy analysis'),
-
--- Cart 31-35: Mixed Services
-(31, 1, 1, 120.0000, 120.0000, 'Allergy skin testing'),
-(32, 2, 1, 300.0000, 300.0000, 'Genetic carrier screening'),
-
-(33, 3, 1, 75.0000, 75.0000, 'Initial physiotherapy assessment'),
-(34, 4, 1, 85.0000, 85.0000, 'Nutrition consultation'),
-(35, 5, 4, 100.0000, 400.0000, '4 therapy sessions package'),
-
--- Cart 36-42: Mixed Services
-(36, 6, 2, 70.0000, 140.0000, '2 acupuncture sessions'),
-(37, 7, 1, 100.0000, 100.0000, 'First trimester ultrasound'),
-
-(38, 8, 1, 65.0000, 65.0000, 'Well-baby checkup'),
-(39, 9, 1, 130.0000, 130.0000, 'Geriatric health assessment'),
-
-(40, 10, 1, 100.0000, 100.0000, 'Sports injury evaluation'),
-(41, 11, 1, 20.0000, 20.0000, 'Single test cart'),
-(41, 10, 1, 25.0000, 25.0000, 'Flu shot only'),
-
-(42, 16, 1, 65.0000, 65.0000, 'Dental cleaning'),
-(42, 10, 1, 25.0000, 25.0000, 'Plus flu vaccination');
-
--- Insert ordered_items with valid product_id (1-7) and cart_ref (1-42)
-INSERT INTO `gluttex`.`ordered_item` (
-  `ordered_product_id`,
-  `ordered_quantity`,
-  `applied_vat`,
-  `unit_price`,
-  `product_discount`,
-  `ordered_item_cart_ref`
-) VALUES
--- Cart 1: Blood test supplies (product IDs 1-4)
-(1, 5, 8.0, 1.5000, 0.0, 1),    -- Blood Collection Tubes
-(1, 10, 8.0, 0.7500, 10.0, 1),   -- Sterile Needles
-(1, 20, 8.0, 0.2500, 0.0, 1),    -- Alcohol Swabs
-(2, 1, 8.0, 8.0000, 15.0, 1),    -- Fasting Blood Test Kit
-
--- Cart 2: More lab supplies
-(2, 2, 8.0, 12.0000, 5.0, 2),    -- Liver Function Reagents
-(2, 1, 8.0, 25.0000, 10.0, 2),   -- Thyroid Assay Kit
-(1, 3, 8.0, 0.5000, 0.0, 2),     -- Bandages
-
--- Cart 3: Imaging supplies
-(4, 2, 18.0, 8.0000, 0.0, 3),    -- X-Ray Films
-(3, 2, 18.0, 45.0000, 15.0, 3),  -- Lead Aprons
-(2, 1, 18.0, 35.0000, 10.0, 3),  -- Contrast Media
-
--- Cart 4: Ultrasound supplies
-(1, 3, 18.0, 5.0000, 5.0, 4),    -- Ultrasound Gel
-(1, 5, 18.0, 1.2500, 0.0, 4),    -- Probe Covers
-
--- Cart 5: MRI supplies
-(2, 1, 18.0, 85.0000, 20.0, 5),  -- MRI Contrast Agent
-(3, 1, 18.0, 12.0000, 5.0, 5),   -- MRI Safe IV Set
-
--- Cart 6: Vaccination supplies
-(2, 10, 5.0, 18.0000, 25.0, 6),  -- Flu Vaccines
-(1, 12, 5.0, 0.8500, 10.0, 6),   -- Syringes with Needles
-(3, 2, 5.0, 3.5000, 0.0, 6),     -- Sharps Containers
-
--- Cart 7: COVID vaccination supplies
-(1, 25, 0.0, 4.5000, 0.0, 7),    -- PPE Kits
-
--- Cart 8: Travel vaccination package
-(2, 5, 5.0, 40.0000, 15.0, 8),   -- Travel Vaccines
-
--- Cart 9: Dental supplies
-(1, 10, 18.0, 4.5000, 10.0, 9),  -- Dental Prophy Paste
-(1, 15, 18.0, 2.7500, 5.0, 9),   -- Disposable Prophy Angles
-(1, 20, 18.0, 0.5000, 0.0, 9),   -- Dental Floss
-
--- Cart 10: Dental filling materials
-(1, 5, 18.0, 15.0000, 15.0, 10), -- Dental Composite
-(1, 10, 18.0, 3.5000, 5.0, 10),  -- Dental Dam
-(4, 1, 18.0, 250.0000, 20.0, 10), -- Curing Light
-
--- Cart 11: X-ray dental supplies
-(1, 20, 18.0, 1.2500, 5.0, 11),  -- Digital Sensor Covers
-(3, 2, 18.0, 12.0000, 10.0, 11), -- Lead Thyroid Collars
-
--- Cart 12: Pathology lab supplies
-(2, 5, 8.0, 25.0000, 15.0, 12),  -- Staining Reagents
-(1, 50, 8.0, 0.8000, 20.0, 12),  -- Histology Slides
-
--- Cart 13: Urine test supplies
-(1, 25, 8.0, 0.8500, 10.0, 13),  -- Urine Collection Cups
-(2, 30, 8.0, 2.2500, 15.0, 13),  -- Urine Test Strips
-(2, 10, 8.0, 4.5000, 20.0, 13),  -- Culture Media Plates
-
--- Cart 14: Allergy testing supplies
-(2, 50, 8.0, 0.9500, 25.0, 14),  -- Allergen Extracts
-(1, 60, 8.0, 0.1500, 30.0, 14),  -- Skin Test Lancets
-
--- Cart 15: Genetic testing supplies
-(2, 3, 8.0, 350.0000, 20.0, 15), -- Carrier Screening Kits
-(3, 1, 8.0, 25.0000, 10.0, 15),  -- Software Subscription
-
--- Cart 16: Physiotherapy equipment
-(3, 2, 18.0, 25.0000, 15.0, 16), -- Blood Pressure Cuffs
-(3, 1, 18.0, 35.0000, 10.0, 16), -- Stethoscopes
-(3, 1, 18.0, 85.0000, 20.0, 16), -- Otoscope/Ophthalmoscope Set
-
--- Cart 17: Sports medicine equipment
-(3, 1, 18.0, 45.0000, 15.0, 17), -- Fall Risk Assessment Kit
-(3, 2, 18.0, 8.5000, 10.0, 17),  -- Reflex Hammers
-(4, 1, 18.0, 150.0000, 25.0, 17), -- Bone Density Calibration
-
--- Cart 18: Single product orders
-(1, 100, 8.0, 0.2500, 40.0, 18),  -- Bulk Alcohol Swabs
-(2, 1, 18.0, 65.0000, 0.0, 19),   -- Single CT Contrast
-(3, 3, 18.0, 12.0000, 10.0, 20),  -- Multiple IV Sets
-(4, 2, 18.0, 8.0000, 5.0, 21),    -- X-Ray Films
-(1, 50, 5.0, 0.8500, 30.0, 22),   -- Bulk Syringes
-
--- Cart 19-25: Mixed medical supplies
-(2, 4, 8.0, 12.0000, 15.0, 23),   -- Liver Reagents
-(1, 30, 8.0, 1.5000, 20.0, 24),   -- Blood Tubes
-(3, 1, 18.0, 35.0000, 10.0, 25),  -- Stethoscope
-(2, 2, 18.0, 85.0000, 25.0, 26),  -- MRI Contrast
-(1, 15, 18.0, 4.5000, 15.0, 27),  -- Dental Paste
-(2, 8, 5.0, 18.0000, 30.0, 28),   -- Flu Vaccines
-(1, 40, 8.0, 0.8500, 35.0, 29),   -- Urine Cups
-
--- Cart 30-35: Business/wholesale orders
-(1, 500, 8.0, 0.7500, 50.0, 30),  -- Wholesale Needles
-(2, 100, 8.0, 2.2500, 40.0, 31),  -- Bulk Test Strips
-(3, 25, 18.0, 3.5000, 35.0, 32),  -- Sharps Containers
-(1, 200, 18.0, 5.0000, 30.0, 34), -- Ultrasound Gel
-(2, 20, 18.0, 35.0000, 25.0, 35), -- Contrast Media
-
--- Cart 36-42: Final mixed carts
-(1, 10, 8.0, 1.5000, 10.0, 36),   -- Blood Tubes
-(2, 5, 8.0, 8.0000, 15.0, 37),    -- Test Kits
-(3, 2, 18.0, 45.0000, 20.0, 38),  -- Lead Aprons
-(1, 25, 5.0, 0.8500, 25.0, 40),   -- Syringes
-(2, 1, 18.0, 250.0000, 30.0, 41), -- Curing Light
-(3, 1, 8.0, 25.0000, 15.0, 42);   -- Software
-
--- Insert more varied orders
-INSERT INTO `gluttex`.`ordered_item` (
-  `ordered_product_id`,
-  `ordered_quantity`,
-  `applied_vat`,
-  `unit_price`,
-  `product_discount`,
-  `ordered_item_cart_ref`
-) VALUES
--- Zero VAT items (medical essentials)
-(1, 15, 0.0, 1.5000, 0.0, 1),
-(2, 3, 0.0, 8.0000, 10.0, 2),
-
--- High VAT items (non-essential medical equipment)
-(4, 1, 23.0, 250.0000, 15.0, 3),
-(3, 2, 23.0, 85.0000, 20.0, 4),
-
--- Small orders for individual patients
-(1, 5, 8.0, 0.2500, 0.0, 7),
-(2, 1, 8.0, 25.0000, 5.0, 8),
-(3, 1, 18.0, 35.0000, 10.0, 9),
-
--- Mixed VAT cart
-(1, 10, 8.0, 1.5000, 10.0, 10),
-(2, 2, 18.0, 35.0000, 15.0, 10),
-(3, 1, 23.0, 85.0000, 20.0, 10),
-
--- Emergency order (no discount)
-(1, 50, 8.0, 1.5000, 0.0, 11),
-(2, 10, 8.0, 12.0000, 0.0, 11),
-
--- Seasonal sale items
-(1, 20, 8.0, 4.5000, 50.0, 12),
-(2, 5, 8.0, 18.0000, 40.0, 12),
-(3, 3, 18.0, 12.0000, 30.0, 12);
-
--- Insert invoices with valid cart_id (1-42)
-INSERT INTO `gluttex`.`invoice` (
-  `invoice_cart_id`,
-  `invoice_number`,
-  `invoice_total_amount`,
-  `invoice_status`,
-  `invoice_issue_date`,
-  `invoice_due_date`,
-  `invoice_notes`
-) VALUES
--- Cart 1-10: Various invoices
-(1, 'INV-2024-001', 85.5000, 'paid', '2024-01-15', '2024-02-15', 'Complete blood work invoice'),
-(2, 'INV-2024-002', 120.0000, 'paid', '2024-01-16', '2024-02-16', 'Follow-up tests invoice'),
-(3, 'INV-2024-003', 220.7500, 'paid', '2024-01-17', '2024-02-17', 'Family tests package'),
-(4, 'INV-2024-004', 95.2500, 'paid', '2024-01-18', '2024-02-18', 'Annual screening tests'),
-(5, 'INV-2024-005', 65.0000, 'paid', '2024-01-19', '2024-02-19', 'Basic CBC screening'),
-(6, 'INV-2024-006', 180.5000, 'paid', '2024-01-20', '2024-02-20', 'Chest X-ray and ultrasound'),
-(7, 'INV-2024-007', 420.5000, 'paid', '2024-01-21', '2024-02-21', 'MRI and CT scan package'),
-(8, 'INV-2024-008', 150.0000, 'paid', '2024-01-22', '2024-02-22', 'Pre-employment tests'),
-(9, 'INV-2024-009', 280.0000, 'paid', '2024-01-23', '2024-02-23', 'Neurological MRI'),
-(10, 'INV-2024-010', 240.0000, 'paid', '2024-01-24', '2024-02-24', 'CT scan follow-up'),
-
--- Cart 11-20: More invoices
-(11, 'INV-2024-011', 25.0000, 'paid', '2024-01-25', '2024-02-25', 'Annual flu vaccination'),
-(12, 'INV-2024-012', 300.0000, 'paid', '2024-01-26', '2024-02-26', 'Travel vaccination'),
-(13, 'INV-2024-013', 50.0000, 'paid', '2024-01-27', '2024-02-27', 'Family flu shots'),
-(14, 'INV-2024-014', 120.0000, 'paid', '2024-01-28', '2024-02-28', 'Business travel'),
-(15, 'INV-2024-015', 540.0000, 'paid', '2024-01-29', '2024-02-29', 'HPV vaccine series'),
-(16, 'INV-2024-016', 480.0000, 'paid', '2024-01-30', '2024-03-01', 'Executive health'),
-(17, 'INV-2024-017', 280.0000, 'unpaid', '2024-02-01', '2024-03-01', 'Annual physical'),
-(18, 'INV-2024-018', 400.0000, 'paid', '2024-02-02', '2024-03-02', 'Corporate checkup'),
-(19, 'INV-2024-019', 160.0000, 'unpaid', '2024-02-03', '2024-03-03', 'Family exams'),
-(20, 'INV-2024-020', 200.0000, 'paid', '2024-02-04', '2024-03-04', 'Geriatric assessment'),
-
--- Cart 21-30: More invoices
-(21, 'INV-2024-021', 105.0000, 'paid', '2024-02-05', '2024-03-05', 'Dental cleaning'),
-(22, 'INV-2024-022', 265.0000, 'paid', '2024-02-06', '2024-03-06', 'Dental fillings'),
-(23, 'INV-2024-023', 40.0000, 'paid', '2024-02-07', '2024-03-07', 'Dental X-rays'),
-(24, 'INV-2024-024', 65.0000, 'paid', '2024-02-08', '2024-03-08', '6-month cleaning'),
-(25, 'INV-2024-025', 100.0000, 'unpaid', '2024-02-09', '2024-03-09', 'Single filling'),
-(26, 'INV-2024-026', 205.0000, 'paid', '2024-02-10', '2024-03-10', 'Biopsy tests'),
-(27, 'INV-2024-027', 160.0000, 'paid', '2024-02-11', '2024-03-11', 'Mole biopsy'),
-(28, 'INV-2024-028', 45.0000, 'paid', '2024-02-12', '2024-03-12', 'Gynecological screening'),
-(29, 'INV-2024-029', 56.0000, 'paid', '2024-02-13', '2024-03-13', 'UTI tests'),
-(30, 'INV-2024-030', 20.0000, 'unpaid', '2024-02-14', '2024-03-14', 'Drug screening'),
-
--- Cart 31-42: More invoices
-(31, 'INV-2024-031', 270.0000, 'paid', '2024-02-15', '2024-03-15', 'Allergy testing'),
-(32, 'INV-2024-032', 379.0000, 'paid', '2024-02-16', '2024-03-16', 'Genetic testing'),
-(33, 'INV-2024-033', 255.0000, 'unpaid', '2024-02-17', '2024-03-17', 'Physiotherapy'),
-(34, 'INV-2024-034', 585.0000, 'paid', '2024-02-18', '2024-03-18', 'Weight management'),
-(35, 'INV-2024-035', 530.0000, 'unpaid', '2024-02-19', '2024-03-19', 'Therapy package'),
-(36, 'INV-2024-036', 215.0000, 'paid', '2024-02-20', '2024-03-20', 'Acupuncture'),
-(37, 'INV-2024-037', 280.0000, 'paid', '2024-02-21', '2024-03-21', 'Prenatal care'),
-(38, 'INV-2024-038', 165.0000, 'paid', '2024-02-22', '2024-03-22', 'Pediatric care'),
-(39, 'INV-2024-039', 215.0000, 'unpaid', '2024-02-23', '2024-03-23', 'Geriatric care'),
-(40, 'INV-2024-040', 230.0000, 'paid', '2024-02-24', '2024-03-24', 'Sports medicine'),
-(41, 'INV-2024-041', 45.0000, 'paid', '2024-02-25', '2024-03-25', 'Single tests'),
-(42, 'INV-2024-042', 130.0000, 'canceled', '2024-02-26', '2024-03-26', 'Dental + flu');
-
--- Insert more invoices
-INSERT INTO `gluttex`.`invoice` (
-  `invoice_cart_id`,
-  `invoice_number`,
-  `invoice_total_amount`,
-  `invoice_status`,
-  `invoice_issue_date`,
-  `invoice_due_date`,
-  `invoice_notes`
-) VALUES
--- Past due invoices
-(17, 'INV-2024-043', 280.0000, 'unpaid', '2024-01-15', '2024-02-15', 'PAST DUE - Annual physical'),
-(19, 'INV-2024-044', 160.0000, 'unpaid', '2024-01-20', '2024-02-20', 'PAST DUE - Family exams'),
-(25, 'INV-2024-045', 100.0000, 'unpaid', '2024-01-25', '2024-02-25', 'PAST DUE - Dental filling'),
-
--- Bulk/wholesale invoices
-(5, 'INV-2024-048', 650.0000, 'paid', '2024-02-01', '2024-03-01', 'Corporate bulk order'),
-(11, 'INV-2024-049', 250.0000, 'paid', '2024-02-05', '2024-03-05', 'Company flu program'),
-
--- Recent invoices
-(17, 'INV-2024-054', 280.0000, 'unpaid', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'Current month invoice'),
-(25, 'INV-2024-055', 100.0000, 'unpaid', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'Current dental work');
-
--- Insert payments with valid invoice_id (1-60)
-INSERT INTO `gluttex`.`payment` (
-  `payment_invoice_id`,
-  `payment_amount`,
-  `payment_method`,
-  `payment_status`,
-  `payment_reference`,
-  `payment_notes`
-) VALUES
--- Full payments for invoices 1-10
-(1, 85.5000, 'card', 'completed', 'TXN-00123456', 'Credit card payment'),
-(2, 120.0000, 'bank', 'completed', 'BANK-78901234', 'Bank transfer'),
-(3, 220.7500, 'card', 'completed', 'TXN-56789012', 'Debit card payment');
-
-
+-- -- Insert carts with valid references
 -- INSERT INTO `gluttex`.`cart` (
 --   `cart_product_provider_id`,
 --   `cart_selling_user`,
@@ -804,44 +366,467 @@ INSERT INTO `gluttex`.`payment` (
 --   `cart_notes`,
 --   `cart_person_ref`
 -- ) VALUES
--- -- Provider 2: Open carts
--- (2, 2, 'open', 85.5000, 'Lab tests pending selection', 2),
--- (2, 2, 'open', 120.0000, 'Follow-up tests needed', 2),
+-- -- Provider 2: Open carts (provider_id=2, selling_user=1, person_ref=1)
+-- (2, 1, 'open', 85.5000, 'Lab tests pending selection', 1),
+-- (2, 1, 'open', 120.0000, 'Follow-up tests needed', 1),
 
 -- -- Provider 2: Pending/processing carts
--- (2, 2, 'pending', 220.7500, 'Waiting for insurance approval', 2),
--- (2, 2, 'pending', 95.2500, 'Payment processing', 2),
+-- (2, 1, 'pending', 220.7500, 'Waiting for insurance approval', 1),
+-- (2, 1, 'pending', 95.2500, 'Payment processing', 1),
 
 -- -- Provider 2: Completed carts
--- (2, 2, 'completed', 65.0000, 'Annual blood work completed on 2024-01-15', 2),
--- (2, 2, 'completed', 180.5000, 'Comprehensive health screening package', 2),
--- (2, 2, 'completed', 45.7500, 'Flu vaccination and basic checkup', 2),
+-- (2, 1, 'completed', 65.0000, 'Annual blood work completed on 2024-01-15', 1),
+-- (2, 1, 'completed', 180.5000, 'Comprehensive health screening package', 1),
+-- (2, 1, 'completed', 45.7500, 'Flu vaccination and basic checkup', 1),
 
 -- -- Provider 3: Various status carts
--- (3, 2, 'open', 350.0000, 'MRI scan consultation', 2),
--- (3, 2, 'pending', 420.5000, 'CT scan scheduled for next week', 2),
--- (3, 2, 'completed', 280.0000, 'Ultrasound completed last month', 2),
--- (3, 2, 'completed', 150.0000, 'X-ray services - sports injury', 2),
+-- (3, 1, 'open', 350.0000, 'MRI scan consultation', 1),
+-- (3, 1, 'pending', 420.5000, 'CT scan scheduled for next week', 1),
+-- (3, 1, 'completed', 280.0000, 'Ultrasound completed last month', 1),
+-- (3, 1, 'completed', 150.0000, 'X-ray services - sports injury', 1),
 
 -- -- Provider 4: Carts for different services
--- (4, 2, 'open', 600.0000, 'Executive health package under consideration', 2),
--- (4, 2, 'pending', 450.0000, 'Physiotherapy session package - awaiting confirmation', 2),
--- (4, 2, 'completed', 380.0000, 'Sports medicine consultation completed', 2),
--- (4, 2, 'canceled', 220.0000, 'Patient rescheduled acupuncture sessions', 2),
+-- (4, 1, 'open', 600.0000, 'Executive health package under consideration', 1),
+-- (4, 1, 'pending', 450.0000, 'Physiotherapy session package - awaiting confirmation', 1),
+-- (4, 1, 'completed', 380.0000, 'Sports medicine consultation completed', 1),
+-- (4, 1, 'canceled', 220.0000, 'Patient rescheduled acupuncture sessions', 1),
 
 -- -- Provider 5: Vaccination and wellness carts
--- (5, 2, 'open', 0.0000, 'COVID-19 booster - free service', 2),
--- (5, 2, 'pending', 200.0000, 'HPV vaccination series - first dose administered', 2),
--- (5, 2, 'completed', 85.0000, 'Nutrition counseling - initial session', 2),
--- (5, 2, 'completed', 75.0000, 'Electro-acupuncture therapy completed', 2),
+-- (5, 1, 'open', 0.0000, 'COVID-19 booster - free service', 1),
+-- (5, 1, 'pending', 200.0000, 'HPV vaccination series - first dose administered', 1),
+-- (5, 1, 'completed', 85.0000, 'Nutrition counseling - initial session', 1),
+-- (5, 1, 'completed', 75.0000, 'Electro-acupuncture therapy completed', 1),
 
 -- -- Provider 6: Travel and specialized services
--- (6, 2, 'open', 320.0000, 'Travel vaccination package for Europe trip', 2),
--- (6, 2, 'pending', 130.0000, 'Couples counseling - session package', 2),
--- (6, 2, 'completed', 79.0000, 'Ancestry DNA test results received', 2),
--- (6, 2, 'completed', 200.0000, 'Senior citizen health assessment completed', 2),
+-- (6, 1, 'open', 320.0000, 'Travel vaccination package for Europe trip', 1),
+-- (6, 1, 'pending', 130.0000, 'Couples counseling - session package', 1),
+-- (6, 1, 'completed', 79.0000, 'Ancestry DNA test results received', 1),
+-- (6, 1, 'completed', 200.0000, 'Senior citizen health assessment completed', 1),
 
 -- -- Provider 7: Various medical services
+-- (7, 1, 'open', 95.0000, 'Dental cleaning appointment cart', 1),
+-- (7, 1, 'pending', 165.0000, 'Dental filling procedure scheduled', 1),
+-- (7, 1, 'completed', 40.0000, 'Dental X-ray completed', 1),
+-- (7, 1, 'canceled', 100.0000, 'Patient opted for different provider', 1),
+
+-- -- Additional carts with different statuses
+-- (3, 1, 'open', 0.0000, 'Consultation cart - no services added yet', 1),
+-- (4, 1, 'pending', 750.0000, 'Comprehensive diagnostic package - awaiting lab results', 1),
+-- (5, 1, 'completed', 120.0000, 'Travel medicine consultation for Asia trip', 1),
+-- (6, 1, 'open', 45.0000, 'Basic urinalysis test selection', 1),
+-- (7, 1, 'pending', 300.0000, 'Dental crown procedure - mold taken', 1);
+
+-- -- More varied cart examples
+-- INSERT INTO `gluttex`.`cart` (
+--   `cart_product_provider_id`,
+--   `cart_selling_user`,
+--   `cart_status`,
+--   `cart_total_amount`,
+--   `cart_notes`,
+--   `cart_person_ref`
+-- ) VALUES
+-- (2, 1, 'completed', 560.0000, 'Full body checkup with specialist consultations', 1),
+-- (3, 1, 'completed', 680.0000, 'MRI and CT scan package for neurological assessment', 1),
+-- (4, 1, 'pending', 900.0000, 'Executive health screening with cardiology consult', 1),
+-- (5, 1, 'canceled', 150.0000, 'Canceled due to schedule conflict', 1),
+-- (6, 1, 'open', 250.0000, 'Genetic counseling and testing consideration', 1),
+-- (7, 1, 'completed', 480.0000, 'Complete dental work including cleaning, filling, and X-ray', 1),
+-- (2, 1, 'open', 35.0000, 'Single cholesterol test selection', 1),
+-- (3, 1, 'pending', 1500.0000, 'Advanced imaging package - payment plan requested', 1),
+-- (4, 1, 'completed', 320.0000, 'Physiotherapy sessions for back pain - completed course', 1),
+-- (5, 1, 'open', 0.0000, 'Flu shot reminder cart', 1);
+
+-- -- Insert ordered_services with valid cart_id (1-42) and service_id (1-17)
+-- INSERT INTO `gluttex`.`ordered_service` (
+--   `ordered_service_cart_id`,
+--   `ordered_service_service_id`,
+--   `ordered_service_quantity`,
+--   `ordered_service_unit_price`,
+--   `ordered_service_total_price`,
+--   `ordered_service_notes`
+-- ) VALUES
+-- -- Cart 1-5: Blood Testing Services (services 1-3)
+-- (1, 1, 1, 20.0000, 20.0000, 'Complete Blood Count test'),
+-- (1, 2, 1, 28.0000, 28.0000, 'Lipid Profile with fasting'),
+-- (1, 3, 1, 12.0000, 12.0000, 'Random blood glucose test'),
+
+-- (2, 4, 1, 36.0000, 36.0000, 'Liver function test follow-up'),
+-- (2, 5, 1, 48.0000, 48.0000, 'Thyroid panel re-check'),
+
+-- (3, 1, 2, 20.0000, 40.0000, 'CBC for family - 2 persons'),
+-- (3, 2, 2, 28.0000, 56.0000, 'Lipid tests for couple'),
+-- (3, 3, 1, 12.0000, 12.0000, 'Single glucose test'),
+
+-- (4, 4, 1, 36.0000, 36.0000, 'Annual liver function'),
+-- (4, 5, 1, 48.0000, 48.0000, 'Thyroid monitoring'),
+
+-- (5, 1, 1, 20.0000, 20.0000, 'Routine CBC'),
+-- (5, 3, 1, 12.0000, 12.0000, 'Diabetes screening'),
+
+-- -- Cart 6-10: Imaging Services (services 6-9)
+-- (6, 6, 1, 65.0000, 65.0000, 'Chest X-ray for cough'),
+-- (6, 7, 1, 95.0000, 95.0000, 'Abdominal ultrasound'),
+
+-- (7, 8, 1, 360.0000, 360.0000, 'Brain MRI for headaches'),
+-- (7, 9, 1, 240.0000, 240.0000, 'Follow-up CT scan'),
+
+-- (8, 6, 1, 65.0000, 65.0000, 'Pre-employment chest X-ray'),
+-- (8, 7, 1, 95.0000, 95.0000, 'Gallbladder ultrasound'),
+
+-- (9, 8, 1, 360.0000, 360.0000, 'Neurological assessment MRI'),
+-- (10, 9, 1, 240.0000, 240.0000, 'Chest CT for lung nodule'),
+
+-- -- Cart 11-15: Vaccination Services (services 10-13)
+-- (11, 10, 1, 25.0000, 25.0000, 'Annual flu shot'),
+-- (11, 11, 1, 0.0000, 0.0000, 'COVID-19 booster'),
+
+-- (12, 12, 1, 120.0000, 120.0000, 'Travel vaccination package'),
+-- (12, 13, 1, 180.0000, 180.0000, 'HPV vaccine first dose'),
+
+-- (13, 10, 2, 25.0000, 50.0000, 'Flu shots for couple'),
+-- (13, 11, 2, 0.0000, 0.0000, 'COVID boosters for family'),
+
+-- (14, 12, 1, 120.0000, 120.0000, 'Business travel vaccinations'),
+-- (15, 13, 3, 180.0000, 540.0000, 'HPV vaccine for all 3 doses'),
+
+-- -- Cart 16-20: Health Check-ups (services 14-15)
+-- (16, 14, 1, 400.0000, 400.0000, 'Executive health screening'),
+-- (16, 15, 1, 80.0000, 80.0000, 'Basic physical added'),
+
+-- (17, 15, 1, 80.0000, 80.0000, 'Annual physical exam'),
+-- (18, 14, 1, 400.0000, 400.0000, 'Corporate executive checkup'),
+
+-- (19, 15, 2, 80.0000, 160.0000, 'Family physical exams'),
+
+-- -- Cart 21-25: Dental Care (services 16-17)
+-- (21, 16, 1, 65.0000, 65.0000, 'Teeth cleaning'),
+-- (22, 17, 2, 100.0000, 200.0000, 'Two fillings needed'),
+-- (22, 16, 1, 65.0000, 65.0000, 'Cleaning before fillings'),
+
+-- (24, 16, 1, 65.0000, 65.0000, '6-month cleaning'),
+-- (25, 17, 1, 100.0000, 100.0000, 'Single cavity filling'),
+
+-- -- Cart 26-30: Pathology Tests (service 17)
+-- (26, 17, 1, 160.0000, 160.0000, 'Skin biopsy analysis'),
+
+-- -- Cart 31-35: Mixed Services
+-- (31, 1, 1, 120.0000, 120.0000, 'Allergy skin testing'),
+-- (32, 2, 1, 300.0000, 300.0000, 'Genetic carrier screening'),
+
+-- (33, 3, 1, 75.0000, 75.0000, 'Initial physiotherapy assessment'),
+-- (34, 4, 1, 85.0000, 85.0000, 'Nutrition consultation'),
+-- (35, 5, 4, 100.0000, 400.0000, '4 therapy sessions package'),
+
+-- -- Cart 36-42: Mixed Services
+-- (36, 6, 2, 70.0000, 140.0000, '2 acupuncture sessions'),
+-- (37, 7, 1, 100.0000, 100.0000, 'First trimester ultrasound'),
+
+-- (38, 8, 1, 65.0000, 65.0000, 'Well-baby checkup'),
+-- (39, 9, 1, 130.0000, 130.0000, 'Geriatric health assessment'),
+
+-- (40, 10, 1, 100.0000, 100.0000, 'Sports injury evaluation'),
+-- (41, 11, 1, 20.0000, 20.0000, 'Single test cart'),
+-- (41, 10, 1, 25.0000, 25.0000, 'Flu shot only'),
+
+-- (42, 16, 1, 65.0000, 65.0000, 'Dental cleaning'),
+-- (42, 10, 1, 25.0000, 25.0000, 'Plus flu vaccination');
+
+-- -- Insert ordered_items with valid product_id (1-7) and cart_ref (1-42)
+-- INSERT INTO `gluttex`.`ordered_item` (
+--   `ordered_product_id`,
+--   `ordered_quantity`,
+--   `applied_vat`,
+--   `unit_price`,
+--   `product_discount`,
+--   `ordered_item_cart_ref`
+-- ) VALUES
+-- -- Cart 1: Blood test supplies (product IDs 1-4)
+-- (1, 5, 8.0, 1.5000, 0.0, 1),    -- Blood Collection Tubes
+-- (1, 10, 8.0, 0.7500, 10.0, 1),   -- Sterile Needles
+-- (1, 20, 8.0, 0.2500, 0.0, 1),    -- Alcohol Swabs
+-- (2, 1, 8.0, 8.0000, 15.0, 1),    -- Fasting Blood Test Kit
+
+-- -- Cart 2: More lab supplies
+-- (2, 2, 8.0, 12.0000, 5.0, 2),    -- Liver Function Reagents
+-- (2, 1, 8.0, 25.0000, 10.0, 2),   -- Thyroid Assay Kit
+-- (1, 3, 8.0, 0.5000, 0.0, 2),     -- Bandages
+
+-- -- Cart 3: Imaging supplies
+-- (4, 2, 18.0, 8.0000, 0.0, 3),    -- X-Ray Films
+-- (3, 2, 18.0, 45.0000, 15.0, 3),  -- Lead Aprons
+-- (2, 1, 18.0, 35.0000, 10.0, 3),  -- Contrast Media
+
+-- -- Cart 4: Ultrasound supplies
+-- (1, 3, 18.0, 5.0000, 5.0, 4),    -- Ultrasound Gel
+-- (1, 5, 18.0, 1.2500, 0.0, 4),    -- Probe Covers
+
+-- -- Cart 5: MRI supplies
+-- (2, 1, 18.0, 85.0000, 20.0, 5),  -- MRI Contrast Agent
+-- (3, 1, 18.0, 12.0000, 5.0, 5),   -- MRI Safe IV Set
+
+-- -- Cart 6: Vaccination supplies
+-- (2, 10, 5.0, 18.0000, 25.0, 6),  -- Flu Vaccines
+-- (1, 12, 5.0, 0.8500, 10.0, 6),   -- Syringes with Needles
+-- (3, 2, 5.0, 3.5000, 0.0, 6),     -- Sharps Containers
+
+-- -- Cart 7: COVID vaccination supplies
+-- (1, 25, 0.0, 4.5000, 0.0, 7),    -- PPE Kits
+
+-- -- Cart 8: Travel vaccination package
+-- (2, 5, 5.0, 40.0000, 15.0, 8),   -- Travel Vaccines
+
+-- -- Cart 9: Dental supplies
+-- (1, 10, 18.0, 4.5000, 10.0, 9),  -- Dental Prophy Paste
+-- (1, 15, 18.0, 2.7500, 5.0, 9),   -- Disposable Prophy Angles
+-- (1, 20, 18.0, 0.5000, 0.0, 9),   -- Dental Floss
+
+-- -- Cart 10: Dental filling materials
+-- (1, 5, 18.0, 15.0000, 15.0, 10), -- Dental Composite
+-- (1, 10, 18.0, 3.5000, 5.0, 10),  -- Dental Dam
+-- (4, 1, 18.0, 250.0000, 20.0, 10), -- Curing Light
+
+-- -- Cart 11: X-ray dental supplies
+-- (1, 20, 18.0, 1.2500, 5.0, 11),  -- Digital Sensor Covers
+-- (3, 2, 18.0, 12.0000, 10.0, 11), -- Lead Thyroid Collars
+
+-- -- Cart 12: Pathology lab supplies
+-- (2, 5, 8.0, 25.0000, 15.0, 12),  -- Staining Reagents
+-- (1, 50, 8.0, 0.8000, 20.0, 12),  -- Histology Slides
+
+-- -- Cart 13: Urine test supplies
+-- (1, 25, 8.0, 0.8500, 10.0, 13),  -- Urine Collection Cups
+-- (2, 30, 8.0, 2.2500, 15.0, 13),  -- Urine Test Strips
+-- (2, 10, 8.0, 4.5000, 20.0, 13),  -- Culture Media Plates
+
+-- -- Cart 14: Allergy testing supplies
+-- (2, 50, 8.0, 0.9500, 25.0, 14),  -- Allergen Extracts
+-- (1, 60, 8.0, 0.1500, 30.0, 14),  -- Skin Test Lancets
+
+-- -- Cart 15: Genetic testing supplies
+-- (2, 3, 8.0, 350.0000, 20.0, 15), -- Carrier Screening Kits
+-- (3, 1, 8.0, 25.0000, 10.0, 15),  -- Software Subscription
+
+-- -- Cart 16: Physiotherapy equipment
+-- (3, 2, 18.0, 25.0000, 15.0, 16), -- Blood Pressure Cuffs
+-- (3, 1, 18.0, 35.0000, 10.0, 16), -- Stethoscopes
+-- (3, 1, 18.0, 85.0000, 20.0, 16), -- Otoscope/Ophthalmoscope Set
+
+-- -- Cart 17: Sports medicine equipment
+-- (3, 1, 18.0, 45.0000, 15.0, 17), -- Fall Risk Assessment Kit
+-- (3, 2, 18.0, 8.5000, 10.0, 17),  -- Reflex Hammers
+-- (4, 1, 18.0, 150.0000, 25.0, 17), -- Bone Density Calibration
+
+-- -- Cart 18: Single product orders
+-- (1, 100, 8.0, 0.2500, 40.0, 18),  -- Bulk Alcohol Swabs
+-- (2, 1, 18.0, 65.0000, 0.0, 19),   -- Single CT Contrast
+-- (3, 3, 18.0, 12.0000, 10.0, 20),  -- Multiple IV Sets
+-- (4, 2, 18.0, 8.0000, 5.0, 21),    -- X-Ray Films
+-- (1, 50, 5.0, 0.8500, 30.0, 22),   -- Bulk Syringes
+
+-- -- Cart 19-25: Mixed medical supplies
+-- (2, 4, 8.0, 12.0000, 15.0, 23),   -- Liver Reagents
+-- (1, 30, 8.0, 1.5000, 20.0, 24),   -- Blood Tubes
+-- (3, 1, 18.0, 35.0000, 10.0, 25),  -- Stethoscope
+-- (2, 2, 18.0, 85.0000, 25.0, 26),  -- MRI Contrast
+-- (1, 15, 18.0, 4.5000, 15.0, 27),  -- Dental Paste
+-- (2, 8, 5.0, 18.0000, 30.0, 28),   -- Flu Vaccines
+-- (1, 40, 8.0, 0.8500, 35.0, 29),   -- Urine Cups
+
+-- -- Cart 30-35: Business/wholesale orders
+-- (1, 500, 8.0, 0.7500, 50.0, 30),  -- Wholesale Needles
+-- (2, 100, 8.0, 2.2500, 40.0, 31),  -- Bulk Test Strips
+-- (3, 25, 18.0, 3.5000, 35.0, 32),  -- Sharps Containers
+-- (1, 200, 18.0, 5.0000, 30.0, 34), -- Ultrasound Gel
+-- (2, 20, 18.0, 35.0000, 25.0, 35), -- Contrast Media
+
+-- -- Cart 36-42: Final mixed carts
+-- (1, 10, 8.0, 1.5000, 10.0, 36),   -- Blood Tubes
+-- (2, 5, 8.0, 8.0000, 15.0, 37),    -- Test Kits
+-- (3, 2, 18.0, 45.0000, 20.0, 38),  -- Lead Aprons
+-- (1, 25, 5.0, 0.8500, 25.0, 40),   -- Syringes
+-- (2, 1, 18.0, 250.0000, 30.0, 41), -- Curing Light
+-- (3, 1, 8.0, 25.0000, 15.0, 42);   -- Software
+
+-- -- Insert more varied orders
+-- INSERT INTO `gluttex`.`ordered_item` (
+--   `ordered_product_id`,
+--   `ordered_quantity`,
+--   `applied_vat`,
+--   `unit_price`,
+--   `product_discount`,
+--   `ordered_item_cart_ref`
+-- ) VALUES
+-- -- Zero VAT items (medical essentials)
+-- (1, 15, 0.0, 1.5000, 0.0, 1),
+-- (2, 3, 0.0, 8.0000, 10.0, 2),
+
+-- -- High VAT items (non-essential medical equipment)
+-- (4, 1, 23.0, 250.0000, 15.0, 3),
+-- (3, 2, 23.0, 85.0000, 20.0, 4),
+
+-- -- Small orders for individual patients
+-- (1, 5, 8.0, 0.2500, 0.0, 7),
+-- (2, 1, 8.0, 25.0000, 5.0, 8),
+-- (3, 1, 18.0, 35.0000, 10.0, 9),
+
+-- -- Mixed VAT cart
+-- (1, 10, 8.0, 1.5000, 10.0, 10),
+-- (2, 2, 18.0, 35.0000, 15.0, 10),
+-- (3, 1, 23.0, 85.0000, 20.0, 10),
+
+-- -- Emergency order (no discount)
+-- (1, 50, 8.0, 1.5000, 0.0, 11),
+-- (2, 10, 8.0, 12.0000, 0.0, 11),
+
+-- -- Seasonal sale items
+-- (1, 20, 8.0, 4.5000, 50.0, 12),
+-- (2, 5, 8.0, 18.0000, 40.0, 12),
+-- (3, 3, 18.0, 12.0000, 30.0, 12);
+
+-- -- Insert invoices with valid cart_id (1-42)
+-- -- INSERT INTO `gluttex`.`invoice` (
+-- --   `invoice_cart_id`,
+-- --   `invoice_number`,
+-- --   `invoice_total_amount`,
+-- --   `invoice_status`,
+-- --   `invoice_issue_date`,
+-- --   `invoice_due_date`,
+-- --   `invoice_notes`
+-- -- ) VALUES
+-- -- -- Cart 1-10: Various invoices
+-- -- (1, 'INV-2024-001', 85.5000, 'paid', '2024-01-15', '2024-02-15', 'Complete blood work invoice'),
+-- -- (2, 'INV-2024-002', 120.0000, 'paid', '2024-01-16', '2024-02-16', 'Follow-up tests invoice'),
+-- -- (3, 'INV-2024-003', 220.7500, 'paid', '2024-01-17', '2024-02-17', 'Family tests package'),
+-- -- (4, 'INV-2024-004', 95.2500, 'paid', '2024-01-18', '2024-02-18', 'Annual screening tests'),
+-- -- (5, 'INV-2024-005', 65.0000, 'paid', '2024-01-19', '2024-02-19', 'Basic CBC screening'),
+-- -- (6, 'INV-2024-006', 180.5000, 'paid', '2024-01-20', '2024-02-20', 'Chest X-ray and ultrasound'),
+-- -- (7, 'INV-2024-007', 420.5000, 'paid', '2024-01-21', '2024-02-21', 'MRI and CT scan package'),
+-- -- (8, 'INV-2024-008', 150.0000, 'paid', '2024-01-22', '2024-02-22', 'Pre-employment tests'),
+-- -- (9, 'INV-2024-009', 280.0000, 'paid', '2024-01-23', '2024-02-23', 'Neurological MRI'),
+-- -- (10, 'INV-2024-010', 240.0000, 'paid', '2024-01-24', '2024-02-24', 'CT scan follow-up'),
+
+-- -- -- Cart 11-20: More invoices
+-- -- (11, 'INV-2024-011', 25.0000, 'paid', '2024-01-25', '2024-02-25', 'Annual flu vaccination'),
+-- -- (12, 'INV-2024-012', 300.0000, 'paid', '2024-01-26', '2024-02-26', 'Travel vaccination'),
+-- -- (13, 'INV-2024-013', 50.0000, 'paid', '2024-01-27', '2024-02-27', 'Family flu shots'),
+-- -- (14, 'INV-2024-014', 120.0000, 'paid', '2024-01-28', '2024-02-28', 'Business travel'),
+-- -- (15, 'INV-2024-015', 540.0000, 'paid', '2024-01-29', '2024-02-29', 'HPV vaccine series'),
+-- -- (16, 'INV-2024-016', 480.0000, 'paid', '2024-01-30', '2024-03-01', 'Executive health'),
+-- -- (17, 'INV-2024-017', 280.0000, 'unpaid', '2024-02-01', '2024-03-01', 'Annual physical'),
+-- -- (18, 'INV-2024-018', 400.0000, 'paid', '2024-02-02', '2024-03-02', 'Corporate checkup'),
+-- -- (19, 'INV-2024-019', 160.0000, 'unpaid', '2024-02-03', '2024-03-03', 'Family exams'),
+-- -- (20, 'INV-2024-020', 200.0000, 'paid', '2024-02-04', '2024-03-04', 'Geriatric assessment'),
+
+-- -- -- Cart 21-30: More invoices
+-- -- (21, 'INV-2024-021', 105.0000, 'paid', '2024-02-05', '2024-03-05', 'Dental cleaning'),
+-- -- (22, 'INV-2024-022', 265.0000, 'paid', '2024-02-06', '2024-03-06', 'Dental fillings'),
+-- -- (23, 'INV-2024-023', 40.0000, 'paid', '2024-02-07', '2024-03-07', 'Dental X-rays'),
+-- -- (24, 'INV-2024-024', 65.0000, 'paid', '2024-02-08', '2024-03-08', '6-month cleaning'),
+-- -- (25, 'INV-2024-025', 100.0000, 'unpaid', '2024-02-09', '2024-03-09', 'Single filling'),
+-- -- (26, 'INV-2024-026', 205.0000, 'paid', '2024-02-10', '2024-03-10', 'Biopsy tests'),
+-- -- (27, 'INV-2024-027', 160.0000, 'paid', '2024-02-11', '2024-03-11', 'Mole biopsy'),
+-- -- (28, 'INV-2024-028', 45.0000, 'paid', '2024-02-12', '2024-03-12', 'Gynecological screening'),
+-- -- (29, 'INV-2024-029', 56.0000, 'paid', '2024-02-13', '2024-03-13', 'UTI tests'),
+-- -- (30, 'INV-2024-030', 20.0000, 'unpaid', '2024-02-14', '2024-03-14', 'Drug screening'),
+
+-- -- -- Cart 31-42: More invoices
+-- -- (31, 'INV-2024-031', 270.0000, 'paid', '2024-02-15', '2024-03-15', 'Allergy testing'),
+-- -- (32, 'INV-2024-032', 379.0000, 'paid', '2024-02-16', '2024-03-16', 'Genetic testing'),
+-- -- (33, 'INV-2024-033', 255.0000, 'unpaid', '2024-02-17', '2024-03-17', 'Physiotherapy'),
+-- -- (34, 'INV-2024-034', 585.0000, 'paid', '2024-02-18', '2024-03-18', 'Weight management'),
+-- -- (35, 'INV-2024-035', 530.0000, 'unpaid', '2024-02-19', '2024-03-19', 'Therapy package'),
+-- -- (36, 'INV-2024-036', 215.0000, 'paid', '2024-02-20', '2024-03-20', 'Acupuncture'),
+-- -- (37, 'INV-2024-037', 280.0000, 'paid', '2024-02-21', '2024-03-21', 'Prenatal care'),
+-- -- (38, 'INV-2024-038', 165.0000, 'paid', '2024-02-22', '2024-03-22', 'Pediatric care'),
+-- -- (39, 'INV-2024-039', 215.0000, 'unpaid', '2024-02-23', '2024-03-23', 'Geriatric care'),
+-- -- (40, 'INV-2024-040', 230.0000, 'paid', '2024-02-24', '2024-03-24', 'Sports medicine'),
+-- -- (41, 'INV-2024-041', 45.0000, 'paid', '2024-02-25', '2024-03-25', 'Single tests'),
+-- -- (42, 'INV-2024-042', 130.0000, 'canceled', '2024-02-26', '2024-03-26', 'Dental + flu');
+
+-- -- -- Insert more invoices
+-- -- INSERT INTO `gluttex`.`invoice` (
+-- --   `invoice_cart_id`,
+-- --   `invoice_number`,
+-- --   `invoice_total_amount`,
+-- --   `invoice_status`,
+-- --   `invoice_issue_date`,
+-- --   `invoice_due_date`,
+-- --   `invoice_notes`
+-- -- ) VALUES
+-- -- -- Past due invoices
+-- -- (17, 'INV-2024-043', 280.0000, 'unpaid', '2024-01-15', '2024-02-15', 'PAST DUE - Annual physical'),
+-- -- (19, 'INV-2024-044', 160.0000, 'unpaid', '2024-01-20', '2024-02-20', 'PAST DUE - Family exams'),
+-- -- (25, 'INV-2024-045', 100.0000, 'unpaid', '2024-01-25', '2024-02-25', 'PAST DUE - Dental filling'),
+
+-- -- -- Bulk/wholesale invoices
+-- -- (5, 'INV-2024-048', 650.0000, 'paid', '2024-02-01', '2024-03-01', 'Corporate bulk order'),
+-- -- (11, 'INV-2024-049', 250.0000, 'paid', '2024-02-05', '2024-03-05', 'Company flu program'),
+
+-- -- -- Recent invoices
+-- -- (17, 'INV-2024-054', 280.0000, 'unpaid', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'Current month invoice'),
+-- -- (25, 'INV-2024-055', 100.0000, 'unpaid', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 30 DAY), 'Current dental work');
+
+-- -- -- Insert payments with valid invoice_id (1-60)
+-- -- INSERT INTO `gluttex`.`payment` (
+-- --   `payment_invoice_id`,
+-- --   `payment_amount`,
+-- --   `payment_method`,
+-- --   `payment_status`,
+-- --   `payment_reference`,
+-- --   `payment_notes`
+-- -- ) VALUES
+-- -- -- Full payments for invoices 1-10
+-- -- (1, 85.5000, 'card', 'completed', 'TXN-00123456', 'Credit card payment'),
+-- -- (2, 120.0000, 'bank', 'completed', 'BANK-78901234', 'Bank transfer'),
+-- -- (3, 220.7500, 'card', 'completed', 'TXN-56789012', 'Debit card payment');
+
+
+-- -- INSERT INTO `gluttex`.`cart` (
+-- --   `cart_product_provider_id`,
+-- --   `cart_selling_user`,
+-- --   `cart_status`,
+-- --   `cart_total_amount`,
+-- --   `cart_notes`,
+-- --   `cart_person_ref`
+-- -- ) VALUES
+-- -- -- Provider 2: Open carts
+-- -- (2, 2, 'open', 85.5000, 'Lab tests pending selection', 2),
+-- -- (2, 2, 'open', 120.0000, 'Follow-up tests needed', 2),
+
+-- -- -- Provider 2: Pending/processing carts
+-- -- (2, 2, 'pending', 220.7500, 'Waiting for insurance approval', 2),
+-- -- (2, 2, 'pending', 95.2500, 'Payment processing', 2),
+
+-- -- -- Provider 2: Completed carts
+-- -- (2, 2, 'completed', 65.0000, 'Annual blood work completed on 2024-01-15', 2),
+-- -- (2, 2, 'completed', 180.5000, 'Comprehensive health screening package', 2),
+-- -- (2, 2, 'completed', 45.7500, 'Flu vaccination and basic checkup', 2),
+
+-- -- -- Provider 3: Various status carts
+-- -- (3, 2, 'open', 350.0000, 'MRI scan consultation', 2),
+-- -- (3, 2, 'pending', 420.5000, 'CT scan scheduled for next week', 2),
+-- -- (3, 2, 'completed', 280.0000, 'Ultrasound completed last month', 2),
+-- -- (3, 2, 'completed', 150.0000, 'X-ray services - sports injury', 2),
+
+-- -- -- Provider 4: Carts for different services
+-- -- (4, 2, 'open', 600.0000, 'Executive health package under consideration', 2),
+-- -- (4, 2, 'pending', 450.0000, 'Physiotherapy session package - awaiting confirmation', 2),
+-- -- (4, 2, 'completed', 380.0000, 'Sports medicine consultation completed', 2),
+-- -- (4, 2, 'canceled', 220.0000, 'Patient rescheduled acupuncture sessions', 2),
+
+-- -- -- Provider 5: Vaccination and wellness carts
+-- -- (5, 2, 'open', 0.0000, 'COVID-19 booster - free service', 2),
+-- -- (5, 2, 'pending', 200.0000, 'HPV vaccination series - first dose administered', 2),
+-- -- (5, 2, 'completed', 85.0000, 'Nutrition counseling - initial session', 2),
+-- -- (5, 2, 'completed', 75.0000, 'Electro-acupuncture therapy completed', 2),
+
+-- -- -- Provider 6: Travel and specialized services
+-- -- (6, 2, 'open', 320.0000, 'Travel vaccination package for Europe trip', 2),
+-- -- (6, 2, 'pending', 130.0000, 'Couples counseling - session package', 2),
+-- -- (6, 2, 'completed', 79.0000, 'Ancestry DNA test results received', 2),
+-- -- (6, 2, 'completed', 200.0000, 'Senior citizen health assessment completed', 2),
+
+-- -- -- Provider 7: Various medical services
 -- (7, 2, 'open', 95.0000, 'Dental cleaning appointment cart', 2),
 -- (7, 2, 'pending', 165.0000, 'Dental filling procedure scheduled', 2),
 -- (7, 2, 'completed', 40.0000, 'Dental X-ray completed', 2),
@@ -1676,19 +1661,19 @@ INSERT INTO `gluttex`.`payment` (
 -- (NULL, 20, 100.0000, 'bank', 'DEP-BANK-009', 'Deposit against invoice - cart not specified', NULL),
 -- (NULL, 21, 52.5000, 'card', 'DEP-TXN-008', 'Partial deposit - cart unknown', NULL);
 
-
+select * from app_user;
 desc app_user ;
 insert into app_user (id_app_user,
 app_user_name,
 app_user_password,
-app_user_type_id,
+app_user_type,
 app_user_preferences,
 app_user_image_url,
 app_user_last_active,
 app_user_last_updated,
 app_user_creation)
 values
-(4, 'admin', '77b23d5396b51608e7189cf8895bd283c88639db5ed6211fa8bfbaecf477409f',  3,NULL , NULL , '2025-12-10 08:01:27', '2025-12-10 08:01:27', '2025-12-10 08:01:27' );
+(4, 'admin', '77b23d5396b51608e7189cf8895bd283c88639db5ed6211fa8bfbaecf477409f',  "admin",NULL , NULL , '2025-12-10 08:01:27', '2025-12-10 08:01:27', '2025-12-10 08:01:27' );
 
 
 INSERT INTO `gluttex`.`management_rule` (
@@ -1744,764 +1729,13 @@ INSERT INTO `gluttex`.`management_rule` (
 (NULL, 2, 2, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY)),  -- User ID 2
 (NULL, 2, 3, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY));  -- User ID 3
 
-INSERT INTO `gluttex`.`placed_order` 
-(`id_placed_order`, `order_discount`, `total_price`, `ordering_user_id`, `placed_order_state_ref`, `placed_order_creation`) VALUES
-(1, 5.00, 95.00, 1, 1, '2024-01-15 09:30:00'),
-(2, 0.00, 150.00, 2, 1, '2024-01-16 14:15:00'),
-(3, 10.00, 180.00, 3, 2, '2024-01-17 11:45:00'),
-(4, 15.00, 235.00, 4, 3, '2024-01-18 16:20:00'),
-(5, 0.00, 75.00, 1, 1, '2024-01-19 10:00:00'),
-(6, 20.00, 280.00, 2, 4, '2024-01-20 13:30:00'),
-(7, 8.00, 142.00, 3, 1, '2024-01-21 15:45:00'),
-(8, 0.00, 90.00, 4, 2, '2024-01-22 12:10:00'),
-(9, 12.50, 187.50, 1, 3, '2024-01-23 09:15:00'),
-(10, 5.00, 195.00, 2, 1, '2024-01-24 17:00:00');
-
-
-INSERT INTO `gluttex`.`ordered_item`
-( `ordered_product_id`, `ordered_quantity`, `applied_vat`, `order_ref`, `unit_price`, `product_discount`) VALUES
--- Order 1 items
-( 1, 2, 15.00, 1, 30.00, 0.00),
-( 2, 1, 15.00, 1, 40.00, 5.00),
-
--- Order 2 items
-( 3, 3, 18.00, 2, 25.00, 0.00),
-( 4, 1, 18.00, 2, 75.00, 0.00),
-
--- Order 3 items
-( 5, 2, 20.00, 3, 50.00, 10.00),
-( 6, 1, 20.00, 3, 80.00, 0.00),
-
--- Order 4 items
-( 7, 5, 10.00, 4, 30.00, 15.00),
-( 8, 2, 10.00, 4, 75.00, 0.00),
-
--- Order 5 items
-( 1, 1, 15.00, 5, 75.00, 0.00),
-
--- Order 6 items
-( 2, 4, 18.00, 6, 50.00, 20.00),
-( 3, 2, 18.00, 6, 60.00, 0.00),
-
--- Order 7 items
-( 4, 3, 15.00, 7, 30.00, 8.00),
-( 5, 1, 15.00, 7, 60.00, 0.00),
-
--- Order 8 items
-( 6, 2, 20.00, 8, 45.00, 0.00),
-
--- Order 9 items (no items - order canceled?)
--- Order 10 items
-( 7, 3, 15.00, 10, 40.00, 5.00),
-( 8, 2, 15.00, 10, 50.00, 0.00),
-( 1, 1, 15.00, 10, 25.00, 0.00);
-
-INSERT INTO `gluttex`.`invoice`
-( `invoice_number`, `invoice_total_amount`, `invoice_status`, `invoice_issue_date`, `invoice_due_date`, `invoice_notes`, `invoice_created_at`) VALUES
-( 'INV-2024-001', 95.00, 'paid', '2024-01-15', '2024-02-15', 'First order discount applied', '2024-01-15 09:35:00'),
-( 'INV-2024-002', 150.00, 'paid', '2024-01-16', '2024-02-16', 'Bulk order', '2024-01-16 14:20:00'),
-( 'INV-2024-003', 180.00, 'unpaid', '2024-01-17', '2024-02-17', 'Pending payment', '2024-01-17 11:50:00'),
-( 'INV-2024-004', 235.00, 'paid', '2024-01-18', '2024-02-18', 'Multiple items', '2024-01-18 16:25:00'),
-( 'INV-2024-005', 75.00, 'canceled', '2024-01-19', '2024-02-19', 'Customer canceled', '2024-01-19 10:05:00'),
-( 'INV-2024-006', 280.00, 'paid', '2024-01-20', '2024-02-20', 'Large order with discount', '2024-01-20 13:35:00'),
-( 'INV-2024-007', 142.00, 'paid', '2024-01-21', '2024-02-21', 'Standard order', '2024-01-21 15:50:00'),
-( 'INV-2024-008', 90.00, 'unpaid', '2024-01-22', '2024-02-22', 'Awaiting payment', '2024-01-22 12:15:00');
-
-
-INSERT INTO `gluttex`.`payment`
-( `payment_invoice_id`, `payment_amount`, `payment_method`, `payment_status`, `payment_reference`, `payment_notes`) VALUES
-( 50, 95.00, 'card', 'completed', 'TRX-001234', 'Paid with Visa'),
-( 51, 150.00, 'bank', 'completed', 'BANK-567890', 'Bank transfer'),
-( 52, 235.00, 'mobile', 'completed', 'MOB-112233', 'Mobile payment'),
-( 53, 280.00, 'card', 'completed', 'TRX-445566', 'Paid with Mastercard'),
-( 54, 142.00, 'cash', 'completed', 'CASH-001', 'Cash payment');
-
-INSERT INTO `gluttex`.`payment`
-( `payment_invoice_id`, `payment_amount`, `payment_method`, `payment_status`, `payment_reference`, `payment_notes`) VALUES
--- Invoice 3 deposits
-( 55, 90.00, 'bank', 'completed', 'BANK-778899', 'First installment'),
-( 55, 90.00, 'bank', 'pending', 'BANK-990011', 'Second installment due'),
-
--- Invoice 8 deposits
-( 56, 45.00, 'mobile', 'completed', 'MOB-223344', 'Partial payment'),
-( 56, 45.00, 'cash', 'completed', 'CASH-002', 'Final payment');
-
-UPDATE `gluttex`.`placed_order` 
-SET `placed_order_invoice_ref` = CASE `id_placed_order`
-    WHEN 1 THEN 50
-    WHEN 2 THEN 51
-        WHEN 3 THEN 52
-        WHEN 4 THEN 53
-        WHEN 5 THEN 54
-        WHEN 6 THEN 55
-        WHEN 7 THEN 56
-        WHEN 8 THEN 57
-
-    ELSE NULL
-END
-WHERE `id_placed_order` BETWEEN 1 AND 8;
-
--- Insert dummy data for deposit table
-INSERT INTO `gluttex`.`deposit` (
-    `deposit_cart_id`, 
-    `deposit_invoice_id`, 
-    `deposit_amount`, 
-    `deposit_method`, 
-    `deposit_reference`, 
-    `deposit_notes`, 
-    `deposit_created_at`, 
-    `deposit_receipt_id`
-) VALUES
--- ============================================================================
--- SCENARIO 1: Cart-based deposits (no invoice yet) - 15 records
--- ============================================================================
--- Partial deposits for pending carts
-(1, NULL, 2500.0000, 'CASH', 'CASH-2024-001', 'Partial payment for cart #1', '2024-01-15 09:30:00', NULL),
-(3, NULL, 5000.0000, 'BANK_TRANSFER', 'BT-2024-003', 'Advance payment 50%', '2024-01-16 14:20:00', NULL),
-(5, NULL, 7500.0000, 'CREDIT_CARD', 'CC-2024-005-AUTH', 'Security deposit', '2024-01-17 11:45:00', NULL),
-(7, NULL, 3000.0000, 'MOBILE_MONEY', 'MM-2024-007', 'Initial payment', '2024-01-18 16:30:00', NULL),
-(9, NULL, 4500.0000, 'CASH', 'CASH-2024-009', 'Customer deposit', '2024-01-19 10:15:00', NULL),
-
--- Full deposits for carts
-(11, NULL, 12000.0000, 'BANK_TRANSFER', 'BT-2024-011', 'Full payment in advance', '2024-01-20 13:45:00', NULL),
-(13, NULL, 8500.0000, 'CREDIT_CARD', 'CC-2024-013', 'Complete payment', '2024-01-21 15:20:00', NULL),
-(15, NULL, 6200.0000, 'MOBILE_MONEY', 'MM-2024-015', 'Advance full amount', '2024-01-22 09:10:00', NULL),
-
--- Multiple deposits on same cart
-(17, NULL, 4000.0000, 'CASH', 'CASH-2024-017-A', 'First installment', '2024-01-23 11:30:00', NULL),
-(17, NULL, 3500.0000, 'BANK_TRANSFER', 'BT-2024-017-B', 'Second installment', '2024-01-25 14:45:00', NULL),
-(19, NULL, 2000.0000, 'CREDIT_CARD', 'CC-2024-019-1', 'Initial deposit', '2024-01-26 10:20:00', NULL),
-(19, NULL, 1800.0000, 'CASH', 'CASH-2024-019-2', 'Additional deposit', '2024-01-27 16:15:00', NULL),
-
--- Small deposits
-(21, NULL, 1000.0000, 'MOBILE_MONEY', 'MM-2024-021', 'Token payment', '2024-01-28 12:30:00', NULL),
-(23, NULL, 800.0000, 'CASH', 'CASH-2024-023', 'Booking fee', '2024-01-29 09:45:00', NULL),
-(25, NULL, 1500.0000, 'BANK_TRANSFER', 'BT-2024-025', 'Advance payment', '2024-01-30 14:20:00', NULL),
-
--- ============================================================================
--- SCENARIO 2: Invoice-based deposits (partial payments against invoices) - 20 records
--- ============================================================================
--- Partial payments for unpaid invoices
-(NULL, 1, 5000.0000, 'CASH', 'CASH-INV-001', 'Partial payment for invoice #1', '2024-02-01 10:30:00', NULL),
-(NULL, 3, 7500.0000, 'BANK_TRANSFER', 'BT-INV-003', 'First installment', '2024-02-02 11:45:00', NULL),
-(NULL, 5, 3000.0000, 'CREDIT_CARD', 'CC-INV-005', 'Advance payment', '2024-02-03 14:20:00', NULL),
-(NULL, 7, 4500.0000, 'MOBILE_MONEY', 'MM-INV-007', 'Partial settlement', '2024-02-04 16:15:00', NULL),
-
--- Multiple deposits on same invoice
-(NULL, 9, 6000.0000, 'CASH', 'CASH-INV-009-A', 'First payment', '2024-02-05 09:30:00', NULL),
-(NULL, 9, 4000.0000, 'BANK_TRANSFER', 'BT-INV-009-B', 'Second payment', '2024-02-07 13:45:00', NULL),
-(NULL, 11, 2500.0000, 'CREDIT_CARD', 'CC-INV-011-1', 'Initial payment', '2024-02-08 10:20:00', NULL),
-(NULL, 11, 2000.0000, 'MOBILE_MONEY', 'MM-INV-011-2', 'Follow-up payment', '2024-02-10 15:30:00', NULL),
-
--- Large deposits for high-value invoices
-(NULL, 13, 15000.0000, 'BANK_TRANSFER', 'BT-INV-013', 'Large payment', '2024-02-11 11:00:00', NULL),
-(NULL, 15, 20000.0000, 'CREDIT_CARD', 'CC-INV-015', 'Major payment', '2024-02-12 14:45:00', NULL),
-
--- Small final payments
-(NULL, 17, 500.0000, 'CASH', 'CASH-INV-017', 'Final settlement', '2024-02-13 09:15:00', NULL),
-(NULL, 19, 750.0000, 'MOBILE_MONEY', 'MM-INV-019', 'Closing payment', '2024-02-14 16:30:00', NULL),
-(NULL, 21, 1200.0000, 'BANK_TRANSFER', 'BT-INV-021', 'Balance payment', '2024-02-15 10:45:00', NULL),
-
--- Deposits for overdue invoices
-(NULL, 23, 3000.0000, 'CASH', 'CASH-INV-023', 'Overdue payment part 1', '2024-02-16 13:20:00', NULL),
-(NULL, 25, 1800.0000, 'CREDIT_CARD', 'CC-INV-025', 'Late payment', '2024-02-17 15:10:00', NULL),
-
--- Recent deposits
-(NULL, 27, 4200.0000, 'BANK_TRANSFER', 'BT-INV-027', 'Recent payment', '2024-02-18 11:30:00', NULL),
-(NULL, 29, 5600.0000, 'MOBILE_MONEY', 'MM-INV-029', 'Latest deposit', '2024-02-19 14:15:00', NULL),
-(NULL, 31, 3200.0000, 'CASH', 'CASH-INV-031', 'Today\'s payment', '2024-02-20 09:45:00', NULL),
-(NULL, 33, 2800.0000, 'CREDIT_CARD', 'CC-INV-033', 'Morning payment', '2024-02-20 10:30:00', NULL),
-
--- ============================================================================
--- SCENARIO 3: Both cart and invoice references (when cart has invoice) - 10 records
--- ============================================================================
-(2, 2, 3500.0000, 'CASH', 'CASH-BOTH-002', 'Deposit for cart with invoice', '2024-02-21 12:15:00', NULL),
-(4, 4, 4800.0000, 'BANK_TRANSFER', 'BT-BOTH-004', 'Advance payment', '2024-02-22 14:30:00', NULL),
-(6, 6, 5200.0000, 'CREDIT_CARD', 'CC-BOTH-006', 'Partial payment', '2024-02-23 16:45:00', NULL),
-(8, 8, 2100.0000, 'MOBILE_MONEY', 'MM-BOTH-008', 'Initial deposit', '2024-02-24 10:20:00', NULL),
-(10, 10, 3800.0000, 'CASH', 'CASH-BOTH-010', 'Security deposit', '2024-02-25 13:40:00', NULL),
-
--- Multiple deposits for same cart/invoice combo
-(12, 12, 2500.0000, 'BANK_TRANSFER', 'BT-BOTH-012-A', 'First installment', '2024-02-26 09:15:00', NULL),
-(12, 12, 1800.0000, 'CASH', 'CASH-BOTH-012-B', 'Second installment', '2024-02-27 15:30:00', NULL),
-
--- Full payment deposits
-(14, 14, 12500.0000, 'CREDIT_CARD', 'CC-BOTH-014', 'Full payment deposit', '2024-02-28 11:45:00', NULL),
-(16, 16, 9200.0000, 'MOBILE_MONEY', 'MM-BOTH-016', 'Complete deposit', '2024-02-29 14:20:00', NULL),
-(18, 18, 6700.0000, 'CASH', 'CASH-BOTH-018', 'Final deposit', '2024-03-01 16:10:00', NULL),
-
--- ============================================================================
--- SCENARIO 4: Late deposits (older dates) - 10 records
--- ============================================================================
-(20, NULL, 2900.0000, 'BANK_TRANSFER', 'BT-LATE-020', 'Late deposit from last month', '2023-12-15 10:30:00', NULL),
-(NULL, 22, 4100.0000, 'CREDIT_CARD', 'CC-LATE-022', 'Overdue payment', '2023-12-20 14:45:00', NULL),
-(22, 24, 3300.0000, 'CASH', 'CASH-LATE-024', 'Late combined deposit', '2023-12-25 09:15:00', NULL),
-(NULL, 26, 2700.0000, 'MOBILE_MONEY', 'MM-LATE-026', 'Delayed payment', '2023-11-10 13:20:00', NULL),
-(24, NULL, 1900.0000, 'BANK_TRANSFER', 'BT-LATE-028', 'Old cart deposit', '2023-11-15 15:30:00', NULL),
-
--- Very old deposits
-(NULL, 30, 1500.0000, 'CASH', 'CASH-OLD-030', 'Very old invoice payment', '2023-10-05 11:45:00', NULL),
-(26, 32, 2200.0000, 'CREDIT_CARD', 'CC-OLD-032', 'Historical deposit', '2023-10-10 09:20:00', NULL),
-(NULL, 34, 1800.0000, 'MOBILE_MONEY', 'MM-OLD-034', 'Ancient payment', '2023-09-15 14:15:00', NULL),
-(28, NULL, 3100.0000, 'BANK_TRANSFER', 'BT-OLD-036', 'Old cart advance', '2023-09-20 16:40:00', NULL),
-(NULL, 38, 2600.0000, 'CASH', 'CASH-OLD-038', 'Past due payment', '2023-08-25 10:25:00', NULL),
-
--- ============================================================================
--- SCENARIO 5: Recent high-value deposits - 7 records
--- ============================================================================
-(NULL, 40, 25000.0000, 'BANK_TRANSFER', 'BT-HIGH-040', 'Large corporate payment', '2024-03-05 11:00:00', NULL),
-(30, 42, 18000.0000, 'CREDIT_CARD', 'CC-HIGH-042', 'Big transaction', '2024-03-06 14:30:00', NULL),
-(NULL, 44, 32000.0000, 'BANK_TRANSFER', 'BT-HIGH-044', 'Major deposit', '2024-03-07 09:45:00', NULL),
-(32, 46, 15000.0000, 'CASH', 'CASH-HIGH-046', 'Cash deposit', '2024-03-08 13:15:00', NULL),
-(NULL, 48, 28000.0000, 'MOBILE_MONEY', 'MM-HIGH-048', 'Mobile large payment', '2024-03-09 16:20:00', NULL),
-(34, 50, 22000.0000, 'BANK_TRANSFER', 'BT-HIGH-050', 'Recent transfer', '2024-03-10 10:10:00', NULL),
-(NULL, 52, 19000.0000, 'CREDIT_CARD', 'CC-HIGH-052', 'High-value card payment', '2024-03-11 15:45:00', NULL);
-
--- Insert dummy data for receipt table
-INSERT INTO `gluttex`.`receipt` ( 
-    `receipt_number`, 
-    `receipt_amount`, 
-    `receipt_notes`, 
-    `receipt_created_at`, 
-    `receipt_cart_ref`
-) VALUES
--- ============================================================================
--- SCENARIO 1: Receipts with payment_id (regular payments) - 25 records
--- ============================================================================
--- For demonstration, we'll assume payment_ids 1-25 exist
-('RCPT-2024-001', 12500.0000, 'Full payment receipt for invoice #1', '2024-01-10 10:30:00', NULL),
-('RCPT-2024-002', 8500.0000, 'Payment received for order #2', '2024-01-11 14:45:00', NULL),
-('RCPT-2024-003', 9200.0000, 'Service payment receipt', '2024-01-12 09:15:00', NULL),
-('RCPT-2024-004', 4500.0000, 'Partial payment receipt', '2024-01-13 16:20:00', NULL),
-('RCPT-2024-005', 13800.0000, 'Final payment receipt', '2024-01-14 11:30:00', NULL),
-
-('RCPT-2024-006', 7200.0000, 'Monthly subscription', '2024-01-15 13:40:00', NULL),
-('RCPT-2024-007', 15600.0000, 'Bulk order payment', '2024-01-16 15:25:00', NULL),
-('RCPT-2024-008', 3400.0000, 'Small purchase receipt', '2024-01-17 10:10:00', NULL),
-('RCPT-2024-009', 8900.0000, 'Installment payment', '2024-01-18 14:55:00', NULL),
-('RCPT-2024-010', 11200.0000, 'Corporate payment', '2024-01-19 09:35:00', NULL),
-
-('RCPT-2024-011', 6300.0000, 'Retail purchase', '2024-01-20 16:15:00', NULL),
-('RCPT-2024-012', 7800.0000, 'Online payment receipt', '2024-01-21 11:45:00', NULL),
-('RCPT-2024-013', 25000.0000, 'Large transaction receipt', '2024-01-22 13:30:00', NULL),
-('RCPT-2024-014', 4200.0000, 'Service fee receipt', '2024-01-23 15:20:00', NULL),
-('RCPT-2024-015', 9500.0000, 'Advance payment receipt', '2024-01-24 10:05:00', NULL),
-
-('RCPT-2024-016', 16800.0000, 'Project payment', '2024-01-25 14:40:00', NULL),
-('RCPT-2024-017', 3100.0000, 'Consultation fee', '2024-01-26 09:50:00', NULL),
-('RCPT-2024-018', 12400.0000, 'Contract payment', '2024-01-27 16:25:00', NULL),
-('RCPT-2024-019', 5600.0000, 'Maintenance payment', '2024-01-28 11:15:00', NULL),
-('RCPT-2024-020', 8200.0000, 'Equipment purchase', '2024-01-29 13:55:00', NULL),
-
-('RCPT-2024-021', 14900.0000, 'Annual subscription', '2024-01-30 15:30:00', NULL),
-('RCPT-2024-022', 3700.0000, 'Training fee', '2024-01-31 10:20:00', NULL),
-('RCPT-2024-023', 10500.0000, 'Software license', '2024-02-01 14:10:00', NULL),
-('RCPT-2024-024', 6900.0000, 'Support payment', '2024-02-02 09:45:00', NULL),
-('RCPT-2024-025', 18200.0000, 'Enterprise solution', '2024-02-03 16:35:00', NULL),
-
--- ============================================================================
--- SCENARIO 2: Receipts with cart_ref only (direct cart payments) - 15 records
--- ============================================================================
-('RCPT-CART-026', 7500.0000, 'Direct cart payment receipt', '2024-02-04 11:25:00', 1),
-('RCPT-CART-027', 9200.0000, 'Cart checkout receipt', '2024-02-05 14:50:00', 3),
-('RCPT-CART-028', 4800.0000, 'Online cart payment', '2024-02-06 09:30:00', 5),
-('RCPT-CART-029', 15600.0000, 'Direct purchase receipt', '2024-02-07 16:15:00', 7),
-('RCPT-CART-030', 3200.0000, 'Cart payment confirmation', '2024-02-08 10:40:00', 9),
-
-('RCPT-CART-031', 8900.0000, 'Shopping cart receipt', '2024-02-09 13:20:00', 11),
-('RCPT-CART-032', 12500.0000, 'Cart final payment', '2024-02-10 15:55:00', 13),
-('RCPT-CART-033', 5400.0000, 'Direct checkout receipt', '2024-02-11 11:10:00', 15),
-('RCPT-CART-034', 16800.0000, 'Cart transaction receipt', '2024-02-12 14:45:00', 17),
-('RCPT-CART-035', 2100.0000, 'Small cart purchase', '2024-02-13 09:25:00', 19),
-
-('RCPT-CART-036', 7300.0000, 'Cart payment slip', '2024-02-14 16:30:00', 21),
-('RCPT-CART-037', 9500.0000, 'Direct cart receipt', '2024-02-15 10:15:00', 23),
-('RCPT-CART-038', 4200.0000, 'Cart sale receipt', '2024-02-16 13:40:00', 25),
-('RCPT-CART-039', 11200.0000, 'Cart payment voucher', '2024-02-17 15:25:00', 27),
-('RCPT-CART-040', 6800.0000, 'Direct purchase receipt', '2024-02-18 11:50:00', 29),
-
--- ============================================================================
--- SCENARIO 3: Receipts with both payment_id and cart_ref (ecords) - 10 records
--- ============================================================================
-('RCPT-BOTH-041', 14900.0000, 'Complete payment with invoice', '2024-02-19 14:35:00', 2),
-('RCPT-BOTH-042', 7800.0000, 'Payment with cart reference', '2024-02-20 09:20:00', 4),
-('RCPT-BOTH-043', 10500.0000, 'Dual reference receipt', '2024-02-21 16:05:00', 6),
-('RCPT-BOTH-044', 4500.0000, 'Combined receipt', '2024-02-22 11:30:00', 8),
-('RCPT-BOTH-045', 18200.0000, 'Complete transaction receipt', '2024-02-23 13:15:00', 10),
-
-('RCPT-BOTH-046', 6300.0000, 'Payment confirmation', '2024-02-24 15:50:00', 12),
-('RCPT-BOTH-047', 12400.0000, 'Final receipt with references', '2024-02-25 10:25:00', 14),
-('RCPT-BOTH-048', 3100.0000, 'Small transaction receipt', '2024-02-26 14:10:00', 16),
-('RCPT-BOTH-049', 16800.0000, 'Large payment receipt', '2024-02-27 09:55:00', 18),
-('RCPT-BOTH-050', 5600.0000, 'Standard receipt', '2024-02-28 16:40:00', 20),
-
--- ============================================================================
--- SCENARIO 4: Recent receipts - 7 records
--- ============================================================================
-('RCPT-RECENT-051', 25000.0000, 'Recent large payment', '2024-03-01 11:45:00', 31),
-('RCPT-RECENT-052', 18900.0000, 'Today\'s payment', '2024-03-02 14:20:00', NULL),
-('RCPT-RECENT-053', 11200.0000, 'Latest cart payment', '2024-03-03 10:05:00', 33),
-('RCPT-RECENT-054', 7600.0000, 'Recent invoice payment', '2024-03-04 13:50:00', NULL),
-('RCPT-RECENT-055', 14800.0000, 'New cart transaction', '2024-03-05 15:35:00', 35),
-
-('RCPT-RECENT-056', 9200.0000, 'Fresh payment receipt', '2024-03-06 09:10:00', 37),
-('RCPT-RECENT-057', 21400.0000, 'Most recent purchase', '2024-03-07 16:25:00', 39);
-
-CREATE OR REPLACE VIEW business_operation AS
--- PART 1: Complete Cart-based operations with ALL financial scenarios
-SELECT 
-    -- Supplier information from cart's product provider
-    pp.id_product_provider AS supplier_id,
-    
-    -- Order information (if order exists)
-    po.id_placed_order AS order_id,
-    
-    -- Cart information
-    c.cart_id,
-    
-    -- Client information
-    COALESCE(c.cart_client_user, c.cart_selling_user) AS client_id,
-    
-    -- Seller information
-    COALESCE(c.cart_selling_user, c.cart_client_user) AS seller_id,
-    
-    -- Financial information (use highest available amount)
-    COALESCE(
-        i.invoice_total_amount, 
-        r.receipt_amount, 
-        c.cart_total_amount, 
-        0
-    ) AS total_amount,
-    
-    -- Invoice information
-    i.invoice_id,
-    COALESCE(i.invoice_status, 
-        CASE WHEN r.receipt_id IS NOT NULL THEN 'receipt_only'
-             WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id) THEN 'deposit_only'
-             ELSE 'no_document' END
-    ) AS invoice_status,
-    
-    -- Receipt information
-    r.receipt_id,
-    
-    -- Total paid amount from ALL payment sources
-    COALESCE(
-        -- Payments linked to invoice
-        (SELECT SUM(p2.payment_amount) 
-         FROM payment p2 
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status = 'completed'),
-         
-        -- Payments linked to receipt
-        (SELECT SUM(p3.payment_amount)
-         FROM payment p3
-         WHERE p3.payment_id = r.receipt_payment_id
-         AND p3.payment_status = 'completed'),
-         
-        0
-    ) AS total_paid,
-    
-    -- Total deposited amount (from deposits table)
-    COALESCE(
-        (SELECT SUM(d2.deposit_amount) 
-         FROM deposit d2 
-         WHERE (d2.deposit_cart_id = c.cart_id OR d2.deposit_invoice_id = i.invoice_id)
-         AND d2.deposit_amount > 0), 
-        0
-    ) AS total_deposited,
-    
-    -- Balance due calculation (considering all payment types)
-    COALESCE(i.invoice_total_amount, c.cart_total_amount, 0) - 
-    (
-        COALESCE(
-            (SELECT SUM(p2.payment_amount) 
-             FROM payment p2 
-             WHERE p2.payment_invoice_id = i.invoice_id
-             AND p2.payment_status = 'completed'), 0
-        ) +
-        COALESCE(
-            (SELECT SUM(d2.deposit_amount) 
-             FROM deposit d2 
-             WHERE (d2.deposit_cart_id = c.cart_id OR d2.deposit_invoice_id = i.invoice_id)
-             AND d2.deposit_amount > 0), 0
-        )
-    ) AS balance_due,
-    
-    -- Payment status (comprehensive)
-    CASE 
-        -- Receipt-based payments (immediate)
-        WHEN r.receipt_id IS NOT NULL THEN 
-            CASE WHEN r.receipt_amount >= COALESCE(c.cart_total_amount, 0) 
-                 THEN 'fully_paid_receipt' 
-                 ELSE 'partially_paid_receipt' 
-            END
-        
-        -- Invoice-based payments
-        WHEN i.invoice_id IS NOT NULL THEN
-            CASE 
-                WHEN EXISTS (
-                    SELECT 1 FROM payment p3 
-                    WHERE p3.payment_invoice_id = i.invoice_id 
-                    AND p3.payment_status = 'completed'
-                    AND p3.payment_amount >= i.invoice_total_amount
-                ) THEN 'fully_paid_invoice'
-                
-                WHEN EXISTS (
-                    SELECT 1 FROM deposit d3 
-                    WHERE d3.deposit_invoice_id = i.invoice_id
-                    AND d3.deposit_amount >= i.invoice_total_amount
-                ) THEN 'fully_paid_deposit'
-                
-                WHEN EXISTS (
-                    SELECT 1 FROM payment p4 
-                    WHERE p4.payment_invoice_id = i.invoice_id 
-                    AND p4.payment_status = 'completed'
-                ) OR EXISTS (
-                    SELECT 1 FROM deposit d4 
-                    WHERE d4.deposit_invoice_id = i.invoice_id
-                ) THEN 'partially_paid'
-                
-                ELSE 'unpaid_invoice'
-            END
-        
-        -- Deposit-only (no invoice/receipt)
-        WHEN EXISTS (SELECT 1 FROM deposit d5 WHERE d5.deposit_cart_id = c.cart_id) THEN
-            CASE 
-                WHEN (SELECT SUM(d6.deposit_amount) FROM deposit d6 
-                      WHERE d6.deposit_cart_id = c.cart_id) >= COALESCE(c.cart_total_amount, 0)
-                THEN 'fully_paid_deposit_only'
-                ELSE 'partially_paid_deposit_only'
-            END
-        
-        -- No financial documents yet
-        ELSE 'pending_payment'
-    END AS payment_status,
-    
-    -- Document type
-    CASE 
-        WHEN i.invoice_id IS NOT NULL AND r.receipt_id IS NOT NULL THEN 'invoice_and_receipt'
-        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
-        WHEN r.receipt_id IS NOT NULL THEN 'receipt'
-        WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id) THEN 'deposit_only'
-        ELSE 'no_document'
-    END AS document_type,
-    
-    -- Operation type
-    CASE 
-        WHEN EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id) 
-             AND EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id)
-        THEN 'mixed_products_services'
-        WHEN EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id) 
-        THEN 'products_only'
-        WHEN EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id) 
-        THEN 'services_only'
-        ELSE 'empty_cart'
-    END AS operation_type,
-    
-    -- Source identifier
-    'cart_based' AS source_table,
-    
-    -- Creation timestamp
-    COALESCE(
-        i.invoice_created_at,
-        r.receipt_created_at,
-        c.cart_created_at
-    ) AS operation_date
-
-FROM cart c
--- Join to Product Provider (Supplier)
-LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
--- Join to Invoice (if exists)
-LEFT JOIN invoice i ON c.cart_id = i.invoice_cart_id
--- Join to Receipt (if exists)
-LEFT JOIN receipt r ON c.cart_id = r.receipt_cart_ref
--- Join to Placed Order (if exists - corrected relationship)
-LEFT JOIN placed_order po ON po.placed_order_invoice_ref = i.invoice_id OR 
-                            (po.id_placed_order IN (
-                                SELECT oi.order_ref 
-                                FROM ordered_item oi 
-                                WHERE oi.ordered_item_cart_ref = c.cart_id
-                            ))
-
-WHERE c.cart_status IN ('completed', 'pending', 'processing')  -- Only relevant carts
-
-UNION ALL
-
--- PART 2: Direct Order-based items (without cart reference)
-SELECT 
-    -- Supplier information
-    COALESCE(
-        -- From product's provider
-        (SELECT pp2.id_product_provider 
-         FROM product p2 
-         JOIN product_provider pp2 ON p2.product_provider_id = pp2.id_product_provider
-         WHERE p2.id_product = oi.ordered_product_id),
-         
-        0
-    ) AS supplier_id,
-    
-    -- Order information
-    oi.order_ref AS order_id,
-    
-    -- Cart information (null for these)
-    NULL AS cart_id,
-    
-    -- Client information from placed_order
-    po.ordering_user_id AS client_id,
-    
-    -- Seller information (default to ordering user if no seller)
-    COALESCE(
-        (SELECT au.id_app_user FROM app_user au 
-         WHERE au.id_app_user IN (SELECT au2.id_app_user FROM app_user au2 WHERE au2.id_app_user = po.ordering_user_id)),
-        po.ordering_user_id
-    ) AS seller_id,
-    
-    -- Financial information
-    (oi.ordered_quantity * oi.unit_price * 
-     (1 - COALESCE(oi.product_discount, 0)/100) *
-     (1 + COALESCE(oi.applied_vat, 0)/100)) AS total_amount,
-    
-    -- Invoice information
-    i.invoice_id,
-    COALESCE(i.invoice_status, 'no_invoice') AS invoice_status,
-    
-    -- Receipt information
-    NULL AS receipt_id,
-    
-    -- Total paid amount
-    COALESCE(
-        (SELECT SUM(p2.payment_amount)
-         FROM payment p2
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status = 'completed'),
-        0
-    ) AS total_paid,
-    
-    -- Total deposited amount
-    COALESCE(
-        (SELECT SUM(d2.deposit_amount)
-         FROM deposit d2
-         WHERE d2.deposit_invoice_id = i.invoice_id),
-        0
-    ) AS total_deposited,
-    
-    -- Balance due
-    (oi.ordered_quantity * oi.unit_price * 
-     (1 - COALESCE(oi.product_discount, 0)/100) *
-     (1 + COALESCE(oi.applied_vat, 0)/100)) - 
-    COALESCE(
-        (SELECT SUM(p2.payment_amount)
-         FROM payment p2
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status = 'completed'),
-        0
-    ) - 
-    COALESCE(
-        (SELECT SUM(d2.deposit_amount)
-         FROM deposit d2
-         WHERE d2.deposit_invoice_id = i.invoice_id),
-        0
-    ) AS balance_due,
-    
-    -- Payment status
-    CASE 
-        WHEN i.invoice_id IS NULL THEN 'no_invoice'
-        
-        WHEN EXISTS (
-            SELECT 1 FROM payment p3 
-            WHERE p3.payment_invoice_id = i.invoice_id 
-            AND p3.payment_status = 'completed'
-            AND p3.payment_amount >= i.invoice_total_amount
-        ) THEN 'fully_paid'
-        
-        WHEN EXISTS (
-            SELECT 1 FROM payment p3 
-            WHERE p3.payment_invoice_id = i.invoice_id 
-            AND p3.payment_status = 'completed'
-        ) OR EXISTS (
-            SELECT 1 FROM deposit d3 
-            WHERE d3.deposit_invoice_id = i.invoice_id
-        ) THEN 'partially_paid'
-        
-        ELSE 'unpaid'
-    END AS payment_status,
-    
-    -- Document type
-    CASE 
-        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
-        ELSE 'no_document'
-    END AS document_type,
-    
-    -- Operation type
-    'direct_order' AS operation_type,
-    
-    -- Source identifier
-    'order_based' AS source_table,
-    
-    -- Creation timestamp
-    COALESCE(
-        i.invoice_created_at,
-        po.placed_order_creation
-    ) AS operation_date
-
-FROM ordered_item oi
--- Join to placed_order
-LEFT JOIN placed_order po ON po.id_placed_order = oi.order_ref
--- Join to invoice via placed_order
-LEFT JOIN invoice i ON i.invoice_id = po.placed_order_invoice_ref
--- Only include items without cart reference but with order reference
-WHERE oi.ordered_item_cart_ref IS NULL 
-AND oi.order_ref IS NOT NULL
-AND oi.ordered_product_id IS NOT NULL
-
-UNION ALL
-
--- PART 3: Services-only operations (from ordered_service through cart)
-SELECT 
-    -- Supplier information from cart's provider
-    pp.id_product_provider AS supplier_id,
-    
-    -- Order information (services usually don't create placed_orders)
-    NULL AS order_id,
-    
-    -- Cart information
-    c.cart_id,
-    
-    -- Client information
-    COALESCE(c.cart_client_user, c.cart_selling_user) AS client_id,
-    
-    -- Seller information
-    COALESCE(c.cart_selling_user, c.cart_client_user) AS seller_id,
-    
-    -- Financial information (sum of all services in cart)
-    COALESCE(
-        (SELECT SUM(os.ordered_service_total_price)
-         FROM ordered_service os
-         WHERE os.ordered_service_cart_id = c.cart_id),
-        c.cart_total_amount,
-        0
-    ) AS total_amount,
-    
-    -- Invoice information
-    i.invoice_id,
-    COALESCE(i.invoice_status, 'no_invoice') AS invoice_status,
-    
-    -- Receipt information
-    r.receipt_id,
-    
-    -- Total paid amount
-    COALESCE(
-        (SELECT SUM(p2.payment_amount) 
-         FROM payment p2 
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status = 'completed'),
-         
-        (SELECT SUM(p3.payment_amount)
-         FROM payment p3
-         WHERE p3.payment_id = r.receipt_payment_id
-         AND p3.payment_status = 'completed'),
-         
-        0
-    ) AS total_paid,
-    
-    -- Total deposited amount
-    COALESCE(
-        (SELECT SUM(d2.deposit_amount) 
-         FROM deposit d2 
-         WHERE d2.deposit_cart_id = c.cart_id),
-        0
-    ) AS total_deposited,
-    
-    -- Balance due
-    COALESCE(
-        (SELECT SUM(os.ordered_service_total_price)
-         FROM ordered_service os
-         WHERE os.ordered_service_cart_id = c.cart_id),
-        c.cart_total_amount,
-        0
-    ) - 
-    (
-        COALESCE(
-            (SELECT SUM(p2.payment_amount) 
-             FROM payment p2 
-             WHERE p2.payment_invoice_id = i.invoice_id
-             AND p2.payment_status = 'completed'), 0
-        ) +
-        COALESCE(
-            (SELECT SUM(d2.deposit_amount) 
-             FROM deposit d2 
-             WHERE d2.deposit_cart_id = c.cart_id), 0
-        )
-    ) AS balance_due,
-    
-    -- Payment status (similar to cart-based)
-    CASE 
-        WHEN r.receipt_id IS NOT NULL THEN 'fully_paid_receipt'
-        WHEN i.invoice_id IS NOT NULL THEN
-            CASE 
-                WHEN EXISTS (
-                    SELECT 1 FROM payment p3 
-                    WHERE p3.payment_invoice_id = i.invoice_id 
-                    AND p3.payment_status = 'completed'
-                    AND p3.payment_amount >= i.invoice_total_amount
-                ) THEN 'fully_paid_invoice'
-                WHEN EXISTS (
-                    SELECT 1 FROM payment p4 
-                    WHERE p4.payment_invoice_id = i.invoice_id 
-                    AND p4.payment_status = 'completed'
-                ) THEN 'partially_paid'
-                ELSE 'unpaid_invoice'
-            END
-        WHEN EXISTS (SELECT 1 FROM deposit d5 WHERE d5.deposit_cart_id = c.cart_id) THEN
-            CASE 
-                WHEN (SELECT SUM(d6.deposit_amount) FROM deposit d6 
-                      WHERE d6.deposit_cart_id = c.cart_id) >= 
-                     COALESCE(c.cart_total_amount, 0)
-                THEN 'fully_paid_deposit_only'
-                ELSE 'partially_paid_deposit_only'
-            END
-        ELSE 'pending_payment'
-    END AS payment_status,
-    
-    -- Document type
-    CASE 
-        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
-        WHEN r.receipt_id IS NOT NULL THEN 'receipt'
-        WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id) THEN 'deposit_only'
-        ELSE 'no_document'
-    END AS document_type,
-    
-    -- Operation type
-    'services_only' AS operation_type,
-    
-    -- Source identifier
-    'service_based' AS source_table,
-    
-    -- Creation timestamp
-    COALESCE(
-        i.invoice_created_at,
-        r.receipt_created_at,
-        c.cart_created_at
-    ) AS operation_date
-
-FROM cart c
--- Join to Product Provider
-LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
--- Join to Invoice
-LEFT JOIN invoice i ON c.cart_id = i.invoice_cart_id
--- Join to Receipt
-LEFT JOIN receipt r ON c.cart_id = r.receipt_cart_ref
--- Ensure cart has services
-WHERE EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id)
-AND NOT EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id)  -- No products
-AND c.cart_status IN ('completed', 'pending', 'processing');
-
 -- -----------------------------------------------------
--- View: financial_documents_status
+-- View `gluttex`.`business_operation`
 -- -----------------------------------------------------
-DROP VIEW IF EXISTS `gluttex`.`financial_documents_status`;
-CREATE VIEW `gluttex`.`financial_documents_status` AS
--- PART 1: Invoice-based transactions
+DROP VIEW IF EXISTS `gluttex`.`business_operation`;
+
+CREATE OR REPLACE VIEW `gluttex`.`financial_documents_status` AS
+-- PART 1: Invoice-based transactions (keep as is)
 SELECT 
     -- Document Identification
     'invoice' AS document_type,
@@ -2531,15 +1765,15 @@ SELECT
     -- Customer Information with TYPE
     COALESCE(
         c.cart_client_user,
-        c.cart_selling_user,
-        po.ordering_user_id
+        po.ordering_user_id,
+        NULL
     ) AS customer_id,
     
     -- CUSTOMER TYPE: Determine if customer is user or person
     CASE 
         -- If customer_id exists in app_user table, it's a user
-        WHEN COALESCE(c.cart_client_user, c.cart_selling_user, po.ordering_user_id) IS NOT NULL 
-             AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = COALESCE(c.cart_client_user, c.cart_selling_user, po.ordering_user_id))
+        WHEN COALESCE(c.cart_client_user, po.ordering_user_id) IS NOT NULL 
+             AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = COALESCE(c.cart_client_user, po.ordering_user_id))
             THEN 'user'
         -- If cart has person_ref, it's a person
         WHEN c.cart_person_ref IS NOT NULL 
@@ -2559,15 +1793,13 @@ SELECT
         c.cart_person_ref,
         (SELECT p2.id_person FROM app_user au3 
          JOIN person p2 ON au3.app_user_person_id = p2.id_person 
-         WHERE au3.id_app_user = COALESCE(c.cart_client_user, c.cart_selling_user, po.ordering_user_id)
+         WHERE au3.id_app_user = COALESCE(c.cart_client_user, po.ordering_user_id)
          LIMIT 1)
     ) AS customer_person_id,
     
     -- Seller Information
     COALESCE(
-        c.cart_selling_user,
-        c.cart_client_user,
-        po.ordering_user_id
+        c.cart_selling_user
     ) AS seller_id,
     
     -- Financial Information
@@ -2580,7 +1812,7 @@ SELECT
         (SELECT SUM(p.payment_amount) 
          FROM payment p 
          WHERE p.payment_invoice_id = i.invoice_id 
-         AND p.payment_status = 'completed'),
+         ),
         0
     ) AS total_paid,
     
@@ -2607,7 +1839,7 @@ SELECT
     -- Balance Calculation
     GREATEST(
         i.invoice_total_amount - 
-        COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id AND p.payment_status = 'completed'), 0) -
+        COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id ), 0) -
         COALESCE((SELECT SUM(d.deposit_amount) FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id), 0),
         0
     ) AS outstanding_balance,
@@ -2615,17 +1847,36 @@ SELECT
     -- Status Summary
     i.invoice_status AS document_status,
     
-    -- Payment Status Classification
+    -- Payment Status Classification (3-STATE MODEL)
     CASE 
+        -- Canceled state (special case)
         WHEN i.invoice_status = 'canceled' THEN 'canceled'
-        WHEN (COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id AND p.payment_status = 'completed'), 0) +
+        
+        -- PAID STATE: Full payment via payments OR deposits
+        WHEN (COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id ), 0) +
               COALESCE((SELECT SUM(d.deposit_amount) FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id), 0)) >= i.invoice_total_amount 
-            THEN 'fully_paid'
-        WHEN (COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id AND p.payment_status = 'completed'), 0) +
+            THEN 'paid'
+        
+        -- DEPOSITED STATE: Some payment/deposit made but not full
+        WHEN (COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id ), 0) +
               COALESCE((SELECT SUM(d.deposit_amount) FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id), 0)) > 0
-            THEN 'partially_paid'
+            THEN 'deposited'
+        
+        -- UNPAID STATE: No payments or deposits
         ELSE 'unpaid'
     END AS payment_status,
+    
+    -- Payment method detail (for reference)
+    CASE 
+        WHEN EXISTS (SELECT 1 FROM payment p WHERE p.payment_invoice_id = i.invoice_id ) 
+             AND EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id AND d.deposit_amount > 0)
+            THEN 'mixed_payments'
+        WHEN EXISTS (SELECT 1 FROM payment p WHERE p.payment_invoice_id = i.invoice_id )
+            THEN 'payment_only'
+        WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id AND d.deposit_amount > 0)
+            THEN 'deposit_only'
+        ELSE 'no_payments'
+    END AS payment_method,
     
     -- Aging Information
     CASE 
@@ -2651,7 +1902,7 @@ LEFT JOIN product_provider pp_cart ON c.cart_product_provider_id = pp_cart.id_pr
 
 UNION ALL
 
--- PART 2: Deposit-only transactions
+-- PART 2: Deposit-only transactions (keep as is)
 SELECT 
     'deposit' AS document_type,
     d.deposit_id AS document_id,
@@ -2679,24 +1930,24 @@ SELECT
     
     -- Customer identification with TYPE
     COALESCE(
-        (SELECT COALESCE(c4.cart_client_user, c4.cart_selling_user) 
+        (SELECT COALESCE(c4.cart_client_user) 
          FROM cart c4 
          WHERE c4.cart_id = d.deposit_cart_id),
-        (SELECT COALESCE(c5.cart_client_user, c5.cart_selling_user) 
+        (SELECT COALESCE(c5.cart_client_user) 
          FROM invoice i3 
          LEFT JOIN cart c5 ON i3.invoice_cart_id = c5.cart_id
          WHERE i3.invoice_id = d.deposit_invoice_id),
-        0
+        NULL
     ) AS customer_id,
     
     -- CUSTOMER TYPE for deposits
     CASE 
-        -- If from cart with cart_client_user or cart_selling_user
+        -- If from cart with cart_client_user
         WHEN d.deposit_cart_id IS NOT NULL AND EXISTS (
             SELECT 1 FROM cart c6 
             WHERE c6.cart_id = d.deposit_cart_id 
-            AND (c6.cart_client_user IS NOT NULL OR c6.cart_selling_user IS NOT NULL)
-            AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user IN (c6.cart_client_user, c6.cart_selling_user))
+            AND c6.cart_client_user IS NOT NULL 
+            AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = c6.cart_client_user)
         ) THEN 'user'
         
         -- If from cart with cart_person_ref
@@ -2711,8 +1962,8 @@ SELECT
                     SELECT 1 FROM invoice i4 
                     LEFT JOIN cart c8 ON i4.invoice_cart_id = c8.cart_id
                     WHERE i4.invoice_id = d.deposit_invoice_id 
-                    AND (c8.cart_client_user IS NOT NULL OR c8.cart_selling_user IS NOT NULL)
-                    AND EXISTS (SELECT 1 FROM app_user au2 WHERE au2.id_app_user IN (c8.cart_client_user, c8.cart_selling_user))
+                    AND c8.cart_client_user IS NOT NULL
+                    AND EXISTS (SELECT 1 FROM app_user au2 WHERE au2.id_app_user = c8.cart_client_user)
                 ) THEN 'user'
                 WHEN EXISTS (
                     SELECT 1 FROM invoice i5 
@@ -2736,10 +1987,10 @@ SELECT
     
     -- Seller identification
     COALESCE(
-        (SELECT COALESCE(c12.cart_selling_user, c12.cart_client_user) 
+        (SELECT COALESCE(c12.cart_selling_user) 
          FROM cart c12 
          WHERE c12.cart_id = d.deposit_cart_id),
-        (SELECT COALESCE(c13.cart_selling_user, c13.cart_client_user) 
+        (SELECT COALESCE(c13.cart_selling_user) 
          FROM invoice i7 
          LEFT JOIN cart c13 ON i7.invoice_cart_id = c13.cart_id
          WHERE i7.invoice_id = d.deposit_invoice_id),
@@ -2763,7 +2014,7 @@ SELECT
                  FROM invoice i8 
                  WHERE i8.invoice_id = d.deposit_invoice_id) - 
                 d.deposit_amount -
-                COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = d.deposit_invoice_id AND p.payment_status = 'completed'), 0),
+                COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = d.deposit_invoice_id ), 0),
                 0
             )
         ELSE d.deposit_amount
@@ -2771,20 +2022,29 @@ SELECT
     
     'pending' AS document_status,
     
-    -- Deposit Status
+    -- Payment Status (3-STATE MODEL for deposits)
     CASE 
         WHEN d.deposit_invoice_id IS NOT NULL THEN
             CASE 
+                -- PAID STATE: Deposit covers full invoice amount
                 WHEN d.deposit_amount >= 
                     (SELECT i9.invoice_total_amount 
                      FROM invoice i9 
                      WHERE i9.invoice_id = d.deposit_invoice_id)
-                    THEN 'deposit_covers_full'
-                WHEN d.deposit_amount > 0 THEN 'deposit_partial'
-                ELSE 'no_deposit'
+                    THEN 'paid'
+                -- DEPOSITED STATE: Partial deposit
+                WHEN d.deposit_amount > 0 THEN 'deposited'
+                ELSE 'unpaid'
             END
-        ELSE 'cart_deposit'
+        -- Cart deposit (no invoice yet)
+        ELSE CASE
+            WHEN d.deposit_amount > 0 THEN 'deposited'
+            ELSE 'unpaid'
+        END
     END AS payment_status,
+    
+    -- Payment method detail
+    'deposit_only' AS payment_method,
     
     CASE 
         WHEN d.deposit_created_at IS NOT NULL THEN 
@@ -2801,9 +2061,9 @@ WHERE d.deposit_amount > 0
 
 UNION ALL
 
--- PART 3: Pending Cart transactions (no invoice yet)
+-- PART 3: Cart transactions with payments but no invoice (NEW - FIXED)
 SELECT 
-    'pending_cart' AS document_type,
+    'cart_with_payments' AS document_type,  -- Changed from 'pending_cart'
     c.cart_id AS document_id,
     CONCAT('CART-', c.cart_id) AS document_number,
     
@@ -2812,12 +2072,12 @@ SELECT
     
     pp.id_product_provider AS supplier_id,
     
-    COALESCE(c.cart_client_user, c.cart_selling_user) AS customer_id,
+    COALESCE(c.cart_client_user, NULL) AS customer_id,
     
-    -- CUSTOMER TYPE for pending carts
+    -- CUSTOMER TYPE for carts
     CASE 
-        WHEN COALESCE(c.cart_client_user, c.cart_selling_user) IS NOT NULL 
-             AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = COALESCE(c.cart_client_user, c.cart_selling_user))
+        WHEN COALESCE(c.cart_client_user) IS NOT NULL 
+             AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = COALESCE(c.cart_client_user))
             THEN 'user'
         WHEN c.cart_person_ref IS NOT NULL 
             THEN 'person'
@@ -2826,13 +2086,21 @@ SELECT
     
     COALESCE(c.cart_person_ref, 0) AS customer_person_id,
     
-    COALESCE(c.cart_selling_user, c.cart_client_user) AS seller_id,
+    COALESCE(c.cart_selling_user, 0) AS seller_id,
     
     c.cart_total_amount AS document_amount,
     DATE(c.cart_created_at) AS issue_date,
-    DATE(c.cart_created_at) AS due_date,
+    COALESCE(c.cart_due_date, DATE_ADD(c.cart_created_at, INTERVAL 30 DAY)) AS due_date,
     
-    0 AS total_paid,
+    -- CALCULATE PAYMENTS: Check if cart has payments via receipts
+    COALESCE(
+        (SELECT SUM(r.receipt_amount)
+         FROM receipt r 
+         WHERE r.receipt_cart_ref = c.cart_id),
+        0
+    ) AS total_paid,
+    
+    -- CALCULATE DEPOSITS
     COALESCE(
         (SELECT SUM(d2.deposit_amount) 
          FROM deposit d2 
@@ -2842,42 +2110,873 @@ SELECT
     
     0 AS additional_fees,
     
-    c.cart_total_amount - 
-    COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0) 
-    AS outstanding_balance,
+    -- Balance calculation: cart total - payments - deposits
+    GREATEST(
+        c.cart_total_amount - 
+        COALESCE((SELECT SUM(r.receipt_amount) FROM receipt r WHERE r.receipt_cart_ref = c.cart_id), 0) -
+        COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0),
+        0
+    ) AS outstanding_balance,
     
     c.cart_status AS document_status,
     
+    -- Payment Status (3-STATE MODEL) - IMPROVED LOGIC
     CASE 
+        -- Canceled state (special case)
         WHEN c.cart_status = 'canceled' THEN 'canceled'
-        WHEN EXISTS (SELECT 1 FROM deposit d3 WHERE d3.deposit_cart_id = c.cart_id AND d3.deposit_amount > 0) 
-            THEN 'deposit_received'
-        ELSE 'pending_payment'
+        
+        -- PAID STATE: Payments + Deposits >= Cart total
+        WHEN (
+            COALESCE((SELECT SUM(r.receipt_amount) FROM receipt r WHERE r.receipt_cart_ref = c.cart_id), 0) +
+            COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0)
+        ) >= c.cart_total_amount 
+            THEN 'paid'
+        
+        -- DEPOSITED STATE: Has any payments or deposits
+        WHEN (
+            COALESCE((SELECT SUM(r.receipt_amount) FROM receipt r WHERE r.receipt_cart_ref = c.cart_id), 0) +
+            COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0)
+        ) > 0
+            THEN 'deposited'
+        
+        -- UNPAID STATE: No payments or deposits
+        ELSE 'unpaid'
     END AS payment_status,
     
+    -- Payment method detail
+    CASE 
+        WHEN EXISTS (SELECT 1 FROM receipt r WHERE r.receipt_cart_ref = c.cart_id AND r.receipt_amount > 0)
+            AND EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id AND d.deposit_amount > 0)
+            THEN 'mixed_payments'
+        WHEN EXISTS (SELECT 1 FROM receipt r WHERE r.receipt_cart_ref = c.cart_id AND r.receipt_amount > 0)
+            THEN 'payment_only'
+        WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id AND d.deposit_amount > 0)
+            THEN 'deposit_only'
+        ELSE 'no_payments'
+    END AS payment_method,
+    
     DATEDIFF(CURRENT_DATE(), c.cart_created_at) AS days_issued,
-    0 AS days_overdue,
+    
+    -- Calculate days overdue
+    CASE 
+        WHEN COALESCE(c.cart_due_date, DATE_ADD(c.cart_created_at, INTERVAL 30 DAY)) < CURRENT_DATE() 
+             AND (
+                COALESCE((SELECT SUM(r.receipt_amount) FROM receipt r WHERE r.receipt_cart_ref = c.cart_id), 0) +
+                COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0)
+             ) < c.cart_total_amount
+            THEN DATEDIFF(CURRENT_DATE(), COALESCE(c.cart_due_date, DATE_ADD(c.cart_created_at, INTERVAL 30 DAY)))
+        ELSE 0
+    END AS days_overdue,
     
     c.cart_created_at,
     c.cart_updated_at
 
 FROM cart c
 LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
-WHERE c.cart_status NOT IN ('completed', 'canceled')
-AND NOT EXISTS (
-    SELECT 1 FROM invoice i WHERE i.invoice_cart_id = c.cart_id
-    UNION ALL
-    SELECT 1 FROM receipt r WHERE r.receipt_cart_ref = c.cart_id
-)
+WHERE 
+    -- Include ALL carts that don't have invoices
+    NOT EXISTS (
+        SELECT 1 FROM invoice i WHERE i.invoice_cart_id = c.cart_id
+    )
+    -- But exclude carts that are canceled (unless you want to see them)
+    AND c.cart_status != 'canceled'
 
+UNION ALL
+
+-- PART 4: Receipt-only transactions (keep as is)
+SELECT 
+    'receipt' AS document_type,
+    r.receipt_id AS document_id,
+    COALESCE(r.receipt_number, CONCAT('REC-', r.receipt_id)) AS document_number,
+    
+    r.receipt_cart_ref AS source_id,
+    CASE 
+        WHEN r.receipt_cart_ref IS NOT NULL THEN 'cart_based'
+        ELSE 'direct_receipt'
+    END AS source_type,
+    
+    COALESCE(
+        (SELECT pp.id_product_provider 
+         FROM cart c 
+         JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
+         WHERE c.cart_id = r.receipt_cart_ref),
+        0
+    ) AS supplier_id,
+    
+    -- Customer information from cart
+    COALESCE(
+        (SELECT c2.cart_client_user FROM cart c2 WHERE c2.cart_id = r.receipt_cart_ref),
+        (SELECT c3.cart_selling_user FROM cart c3 WHERE c3.cart_id = r.receipt_cart_ref),
+        NULL
+    ) AS customer_id,
+    
+    -- CUSTOMER TYPE for receipts
+    CASE 
+        WHEN EXISTS (
+            SELECT 1 FROM cart c4 
+            WHERE c4.cart_id = r.receipt_cart_ref 
+            AND c4.cart_client_user IS NOT NULL
+            AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = c4.cart_client_user)
+        ) THEN 'user'
+        WHEN EXISTS (
+            SELECT 1 FROM cart c5 
+            WHERE c5.cart_id = r.receipt_cart_ref 
+            AND c5.cart_person_ref IS NOT NULL
+        ) THEN 'person'
+        WHEN EXISTS (
+            SELECT 1 FROM cart c6 
+            WHERE c6.cart_id = r.receipt_cart_ref 
+            AND c6.cart_selling_user IS NOT NULL
+            AND EXISTS (SELECT 1 FROM app_user au2 WHERE au2.id_app_user = c6.cart_selling_user)
+        ) THEN 'user'
+        ELSE 'unknown'
+    END AS customer_type,
+    
+    -- Person ID from cart
+    COALESCE(
+        (SELECT c7.cart_person_ref FROM cart c7 WHERE c7.cart_id = r.receipt_cart_ref),
+        0
+    ) AS customer_person_id,
+    
+    -- Seller from cart
+    COALESCE(
+        (SELECT c8.cart_selling_user FROM cart c8 WHERE c8.cart_id = r.receipt_cart_ref),
+        0
+    ) AS seller_id,
+    
+    r.receipt_amount AS document_amount,
+    r.receipt_created_at AS issue_date,
+    r.receipt_created_at AS due_date,
+    
+    COALESCE(
+        (SELECT p.payment_amount 
+         FROM payment p 
+         WHERE p.payment_id = r.receipt_payment_id 
+         ),
+        r.receipt_amount
+    ) AS total_paid,
+    
+    0 AS total_deposited,
+    
+    0 AS additional_fees,
+    
+    0 AS outstanding_balance, -- Receipts are always fully paid
+    
+    'completed' AS document_status,
+    
+    -- Receipts are always PAID
+    'paid' AS payment_status,
+    
+    -- Payment method detail
+    COALESCE(
+        (SELECT p2.payment_method FROM payment p2 WHERE p2.payment_id = r.receipt_payment_id),
+        'cash'
+    ) AS payment_method_detail,
+    
+    CASE 
+        WHEN r.receipt_created_at IS NOT NULL THEN 
+            DATEDIFF(CURRENT_DATE(), r.receipt_created_at)
+        ELSE 0
+    END AS days_issued,
+    0 AS days_overdue,
+    
+    r.receipt_created_at,
+    DATEDIFF(CURRENT_DATE(), r.receipt_created_at)
+
+FROM receipt r
+WHERE r.receipt_amount > 0
+
+-- Optional: Add order by for consistent results
 ORDER BY issue_date DESC, document_type, document_id;
 
+CREATE OR REPLACE VIEW business_operation AS
+-- PART 1: Cart-based operations with receipts OR invoices
+SELECT 
+    -- Supplier information
+    pp.id_product_provider AS supplier_id,
+    
+    -- Order information (if exists)
+    po.id_placed_order AS order_id,
+    
+    -- Cart information
+    c.cart_id,
+    
+    -- Client information
+    COALESCE(c.cart_client_user, c.cart_selling_user) AS client_id,
+    
+    -- Seller information
+    COALESCE(c.cart_selling_user, c.cart_client_user) AS seller_id,
+    
+    -- Financial information (use appropriate amount based on document type)
+    CASE 
+        WHEN i.invoice_id IS NOT NULL THEN i.invoice_total_amount
+        WHEN r.receipt_id IS NOT NULL THEN r.receipt_amount
+        ELSE c.cart_total_amount
+    END AS total_amount,
+    
+    -- Invoice information (if exists)
+    i.invoice_id,
+    COALESCE(i.invoice_status, 
+        CASE 
+            WHEN r.receipt_id IS NOT NULL THEN 'receipt_only'
+            ELSE 'no_document'
+        END
+    ) AS invoice_status,
+    
+    -- Receipt information (if exists)
+    r.receipt_id,
+    
+    -- Total paid amount (CRITICAL: Check both receipt AND invoice payments)
+    COALESCE(
+        -- 1. Receipt-based payments (direct receipt_payment_id link)
+        (SELECT SUM(p2.payment_amount)
+         FROM payment p2
+         WHERE p2.payment_id = r.receipt_payment_id
+         AND p2.payment_status IN ('completed', 'partial')),
+         
+        -- 2. Invoice-based payments (invoice_id link)
+        (SELECT SUM(p3.payment_amount)
+         FROM payment p3
+         WHERE p3.payment_invoice_id = i.invoice_id
+         AND p3.payment_status IN ('completed', 'partial')),
+         
+        0
+    ) AS total_paid,
+    
+    -- Total pending payments
+    COALESCE(
+        (SELECT SUM(p2.payment_amount)
+         FROM payment p2
+         WHERE p2.payment_id = r.receipt_payment_id
+         AND p2.payment_status IN ('pending', 'processing')),
+         
+        (SELECT SUM(p3.payment_amount)
+         FROM payment p3
+         WHERE p3.payment_invoice_id = i.invoice_id
+         AND p3.payment_status IN ('pending', 'processing')),
+         
+        0
+    ) AS total_pending,
+    
+    -- Total deposited amount
+    COALESCE(
+        (SELECT SUM(d2.deposit_amount) 
+         FROM deposit d2 
+         WHERE d2.deposit_cart_id = c.cart_id
+         AND d2.deposit_amount > 0), 
+        0
+    ) AS total_deposited,
+    
+    -- Balance due calculation
+    CASE 
+        WHEN i.invoice_id IS NOT NULL THEN 
+            i.invoice_total_amount - 
+            COALESCE(
+                (SELECT SUM(p3.payment_amount)
+                 FROM payment p3
+                 WHERE p3.payment_invoice_id = i.invoice_id
+                 AND p3.payment_status IN ('completed', 'partial')), 0
+            )
+        WHEN r.receipt_id IS NOT NULL THEN 
+            r.receipt_amount - 
+            COALESCE(
+                (SELECT SUM(p2.payment_amount)
+                 FROM payment p2
+                 WHERE p2.payment_id = r.receipt_payment_id
+                 AND p2.payment_status IN ('completed', 'partial')), 0
+            )
+        ELSE c.cart_total_amount
+    END AS balance_due,
+    
+    -- Payment status (comprehensive)
+    CASE 
+        -- Receipt-based payments (typically completed immediately)
+        WHEN r.receipt_id IS NOT NULL THEN
+            CASE 
+                WHEN EXISTS (
+                    SELECT 1 FROM payment p2
+                    WHERE p2.payment_id = r.receipt_payment_id
+                    AND p2.payment_status = 'completed'
+                    AND p2.payment_amount >= r.receipt_amount
+                ) THEN 'fully_paid'
+                
+                WHEN EXISTS (
+                    SELECT 1 FROM payment p2
+                    WHERE p2.payment_id = r.receipt_payment_id
+                    AND p2.payment_status = 'completed'
+                ) THEN 'partially_paid_receipt'
+                
+                ELSE 'receipt_unpaid'
+            END
+        
+        -- Invoice-based payments
+        WHEN i.invoice_id IS NOT NULL THEN
+            CASE 
+                -- Fully paid invoice
+                WHEN EXISTS (
+                    SELECT 1 FROM payment p3 
+                    WHERE p3.payment_invoice_id = i.invoice_id 
+                    AND p3.payment_status = 'completed'
+                    AND p3.payment_amount >= i.invoice_total_amount
+                ) THEN 'fully_paid'
+                
+                -- Partial payment (completed or partial status)
+                WHEN EXISTS (
+                    SELECT 1 FROM payment p3 
+                    WHERE p3.payment_invoice_id = i.invoice_id 
+                    AND p3.payment_status IN ('completed', 'partial')
+                    AND p3.payment_amount > 0
+                ) THEN 'partially_paid'
+                
+                -- Pending payments
+                WHEN EXISTS (
+                    SELECT 1 FROM payment p3 
+                    WHERE p3.payment_invoice_id = i.invoice_id 
+                    AND p3.payment_status IN ('pending', 'processing')
+                ) THEN 'pending_payment'
+                
+                -- No payments
+                ELSE 'unpaid_invoice'
+            END
+        
+        -- No documents yet
+        ELSE 'no_document'
+    END AS payment_status,
+    
+    -- Detailed payment status
+    CASE 
+        WHEN r.receipt_id IS NOT NULL THEN
+            COALESCE(
+                (SELECT p2.payment_status
+                 FROM payment p2
+                 WHERE p2.payment_id = r.receipt_payment_id
+                 LIMIT 1),
+                'receipt_no_payment'
+            )
+        WHEN i.invoice_id IS NOT NULL THEN
+            COALESCE(
+                (SELECT p3.payment_status
+                 FROM payment p3
+                 WHERE p3.payment_invoice_id = i.invoice_id
+                 ORDER BY p3.payment_created_at DESC
+                 LIMIT 1),
+                'invoice_no_payment'
+            )
+        ELSE 'no_payments'
+    END AS detailed_payment_status,
+    
+    -- Document type
+    CASE 
+        WHEN i.invoice_id IS NOT NULL AND r.receipt_id IS NOT NULL THEN 'invoice_and_receipt'
+        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
+        WHEN r.receipt_id IS NOT NULL THEN 'receipt'
+        ELSE 'no_document'
+    END AS document_type,
+    
+    -- Operation type (based on cart contents)
+    CASE 
+        WHEN EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id) 
+             AND EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id)
+        THEN 'mixed_products_services'
+        WHEN EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id) 
+        THEN 'products_only'
+        WHEN EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id) 
+        THEN 'services_only'
+        ELSE 'empty_cart'
+    END AS operation_type,
+    
+    -- Payment method
+    COALESCE(
+        -- From receipt payments
+        (SELECT p2.payment_method
+         FROM payment p2
+         WHERE p2.payment_id = r.receipt_payment_id
+         AND p2.payment_status IN ('completed', 'partial')
+         LIMIT 1),
+         
+        -- From invoice payments
+        (SELECT p3.payment_method
+         FROM payment p3
+         WHERE p3.payment_invoice_id = i.invoice_id
+         AND p3.payment_status IN ('completed', 'partial')
+         ORDER BY p3.payment_created_at DESC
+         LIMIT 1),
+         
+        'not_paid'
+    ) AS payment_method,
+    
+    -- Payment reference
+    COALESCE(
+        (SELECT p2.payment_reference
+         FROM payment p2
+         WHERE p2.payment_id = r.receipt_payment_id
+         AND p2.payment_status IN ('completed', 'partial')
+         LIMIT 1),
+         
+        (SELECT p3.payment_reference
+         FROM payment p3
+         WHERE p3.payment_invoice_id = i.invoice_id
+         AND p3.payment_status IN ('completed', 'partial')
+         ORDER BY p3.payment_created_at DESC
+         LIMIT 1),
+         
+        NULL
+    ) AS payment_reference,
+    
+    -- Source identifier
+    'cart_based' AS source_table,
+    
+    -- Creation timestamp
+    COALESCE(
+        i.invoice_created_at,
+        r.receipt_created_at,
+        c.cart_created_at
+    ) AS operation_date,
+    
+    -- Cart status
+    c.cart_status
 
-SELECT * FROM business_operation;
+FROM cart c
+-- Join to Product Provider
+LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
+-- Join to Invoice (if exists)
+LEFT JOIN invoice i ON c.cart_id = i.invoice_cart_id
+-- Join to Receipt (if exists)
+LEFT JOIN receipt r ON c.cart_id = r.receipt_cart_ref
+-- Join to Placed Order (if exists)
+LEFT JOIN placed_order po ON (
+    po.placed_order_invoice_ref = i.invoice_id 
+    OR po.id_placed_order IN (
+        SELECT oi.order_ref 
+        FROM ordered_item oi 
+        WHERE oi.ordered_item_cart_ref = c.cart_id
+    )
+)
+
+WHERE c.cart_status IN ('completed', 'pending', 'partial')  -- Include partial status
+
+UNION ALL
+
+-- PART 2: Direct Order-based items (without cart reference)
+-- [Keep this part similar to before but simplified]
+SELECT 
+    -- Supplier information
+    COALESCE(
+        (SELECT pp2.id_product_provider 
+         FROM product p2 
+         JOIN product_provider pp2 ON p2.product_provider_id = pp2.id_product_provider
+         WHERE p2.id_product = oi.ordered_product_id),
+        0
+    ) AS supplier_id,
+    
+    oi.order_ref AS order_id,
+    
+    NULL AS cart_id,
+    
+    po.ordering_user_id AS client_id,
+    
+    COALESCE(
+        (SELECT au.id_app_user FROM app_user au 
+         WHERE au.id_app_user IN (SELECT au2.id_app_user FROM app_user au2 WHERE au2.id_app_user = po.ordering_user_id)),
+        po.ordering_user_id
+    ) AS seller_id,
+    
+    (oi.ordered_quantity * oi.unit_price * 
+     (1 - COALESCE(oi.product_discount, 0)/100) *
+     (1 + COALESCE(oi.applied_vat, 0)/100)) AS total_amount,
+    
+    i.invoice_id,
+    COALESCE(i.invoice_status, 'no_invoice') AS invoice_status,
+    
+    r.receipt_id,
+    
+    COALESCE(
+        (SELECT SUM(p2.payment_amount)
+         FROM payment p2
+         WHERE p2.payment_invoice_id = i.invoice_id
+         AND p2.payment_status IN ('completed', 'partial')),
+        0
+    ) AS total_paid,
+    
+    COALESCE(
+        (SELECT SUM(p2.payment_amount)
+         FROM payment p2
+         WHERE p2.payment_invoice_id = i.invoice_id
+         AND p2.payment_status IN ('pending', 'processing')),
+        0
+    ) AS total_pending,
+    
+    COALESCE(
+        (SELECT SUM(d2.deposit_amount)
+         FROM deposit d2
+         WHERE d2.deposit_invoice_id = i.invoice_id),
+        0
+    ) AS total_deposited,
+    
+    (oi.ordered_quantity * oi.unit_price * 
+     (1 - COALESCE(oi.product_discount, 0)/100) *
+     (1 + COALESCE(oi.applied_vat, 0)/100)) - 
+    COALESCE(
+        (SELECT SUM(p2.payment_amount)
+         FROM payment p2
+         WHERE p2.payment_invoice_id = i.invoice_id
+         AND p2.payment_status IN ('completed', 'partial')), 0
+    ) AS balance_due,
+    
+    CASE 
+        WHEN EXISTS (
+            SELECT 1 FROM payment p2 
+            WHERE p2.payment_invoice_id = i.invoice_id 
+            AND p2.payment_status = 'completed'
+            AND p2.payment_amount >= i.invoice_total_amount
+        ) THEN 'fully_paid'
+        
+        WHEN EXISTS (
+            SELECT 1 FROM payment p2 
+            WHERE p2.payment_invoice_id = i.invoice_id 
+            AND p2.payment_status IN ('completed', 'partial')
+            AND p2.payment_amount > 0
+        ) THEN 'partially_paid'
+        
+        WHEN EXISTS (
+            SELECT 1 FROM payment p2 
+            WHERE p2.payment_invoice_id = i.invoice_id 
+            AND p2.payment_status IN ('pending', 'processing')
+        ) THEN 'pending_payment'
+        
+        ELSE 'unpaid'
+    END AS payment_status,
+    
+    COALESCE(
+        (SELECT p2.payment_status
+         FROM payment p2
+         WHERE p2.payment_invoice_id = i.invoice_id
+         ORDER BY p2.payment_created_at DESC
+         LIMIT 1),
+        'no_payments'
+    ) AS detailed_payment_status,
+    
+    CASE 
+        WHEN i.invoice_id IS NOT NULL AND r.receipt_id IS NOT NULL THEN 'invoice_and_receipt'
+        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
+        WHEN r.receipt_id IS NOT NULL THEN 'receipt'
+        ELSE 'no_document'
+    END AS document_type,
+    
+    'direct_order' AS operation_type,
+    
+    COALESCE(
+        (SELECT p2.payment_method
+         FROM payment p2
+         WHERE p2.payment_invoice_id = i.invoice_id
+         AND p2.payment_status IN ('completed', 'partial')
+         ORDER BY p2.payment_created_at DESC
+         LIMIT 1),
+        'not_paid'
+    ) AS payment_method,
+    
+    COALESCE(
+        (SELECT p2.payment_reference
+         FROM payment p2
+         WHERE p2.payment_invoice_id = i.invoice_id
+         AND p2.payment_status IN ('completed', 'partial')
+         ORDER BY p2.payment_created_at DESC
+         LIMIT 1),
+        NULL
+    ) AS payment_reference,
+    
+    'order_based' AS source_table,
+    
+    COALESCE(
+        i.invoice_created_at,
+        po.placed_order_creation
+    ) AS operation_date,
+    
+    NULL AS cart_status
+
+FROM ordered_item oi
+LEFT JOIN placed_order po ON po.id_placed_order = oi.order_ref
+LEFT JOIN invoice i ON i.invoice_id = po.placed_order_invoice_ref
+LEFT JOIN receipt r ON r.receipt_id = po.placed_order_receipt_ref
+WHERE oi.ordered_item_cart_ref IS NULL 
+AND oi.order_ref IS NOT NULL
+AND oi.ordered_product_id IS NOT NULL
+
+ORDER BY operation_date DESC;
+
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Wheat'), 
+('Barley'), 
+('Rye'), 
+('Oats');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Corn'), 
+('Rice'), 
+('Soy'), 
+('Milk');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Egg'), 
+('Peanuts'), 
+('Tree Nuts'), 
+('Fish');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Shellfish'), 
+('Lentils'), 
+('Chickpeas'), 
+('Buckwheat');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Almond'), 
+('Coconut'), 
+('Sunflower Seeds');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Pumpkin Seeds'), 
+('Sesame Seeds'), 
+('Potato'), 
+('Sweet Potato');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Gelatin'), 
+('Lupin'), 
+('Mustard');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Fennel'), 
+('Cumin');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Ginger');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Garlic');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Onion');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Leek'), 
+('Shallot'), 
+('Scallion'), 
+('Chive'), 
+('Parsley');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Cilantro'), 
+('Basil'), 
+('Oregano'), 
+('Thyme');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Rosemary'), 
+('Sage'), 
+('Mint'), 
+('Lemongrass');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Lavender'), 
+('Paprika'), 
+('Chili Pepper'), 
+('Black Pepper');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('White Pepper'), 
+('Green Pepper'), 
+('Red Pepper'), 
+('Cinnamon'), 
+('Allspice');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Butter'), 
+('Margarine'), 
+('Vegetable Oil'), 
+('Baking Powder');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
+('Baking Soda'), 
+('Cornstarch'), 
+('All-Purpose Flour');
+INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES  
+('Pastry Flour'), 
+('Self-Rising Flour'); 
+
+
+update management_rule set management_rule_code = 16383 where id_management_rule >0;
+
+select * from product_provider, provider_details where  idprovider_details_id=product_provider_details_id;
+
+select * from product_provider ;
 
 
 
+-- Person Details (base information for individuals)
+INSERT INTO person_details (person_first_name, person_last_name, person_birth_date, person_gender, person_country_code, person_phone) VALUES
+('Ahmed', 'Benali', '1985-03-15', 'MALE', '213', '+213551234567'),
+('Fatima', 'Zohra', '1990-07-22', 'FEMALE', '213', '+213552345678'),
+('Mohamed', 'Khelifa', '1978-11-08', 'MALE', '213', '+213553456789'),
+('Nadia', 'Bensalem', '1995-01-30', 'FEMALE', '213', '+213554567890'),
+('Karim', 'Mansouri', '1982-09-12', 'MALE', '213', '+213555678901'),
+('Samira', 'Hadj', '1988-04-25', 'FEMALE', '213', '+213556789012'),
+('Yacine', 'Meziane', '1992-12-03', 'MALE', '213', '+213557890123'),
+('Leila', 'Boukadoum', '1980-06-18', 'FEMALE', '213', '+213558901234'),
+('Rachid', 'Ferhat', '1975-10-10', 'MALE', '213', '+213559012345'),
+('Amira', 'Saidi', '1998-08-07', 'FEMALE', '213', '+213560123456'),
+('Hakim', 'Bouaziz', '1987-02-28', 'MALE', '213', '+213561234567'),
+('Sofia', 'Khemiri', '1993-05-14', 'FEMALE', '213', '+213562345678'),
+('Youcef', 'Lounis', '1970-11-20', 'MALE', '213', '+213563456789'),
+('Meriem', 'Taleb', '1984-09-03', 'FEMALE', '213', '+213564567890'),
+('Ali', 'Boukhelifa', '1991-07-19', 'MALE', '213', '+213565678901'),
+('Djamila', 'Ouahab', '1976-12-25', 'FEMALE', '213', '+213566789012'),
+('Nassim', 'Cherif', '1983-03-08', 'MALE', '213', '+213567890123'),
+('Karima', 'Benaissa', '1989-06-30', 'FEMALE', '213', '+213568901234'),
+('Slimane', 'Kaddour', '1972-08-15', 'MALE', '213', '+213569012345'),
+('Zahra', 'Moussaoui', '1996-01-12', 'FEMALE', '213', '+213570123456'),
+('Abdelkader', 'Benslimane', '1981-10-05', 'MALE', '213', '+213571234567'),
+('Noura', 'Dahmani', '1986-04-22', 'FEMALE', '213', '+213572345678'),
+('Fares', 'Boutaleb', '1994-11-11', 'MALE', '213', '+213573456789'),
+('Hania', 'Zeroual', '1997-02-14', 'FEMALE', '213', '+213574567890'),
+('Walid', 'Gherbi', '1979-05-28', 'MALE', '213', '+213575678901');
+
+-- Persons (linking person_details to other entities)
+-- Assuming person_details inserted with IDs from 1 to 25
+INSERT INTO person (person_details_id, person_blood_type, person_location_id) VALUES
+(1, "A+", NULL),   -- Ahmed Benali, A+
+(2, "O+", NULL),   -- Fatima Zohra, O+
+(3, "B+", NULL),   -- Mohamed Khelifa, B+
+(4, "A+", NULL),   -- Nadia Bensalem, A+
+(5, "AB+", NULL),   -- Karim Mansouri, AB+
+(6, "O+", NULL),   -- Samira Hadj, O+
+(7, "A+", NULL),   -- Yacine Meziane, A+
+(8, "B+", NULL),   -- Leila Boukadoum, B+
+(9, "AB+", NULL),   -- Rachid Ferhat, AB+
+(10, "O+", NULL),  -- Amira Saidi, O+
+(11, "A+", NULL),  -- Hakim Bouaziz, A+
+(12, "B+", NULL),  -- Sofia Khemiri, B+
+(13, "O+", NULL),  -- Youcef Lounis, O+
+(14, "AB+", NULL),  -- Meriem Taleb, AB+
+(15, "A+", NULL),  -- Ali Boukhelifa, A+
+(16, "O+", NULL),  -- Djamila Ouahab, O+
+(17, "B+", NULL),  -- Nassim Cherif, B+
+(18, "A+", NULL),  -- Karima Benaissa, A+
+(19, "AB+", NULL),  -- Slimane Kaddour, AB+
+(20, "O+", NULL),  -- Zahra Moussaoui, O+
+(21, "A+", NULL),  -- Abdelkader Benslimane, A+
+(22, "B+", NULL),  -- Noura Dahmani, B+
+(23, "O+", NULL),  -- Fares Boutaleb, O+
+(24, "AB+", NULL),  -- Hania Zeroual, AB+
+(25, "A+", NULL);  -- Walid Gherbi, A+
 
 
+-- App Users (1-10: Regular Users, 11-15: Managers, 16-20: Admins)
+INSERT INTO app_user (
+    app_user_name, 
+    app_user_password, 
+    app_user_person_id, 
+    app_user_type, 
+    app_user_preferences, 
+    app_user_image_url, 
+    app_user_email, 
+    app_user_wallet_id
+) VALUES
+-- Regular Users (type_id = 1)
+('ahmed.benali', 'hashed_password_1', 1, "admin", '{"theme": "light", "language": "fr"}', 'https://randomuser.me/api/portraits/men/1.jpg', 'ahmed.benali@example.com', NULL),
+('fatima.zohra', 'hashed_password_2', 2, "admin", '{"theme": "dark", "language": "ar"}', 'https://randomuser.me/api/portraits/women/1.jpg', 'fatima.zohra@example.com', NULL),
+('mohamed.khelifa', 'hashed_password_3', 3, "admin", '{"theme": "light", "language": "en"}', 'https://randomuser.me/api/portraits/men/2.jpg', 'mohamed.khelifa@example.com', NULL),
+('nadia.bensalem', 'hashed_password_4', 4, "admin", '{"theme": "dark", "language": "fr"}', 'https://randomuser.me/api/portraits/women/2.jpg', 'nadia.bensalem@example.com', NULL),
+('karim.mansouri', 'hashed_password_5', 5, "admin", '{"theme": "light", "language": "ar"}', 'https://randomuser.me/api/portraits/men/3.jpg', 'karim.mansouri@example.com', NULL),
+('samira.hadj', 'hashed_password_6', 6, "admin", '{"theme": "dark", "language": "en"}', 'https://randomuser.me/api/portraits/women/3.jpg', 'samira.hadj@example.com', NULL),
+('yacine.meziane', 'hashed_password_7', 7, "admin", '{"theme": "light", "language": "fr"}', 'https://randomuser.me/api/portraits/men/4.jpg', 'yacine.meziane@example.com', NULL),
+('leila.boukadoum', 'hashed_password_8', 8, "admin", '{"theme": "dark", "language": "ar"}', 'https://randomuser.me/api/portraits/women/4.jpg', 'leila.boukadoum@example.com', NULL),
+('rachid.ferhat', 'hashed_password_9', 9, "admin", '{"theme": "light", "language": "en"}', 'https://randomuser.me/api/portraits/men/5.jpg', 'rachid.ferhat@example.com', NULL),
+('amira.saidi', 'hashed_password_10', 10, "admin", '{"theme": "dark", "language": "fr"}', 'https://randomuser.me/api/portraits/women/5.jpg', 'amira.saidi@example.com', NULL),
+
+-- Managers (type_id = 2)
+('hakim.bouaziz', 'hashed_password_11', 11, "admin", '{"theme": "light", "language": "en", "dashboard": "admin"}', 'https://randomuser.me/api/portraits/men/6.jpg', 'hakim.bouaziz@management.com', NULL),
+('sofia.khemiri', 'hashed_password_12', 12, "admin", '{"theme": "dark", "language": "fr", "dashboard": "admin"}', 'https://randomuser.me/api/portraits/women/6.jpg', 'sofia.khemiri@management.com', NULL),
+('youcef.lounis', 'hashed_password_13', 13, "admin", '{"theme": "light", "language": "ar", "dashboard": "admin"}', 'https://randomuser.me/api/portraits/men/7.jpg', 'youcef.lounis@management.com', NULL),
+('meriem.taleb', 'hashed_password_14', 14, "admin", '{"theme": "dark", "language": "en", "dashboard": "admin"}', 'https://randomuser.me/api/portraits/women/7.jpg', 'meriem.taleb@management.com', NULL),
+('ali.boukhelifa', 'hashed_password_15', 15, "admin", '{"theme": "light", "language": "fr", "dashboard": "admin"}', 'https://randomuser.me/api/portraits/men/8.jpg', 'ali.boukhelifa@management.com', NULL),
+
+-- Admins (type_id = 3)
+('djamila.ouahab', 'hashed_password_16', 16, "admin", '{"theme": "dark", "language": "ar", "dashboard": "admin", "super_admin": true}', 'https://randomuser.me/api/portraits/women/8.jpg', 'djamila.ouahab@admin.com', NULL),
+('nassim.cherif', 'hashed_password_17', 17, "admin", '{"theme": "light", "language": "en", "dashboard": "admin", "super_admin": true}', 'https://randomuser.me/api/portraits/men/9.jpg', 'nassim.cherif@admin.com', NULL),
+('karima.benaissa', 'hashed_password_18', 18, "admin", '{"theme": "dark", "language": "fr", "dashboard": "admin", "super_admin": true}', 'https://randomuser.me/api/portraits/women/9.jpg', 'karima.benaissa@admin.com', NULL),
+('slimane.kaddour', 'hashed_password_19', 19, "admin", '{"theme": "light", "language": "ar", "dashboard": "admin", "super_admin": true}', 'https://randomuser.me/api/portraits/men/10.jpg', 'slimane.kaddour@admin.com', NULL),
+('zahra.moussaoui', 'hashed_password_20', 20, "admin", '{"theme": "dark", "language": "en", "dashboard": "admin", "super_admin": true}', 'https://randomuser.me/api/portraits/women/10.jpg', 'zahra.moussaoui@admin.com', NULL),
+
+-- Additional regular users
+('abdelkader.benslimane', 'hashed_password_21', 21, "admin", '{"theme": "light", "language": "fr"}', 'https://randomuser.me/api/portraits/men/11.jpg', 'abdelkader.benslimane@example.com', NULL),
+('noura.dahmani', 'hashed_password_22', 22, "admin", '{"theme": "dark", "language": "ar"}', 'https://randomuser.me/api/portraits/women/11.jpg', 'noura.dahmani@example.com', NULL),
+('fares.boutaleb', 'hashed_password_23', 23, "admin", '{"theme": "light", "language": "en"}', 'https://randomuser.me/api/portraits/men/12.jpg', 'fares.boutaleb@example.com', NULL),
+('hania.zeroual', 'hashed_password_24', 24, "admin", '{"theme": "dark", "language": "fr"}', 'https://randomuser.me/api/portraits/women/12.jpg', 'hania.zeroual@example.com', NULL),
+('walid.gherbi', 'hashed_password_25', 25, "admin", '{"theme": "light", "language": "ar"}', 'https://randomuser.me/api/portraits/men/13.jpg', 'walid.gherbi@example.com', NULL);
+
+
+
+-- Notifications for user #4 (assuming user exists with id_app_user = 4)
+
+-- Organizations for suppliers
+INSERT INTO provider_organisation (
+    provider_organisation_name, 
+    provider_organisation_desc
+) VALUES
+('Gluttex International', 'Leading provider of gluten-free products and specialty food items across North Africa. Committed to quality and innovation in celiac-friendly nutrition.'),
+('MediFarm Algérie', 'Agricultural cooperative specializing in organic grains, legumes, and traditional Algerian produce. Focus on sustainable farming and fair trade practices.'),
+('Sahara Fresh Distribution', 'Major distributor of fresh produce, dairy products, and packaged goods serving retail chains across Algeria. Fast delivery and competitive pricing.'),
+('El Djazair Food Industries', 'Food manufacturing company producing traditional Algerian pastries, couscous, and preserved goods. Family-owned since 1985.'),
+('Atlas Mountains Organic', 'Specialized in organic and natural food products sourced from the Atlas Mountains region. Focus on honey, dried fruits, and aromatic herbs.');
+
+
+-- Invitation Notifications for Organizations and Suppliers
+INSERT INTO notification (notification_code, notification_params, notification_user_ref, notification_created_at, notification_read_at) VALUES
+
+-- Organization Invitations (referencing the 5 organizations)
+('ROLE_INVITATION', '{"entity_id": 1, "entity_name": "Gluttex International", "entity_type": "organization", "role_name": "Store Manager", "invited_by": "Admin User", "invitation_date": "2024-06-01T10:30:00", "management_rule_id": 101}', 4, '2024-06-01 10:30:00', NULL),
+('ROLE_INVITATION', '{"entity_id": 2, "entity_name": "MediFarm Algérie", "entity_type": "organization", "role_name": "Product Manager", "invited_by": "Sarah Johnson", "invitation_date": "2024-06-05T14:15:00", "management_rule_id": 102}', 4, '2024-06-05 14:15:00', '2024-06-06 09:20:00'),
+('ROLE_INVITATION', '{"entity_id": 3, "entity_name": "Sahara Fresh Distribution", "entity_type": "organization", "role_name": "Inventory Manager", "invited_by": "Michael Brown", "invitation_date": "2024-06-10T09:45:00", "management_rule_id": 103}', 4, '2024-06-10 09:45:00', NULL),
+('ROLE_INVITATION', '{"entity_id": 4, "entity_name": "El Djazair Food Industries", "entity_type": "organization", "role_name": "Quality Control Manager", "invited_by": "Ahmed Benali", "invitation_date": "2024-06-12T11:00:00", "management_rule_id": 104}', 4, '2024-06-12 11:00:00', NULL),
+('ROLE_INVITATION', '{"entity_id": 5, "entity_name": "Atlas Mountains Organic", "entity_type": "organization", "role_name": "Procurement Specialist", "invited_by": "Fatima Zohra", "invitation_date": "2024-06-15T13:30:00", "management_rule_id": 105}', 4, '2024-06-15 13:30:00', NULL),
+
+-- Supplier Invitations (referencing 7 suppliers)
+('ROLE_INVITATION', '{"entity_id": 1, "entity_name": "Gluttex North Algeria", "entity_type": "supplier", "role_name": "Supplier Admin", "invited_by": "Admin User", "invitation_date": "2024-06-02T09:00:00", "management_rule_id": 201}', 4, '2024-06-02 09:00:00', '2024-06-02 10:30:00'),
+('ROLE_INVITATION', '{"entity_id": 2, "entity_name": "Gluttex South Region", "entity_type": "supplier", "role_name": "Regional Manager", "invited_by": "Admin User", "invitation_date": "2024-06-03T14:00:00", "management_rule_id": 202}', 4, '2024-06-03 14:00:00', NULL),
+('ROLE_INVITATION', '{"entity_id": 3, "entity_name": "MediFarm Central", "entity_type": "supplier", "role_name": "Farm Coordinator", "invited_by": "Sarah Johnson", "invitation_date": "2024-06-07T10:00:00", "management_rule_id": 203}', 4, '2024-06-07 10:00:00', '2024-06-08 08:00:00'),
+('ROLE_INVITATION', '{"entity_id": 4, "entity_name": "Sahara Fresh Algiers", "entity_type": "supplier", "role_name": "Logistics Manager", "invited_by": "Michael Brown", "invitation_date": "2024-06-09T15:30:00", "management_rule_id": 204}', 4, '2024-06-09 15:30:00', NULL),
+('ROLE_INVITATION', '{"entity_id": 5, "entity_name": "El Djazair Traditional", "entity_type": "supplier", "role_name": "Production Supervisor", "invited_by": "Ahmed Benali", "invitation_date": "2024-06-11T11:00:00", "management_rule_id": 205}', 4, '2024-06-11 11:00:00', '2024-06-12 14:00:00'),
+('ROLE_INVITATION', '{"entity_id": 6, "entity_name": "Atlas Honey Products", "entity_type": "supplier", "role_name": "Quality Inspector", "invited_by": "Fatima Zohra", "invitation_date": "2024-06-13T09:00:00", "management_rule_id": 206}', 4, '2024-06-13 09:00:00', NULL),
+('ROLE_INVITATION', '{"entity_id": 7, "entity_name": "Sahara Oasis Dates", "entity_type": "supplier", "role_name": "Date Specialist", "invited_by": "Karim Mansouri", "invitation_date": "2024-06-14T14:00:00", "management_rule_id": 207}', 4, '2024-06-14 14:00:00', NULL),
+
+-- System Alert Notifications
+('service_reminder', '{"alert_type": "maintenance", "message": "System maintenance scheduled for June 15th at 2 AM", "timestamp": "2024-06-08T16:20:00"}', 4, '2024-06-08 16:20:00', '2024-06-08 17:00:00'),
+('service_reminder', '{"alert_type": "security", "message": "New login detected from new device", "timestamp": "2024-06-12T08:15:00"}', 4, '2024-06-12 08:15:00', '2024-06-12 08:30:00'),
+('service_reminder', '{"alert_type": "update", "message": "New version 2.0.0 is available", "timestamp": "2024-06-14T11:00:00"}', 4, '2024-06-14 11:00:00', NULL),
+
+-- Reminder Notifications
+('event_reminder', '{"reminder_type": "order", "due_date": "2024-06-20", "created_at": "2024-06-13T10:00:00"}', 4, '2024-06-13 10:00:00', NULL),
+('event_reminder', '{"reminder_type": "payment", "due_date": "2024-06-25", "created_at": "2024-06-14T09:30:00"}', 4, '2024-06-14 09:30:00', NULL),
+('event_reminder', '{"reminder_type": "subscription", "due_date": "2024-07-01", "created_at": "2024-06-15T14:45:00"}', 4, '2024-06-15 14:45:00', '2024-06-16 08:00:00'),
+
+-- Order Status Notifications
+('order_shipped', '{"order_id": "ORD-12345", "status": "shipped", "tracking_number": "TRK789012", "updated_at": "2024-06-02T15:30:00"}', 4, '2024-06-02 15:30:00', '2024-06-02 16:00:00'),
+('order_delivered', '{"order_id": "ORD-12346", "status": "delivered", "delivered_at": "2024-06-07T12:00:00"}', 4, '2024-06-07 12:00:00', '2024-06-07 13:15:00'),
+('order_processing', '{"order_id": "ORD-12347", "status": "processing", "estimated_delivery": "2024-06-22"}', 4, '2024-06-10 11:20:00', NULL),
+
+-- Stock Alert Notifications
+('product_stock_low', '{"product_name": "Premium Coffee Beans", "current_stock": 15, "min_threshold": 20, "alert_at": "2024-06-03T08:00:00"}', 4, '2024-06-03 08:00:00', '2024-06-03 09:30:00'),
+('product_stock_low', '{"product_name": "Organic Tea", "current_stock": 8, "min_threshold": 10, "alert_at": "2024-06-09T10:15:00"}', 4, '2024-06-09 10:15:00', NULL),
+('product_stock_low', '{"product_name": "Gluten-Free Flour", "current_stock": 25, "min_threshold": 30, "alert_at": "2024-06-11T14:30:00"}', 4, '2024-06-11 14:30:00', NULL),
+
+-- Promotional Notifications
+('promotional_offer', '{"promo_code": "SUMMER20", "discount": "20%", "expires_at": "2024-07-31", "message": "Summer sale! Get 20% off on all orders"}', 4, '2024-06-01 00:00:00', '2024-06-01 10:00:00'),
+('promotional_offer', '{"promo_code": "FREESHIP", "discount": "free shipping", "expires_at": "2024-06-30", "message": "Free shipping on orders over DZD 5000"}', 4, '2024-06-05 09:00:00', NULL),
+('promotional_offer', '{"promo_code": "WELCOME10", "discount": "10%", "expires_at": "2024-07-15", "message": "Welcome discount for new customers"}', 4, '2024-06-10 08:00:00', NULL);
+
+-- Summary counts
+-- SELECT COUNT(*) FROM notification WHERE notification_user_ref = 4;  -- Should return 18
+-- SELECT COUNT(*) FROM notification WHERE notification_user_ref = 4 AND notification_read_at IS NOT NULL;  -- Read count: 6
+-- SELECT COUNT(*) FROM notification WHERE notification_user_ref = 4 AND notification_read_at IS NULL;  -- Unread count: 12
+
+-- Management Rules (Role Invitations) for user #4
+-- These represent pending invitations for the user to join organizations or suppliers
+
+
+desc provider_organisation;
+
+select * from notification;
+select * from product_provider_type;
+desc person_details;
+select * from product_provider, provider_details where product_provider.product_provider_details_id = provider_details.idprovider_details_id ;
+desc notification;
+desc management_rule;
+select * from recipe;
+select * from notification;
+select * from management_rule;
+delete from management_rule where id_management_rule = 19;
 
 

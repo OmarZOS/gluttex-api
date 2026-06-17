@@ -11,7 +11,7 @@ from core.exceptions.handler import APIException
 # Import your models
 
 from core.models import (
-    Product, AppUser, Cart, Invoice, Person, Location, 
+    Product, AppUser, Cart, Invoice, Person, 
     ProductProvider, Recipe, ProductReaction, OrderedItem,
     
 )

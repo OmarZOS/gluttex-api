@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 from core.exceptions.specific.person_exceptions import *
-from core.api_models import Person_API, Location_API
+from core.api_models import BloodType, Person_API, Location_API
 from core.exceptions.handler import (
     DatabaseException
 )
@@ -85,7 +85,7 @@ class PersonService:
             person_last_name=person_data.person_last_name,
             person_birth_date=person_data.person_birth_date,
             person_gender=person_data.person_gender,
-            person_nationality=person_data.person_nationality,
+            person_country_code=person_data.person_country_code,
         )
         
         try:
@@ -129,7 +129,7 @@ class PersonService:
                 person_last_name=person_data.person_last_name,
                 person_birth_date=person_data.person_birth_date,
                 person_gender=person_data.person_gender,
-                person_nationality=person_data.person_nationality,
+                person_country_code=person_data.person_country_code,
             )
         
         # Handle location
@@ -181,15 +181,15 @@ class PersonService:
                 existing_details.person_gender = person_data.person_gender
                 existing_details.person_first_name = person_data.person_first_name
                 existing_details.person_last_name = person_data.person_last_name
-                existing_details.person_country_code = person_data.person_country_code.value if person_data.person_country_code else None
                 existing_person.person_details = existing_details
             else:
                 # Create new details
                 new_details = self.create_person_details(person_data)
                 existing_person.person_details_id = new_details.id_person_details
             
-
-            existing_person.person_blood_type = person_data.blood_type.value if person_data.blood_type else None
+            
+            existing_person.person_details.person_country_code = person_data.person_country_code if person_data.person_country_code  else None
+            existing_person.person_blood_type = person_data.blood_type if (person_data.blood_type != BloodType.UNKNOWN ) else None
             
             # Handle location
             location = self.location_service.get_location_object(location_data.id_location)
@@ -220,7 +220,7 @@ class PersonService:
             
             person = Person()
             
-            person.person_blood_type = person_data.blood_type.value if person_data.blood_type else None
+            person.person_blood_type = person_data.blood_type if (person_data.blood_type != BloodType.UNKNOWN ) else None
             
             if existing_details:
                 person.person_details_id = existing_details.id_person_details
@@ -339,7 +339,7 @@ class PersonService:
             details.person_last_name = person_data.person_last_name
             details.person_birth_date = person_data.person_birth_date
             details.person_gender = person_data.person_gender
-            details.person_nationality = person_data.person_nationality
+            details.person_country_code = person_data.person_country_code
             
             updated_details = self.person_repo.update_person_details(details)
             logger.info(f"Updated person details with ID: {details_id}")
