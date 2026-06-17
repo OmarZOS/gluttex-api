@@ -115,6 +115,155 @@ INSERT INTO `gluttex`.`product`
 -- Products for provider 7
 (2,'Semoule de pain', 'BioCereal','Organic gluten-free semolina.', 7, 3, '1234567890130', 3.99, 120, CURDATE(), CURDATE());
 
+
+-- -----------------------------------------------------
+-- Dummy Data for product
+-- -----------------------------------------------------
+INSERT INTO `product` (
+    `product_owner`,
+    `product_name`,
+    `product_brand`,
+    `product_description`,
+    `product_provider_id`,
+    `product_category_id`,
+    `product_barcode`,
+    `product_price`,
+    `product_quantity`,
+    `product_quantifier`,
+    `product_origin_id`,
+    `last_updated`,
+    `created`
+) VALUES
+-- =====================================================
+-- PROVIDER 1 - General Medical Supplies
+-- =====================================================
+(1, 'Surgical Face Mask (50pcs)', 'MediSafe', 'Disposable 3-ply surgical masks with high filtration efficiency', 1, 8, '1234567890001', 12.99, 500, 'box', NULL, NOW(), NOW()),
+(1, 'Latex Examination Gloves (100pcs)', 'SafeHands', 'Powder-free latex examination gloves, size M', 1, 8, '1234567890002', 15.50, 300, 'box', NULL, NOW(), NOW()),
+(1, 'Digital Thermometer', 'TempSure', 'Fast reading digital thermometer for accurate temperature measurement', 1, 9, '1234567890003', 24.99, 80, 'piece', NULL, NOW(), NOW()),
+(1, 'Blood Pressure Monitor', 'CardioChek', 'Digital blood pressure monitor with large display', 1, 9, '1234567890004', 49.95, 45, 'piece', NULL, NOW(), NOW()),
+(1, 'First Aid Kit', 'MediSafe', 'Comprehensive first aid kit for home and travel', 1, 8, '1234567890005', 29.99, 60, 'kit', NULL, NOW(), NOW()),
+(1, 'Hand Sanitizer 500ml', 'CleanWell', 'Alcohol-based hand sanitizer with moisturizer', 1, 8, '1234567890006', 6.99, 200, 'bottle', NULL, NOW(), NOW()),
+(1, 'Disposable Syringes (10pcs)', 'MediSafe', 'Sterile disposable syringes, 5ml', 1, 8, '1234567890007', 8.50, 150, 'pack', NULL, NOW(), NOW()),
+(1, 'Wound Dressing Pack', 'HealFast', 'Sterile wound dressing with bandages and antiseptic wipes', 1, 8, '1234567890008', 14.99, 100, 'pack', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 2 - Bakery & Pastry Products
+-- =====================================================
+(2, 'Grano''Sac Raisin Cacahuetes', 'Grano''Sac', 'Delicious gluten-free baked goods made with raisins and peanuts', 2, 1, '1234567890009', 5.99, 100, 'pack', NULL, NOW(), NOW()),
+(2, 'Butter Biscuits LEGER', 'LEGER', 'Light and crispy gluten-free butter biscuits', 2, 1, '1234567890010', 4.49, 150, 'pack', NULL, NOW(), NOW()),
+(2, 'Chocolate Chip Cookies', 'LEGER', 'Soft-baked gluten-free chocolate chip cookies', 2, 1, '1234567890011', 4.99, 120, 'pack', NULL, NOW(), NOW()),
+(2, 'Almond Biscotti', 'Grano''Sac', 'Crunchy Italian-style biscotti with almonds', 2, 1, '1234567890012', 5.49, 90, 'pack', NULL, NOW(), NOW()),
+(2, 'Gluten-Free Bread Loaf', 'LEGER', 'Freshly baked gluten-free bread loaf', 2, 1, '1234567890013', 6.99, 80, 'loaf', NULL, NOW(), NOW()),
+(2, 'Oatmeal Cookies', 'Grano''Sac', 'Wholesome oatmeal cookies with raisins', 2, 1, '1234567890014', 3.99, 130, 'pack', NULL, NOW(), NOW()),
+(2, 'Cinnamon Rolls (6pcs)', 'LEGER', 'Gluten-free cinnamon rolls with cream cheese frosting', 2, 1, '1234567890015', 7.49, 60, 'pack', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 3 - Gluten-Free Snacks
+-- =====================================================
+(2, 'Cookies - Assorted', 'Home Bakery', 'Indulgent gluten-free cookies baked to perfection', 3, 1, '1234567890016', 3.99, 200, 'pack', NULL, NOW(), NOW()),
+(2, 'Gullon Cookies - Chocolate Chip', 'Gullon', 'Classic gluten-free chocolate chip cookies', 3, 1, '1234567890017', 6.29, 120, 'pack', NULL, NOW(), NOW()),
+(2, 'Gullon Cookies - Digestive', 'Gullon', 'Gluten-free digestive biscuits', 3, 1, '1234567890018', 5.79, 110, 'pack', NULL, NOW(), NOW()),
+(2, 'Rice Cakes (12pcs)', 'Home Bakery', 'Light and crispy gluten-free rice cakes', 3, 1, '1234567890019', 3.49, 150, 'pack', NULL, NOW(), NOW()),
+(2, 'Granola Bars - 6pcs', 'Home Bakery', 'Healthy gluten-free granola bars with nuts and honey', 3, 1, '1234567890020', 4.29, 140, 'pack', NULL, NOW(), NOW()),
+(2, 'Crispy Crackers', 'Gullon', 'Gluten-free savory crackers', 3, 1, '1234567890021', 4.99, 130, 'pack', NULL, NOW(), NOW()),
+(2, 'Fruit Snacks (12pcs)', 'Home Bakery', 'Gluten-free fruit snacks made with real fruit juice', 3, 1, '1234567890022', 3.79, 160, 'pack', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 4 - Health & Wellness Products
+-- =====================================================
+(2, 'Date Butter - 250g', 'NutriLife', 'Rich and creamy date butter made from premium dates', 4, 2, '1234567890023', 7.99, 80, 'jar', NULL, NOW(), NOW()),
+(2, 'Almond Butter - 300g', 'NutriLife', '100% natural roasted almond butter', 4, 2, '1234567890024', 8.99, 70, 'jar', NULL, NOW(), NOW()),
+(2, 'Pure Honey - 500g', 'NutriLife', 'Raw, unprocessed honey from organic farms', 4, 2, '1234567890025', 9.99, 90, 'bottle', NULL, NOW(), NOW()),
+(2, 'Chia Seeds - 400g', 'NutriLife', 'Organic chia seeds rich in omega-3', 4, 2, '1234567890026', 6.49, 100, 'pack', NULL, NOW(), NOW()),
+(2, 'Quinoa - 500g', 'NutriLife', 'Organic quinoa, high in protein', 4, 2, '1234567890027', 7.49, 85, 'pack', NULL, NOW(), NOW()),
+(2, 'Protein Bar - 12pcs', 'NutriLife', 'High-protein bars for post-workout recovery', 4, 2, '1234567890028', 19.99, 50, 'box', NULL, NOW(), NOW()),
+(2, 'Green Superfood Powder', 'NutriLife', 'Organic green superfood blend with spirulina and wheatgrass', 4, 2, '1234567890029', 24.99, 40, 'can', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 5 - Spreads & Condiments
+-- =====================================================
+(2, 'CARAIBE Crème à Tartiner - 300g', 'CARAIBE', 'Decadent chocolate spread with hazelnuts', 5, 2, '1234567890030', 8.49, 100, 'jar', NULL, NOW(), NOW()),
+(2, 'CARAIBE Caramel Spread', 'CARAIBE', 'Smooth caramel spread with sea salt', 5, 2, '1234567890031', 7.99, 90, 'jar', NULL, NOW(), NOW()),
+(2, 'CARAIBE Coconut Spread', 'CARAIBE', 'Creamy coconut spread with lime zest', 5, 2, '1234567890032', 7.49, 85, 'jar', NULL, NOW(), NOW()),
+(2, 'Organic Strawberry Jam - 250g', 'CARAIBE', 'Organic strawberry jam with no added sugar', 5, 2, '1234567890033', 5.99, 110, 'jar', NULL, NOW(), NOW()),
+(2, 'Blueberry Preserve - 250g', 'CARAIBE', 'Wild blueberry preserve with natural sweetness', 5, 2, '1234567890034', 6.49, 100, 'jar', NULL, NOW(), NOW()),
+(2, 'Maple Syrup - 250ml', 'CARAIBE', 'Pure organic maple syrup from Canada', 5, 2, '1234567890035', 11.99, 60, 'bottle', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 6 - Nut Butters & Spreads
+-- =====================================================
+(2, 'JUMPY Beurre De Cacahuète - 400g', 'JUMPY', 'Smooth and creamy peanut butter spread', 6, 2, '1234567890036', 5.79, 90, 'jar', NULL, NOW(), NOW()),
+(2, 'JUMPY Crunchy Peanut Butter', 'JUMPY', 'Crunchy peanut butter with peanut pieces', 6, 2, '1234567890037', 5.99, 85, 'jar', NULL, NOW(), NOW()),
+(2, 'JUMPY Almond & Cashew Butter', 'JUMPY', 'Blend of roasted almonds and cashews', 6, 2, '1234567890038', 8.99, 70, 'jar', NULL, NOW(), NOW()),
+(2, 'JUMPY Hazelnut Spread', 'JUMPY', 'Rich hazelnut spread with cocoa', 6, 2, '1234567890039', 6.99, 80, 'jar', NULL, NOW(), NOW()),
+(2, 'JUMPY Sunflower Seed Butter', 'JUMPY', 'Nut-free sunflower seed butter', 6, 2, '1234567890040', 7.49, 75, 'jar', NULL, NOW(), NOW()),
+(2, 'JUMPY Pumpkin Seed Butter', 'JUMPY', 'Roasted pumpkin seed butter', 6, 2, '1234567890041', 8.49, 65, 'jar', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 7 - Grains & Cereals
+-- =====================================================
+(2, 'Semoule de pain - Bio', 'BioCereal', 'Organic gluten-free bread semolina', 7, 3, '1234567890042', 3.99, 120, 'pack', NULL, NOW(), NOW()),
+(2, 'Gluten-Free Oatmeal - 500g', 'BioCereal', 'Organic gluten-free rolled oats', 7, 3, '1234567890043', 4.99, 100, 'pack', NULL, NOW(), NOW()),
+(2, 'Rice Pasta - 400g', 'BioCereal', 'Organic gluten-free rice pasta', 7, 3, '1234567890044', 5.49, 95, 'pack', NULL, NOW(), NOW()),
+(2, 'Corn Flour - 1kg', 'BioCereal', 'Fine organic corn flour for baking', 7, 3, '1234567890045', 4.29, 110, 'pack', NULL, NOW(), NOW()),
+(2, 'Buckwheat Flour - 500g', 'BioCereal', 'Organic buckwheat flour, gluten-free', 7, 3, '1234567890046', 5.99, 90, 'pack', NULL, NOW(), NOW()),
+(2, 'Millet Flakes - 300g', 'BioCereal', 'Organic millet flakes for breakfast cereals', 7, 3, '1234567890047', 4.49, 100, 'pack', NULL, NOW(), NOW()),
+(2, 'Quinoa Flour - 500g', 'BioCereal', 'Organic quinoa flour rich in protein', 7, 3, '1234567890048', 6.49, 85, 'pack', NULL, NOW(), NOW()),
+(2, 'Gluten-Free Muesli - 400g', 'BioCereal', 'Organic muesli with dried fruits and nuts', 7, 3, '1234567890049', 5.79, 95, 'pack', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 8 - Fresh Produce
+-- =====================================================
+(2, 'Organic Apples (6pcs)', 'FreshFarm', 'Fresh organic apples from local farms', 8, 4, '1234567890050', 4.99, 100, 'pack', NULL, NOW(), NOW()),
+(2, 'Organic Bananas (bunch)', 'FreshFarm', 'Ripe organic bananas', 8, 4, '1234567890051', 2.99, 120, 'bunch', NULL, NOW(), NOW()),
+(2, 'Mixed Berries (250g)', 'FreshFarm', 'Fresh organic mixed berries', 8, 4, '1234567890052', 5.99, 80, 'pack', NULL, NOW(), NOW()),
+(2, 'Organic Avocados (4pcs)', 'FreshFarm', 'Ripe organic avocados', 8, 4, '1234567890053', 6.99, 60, 'pack', NULL, NOW(), NOW()),
+(2, 'Spinach (250g)', 'FreshFarm', 'Fresh organic spinach leaves', 8, 4, '1234567890054', 3.49, 100, 'pack', NULL, NOW(), NOW()),
+(2, 'Organic Carrots (1kg)', 'FreshFarm', 'Fresh organic carrots', 8, 4, '1234567890055', 2.49, 90, 'pack', NULL, NOW(), NOW()),
+(2, 'Tomatoes (500g)', 'FreshFarm', 'Ripe organic tomatoes', 8, 4, '1234567890056', 3.99, 110, 'pack', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 9 - Dairy & Alternatives
+-- =====================================================
+(2, 'Almond Milk - 1L', 'DairyFree', 'Unsweetened almond milk with calcium', 9, 4, '1234567890057', 3.49, 80, 'carton', NULL, NOW(), NOW()),
+(2, 'Coconut Yogurt (6pcs)', 'DairyFree', 'Organic coconut yogurt cups', 9, 4, '1234567890058', 7.99, 60, 'pack', NULL, NOW(), NOW()),
+(2, 'Oat Milk - 1L', 'DairyFree', 'Smooth unsweetened oat milk', 9, 4, '1234567890059', 3.99, 90, 'carton', NULL, NOW(), NOW()),
+(2, 'Vegan Cheese Slices (10pcs)', 'DairyFree', 'Plant-based cheese slices', 9, 4, '1234567890060', 5.99, 70, 'pack', NULL, NOW(), NOW()),
+(2, 'Soy Yogurt (6pcs)', 'DairyFree', 'Organic soy yogurt cups', 9, 4, '1234567890061', 6.99, 65, 'pack', NULL, NOW(), NOW()),
+(2, 'Cashew Milk - 1L', 'DairyFree', 'Smooth unsweetened cashew milk', 9, 4, '1234567890062', 4.49, 75, 'carton', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 10 - Herbal & Tea Products
+-- =====================================================
+(2, 'Chamomile Tea (20 bags)', 'HerbalEssence', 'Organic chamomile tea for relaxation', 10, 7, '1234567890063', 4.99, 100, 'box', NULL, NOW(), NOW()),
+(2, 'Green Tea (50 bags)', 'HerbalEssence', 'Organic green tea with antioxidants', 10, 7, '1234567890064', 6.99, 120, 'box', NULL, NOW(), NOW()),
+(2, 'Peppermint Tea (20 bags)', 'HerbalEssence', 'Organic peppermint tea for digestion', 10, 7, '1234567890065', 4.49, 110, 'box', NULL, NOW(), NOW()),
+(2, 'Turmeric Latte Blend', 'HerbalEssence', 'Golden milk turmeric latte blend', 10, 7, '1234567890066', 12.99, 50, 'jar', NULL, NOW(), NOW()),
+(2, 'Matcha Powder - 100g', 'HerbalEssence', 'Premium organic matcha powder', 10, 7, '1234567890067', 24.99, 30, 'tin', NULL, NOW(), NOW()),
+(2, 'Lemon Ginger Tea (20 bags)', 'HerbalEssence', 'Organic lemon and ginger tea', 10, 7, '1234567890068', 5.49, 100, 'box', NULL, NOW(), NOW()),
+(2, 'Sleep Tea (20 bags)', 'HerbalEssence', 'Organic sleep blend with valerian and lavender', 10, 7, '1234567890069', 6.49, 90, 'box', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 11 - Supplements & Vitamins
+-- =====================================================
+(2, 'Vitamin C - 1000mg (60 tabs)', 'VitaHealth', 'High potency vitamin C supplement', 11, 9, '1234567890070', 14.99, 80, 'bottle', NULL, NOW(), NOW()),
+(2, 'Vitamin D3 - 2000 IU (90 caps)', 'VitaHealth', 'Vitamin D3 supplement for immune support', 11, 9, '1234567890071', 19.99, 70, 'bottle', NULL, NOW(), NOW()),
+(2, 'Omega-3 Fish Oil (60 caps)', 'VitaHealth', 'Pure omega-3 fish oil supplement', 11, 9, '1234567890072', 24.99, 60, 'bottle', NULL, NOW(), NOW()),
+(2, 'Probiotics (30 caps)', 'VitaHealth', 'High potency probiotic supplement', 11, 9, '1234567890073', 29.99, 50, 'bottle', NULL, NOW(), NOW()),
+(2, 'Magnesium Complex (60 tabs)', 'VitaHealth', 'Magnesium supplement for muscle health', 11, 9, '1234567890074', 18.99, 75, 'bottle', NULL, NOW(), NOW()),
+(2, 'Zinc - 50mg (60 tabs)', 'VitaHealth', 'Zinc supplement for immune function', 11, 9, '1234567890075', 12.99, 90, 'bottle', NULL, NOW(), NOW()),
+(2, 'Multivitamin (120 tabs)', 'VitaHealth', 'Complete multivitamin for daily health', 11, 9, '1234567890076', 29.99, 60, 'bottle', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 12 - Snacks & Convenience Foods
+-- =====================================================
+(2, 'Crispy Chips (6pcs)', 'SnackTime', 'Gluten-free crispy chips variety pack', 12, 1, '1234567890077', 8.99, 100, 'pack', NULL, NOW(), NOW()),
+(2, 'Fruit Bars (12pcs)', 'SnackTime', 'Gluten-free fruit and nut bars', 12, 1, '1234567890078', 9.99, 90, 'box', NULL, NOW(), NOW()),
+(2, 'Protein Balls (6pcs)', 'SnackTime', 'Energy protein balls with nuts and dates', 12, 1, '1234567890079', 6.49, 80, 'pack', NULL, NOW(), NOW()),
+(2, 'Veggie Chips (6pcs)', 'SnackTime', 'Gluten-free vegetable chips variety', 12, 1, '1234567890080', 7.99, 100, 'pack', NULL, NOW(), NOW()),
+(2, 'Trail Mix - 200g', 'SnackTime', 'Mixed nuts, seeds, and dried fruits', 12, 1, '1234567890081', 5.49, 110, 'pack', NULL, NOW(), NOW()),
+(2, 'Pretzel Sticks (6pcs)', 'SnackTime', 'Gluten-free pretzel sticks', 12, 1, '1234567890082', 4.99, 120, 'pack', NULL, NOW(), NOW());
+
 -- Insert provided_service_category first
 INSERT INTO `gluttex`.`provided_service_category` (
   `provided_service_category_name`,
@@ -1661,19 +1810,19 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (NULL, 20, 100.0000, 'bank', 'DEP-BANK-009', 'Deposit against invoice - cart not specified', NULL),
 -- (NULL, 21, 52.5000, 'card', 'DEP-TXN-008', 'Partial deposit - cart unknown', NULL);
 
-select * from app_user;
-desc app_user ;
-insert into app_user (id_app_user,
-app_user_name,
-app_user_password,
-app_user_type,
-app_user_preferences,
-app_user_image_url,
-app_user_last_active,
-app_user_last_updated,
-app_user_creation)
-values
-(4, 'admin', '77b23d5396b51608e7189cf8895bd283c88639db5ed6211fa8bfbaecf477409f',  "admin",NULL , NULL , '2025-12-10 08:01:27', '2025-12-10 08:01:27', '2025-12-10 08:01:27' );
+-- select * from app_user;
+-- desc app_user ;
+-- insert into app_user (id_app_user,
+-- app_user_name,
+-- app_user_password,
+-- app_user_type,
+-- app_user_preferences,
+-- app_user_image_url,
+-- app_user_last_active,
+-- app_user_last_updated,
+-- app_user_creation)
+-- values
+-- (4, 'admin', '77b23d5396b51608e7189cf8895bd283c88639db5ed6211fa8bfbaecf477409f',  "admin",NULL , NULL , '2025-12-10 08:01:27', '2025-12-10 08:01:27', '2025-12-10 08:01:27' );
 
 
 INSERT INTO `gluttex`.`management_rule` (
@@ -1729,980 +1878,7 @@ INSERT INTO `gluttex`.`management_rule` (
 (NULL, 2, 2, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY)),  -- User ID 2
 (NULL, 2, 3, 63, 'ACTIVE', DATE_ADD(NOW(), INTERVAL 60 DAY));  -- User ID 3
 
--- -----------------------------------------------------
--- View `gluttex`.`business_operation`
--- -----------------------------------------------------
-DROP VIEW IF EXISTS `gluttex`.`business_operation`;
 
-CREATE OR REPLACE VIEW `gluttex`.`financial_documents_status` AS
--- PART 1: Invoice-based transactions (keep as is)
-SELECT 
-    -- Document Identification
-    'invoice' AS document_type,
-    i.invoice_id AS document_id,
-    i.invoice_number AS document_number,
-    
-    -- Transaction Identification
-    COALESCE(c.cart_id, po.id_placed_order) AS source_id,
-    CASE 
-        WHEN c.cart_id IS NOT NULL THEN 'cart_based'
-        WHEN po.id_placed_order IS NOT NULL THEN 'order_based'
-        ELSE 'direct_invoice'
-    END AS source_type,
-    
-    -- Provider/Supplier Information
-    COALESCE(
-        pp_cart.id_product_provider,
-        (SELECT pp_prod.id_product_provider 
-         FROM ordered_item oi2 
-         JOIN product p2 ON oi2.ordered_product_id = p2.id_product
-         JOIN product_provider pp_prod ON p2.product_provider_id = pp_prod.id_product_provider
-         WHERE oi2.order_ref = po.id_placed_order 
-         LIMIT 1),
-        0
-    ) AS supplier_id,
-    
-    -- Customer Information with TYPE
-    COALESCE(
-        c.cart_client_user,
-        po.ordering_user_id,
-        NULL
-    ) AS customer_id,
-    
-    -- CUSTOMER TYPE: Determine if customer is user or person
-    CASE 
-        -- If customer_id exists in app_user table, it's a user
-        WHEN COALESCE(c.cart_client_user, po.ordering_user_id) IS NOT NULL 
-             AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = COALESCE(c.cart_client_user, po.ordering_user_id))
-            THEN 'user'
-        -- If cart has person_ref, it's a person
-        WHEN c.cart_person_ref IS NOT NULL 
-            THEN 'person'
-        -- Check if placed_order has person via ordering_user -> person
-        WHEN po.ordering_user_id IS NOT NULL AND EXISTS (
-            SELECT 1 FROM app_user au2 
-            JOIN person p ON au2.app_user_person_id = p.id_person 
-            WHERE au2.id_app_user = po.ordering_user_id
-        )
-            THEN 'person'
-        ELSE 'unknown'
-    END AS customer_type,
-    
-    -- Person ID if available
-    COALESCE(
-        c.cart_person_ref,
-        (SELECT p2.id_person FROM app_user au3 
-         JOIN person p2 ON au3.app_user_person_id = p2.id_person 
-         WHERE au3.id_app_user = COALESCE(c.cart_client_user, po.ordering_user_id)
-         LIMIT 1)
-    ) AS customer_person_id,
-    
-    -- Seller Information
-    COALESCE(
-        c.cart_selling_user
-    ) AS seller_id,
-    
-    -- Financial Information
-    GREATEST(i.invoice_total_amount, 0) AS document_amount,
-    i.invoice_issue_date AS issue_date,
-    i.invoice_due_date AS due_date,
-    
-    -- Payment Information
-    COALESCE(
-        (SELECT SUM(p.payment_amount) 
-         FROM payment p 
-         WHERE p.payment_invoice_id = i.invoice_id 
-         ),
-        0
-    ) AS total_paid,
-    
-    -- Deposit Information
-    COALESCE(
-        (SELECT SUM(d.deposit_amount) 
-         FROM deposit d 
-         WHERE d.deposit_invoice_id = i.invoice_id),
-        0
-    ) AS total_deposited,
-    
-    -- Additional Fees
-    COALESCE(
-        (SELECT SUM(af.additional_fee_amount) 
-         FROM additional_fee af 
-         WHERE af.additional_fee_payment_id IN (
-             SELECT p2.payment_id 
-             FROM payment p2 
-             WHERE p2.payment_invoice_id = i.invoice_id
-         )),
-        0
-    ) AS additional_fees,
-    
-    -- Balance Calculation
-    GREATEST(
-        i.invoice_total_amount - 
-        COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id ), 0) -
-        COALESCE((SELECT SUM(d.deposit_amount) FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id), 0),
-        0
-    ) AS outstanding_balance,
-    
-    -- Status Summary
-    i.invoice_status AS document_status,
-    
-    -- Payment Status Classification (3-STATE MODEL)
-    CASE 
-        -- Canceled state (special case)
-        WHEN i.invoice_status = 'canceled' THEN 'canceled'
-        
-        -- PAID STATE: Full payment via payments OR deposits
-        WHEN (COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id ), 0) +
-              COALESCE((SELECT SUM(d.deposit_amount) FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id), 0)) >= i.invoice_total_amount 
-            THEN 'paid'
-        
-        -- DEPOSITED STATE: Some payment/deposit made but not full
-        WHEN (COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = i.invoice_id ), 0) +
-              COALESCE((SELECT SUM(d.deposit_amount) FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id), 0)) > 0
-            THEN 'deposited'
-        
-        -- UNPAID STATE: No payments or deposits
-        ELSE 'unpaid'
-    END AS payment_status,
-    
-    -- Payment method detail (for reference)
-    CASE 
-        WHEN EXISTS (SELECT 1 FROM payment p WHERE p.payment_invoice_id = i.invoice_id ) 
-             AND EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id AND d.deposit_amount > 0)
-            THEN 'mixed_payments'
-        WHEN EXISTS (SELECT 1 FROM payment p WHERE p.payment_invoice_id = i.invoice_id )
-            THEN 'payment_only'
-        WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_invoice_id = i.invoice_id AND d.deposit_amount > 0)
-            THEN 'deposit_only'
-        ELSE 'no_payments'
-    END AS payment_method,
-    
-    -- Aging Information
-    CASE 
-        WHEN i.invoice_issue_date IS NOT NULL THEN 
-            DATEDIFF(CURRENT_DATE(), i.invoice_issue_date)
-        ELSE 0
-    END AS days_issued,
-    
-    CASE 
-        WHEN i.invoice_due_date IS NOT NULL AND i.invoice_due_date < CURRENT_DATE() THEN 
-            DATEDIFF(CURRENT_DATE(), i.invoice_due_date)
-        ELSE 0
-    END AS days_overdue,
-    
-    -- Metadata
-    i.invoice_created_at,
-    i.invoice_updated_at
-
-FROM invoice i
-LEFT JOIN cart c ON i.invoice_cart_id = c.cart_id
-LEFT JOIN placed_order po ON i.invoice_id = po.placed_order_invoice_ref
-LEFT JOIN product_provider pp_cart ON c.cart_product_provider_id = pp_cart.id_product_provider
-
-UNION ALL
-
--- PART 2: Deposit-only transactions (keep as is)
-SELECT 
-    'deposit' AS document_type,
-    d.deposit_id AS document_id,
-    CONCAT('DEP-', d.deposit_id) AS document_number,
-    
-    COALESCE(d.deposit_cart_id, d.deposit_invoice_id) AS source_id,
-    CASE 
-        WHEN d.deposit_cart_id IS NOT NULL THEN 'cart_based'
-        WHEN d.deposit_invoice_id IS NOT NULL THEN 'invoice_based'
-        ELSE 'direct_deposit'
-    END AS source_type,
-    
-    COALESCE(
-        (SELECT pp.id_product_provider 
-         FROM cart c2 
-         JOIN product_provider pp ON c2.cart_product_provider_id = pp.id_product_provider
-         WHERE c2.cart_id = d.deposit_cart_id),
-        (SELECT pp2.id_product_provider 
-         FROM invoice i2 
-         LEFT JOIN cart c3 ON i2.invoice_cart_id = c3.cart_id
-         LEFT JOIN product_provider pp2 ON c3.cart_product_provider_id = pp2.id_product_provider
-         WHERE i2.invoice_id = d.deposit_invoice_id),
-        0
-    ) AS supplier_id,
-    
-    -- Customer identification with TYPE
-    COALESCE(
-        (SELECT COALESCE(c4.cart_client_user) 
-         FROM cart c4 
-         WHERE c4.cart_id = d.deposit_cart_id),
-        (SELECT COALESCE(c5.cart_client_user) 
-         FROM invoice i3 
-         LEFT JOIN cart c5 ON i3.invoice_cart_id = c5.cart_id
-         WHERE i3.invoice_id = d.deposit_invoice_id),
-        NULL
-    ) AS customer_id,
-    
-    -- CUSTOMER TYPE for deposits
-    CASE 
-        -- If from cart with cart_client_user
-        WHEN d.deposit_cart_id IS NOT NULL AND EXISTS (
-            SELECT 1 FROM cart c6 
-            WHERE c6.cart_id = d.deposit_cart_id 
-            AND c6.cart_client_user IS NOT NULL 
-            AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = c6.cart_client_user)
-        ) THEN 'user'
-        
-        -- If from cart with cart_person_ref
-        WHEN d.deposit_cart_id IS NOT NULL AND EXISTS (
-            SELECT 1 FROM cart c7 WHERE c7.cart_id = d.deposit_cart_id AND c7.cart_person_ref IS NOT NULL
-        ) THEN 'person'
-        
-        -- If from invoice, check the associated cart
-        WHEN d.deposit_invoice_id IS NOT NULL THEN
-            CASE 
-                WHEN EXISTS (
-                    SELECT 1 FROM invoice i4 
-                    LEFT JOIN cart c8 ON i4.invoice_cart_id = c8.cart_id
-                    WHERE i4.invoice_id = d.deposit_invoice_id 
-                    AND c8.cart_client_user IS NOT NULL
-                    AND EXISTS (SELECT 1 FROM app_user au2 WHERE au2.id_app_user = c8.cart_client_user)
-                ) THEN 'user'
-                WHEN EXISTS (
-                    SELECT 1 FROM invoice i5 
-                    LEFT JOIN cart c9 ON i5.invoice_cart_id = c9.cart_id
-                    WHERE i5.invoice_id = d.deposit_invoice_id 
-                    AND c9.cart_person_ref IS NOT NULL
-                ) THEN 'person'
-                ELSE 'unknown'
-            END
-        ELSE 'unknown'
-    END AS customer_type,
-    
-    -- Person ID for deposits
-    COALESCE(
-        (SELECT c10.cart_person_ref FROM cart c10 WHERE c10.cart_id = d.deposit_cart_id),
-        (SELECT c11.cart_person_ref FROM invoice i6 
-         LEFT JOIN cart c11 ON i6.invoice_cart_id = c11.cart_id
-         WHERE i6.invoice_id = d.deposit_invoice_id),
-        0
-    ) AS customer_person_id,
-    
-    -- Seller identification
-    COALESCE(
-        (SELECT COALESCE(c12.cart_selling_user) 
-         FROM cart c12 
-         WHERE c12.cart_id = d.deposit_cart_id),
-        (SELECT COALESCE(c13.cart_selling_user) 
-         FROM invoice i7 
-         LEFT JOIN cart c13 ON i7.invoice_cart_id = c13.cart_id
-         WHERE i7.invoice_id = d.deposit_invoice_id),
-        0
-    ) AS seller_id,
-    
-    d.deposit_amount AS document_amount,
-    DATE(d.deposit_created_at) AS issue_date,
-    DATE(d.deposit_created_at) AS due_date,
-    
-    0 AS total_paid,
-    d.deposit_amount AS total_deposited,
-    
-    0 AS additional_fees,
-    
-    -- Balance calculation
-    CASE 
-        WHEN d.deposit_invoice_id IS NOT NULL THEN
-            GREATEST(
-                (SELECT i8.invoice_total_amount 
-                 FROM invoice i8 
-                 WHERE i8.invoice_id = d.deposit_invoice_id) - 
-                d.deposit_amount -
-                COALESCE((SELECT SUM(p.payment_amount) FROM payment p WHERE p.payment_invoice_id = d.deposit_invoice_id ), 0),
-                0
-            )
-        ELSE d.deposit_amount
-    END AS outstanding_balance,
-    
-    'pending' AS document_status,
-    
-    -- Payment Status (3-STATE MODEL for deposits)
-    CASE 
-        WHEN d.deposit_invoice_id IS NOT NULL THEN
-            CASE 
-                -- PAID STATE: Deposit covers full invoice amount
-                WHEN d.deposit_amount >= 
-                    (SELECT i9.invoice_total_amount 
-                     FROM invoice i9 
-                     WHERE i9.invoice_id = d.deposit_invoice_id)
-                    THEN 'paid'
-                -- DEPOSITED STATE: Partial deposit
-                WHEN d.deposit_amount > 0 THEN 'deposited'
-                ELSE 'unpaid'
-            END
-        -- Cart deposit (no invoice yet)
-        ELSE CASE
-            WHEN d.deposit_amount > 0 THEN 'deposited'
-            ELSE 'unpaid'
-        END
-    END AS payment_status,
-    
-    -- Payment method detail
-    'deposit_only' AS payment_method,
-    
-    CASE 
-        WHEN d.deposit_created_at IS NOT NULL THEN 
-            DATEDIFF(CURRENT_DATE(), d.deposit_created_at)
-        ELSE 0
-    END AS days_issued,
-    0 AS days_overdue,
-    
-    d.deposit_created_at,
-    d.deposit_updated_at
-
-FROM deposit d
-WHERE d.deposit_amount > 0
-
-UNION ALL
-
--- PART 3: Cart transactions with payments but no invoice (NEW - FIXED)
-SELECT 
-    'cart_with_payments' AS document_type,  -- Changed from 'pending_cart'
-    c.cart_id AS document_id,
-    CONCAT('CART-', c.cart_id) AS document_number,
-    
-    c.cart_id AS source_id,
-    'cart_based' AS source_type,
-    
-    pp.id_product_provider AS supplier_id,
-    
-    COALESCE(c.cart_client_user, NULL) AS customer_id,
-    
-    -- CUSTOMER TYPE for carts
-    CASE 
-        WHEN COALESCE(c.cart_client_user) IS NOT NULL 
-             AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = COALESCE(c.cart_client_user))
-            THEN 'user'
-        WHEN c.cart_person_ref IS NOT NULL 
-            THEN 'person'
-        ELSE 'unknown'
-    END AS customer_type,
-    
-    COALESCE(c.cart_person_ref, 0) AS customer_person_id,
-    
-    COALESCE(c.cart_selling_user, 0) AS seller_id,
-    
-    c.cart_total_amount AS document_amount,
-    DATE(c.cart_created_at) AS issue_date,
-    COALESCE(c.cart_due_date, DATE_ADD(c.cart_created_at, INTERVAL 30 DAY)) AS due_date,
-    
-    -- CALCULATE PAYMENTS: Check if cart has payments via receipts
-    COALESCE(
-        (SELECT SUM(r.receipt_amount)
-         FROM receipt r 
-         WHERE r.receipt_cart_ref = c.cart_id),
-        0
-    ) AS total_paid,
-    
-    -- CALCULATE DEPOSITS
-    COALESCE(
-        (SELECT SUM(d2.deposit_amount) 
-         FROM deposit d2 
-         WHERE d2.deposit_cart_id = c.cart_id),
-        0
-    ) AS total_deposited,
-    
-    0 AS additional_fees,
-    
-    -- Balance calculation: cart total - payments - deposits
-    GREATEST(
-        c.cart_total_amount - 
-        COALESCE((SELECT SUM(r.receipt_amount) FROM receipt r WHERE r.receipt_cart_ref = c.cart_id), 0) -
-        COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0),
-        0
-    ) AS outstanding_balance,
-    
-    c.cart_status AS document_status,
-    
-    -- Payment Status (3-STATE MODEL) - IMPROVED LOGIC
-    CASE 
-        -- Canceled state (special case)
-        WHEN c.cart_status = 'canceled' THEN 'canceled'
-        
-        -- PAID STATE: Payments + Deposits >= Cart total
-        WHEN (
-            COALESCE((SELECT SUM(r.receipt_amount) FROM receipt r WHERE r.receipt_cart_ref = c.cart_id), 0) +
-            COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0)
-        ) >= c.cart_total_amount 
-            THEN 'paid'
-        
-        -- DEPOSITED STATE: Has any payments or deposits
-        WHEN (
-            COALESCE((SELECT SUM(r.receipt_amount) FROM receipt r WHERE r.receipt_cart_ref = c.cart_id), 0) +
-            COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0)
-        ) > 0
-            THEN 'deposited'
-        
-        -- UNPAID STATE: No payments or deposits
-        ELSE 'unpaid'
-    END AS payment_status,
-    
-    -- Payment method detail
-    CASE 
-        WHEN EXISTS (SELECT 1 FROM receipt r WHERE r.receipt_cart_ref = c.cart_id AND r.receipt_amount > 0)
-            AND EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id AND d.deposit_amount > 0)
-            THEN 'mixed_payments'
-        WHEN EXISTS (SELECT 1 FROM receipt r WHERE r.receipt_cart_ref = c.cart_id AND r.receipt_amount > 0)
-            THEN 'payment_only'
-        WHEN EXISTS (SELECT 1 FROM deposit d WHERE d.deposit_cart_id = c.cart_id AND d.deposit_amount > 0)
-            THEN 'deposit_only'
-        ELSE 'no_payments'
-    END AS payment_method,
-    
-    DATEDIFF(CURRENT_DATE(), c.cart_created_at) AS days_issued,
-    
-    -- Calculate days overdue
-    CASE 
-        WHEN COALESCE(c.cart_due_date, DATE_ADD(c.cart_created_at, INTERVAL 30 DAY)) < CURRENT_DATE() 
-             AND (
-                COALESCE((SELECT SUM(r.receipt_amount) FROM receipt r WHERE r.receipt_cart_ref = c.cart_id), 0) +
-                COALESCE((SELECT SUM(d2.deposit_amount) FROM deposit d2 WHERE d2.deposit_cart_id = c.cart_id), 0)
-             ) < c.cart_total_amount
-            THEN DATEDIFF(CURRENT_DATE(), COALESCE(c.cart_due_date, DATE_ADD(c.cart_created_at, INTERVAL 30 DAY)))
-        ELSE 0
-    END AS days_overdue,
-    
-    c.cart_created_at,
-    c.cart_updated_at
-
-FROM cart c
-LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
-WHERE 
-    -- Include ALL carts that don't have invoices
-    NOT EXISTS (
-        SELECT 1 FROM invoice i WHERE i.invoice_cart_id = c.cart_id
-    )
-    -- But exclude carts that are canceled (unless you want to see them)
-    AND c.cart_status != 'canceled'
-
-UNION ALL
-
--- PART 4: Receipt-only transactions (keep as is)
-SELECT 
-    'receipt' AS document_type,
-    r.receipt_id AS document_id,
-    COALESCE(r.receipt_number, CONCAT('REC-', r.receipt_id)) AS document_number,
-    
-    r.receipt_cart_ref AS source_id,
-    CASE 
-        WHEN r.receipt_cart_ref IS NOT NULL THEN 'cart_based'
-        ELSE 'direct_receipt'
-    END AS source_type,
-    
-    COALESCE(
-        (SELECT pp.id_product_provider 
-         FROM cart c 
-         JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
-         WHERE c.cart_id = r.receipt_cart_ref),
-        0
-    ) AS supplier_id,
-    
-    -- Customer information from cart
-    COALESCE(
-        (SELECT c2.cart_client_user FROM cart c2 WHERE c2.cart_id = r.receipt_cart_ref),
-        (SELECT c3.cart_selling_user FROM cart c3 WHERE c3.cart_id = r.receipt_cart_ref),
-        NULL
-    ) AS customer_id,
-    
-    -- CUSTOMER TYPE for receipts
-    CASE 
-        WHEN EXISTS (
-            SELECT 1 FROM cart c4 
-            WHERE c4.cart_id = r.receipt_cart_ref 
-            AND c4.cart_client_user IS NOT NULL
-            AND EXISTS (SELECT 1 FROM app_user au WHERE au.id_app_user = c4.cart_client_user)
-        ) THEN 'user'
-        WHEN EXISTS (
-            SELECT 1 FROM cart c5 
-            WHERE c5.cart_id = r.receipt_cart_ref 
-            AND c5.cart_person_ref IS NOT NULL
-        ) THEN 'person'
-        WHEN EXISTS (
-            SELECT 1 FROM cart c6 
-            WHERE c6.cart_id = r.receipt_cart_ref 
-            AND c6.cart_selling_user IS NOT NULL
-            AND EXISTS (SELECT 1 FROM app_user au2 WHERE au2.id_app_user = c6.cart_selling_user)
-        ) THEN 'user'
-        ELSE 'unknown'
-    END AS customer_type,
-    
-    -- Person ID from cart
-    COALESCE(
-        (SELECT c7.cart_person_ref FROM cart c7 WHERE c7.cart_id = r.receipt_cart_ref),
-        0
-    ) AS customer_person_id,
-    
-    -- Seller from cart
-    COALESCE(
-        (SELECT c8.cart_selling_user FROM cart c8 WHERE c8.cart_id = r.receipt_cart_ref),
-        0
-    ) AS seller_id,
-    
-    r.receipt_amount AS document_amount,
-    r.receipt_created_at AS issue_date,
-    r.receipt_created_at AS due_date,
-    
-    COALESCE(
-        (SELECT p.payment_amount 
-         FROM payment p 
-         WHERE p.payment_id = r.receipt_payment_id 
-         ),
-        r.receipt_amount
-    ) AS total_paid,
-    
-    0 AS total_deposited,
-    
-    0 AS additional_fees,
-    
-    0 AS outstanding_balance, -- Receipts are always fully paid
-    
-    'completed' AS document_status,
-    
-    -- Receipts are always PAID
-    'paid' AS payment_status,
-    
-    -- Payment method detail
-    COALESCE(
-        (SELECT p2.payment_method FROM payment p2 WHERE p2.payment_id = r.receipt_payment_id),
-        'cash'
-    ) AS payment_method_detail,
-    
-    CASE 
-        WHEN r.receipt_created_at IS NOT NULL THEN 
-            DATEDIFF(CURRENT_DATE(), r.receipt_created_at)
-        ELSE 0
-    END AS days_issued,
-    0 AS days_overdue,
-    
-    r.receipt_created_at,
-    DATEDIFF(CURRENT_DATE(), r.receipt_created_at)
-
-FROM receipt r
-WHERE r.receipt_amount > 0
-
--- Optional: Add order by for consistent results
-ORDER BY issue_date DESC, document_type, document_id;
-
-CREATE OR REPLACE VIEW business_operation AS
--- PART 1: Cart-based operations with receipts OR invoices
-SELECT 
-    -- Supplier information
-    pp.id_product_provider AS supplier_id,
-    
-    -- Order information (if exists)
-    po.id_placed_order AS order_id,
-    
-    -- Cart information
-    c.cart_id,
-    
-    -- Client information
-    COALESCE(c.cart_client_user, c.cart_selling_user) AS client_id,
-    
-    -- Seller information
-    COALESCE(c.cart_selling_user, c.cart_client_user) AS seller_id,
-    
-    -- Financial information (use appropriate amount based on document type)
-    CASE 
-        WHEN i.invoice_id IS NOT NULL THEN i.invoice_total_amount
-        WHEN r.receipt_id IS NOT NULL THEN r.receipt_amount
-        ELSE c.cart_total_amount
-    END AS total_amount,
-    
-    -- Invoice information (if exists)
-    i.invoice_id,
-    COALESCE(i.invoice_status, 
-        CASE 
-            WHEN r.receipt_id IS NOT NULL THEN 'receipt_only'
-            ELSE 'no_document'
-        END
-    ) AS invoice_status,
-    
-    -- Receipt information (if exists)
-    r.receipt_id,
-    
-    -- Total paid amount (CRITICAL: Check both receipt AND invoice payments)
-    COALESCE(
-        -- 1. Receipt-based payments (direct receipt_payment_id link)
-        (SELECT SUM(p2.payment_amount)
-         FROM payment p2
-         WHERE p2.payment_id = r.receipt_payment_id
-         AND p2.payment_status IN ('completed', 'partial')),
-         
-        -- 2. Invoice-based payments (invoice_id link)
-        (SELECT SUM(p3.payment_amount)
-         FROM payment p3
-         WHERE p3.payment_invoice_id = i.invoice_id
-         AND p3.payment_status IN ('completed', 'partial')),
-         
-        0
-    ) AS total_paid,
-    
-    -- Total pending payments
-    COALESCE(
-        (SELECT SUM(p2.payment_amount)
-         FROM payment p2
-         WHERE p2.payment_id = r.receipt_payment_id
-         AND p2.payment_status IN ('pending', 'processing')),
-         
-        (SELECT SUM(p3.payment_amount)
-         FROM payment p3
-         WHERE p3.payment_invoice_id = i.invoice_id
-         AND p3.payment_status IN ('pending', 'processing')),
-         
-        0
-    ) AS total_pending,
-    
-    -- Total deposited amount
-    COALESCE(
-        (SELECT SUM(d2.deposit_amount) 
-         FROM deposit d2 
-         WHERE d2.deposit_cart_id = c.cart_id
-         AND d2.deposit_amount > 0), 
-        0
-    ) AS total_deposited,
-    
-    -- Balance due calculation
-    CASE 
-        WHEN i.invoice_id IS NOT NULL THEN 
-            i.invoice_total_amount - 
-            COALESCE(
-                (SELECT SUM(p3.payment_amount)
-                 FROM payment p3
-                 WHERE p3.payment_invoice_id = i.invoice_id
-                 AND p3.payment_status IN ('completed', 'partial')), 0
-            )
-        WHEN r.receipt_id IS NOT NULL THEN 
-            r.receipt_amount - 
-            COALESCE(
-                (SELECT SUM(p2.payment_amount)
-                 FROM payment p2
-                 WHERE p2.payment_id = r.receipt_payment_id
-                 AND p2.payment_status IN ('completed', 'partial')), 0
-            )
-        ELSE c.cart_total_amount
-    END AS balance_due,
-    
-    -- Payment status (comprehensive)
-    CASE 
-        -- Receipt-based payments (typically completed immediately)
-        WHEN r.receipt_id IS NOT NULL THEN
-            CASE 
-                WHEN EXISTS (
-                    SELECT 1 FROM payment p2
-                    WHERE p2.payment_id = r.receipt_payment_id
-                    AND p2.payment_status = 'completed'
-                    AND p2.payment_amount >= r.receipt_amount
-                ) THEN 'fully_paid'
-                
-                WHEN EXISTS (
-                    SELECT 1 FROM payment p2
-                    WHERE p2.payment_id = r.receipt_payment_id
-                    AND p2.payment_status = 'completed'
-                ) THEN 'partially_paid_receipt'
-                
-                ELSE 'receipt_unpaid'
-            END
-        
-        -- Invoice-based payments
-        WHEN i.invoice_id IS NOT NULL THEN
-            CASE 
-                -- Fully paid invoice
-                WHEN EXISTS (
-                    SELECT 1 FROM payment p3 
-                    WHERE p3.payment_invoice_id = i.invoice_id 
-                    AND p3.payment_status = 'completed'
-                    AND p3.payment_amount >= i.invoice_total_amount
-                ) THEN 'fully_paid'
-                
-                -- Partial payment (completed or partial status)
-                WHEN EXISTS (
-                    SELECT 1 FROM payment p3 
-                    WHERE p3.payment_invoice_id = i.invoice_id 
-                    AND p3.payment_status IN ('completed', 'partial')
-                    AND p3.payment_amount > 0
-                ) THEN 'partially_paid'
-                
-                -- Pending payments
-                WHEN EXISTS (
-                    SELECT 1 FROM payment p3 
-                    WHERE p3.payment_invoice_id = i.invoice_id 
-                    AND p3.payment_status IN ('pending', 'processing')
-                ) THEN 'pending_payment'
-                
-                -- No payments
-                ELSE 'unpaid_invoice'
-            END
-        
-        -- No documents yet
-        ELSE 'no_document'
-    END AS payment_status,
-    
-    -- Detailed payment status
-    CASE 
-        WHEN r.receipt_id IS NOT NULL THEN
-            COALESCE(
-                (SELECT p2.payment_status
-                 FROM payment p2
-                 WHERE p2.payment_id = r.receipt_payment_id
-                 LIMIT 1),
-                'receipt_no_payment'
-            )
-        WHEN i.invoice_id IS NOT NULL THEN
-            COALESCE(
-                (SELECT p3.payment_status
-                 FROM payment p3
-                 WHERE p3.payment_invoice_id = i.invoice_id
-                 ORDER BY p3.payment_created_at DESC
-                 LIMIT 1),
-                'invoice_no_payment'
-            )
-        ELSE 'no_payments'
-    END AS detailed_payment_status,
-    
-    -- Document type
-    CASE 
-        WHEN i.invoice_id IS NOT NULL AND r.receipt_id IS NOT NULL THEN 'invoice_and_receipt'
-        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
-        WHEN r.receipt_id IS NOT NULL THEN 'receipt'
-        ELSE 'no_document'
-    END AS document_type,
-    
-    -- Operation type (based on cart contents)
-    CASE 
-        WHEN EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id) 
-             AND EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id)
-        THEN 'mixed_products_services'
-        WHEN EXISTS (SELECT 1 FROM ordered_item oi WHERE oi.ordered_item_cart_ref = c.cart_id) 
-        THEN 'products_only'
-        WHEN EXISTS (SELECT 1 FROM ordered_service os WHERE os.ordered_service_cart_id = c.cart_id) 
-        THEN 'services_only'
-        ELSE 'empty_cart'
-    END AS operation_type,
-    
-    -- Payment method
-    COALESCE(
-        -- From receipt payments
-        (SELECT p2.payment_method
-         FROM payment p2
-         WHERE p2.payment_id = r.receipt_payment_id
-         AND p2.payment_status IN ('completed', 'partial')
-         LIMIT 1),
-         
-        -- From invoice payments
-        (SELECT p3.payment_method
-         FROM payment p3
-         WHERE p3.payment_invoice_id = i.invoice_id
-         AND p3.payment_status IN ('completed', 'partial')
-         ORDER BY p3.payment_created_at DESC
-         LIMIT 1),
-         
-        'not_paid'
-    ) AS payment_method,
-    
-    -- Payment reference
-    COALESCE(
-        (SELECT p2.payment_reference
-         FROM payment p2
-         WHERE p2.payment_id = r.receipt_payment_id
-         AND p2.payment_status IN ('completed', 'partial')
-         LIMIT 1),
-         
-        (SELECT p3.payment_reference
-         FROM payment p3
-         WHERE p3.payment_invoice_id = i.invoice_id
-         AND p3.payment_status IN ('completed', 'partial')
-         ORDER BY p3.payment_created_at DESC
-         LIMIT 1),
-         
-        NULL
-    ) AS payment_reference,
-    
-    -- Source identifier
-    'cart_based' AS source_table,
-    
-    -- Creation timestamp
-    COALESCE(
-        i.invoice_created_at,
-        r.receipt_created_at,
-        c.cart_created_at
-    ) AS operation_date,
-    
-    -- Cart status
-    c.cart_status
-
-FROM cart c
--- Join to Product Provider
-LEFT JOIN product_provider pp ON c.cart_product_provider_id = pp.id_product_provider
--- Join to Invoice (if exists)
-LEFT JOIN invoice i ON c.cart_id = i.invoice_cart_id
--- Join to Receipt (if exists)
-LEFT JOIN receipt r ON c.cart_id = r.receipt_cart_ref
--- Join to Placed Order (if exists)
-LEFT JOIN placed_order po ON (
-    po.placed_order_invoice_ref = i.invoice_id 
-    OR po.id_placed_order IN (
-        SELECT oi.order_ref 
-        FROM ordered_item oi 
-        WHERE oi.ordered_item_cart_ref = c.cart_id
-    )
-)
-
-WHERE c.cart_status IN ('completed', 'pending', 'partial')  -- Include partial status
-
-UNION ALL
-
--- PART 2: Direct Order-based items (without cart reference)
--- [Keep this part similar to before but simplified]
-SELECT 
-    -- Supplier information
-    COALESCE(
-        (SELECT pp2.id_product_provider 
-         FROM product p2 
-         JOIN product_provider pp2 ON p2.product_provider_id = pp2.id_product_provider
-         WHERE p2.id_product = oi.ordered_product_id),
-        0
-    ) AS supplier_id,
-    
-    oi.order_ref AS order_id,
-    
-    NULL AS cart_id,
-    
-    po.ordering_user_id AS client_id,
-    
-    COALESCE(
-        (SELECT au.id_app_user FROM app_user au 
-         WHERE au.id_app_user IN (SELECT au2.id_app_user FROM app_user au2 WHERE au2.id_app_user = po.ordering_user_id)),
-        po.ordering_user_id
-    ) AS seller_id,
-    
-    (oi.ordered_quantity * oi.unit_price * 
-     (1 - COALESCE(oi.product_discount, 0)/100) *
-     (1 + COALESCE(oi.applied_vat, 0)/100)) AS total_amount,
-    
-    i.invoice_id,
-    COALESCE(i.invoice_status, 'no_invoice') AS invoice_status,
-    
-    r.receipt_id,
-    
-    COALESCE(
-        (SELECT SUM(p2.payment_amount)
-         FROM payment p2
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status IN ('completed', 'partial')),
-        0
-    ) AS total_paid,
-    
-    COALESCE(
-        (SELECT SUM(p2.payment_amount)
-         FROM payment p2
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status IN ('pending', 'processing')),
-        0
-    ) AS total_pending,
-    
-    COALESCE(
-        (SELECT SUM(d2.deposit_amount)
-         FROM deposit d2
-         WHERE d2.deposit_invoice_id = i.invoice_id),
-        0
-    ) AS total_deposited,
-    
-    (oi.ordered_quantity * oi.unit_price * 
-     (1 - COALESCE(oi.product_discount, 0)/100) *
-     (1 + COALESCE(oi.applied_vat, 0)/100)) - 
-    COALESCE(
-        (SELECT SUM(p2.payment_amount)
-         FROM payment p2
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status IN ('completed', 'partial')), 0
-    ) AS balance_due,
-    
-    CASE 
-        WHEN EXISTS (
-            SELECT 1 FROM payment p2 
-            WHERE p2.payment_invoice_id = i.invoice_id 
-            AND p2.payment_status = 'completed'
-            AND p2.payment_amount >= i.invoice_total_amount
-        ) THEN 'fully_paid'
-        
-        WHEN EXISTS (
-            SELECT 1 FROM payment p2 
-            WHERE p2.payment_invoice_id = i.invoice_id 
-            AND p2.payment_status IN ('completed', 'partial')
-            AND p2.payment_amount > 0
-        ) THEN 'partially_paid'
-        
-        WHEN EXISTS (
-            SELECT 1 FROM payment p2 
-            WHERE p2.payment_invoice_id = i.invoice_id 
-            AND p2.payment_status IN ('pending', 'processing')
-        ) THEN 'pending_payment'
-        
-        ELSE 'unpaid'
-    END AS payment_status,
-    
-    COALESCE(
-        (SELECT p2.payment_status
-         FROM payment p2
-         WHERE p2.payment_invoice_id = i.invoice_id
-         ORDER BY p2.payment_created_at DESC
-         LIMIT 1),
-        'no_payments'
-    ) AS detailed_payment_status,
-    
-    CASE 
-        WHEN i.invoice_id IS NOT NULL AND r.receipt_id IS NOT NULL THEN 'invoice_and_receipt'
-        WHEN i.invoice_id IS NOT NULL THEN 'invoice'
-        WHEN r.receipt_id IS NOT NULL THEN 'receipt'
-        ELSE 'no_document'
-    END AS document_type,
-    
-    'direct_order' AS operation_type,
-    
-    COALESCE(
-        (SELECT p2.payment_method
-         FROM payment p2
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status IN ('completed', 'partial')
-         ORDER BY p2.payment_created_at DESC
-         LIMIT 1),
-        'not_paid'
-    ) AS payment_method,
-    
-    COALESCE(
-        (SELECT p2.payment_reference
-         FROM payment p2
-         WHERE p2.payment_invoice_id = i.invoice_id
-         AND p2.payment_status IN ('completed', 'partial')
-         ORDER BY p2.payment_created_at DESC
-         LIMIT 1),
-        NULL
-    ) AS payment_reference,
-    
-    'order_based' AS source_table,
-    
-    COALESCE(
-        i.invoice_created_at,
-        po.placed_order_creation
-    ) AS operation_date,
-    
-    NULL AS cart_status
-
-FROM ordered_item oi
-LEFT JOIN placed_order po ON po.id_placed_order = oi.order_ref
-LEFT JOIN invoice i ON i.invoice_id = po.placed_order_invoice_ref
-LEFT JOIN receipt r ON r.receipt_id = po.placed_order_receipt_ref
-WHERE oi.ordered_item_cart_ref IS NULL 
-AND oi.order_ref IS NOT NULL
-AND oi.ordered_product_id IS NOT NULL
-
-ORDER BY operation_date DESC;
 
 INSERT INTO `gluttex`.`ingredient` (ingredient_name) VALUES 
 ('Wheat'), 
@@ -2965,6 +2141,715 @@ INSERT INTO notification (notification_code, notification_params, notification_u
 -- Management Rules (Role Invitations) for user #4
 -- These represent pending invitations for the user to join organizations or suppliers
 
+INSERT INTO `provided_service_category` (
+    `provided_service_category_name`,
+    `provided_service_category_naming_ref`,
+    `provided_service_category_icon_url`,
+    `provided_service_category_avg_duration`,
+    `provided_service_category_description`,
+    `provided_service_category_created_at`,
+    `provided_service_category_updated_at`,
+    `provided_service_category_deleted_at`
+) VALUES
+-- Medical & Health Services
+('General Medical Consultation', NULL, 'icons/medical/consultation.svg', 30.00, 'General medical consultation and diagnosis for common health issues', NOW(), NOW(), NULL),
+('Specialist Consultation', NULL, 'icons/medical/specialist.svg', 45.00, 'Specialized medical consultation with expert doctors', NOW(), NOW(), NULL),
+('Emergency Care', NULL, 'icons/medical/emergency.svg', 60.00, 'Emergency medical care and urgent treatment services', NOW(), NOW(), NULL),
+('Surgery', NULL, 'icons/medical/surgery.svg', 120.00, 'Surgical procedures and operations', NOW(), NOW(), NULL),
+('Dental Services', NULL, 'icons/medical/dental.svg', 45.00, 'Comprehensive dental care including checkups and procedures', NOW(), NOW(), NULL),
+('Orthopedic Services', NULL, 'icons/medical/orthopedic.svg', 60.00, 'Bone, joint, and muscle treatment services', NOW(), NOW(), NULL),
+('Dermatology', NULL, 'icons/medical/dermatology.svg', 30.00, 'Skin, hair, and nail care services', NOW(), NOW(), NULL),
+('Ophthalmology', NULL, 'icons/medical/ophthalmology.svg', 30.00, 'Eye care and vision services', NOW(), NOW(), NULL),
+('Cardiology', NULL, 'icons/medical/cardiology.svg', 45.00, 'Heart and cardiovascular services', NOW(), NOW(), NULL),
+('Neurology', NULL, 'icons/medical/neurology.svg', 45.00, 'Brain, spine, and nervous system services', NOW(), NOW(), NULL),
+('Gynecology & Obstetrics', NULL, 'icons/medical/gynecology.svg', 45.00, 'Women\'s health, pregnancy, and childbirth services', NOW(), NOW(), NULL),
+('Pediatrics', NULL, 'icons/medical/pediatrics.svg', 30.00, 'Child health and development services', NOW(), NOW(), NULL),
+
+-- Laboratory & Diagnostic Services
+('Laboratory Tests', NULL, 'icons/medical/lab.svg', 15.00, 'Blood tests, urine tests, and other laboratory diagnostics', NOW(), NOW(), NULL),
+('Radiology & Imaging', NULL, 'icons/medical/radiology.svg', 30.00, 'X-rays, MRIs, CT scans, and ultrasound services', NOW(), NOW(), NULL),
+('Pathology', NULL, 'icons/medical/pathology.svg', 45.00, 'Disease diagnosis through tissue and fluid analysis', NOW(), NOW(), NULL),
+
+-- Therapeutic & Rehabilitative Services
+('Physiotherapy', NULL, 'icons/medical/physiotherapy.svg', 45.00, 'Physical therapy and rehabilitation services', NOW(), NOW(), NULL),
+('Occupational Therapy', NULL, 'icons/medical/occupational.svg', 45.00, 'Therapy to help patients perform daily activities', NOW(), NOW(), NULL),
+('Speech Therapy', NULL, 'icons/medical/speech.svg', 30.00, 'Speech and language therapy services', NOW(), NOW(), NULL),
+('Psychological Services', NULL, 'icons/medical/psychology.svg', 50.00, 'Mental health counseling and psychological therapy', NOW(), NOW(), NULL),
+('Psychiatry', NULL, 'icons/medical/psychiatry.svg', 45.00, 'Psychiatric evaluation and medication management', NOW(), NOW(), NULL),
+
+-- Wellness & Preventive
+('Nutrition & Dietetics', NULL, 'icons/medical/nutrition.svg', 30.00, 'Nutritional counseling and diet planning', NOW(), NOW(), NULL),
+('Fitness & Wellness', NULL, 'icons/medical/fitness.svg', 45.00, 'Personal training and wellness programs', NOW(), NOW(), NULL),
+('Health Screening', NULL, 'icons/medical/screening.svg', 20.00, 'Preventive health screening and checkups', NOW(), NOW(), NULL),
+('Vaccination Services', NULL, 'icons/medical/vaccination.svg', 15.00, 'Immunization and vaccination services', NOW(), NOW(), NULL),
+
+-- Home Care & Support
+('Home Healthcare', NULL, 'icons/medical/homecare.svg', 60.00, 'Healthcare services provided at the patient\'s home', NOW(), NOW(), NULL),
+('Palliative Care', NULL, 'icons/medical/palliative.svg', 60.00, 'Comfort care for patients with serious illnesses', NOW(), NOW(), NULL),
+('Hospice Care', NULL, 'icons/medical/hospice.svg', 60.00, 'End-of-life care and support services', NOW(), NOW(), NULL),
+
+-- Administrative & Other Services
+('Medical Records Management', NULL, 'icons/medical/records.svg', 15.00, 'Medical records and health information management', NOW(), NOW(), NULL),
+('Pharmacy Services', NULL, 'icons/medical/pharmacy.svg', 10.00, 'Medication dispensing and pharmaceutical services', NOW(), NOW(), NULL),
+('Medical Transport', NULL, 'icons/medical/transport.svg', 30.00, 'Ambulance and medical transportation services', NOW(), NOW(), NULL),
+('Health Education', NULL, 'icons/medical/education.svg', 45.00, 'Health education and wellness workshops', NOW(), NOW(), NULL);
+
+
+INSERT INTO `provided_service_category` (
+    `provided_service_category_name`,
+    `provided_service_category_naming_ref`,
+    `provided_service_category_icon_url`,
+    `provided_service_category_avg_duration`,
+    `provided_service_category_description`,
+    `provided_service_category_created_at`,
+    `provided_service_category_updated_at`,
+    `provided_service_category_deleted_at`
+) VALUES
+-- Medical & Health Services
+('General Medical Consultation', NULL, 'icons/medical/consultation.svg', 30.00, 'General medical consultation and diagnosis for common health issues', NOW(), NOW(), NULL),
+('Specialist Consultation', NULL, 'icons/medical/specialist.svg', 45.00, 'Specialized medical consultation with expert doctors', NOW(), NOW(), NULL),
+('Emergency Care', NULL, 'icons/medical/emergency.svg', 60.00, 'Emergency medical care and urgent treatment services', NOW(), NOW(), NULL),
+('Surgery', NULL, 'icons/medical/surgery.svg', 120.00, 'Surgical procedures and operations', NOW(), NOW(), NULL),
+('Dental Services', NULL, 'icons/medical/dental.svg', 45.00, 'Comprehensive dental care including checkups and procedures', NOW(), NOW(), NULL),
+('Orthopedic Services', NULL, 'icons/medical/orthopedic.svg', 60.00, 'Bone, joint, and muscle treatment services', NOW(), NOW(), NULL),
+('Dermatology', NULL, 'icons/medical/dermatology.svg', 30.00, 'Skin, hair, and nail care services', NOW(), NOW(), NULL),
+('Ophthalmology', NULL, 'icons/medical/ophthalmology.svg', 30.00, 'Eye care and vision services', NOW(), NOW(), NULL),
+('Cardiology', NULL, 'icons/medical/cardiology.svg', 45.00, 'Heart and cardiovascular services', NOW(), NOW(), NULL),
+('Neurology', NULL, 'icons/medical/neurology.svg', 45.00, 'Brain, spine, and nervous system services', NOW(), NOW(), NULL),
+('Gynecology & Obstetrics', NULL, 'icons/medical/gynecology.svg', 45.00, 'Women\'s health, pregnancy, and childbirth services', NOW(), NOW(), NULL),
+('Pediatrics', NULL, 'icons/medical/pediatrics.svg', 30.00, 'Child health and development services', NOW(), NOW(), NULL),
+
+-- Laboratory & Diagnostic Services
+('Laboratory Tests', NULL, 'icons/medical/lab.svg', 15.00, 'Blood tests, urine tests, and other laboratory diagnostics', NOW(), NOW(), NULL),
+('Radiology & Imaging', NULL, 'icons/medical/radiology.svg', 30.00, 'X-rays, MRIs, CT scans, and ultrasound services', NOW(), NOW(), NULL),
+('Pathology', NULL, 'icons/medical/pathology.svg', 45.00, 'Disease diagnosis through tissue and fluid analysis', NOW(), NOW(), NULL),
+
+-- Therapeutic & Rehabilitative Services
+('Physiotherapy', NULL, 'icons/medical/physiotherapy.svg', 45.00, 'Physical therapy and rehabilitation services', NOW(), NOW(), NULL),
+('Occupational Therapy', NULL, 'icons/medical/occupational.svg', 45.00, 'Therapy to help patients perform daily activities', NOW(), NOW(), NULL),
+('Speech Therapy', NULL, 'icons/medical/speech.svg', 30.00, 'Speech and language therapy services', NOW(), NOW(), NULL),
+('Psychological Services', NULL, 'icons/medical/psychology.svg', 50.00, 'Mental health counseling and psychological therapy', NOW(), NOW(), NULL),
+('Psychiatry', NULL, 'icons/medical/psychiatry.svg', 45.00, 'Psychiatric evaluation and medication management', NOW(), NOW(), NULL),
+
+-- Wellness & Preventive
+('Nutrition & Dietetics', NULL, 'icons/medical/nutrition.svg', 30.00, 'Nutritional counseling and diet planning', NOW(), NOW(), NULL),
+('Fitness & Wellness', NULL, 'icons/medical/fitness.svg', 45.00, 'Personal training and wellness programs', NOW(), NOW(), NULL),
+('Health Screening', NULL, 'icons/medical/screening.svg', 20.00, 'Preventive health screening and checkups', NOW(), NOW(), NULL),
+('Vaccination Services', NULL, 'icons/medical/vaccination.svg', 15.00, 'Immunization and vaccination services', NOW(), NOW(), NULL),
+
+-- Home Care & Support
+('Home Healthcare', NULL, 'icons/medical/homecare.svg', 60.00, 'Healthcare services provided at the patient\'s home', NOW(), NOW(), NULL),
+('Palliative Care', NULL, 'icons/medical/palliative.svg', 60.00, 'Comfort care for patients with serious illnesses', NOW(), NOW(), NULL),
+('Hospice Care', NULL, 'icons/medical/hospice.svg', 60.00, 'End-of-life care and support services', NOW(), NOW(), NULL),
+
+-- Administrative & Other Services
+('Medical Records Management', NULL, 'icons/medical/records.svg', 15.00, 'Medical records and health information management', NOW(), NOW(), NULL),
+('Pharmacy Services', NULL, 'icons/medical/pharmacy.svg', 10.00, 'Medication dispensing and pharmaceutical services', NOW(), NOW(), NULL),
+('Medical Transport', NULL, 'icons/medical/transport.svg', 30.00, 'Ambulance and medical transportation services', NOW(), NOW(), NULL),
+('Health Education', NULL, 'icons/medical/education.svg', 45.00, 'Health education and wellness workshops', NOW(), NOW(), NULL);
+
+
+-- -----------------------------------------------------
+-- Dummy Data for provided_service
+-- -----------------------------------------------------
+INSERT INTO `provided_service` (
+    `provided_service_name`,
+    `provided_service_description`,
+    `provided_service_category_id`,
+    `provided_service_product_provider_id`,
+    `provided_service_base_price`,
+    `provided_service_final_price`,
+    `provided_service_actual_duration`,
+    `provided_service_is_active`,
+    `provided_service_pricing_config`,
+    `provided_service_created_at`,
+    `provided_service_updated_at`,
+    `provided_service_deleted_at`
+) VALUES
+-- Provider 1 (General Medical Services)
+('General Health Checkup', 'Comprehensive health checkup including vital signs, basic lab tests, and general physical examination', 1, 1, 80.00, 75.00, 30.00, 1, '{"discount": 5, "package_price": 75}', NOW(), NOW(), NULL),
+('Family Medicine Consultation', 'Primary care consultation for all family members', 1, 1, 60.00, 60.00, 25.00, 1, NULL, NOW(), NOW(), NULL),
+('Urgent Care Visit', 'Same-day urgent care for non-emergency conditions', 3, 1, 100.00, 95.00, 30.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Physical Examination', 'Complete physical exam for employment or school', 1, 1, 85.00, 85.00, 40.00, 1, NULL, NOW(), NOW(), NULL),
+
+-- Provider 2 (Specialist Services)
+('Cardiology Consultation', 'Cardiac evaluation and consultation', 9, 2, 150.00, 140.00, 45.00, 1, '{"discount": 10}', NOW(), NOW(), NULL),
+('ECG/EKG Test', 'Electrocardiogram for heart rhythm assessment', 9, 2, 65.00, 65.00, 20.00, 1, NULL, NOW(), NOW(), NULL),
+('Echocardiogram', 'Ultrasound imaging of the heart', 9, 2, 250.00, 235.00, 45.00, 1, '{"discount": 15}', NOW(), NOW(), NULL),
+('Cardiac Stress Test', 'Exercise stress test for heart evaluation', 9, 2, 180.00, 170.00, 60.00, 1, '{"discount": 10}', NOW(), NOW(), NULL),
+
+-- Provider 3 (Dental Services)
+('General Dental Checkup', 'Comprehensive dental examination and cleaning', 5, 3, 70.00, 70.00, 30.00, 1, NULL, NOW(), NOW(), NULL),
+('Teeth Cleaning', 'Professional teeth cleaning and scaling', 5, 3, 50.00, 45.00, 25.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Dental X-ray', 'X-ray imaging for dental diagnosis', 5, 3, 40.00, 40.00, 15.00, 1, NULL, NOW(), NOW(), NULL),
+('Root Canal Treatment', 'Endodontic treatment for infected teeth', 5, 3, 350.00, 330.00, 90.00, 1, '{"discount": 20}', NOW(), NOW(), NULL),
+('Teeth Whitening', 'Professional teeth whitening service', 5, 3, 120.00, 110.00, 45.00, 1, '{"discount": 10}', NOW(), NOW(), NULL),
+
+-- Provider 4 (Dermatology)
+('Dermatology Consultation', 'Skin, hair, and nail evaluation', 7, 4, 100.00, 95.00, 30.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Acne Treatment', 'Customized acne treatment program', 7, 4, 150.00, 140.00, 45.00, 1, '{"discount": 10}', NOW(), NOW(), NULL),
+('Skin Biopsy', 'Skin tissue biopsy for diagnosis', 7, 4, 200.00, 190.00, 30.00, 1, '{"discount": 10}', NOW(), NOW(), NULL),
+('Laser Skin Treatment', 'Laser treatment for skin conditions', 7, 4, 300.00, 275.00, 45.00, 1, '{"discount": 25}', NOW(), NOW(), NULL),
+('Chemical Peel', 'Skin rejuvenation with chemical peel', 7, 4, 180.00, 170.00, 30.00, 1, '{"discount": 10}', NOW(), NOW(), NULL),
+
+-- Provider 5 (Laboratory & Imaging)
+('Blood Tests', 'Complete blood count and basic chemistry panel', 13, 5, 45.00, 45.00, 15.00, 1, NULL, NOW(), NOW(), NULL),
+('Urine Analysis', 'Urine test for various health indicators', 13, 5, 25.00, 25.00, 10.00, 1, NULL, NOW(), NOW(), NULL),
+('X-Ray Imaging', 'General X-ray imaging service', 14, 5, 75.00, 70.00, 20.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Ultrasound Scan', 'Ultrasound diagnostic imaging', 14, 5, 120.00, 115.00, 30.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('CT Scan', 'Computerized tomography scan', 14, 5, 350.00, 330.00, 30.00, 1, '{"discount": 20}', NOW(), NOW(), NULL),
+
+-- Provider 6 (Physiotherapy)
+('Physiotherapy Assessment', 'Initial physiotherapy evaluation', 16, 6, 80.00, 75.00, 45.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Physical Therapy Session', 'Regular physiotherapy treatment session', 16, 6, 60.00, 55.00, 45.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Sports Injury Rehabilitation', 'Specialized rehabilitation for sports injuries', 16, 6, 90.00, 85.00, 60.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Massage Therapy', 'Therapeutic massage for pain relief', 16, 6, 70.00, 65.00, 60.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+
+-- Provider 7 (Mental Health)
+('Psychological Assessment', 'Comprehensive psychological evaluation', 19, 7, 120.00, 115.00, 50.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Cognitive Behavioral Therapy', 'CBT session for mental health', 19, 7, 100.00, 95.00, 50.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Psychiatric Consultation', 'Psychiatric evaluation and medication management', 19, 7, 150.00, 140.00, 45.00, 1, '{"discount": 10}', NOW(), NOW(), NULL),
+('Counseling Session', 'General counseling and therapy', 19, 7, 80.00, 75.00, 45.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+
+-- More Services for Provider 1
+('Vaccination Service', 'Immunization and vaccination administration', 24, 1, 50.00, 50.00, 15.00, 1, NULL, NOW(), NOW(), NULL),
+('Travel Medicine Consultation', 'Pre-travel health consultation and advice', 1, 1, 70.00, 65.00, 30.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Home Visit Consultation', 'Medical consultation at patient\'s home', 25, 1, 120.00, 115.00, 45.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+
+-- More Services for Provider 2
+('Holter Monitor', '24-hour heart rhythm monitoring', 9, 2, 200.00, 190.00, 30.00, 1, '{"discount": 10}', NOW(), NOW(), NULL),
+('Blood Pressure Monitoring', '24-hour ambulatory blood pressure monitoring', 9, 2, 150.00, 145.00, 30.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+
+-- More Services for Provider 3
+('Dental Crown', 'Dental crown fitting and installation', 5, 3, 400.00, 375.00, 90.00, 1, '{"discount": 25}', NOW(), NOW(), NULL),
+('Dental Implant', 'Dental implant surgery', 5, 3, 800.00, 750.00, 120.00, 1, '{"discount": 50}', NOW(), NOW(), NULL),
+('Braces Consultation', 'Orthodontic consultation for braces', 5, 3, 100.00, 95.00, 30.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+
+-- More Services for Provider 4
+('Botox Treatment', 'Botox injection for wrinkles and conditions', 7, 4, 250.00, 235.00, 30.00, 1, '{"discount": 15}', NOW(), NOW(), NULL),
+('Dermatology Surgery', 'Surgical skin procedures and excisions', 7, 4, 500.00, 475.00, 60.00, 1, '{"discount": 25}', NOW(), NOW(), NULL),
+
+-- More Services for Provider 5
+('MRI Scan', 'Magnetic resonance imaging', 14, 5, 500.00, 475.00, 45.00, 1, '{"discount": 25}', NOW(), NOW(), NULL),
+('Blood Donation Services', 'Blood donation and testing', 13, 5, 0.00, 0.00, 30.00, 1, '{"free_service": true}', NOW(), NOW(), NULL),
+
+-- More Services for Provider 6
+('Post-Surgery Rehabilitation', 'Rehabilitation after surgery', 16, 6, 100.00, 95.00, 60.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Geriatric Physiotherapy', 'Physiotherapy for elderly patients', 16, 6, 80.00, 75.00, 45.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+
+-- More Services for Provider 7
+('Group Therapy', 'Group counseling sessions', 19, 7, 50.00, 45.00, 60.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Family Therapy', 'Family counseling and therapy', 19, 7, 120.00, 115.00, 60.00, 1, '{"discount": 5}', NOW(), NOW(), NULL),
+('Online Therapy Session', 'Virtual/online therapy consultation', 19, 7, 80.00, 75.00, 45.00, 1, '{"discount": 5}', NOW(), NOW(), NULL);
+
+
+
+-- -----------------------------------------------------
+-- Dummy Data for staff_role
+-- -----------------------------------------------------
+INSERT INTO `staff_role` (
+    `staff_role_service_category_ref`,
+    `staff_role_naming_ref`,
+    `staff_role_icon_url`,
+    `staff_role_name`
+) VALUES
+-- Medical Doctors (Reference General Medical Consultation)
+(1, NULL, 'icons/staff/doctor.svg', 'General Practitioner'),
+(1, NULL, 'icons/staff/doctor.svg', 'Family Physician'),
+(2, NULL, 'icons/staff/specialist.svg', 'Specialist Doctor'),
+(2, NULL, 'icons/staff/surgeon.svg', 'Consultant'),
+
+-- Surgeons (Reference Surgery)
+(4, NULL, 'icons/staff/surgeon.svg', 'General Surgeon'),
+(4, NULL, 'icons/staff/surgeon.svg', 'Cardiothoracic Surgeon'),
+(4, NULL, 'icons/staff/surgeon.svg', 'Neurosurgeon'),
+(4, NULL, 'icons/staff/surgeon.svg', 'Orthopedic Surgeon'),
+(4, NULL, 'icons/staff/surgeon.svg', 'Plastic Surgeon'),
+
+-- Dental Staff (Reference Dental Services)
+(5, NULL, 'icons/staff/dentist.svg', 'General Dentist'),
+(5, NULL, 'icons/staff/dentist.svg', 'Orthodontist'),
+(5, NULL, 'icons/staff/dentist.svg', 'Oral Surgeon'),
+(5, NULL, 'icons/staff/dental_hygienist.svg', 'Dental Hygienist'),
+(5, NULL, 'icons/staff/dental_assistant.svg', 'Dental Assistant'),
+
+-- Orthopedic Staff (Reference Orthopedic Services)
+(6, NULL, 'icons/staff/orthopedic.svg', 'Orthopedic Surgeon'),
+(6, NULL, 'icons/staff/orthopedic.svg', 'Sports Medicine Specialist'),
+(6, NULL, 'icons/staff/physical_therapist.svg', 'Physical Therapist'),
+
+-- Dermatology Staff (Reference Dermatology)
+(7, NULL, 'icons/staff/dermatologist.svg', 'Dermatologist'),
+(7, NULL, 'icons/staff/dermatologist.svg', 'Cosmetic Dermatologist'),
+
+-- Ophthalmology Staff (Reference Ophthalmology)
+(8, NULL, 'icons/staff/ophthalmologist.svg', 'Ophthalmologist'),
+(8, NULL, 'icons/staff/optometrist.svg', 'Optometrist'),
+
+-- Cardiology Staff (Reference Cardiology)
+(9, NULL, 'icons/staff/cardiologist.svg', 'Interventional Cardiologist'),
+(9, NULL, 'icons/staff/cardiologist.svg', 'Cardiac Surgeon'),
+(9, NULL, 'icons/staff/cardiologist.svg', 'Cardiovascular Technician'),
+
+-- Neurology Staff (Reference Neurology)
+(10, NULL, 'icons/staff/neurologist.svg', 'Neurologist'),
+(10, NULL, 'icons/staff/neurologist.svg', 'Neurosurgeon'),
+
+-- Gynecology Staff (Reference Gynecology & Obstetrics)
+(11, NULL, 'icons/staff/gynecologist.svg', 'Gynecologist'),
+(11, NULL, 'icons/staff/gynecologist.svg', 'Obstetrician'),
+(11, NULL, 'icons/staff/midwife.svg', 'Midwife'),
+
+-- Pediatric Staff (Reference Pediatrics)
+(12, NULL, 'icons/staff/pediatrician.svg', 'Pediatrician'),
+(12, NULL, 'icons/staff/pediatrician.svg', 'Neonatologist'),
+
+-- Laboratory Staff (Reference Laboratory Tests)
+(13, NULL, 'icons/staff/lab_technician.svg', 'Lab Technician'),
+(13, NULL, 'icons/staff/pathologist.svg', 'Pathologist'),
+
+-- Radiology Staff (Reference Radiology & Imaging)
+(14, NULL, 'icons/staff/radiologist.svg', 'Radiologist'),
+(14, NULL, 'icons/staff/radiology_technician.svg', 'Radiology Technician'),
+(14, NULL, 'icons/staff/ultrasound_technician.svg', 'Ultrasound Technician'),
+
+-- Physical Therapy Staff (Reference Physiotherapy)
+(16, NULL, 'icons/staff/physical_therapist.svg', 'Physical Therapist'),
+(16, NULL, 'icons/staff/physical_therapist.svg', 'Physical Therapy Assistant'),
+
+-- Mental Health Staff (Reference Psychological Services)
+(19, NULL, 'icons/staff/psychologist.svg', 'Clinical Psychologist'),
+(19, NULL, 'icons/staff/psychiatrist.svg', 'Psychiatrist'),
+
+-- Support Staff (General)
+(1, NULL, 'icons/staff/nurse.svg', 'Registered Nurse'),
+(1, NULL, 'icons/staff/nurse.svg', 'Licensed Practical Nurse'),
+(1, NULL, 'icons/staff/nurse.svg', 'Nurse Practitioner'),
+(1, NULL, 'icons/staff/medical_assistant.svg', 'Medical Assistant'),
+(1, NULL, 'icons/staff/pharmacist.svg', 'Pharmacist'),
+(1, NULL, 'icons/staff/pharmacist.svg', 'Pharmacy Technician'),
+(1, NULL, 'icons/staff/administrator.svg', 'Medical Administrator'),
+(1, NULL, 'icons/staff/receptionist.svg', 'Medical Receptionist'),
+
+-- Emergency & Critical Care Staff (Reference Emergency Care)
+(3, NULL, 'icons/staff/emergency_doctor.svg', 'Emergency Physician'),
+(3, NULL, 'icons/staff/paramedic.svg', 'Paramedic'),
+(3, NULL, 'icons/staff/emergency_nurse.svg', 'Emergency Nurse'),
+(3, NULL, 'icons/staff/critical_care_nurse.svg', 'Critical Care Nurse'),
+
+-- Nutrition Staff (Reference Nutrition & Dietetics)
+(21, NULL, 'icons/staff/nutritionist.svg', 'Clinical Nutritionist'),
+(21, NULL, 'icons/staff/dietitian.svg', 'Registered Dietitian'),
+
+-- Healthcare Support
+(1, NULL, 'icons/staff/caregiver.svg', 'Caregiver'),
+(1, NULL, 'icons/staff/home_health_aide.svg', 'Home Health Aide'),
+(1, NULL, 'icons/staff/medical_social_worker.svg', 'Medical Social Worker'),
+(1, NULL, 'icons/staff/health_coach.svg', 'Health Coach');
+
+
+
+
+-- -----------------------------------------------------
+-- Dummy Data for service_staff_requirement
+-- -----------------------------------------------------
+INSERT INTO `service_staff_requirement` (
+    `service_staff_requirement_service_id`,
+    `service_staff_requirement_role`,
+    `service_staff_requirement_min_count`,
+    `service_staff_requirement_max_count`,
+    `service_staff_requirement_hourly_rate`,
+    `service_staff_requirement_allocated_hours`,
+    `service_staff_requirement_notes`,
+    `service_staff_requirement_created_at`,
+    `service_staff_requirement_updated_at`
+) VALUES
+-- Provider 1 Services (General Medical)
+(1, 1, 1, 1, 50.00, 1.00, 'General Practitioner for health checkup', NOW(), NOW()),
+(1, 25, 1, 1, 30.00, 1.00, 'Nurse assistant for checkup', NOW(), NOW()),
+(2, 2, 1, 1, 55.00, 1.00, 'Family Physician consultation', NOW(), NOW()),
+(3, 52, 1, 1, 60.00, 1.00, 'Emergency Physician for urgent care', NOW(), NOW()),
+(3, 54, 1, 1, 35.00, 1.00, 'Emergency Nurse support', NOW(), NOW()),
+(4, 1, 1, 1, 50.00, 1.50, 'Physical examination by GP', NOW(), NOW()),
+(4, 25, 1, 1, 30.00, 1.00, 'Nurse for exam preparation', NOW(), NOW()),
+
+-- Provider 2 Services (Cardiology)
+(5, 21, 1, 1, 80.00, 1.00, 'Cardiologist consultation', NOW(), NOW()),
+(5, 25, 1, 1, 35.00, 1.00, 'Nurse assistant', NOW(), NOW()),
+(6, 23, 1, 1, 45.00, 0.50, 'Cardiovascular Technician for ECG', NOW(), NOW()),
+(7, 21, 1, 1, 85.00, 1.00, 'Interventional Cardiologist for echo', NOW(), NOW()),
+(7, 23, 1, 1, 45.00, 0.75, 'Echocardiogram technician', NOW(), NOW()),
+(8, 21, 1, 1, 80.00, 1.50, 'Cardiologist for stress test', NOW(), NOW()),
+(8, 53, 1, 1, 40.00, 1.00, 'Critical Care Nurse monitoring', NOW(), NOW()),
+(31, 21, 1, 1, 75.00, 0.50, 'Holter monitor setup by cardiologist', NOW(), NOW()),
+(31, 23, 1, 1, 40.00, 0.50, 'Technician for monitor setup', NOW(), NOW()),
+(32, 21, 1, 1, 75.00, 0.50, 'Blood pressure monitor setup', NOW(), NOW()),
+
+-- Provider 3 Services (Dental)
+(9, 10, 1, 1, 65.00, 1.00, 'General Dentist for checkup', NOW(), NOW()),
+(9, 13, 1, 1, 30.00, 1.00, 'Dental Hygienist support', NOW(), NOW()),
+(10, 13, 1, 1, 35.00, 1.00, 'Dental Hygienist for cleaning', NOW(), NOW()),
+(10, 25, 1, 1, 25.00, 0.50, 'Assistant for cleaning', NOW(), NOW()),
+(11, 25, 1, 1, 25.00, 0.50, 'Technician for X-ray', NOW(), NOW()),
+(12, 11, 1, 1, 90.00, 2.00, 'Endodontist for root canal', NOW(), NOW()),
+(12, 14, 1, 1, 35.00, 2.00, 'Dental Assistant for root canal', NOW(), NOW()),
+(13, 10, 1, 1, 65.00, 1.00, 'Dentist for whitening', NOW(), NOW()),
+(13, 13, 1, 1, 30.00, 0.75, 'Hygienist support for whitening', NOW(), NOW()),
+(33, 10, 1, 1, 70.00, 2.00, 'Dentist for crown fitting', NOW(), NOW()),
+(33, 14, 1, 1, 30.00, 2.00, 'Assistant for crown procedure', NOW(), NOW()),
+(34, 11, 1, 1, 100.00, 3.00, 'Oral Surgeon for implant', NOW(), NOW()),
+(34, 25, 1, 1, 40.00, 3.00, 'Surgical nurse for implant', NOW(), NOW()),
+(35, 11, 1, 1, 70.00, 1.00, 'Orthodontist for braces consultation', NOW(), NOW()),
+
+-- Provider 4 Services (Dermatology)
+(14, 18, 1, 1, 80.00, 1.00, 'Dermatologist consultation', NOW(), NOW()),
+(15, 18, 1, 1, 85.00, 1.50, 'Dermatologist for acne treatment', NOW(), NOW()),
+(15, 25, 1, 1, 35.00, 1.00, 'Nurse for treatment assistance', NOW(), NOW()),
+(16, 18, 1, 1, 90.00, 1.00, 'Dermatologist for biopsy', NOW(), NOW()),
+(16, 25, 1, 1, 35.00, 0.50, 'Nurse for biopsy preparation', NOW(), NOW()),
+(17, 19, 1, 1, 95.00, 1.00, 'Cosmetic Dermatologist for laser', NOW(), NOW()),
+(17, 25, 1, 1, 40.00, 1.00, 'Nurse for laser treatment', NOW(), NOW()),
+(18, 18, 1, 1, 85.00, 1.00, 'Dermatologist for chemical peel', NOW(), NOW()),
+(18, 25, 1, 1, 35.00, 1.00, 'Nurse for chemical peel assistance', NOW(), NOW()),
+(39, 19, 1, 1, 95.00, 1.00, 'Cosmetic Dermatologist for Botox', NOW(), NOW()),
+(39, 25, 1, 1, 40.00, 1.00, 'Nurse for Botox procedure', NOW(), NOW()),
+(40, 18, 1, 1, 100.00, 2.00, 'Dermatologist for surgery', NOW(), NOW()),
+(40, 54, 1, 1, 45.00, 2.00, 'Surgical nurse for procedure', NOW(), NOW()),
+
+-- Provider 5 Services (Laboratory & Imaging)
+(20, 27, 1, 1, 30.00, 0.50, 'Lab Technician for blood tests', NOW(), NOW()),
+(21, 27, 1, 1, 25.00, 0.50, 'Lab Technician for urine analysis', NOW(), NOW()),
+(22, 28, 1, 1, 45.00, 0.50, 'Radiology Technician for X-ray', NOW(), NOW()),
+(23, 30, 1, 1, 50.00, 1.00, 'Ultrasound Technician for scan', NOW(), NOW()),
+(24, 28, 1, 1, 55.00, 1.00, 'Radiologist for CT scan', NOW(), NOW()),
+(24, 29, 1, 1, 45.00, 1.00, 'Radiology Technician for CT', NOW(), NOW()),
+(41, 28, 1, 1, 60.00, 1.50, 'Radiologist for MRI', NOW(), NOW()),
+(41, 29, 1, 1, 50.00, 1.50, 'MRI Technician', NOW(), NOW()),
+(42, 27, 1, 1, 25.00, 1.00, 'Lab Technician for blood donation', NOW(), NOW()),
+(42, 25, 1, 1, 20.00, 1.00, 'Nurse for blood donation', NOW(), NOW()),
+
+-- Provider 6 Services (Physiotherapy)
+(26, 16, 1, 1, 60.00, 1.00, 'Physical Therapist assessment', NOW(), NOW()),
+(27, 16, 1, 1, 55.00, 1.00, 'Physical Therapist session', NOW(), NOW()),
+(27, 17, 1, 1, 35.00, 1.00, 'Physical Therapy Assistant', NOW(), NOW()),
+(28, 16, 1, 1, 65.00, 1.50, 'Physical Therapist for sports rehab', NOW(), NOW()),
+(29, 16, 1, 1, 55.00, 1.50, 'Physical Therapist for massage', NOW(), NOW()),
+(43, 16, 1, 1, 60.00, 2.00, 'Physical Therapist for post-surgery', NOW(), NOW()),
+(43, 17, 1, 1, 35.00, 2.00, 'Assistant for post-surgery rehab', NOW(), NOW()),
+(44, 16, 1, 1, 60.00, 1.00, 'Geriatric Physiotherapist', NOW(), NOW()),
+
+-- Provider 7 Services (Mental Health)
+(30, 32, 1, 1, 80.00, 1.00, 'Clinical Psychologist assessment', NOW(), NOW()),
+(31, 31, 1, 1, 75.00, 1.00, 'Therapist for CBT', NOW(), NOW()),
+(32, 33, 1, 1, 85.00, 1.00, 'Psychiatrist consultation', NOW(), NOW()),
+(32, 25, 1, 1, 40.00, 1.00, 'Nurse for psychiatric support', NOW(), NOW()),
+(33, 32, 1, 1, 65.00, 1.00, 'Psychologist for counseling', NOW(), NOW()),
+(45, 31, 1, 1, 50.00, 1.50, 'Group therapy session', NOW(), NOW()),
+(45, 32, 1, 1, 60.00, 1.50, 'Psychologist for group session', NOW(), NOW()),
+(46, 31, 1, 1, 80.00, 1.50, 'Family therapist for counseling', NOW(), NOW()),
+(47, 32, 1, 1, 70.00, 1.00, 'Online therapy session', NOW(), NOW());
+
+
+-- -----------------------------------------------------
+-- Dummy Data for service_resource_requirement
+-- -----------------------------------------------------
+INSERT INTO `service_resource_requirement` (
+    `service_resource_requirement_service_id`,
+    `service_resource_requirement_name`,
+    `service_resource_requirement_type`,
+    `service_resource_requirement_quantity`,
+    `service_resource_requirement_cost_per_unit`,
+    `service_resource_requirement_is_consumable`,
+    `service_resource_requirement_notes`,
+    `service_resource_requirement_product_ref`,
+    `service_resource_requirement_created_at`,
+    `service_resource_requirement_updated_at`
+) VALUES
+-- =====================================================
+-- PROVIDER 1 - General Medical Services
+-- =====================================================
+-- Service 1: General Health Checkup
+(1, 'Examination Table Paper Roll', 'Medical Supply', 2, 2.50, 1, 'Disposable paper roll for examination table', NULL, NOW(), NOW()),
+(1, 'Disposable Gloves (Pair)', 'Medical Supply', 2, 0.75, 1, 'Latex-free examination gloves', NULL, NOW(), NOW()),
+(1, 'Stethoscope', 'Medical Equipment', 1, 45.00, 0, 'Standard diagnostic stethoscope', NULL, NOW(), NOW()),
+(1, 'Blood Pressure Cuff', 'Medical Equipment', 1, 30.00, 0, 'Manual blood pressure measurement device', NULL, NOW(), NOW()),
+(1, 'Thermometer (Disposable)', 'Medical Supply', 1, 1.25, 1, 'Single-use disposable thermometer', NULL, NOW(), NOW()),
+(1, 'Alcohol Swabs (Pack of 10)', 'Medical Supply', 1, 1.50, 1, 'Disposable alcohol wipes for skin preparation', NULL, NOW(), NOW()),
+
+-- Service 2: Family Medicine Consultation
+(2, 'Consultation Room Supplies Kit', 'Medical Supply', 1, 5.00, 1, 'Basic supplies for consultation room', NULL, NOW(), NOW()),
+(2, 'Medical Record Forms', 'Administrative', 5, 0.50, 1, 'Patient history and consultation forms', NULL, NOW(), NOW()),
+
+-- Service 3: Urgent Care Visit
+(3, 'Emergency Care Kit', 'Medical Supply', 1, 15.00, 1, 'Basic emergency care supplies', NULL, NOW(), NOW()),
+(3, 'Sterile Gauze Pads (10pcs)', 'Medical Supply', 2, 3.50, 1, 'Sterile gauze for wound care', NULL, NOW(), NOW()),
+(3, 'Medical Tape Roll', 'Medical Supply', 1, 2.50, 1, 'Hypoallergenic medical tape', NULL, NOW(), NOW()),
+
+-- Service 4: Physical Examination
+(4, 'Examination Gown (Disposable)', 'Medical Supply', 1, 3.00, 1, 'Patient examination gown', NULL, NOW(), NOW()),
+(4, 'Pulse Oximeter', 'Medical Equipment', 1, 25.00, 0, 'Oxygen saturation monitor', NULL, NOW(), NOW()),
+(4, 'Weight Scale', 'Medical Equipment', 1, 80.00, 0, 'Digital medical weight scale', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 2 - Cardiology Services
+-- =====================================================
+-- Service 5: Cardiology Consultation
+(5, 'ECG Machine', 'Medical Equipment', 1, 350.00, 0, '12-lead electrocardiogram machine', NULL, NOW(), NOW()),
+(5, 'ECG Electrodes (Pack of 50)', 'Medical Supply', 1, 15.00, 1, 'Disposable ECG electrodes', NULL, NOW(), NOW()),
+(5, 'ECG Paper Roll', 'Medical Supply', 2, 12.50, 1, 'Thermal paper for ECG printing', NULL, NOW(), NOW()),
+(5, 'Cardiac Monitor', 'Medical Equipment', 1, 500.00, 0, 'Patient cardiac monitoring system', NULL, NOW(), NOW()),
+
+-- Service 6: ECG/EKG Test
+(6, 'ECG Electrodes (Pack of 10)', 'Medical Supply', 1, 3.00, 1, 'Disposable electrodes for ECG', NULL, NOW(), NOW()),
+(6, 'ECG Gel', 'Medical Supply', 1, 8.00, 1, 'Conductive gel for ECG', NULL, NOW(), NOW()),
+(6, 'ECG Machine', 'Medical Equipment', 1, 350.00, 0, '12-lead electrocardiogram machine', NULL, NOW(), NOW()),
+
+-- Service 7: Echocardiogram
+(7, 'Ultrasound Machine', 'Medical Equipment', 1, 3500.00, 0, 'Cardiac ultrasound imaging system', NULL, NOW(), NOW()),
+(7, 'Ultrasound Gel', 'Medical Supply', 2, 10.00, 1, 'Conductive ultrasound gel', NULL, NOW(), NOW()),
+(7, 'Ultrasound Probe Cover', 'Medical Supply', 1, 2.50, 1, 'Sterile probe covers', NULL, NOW(), NOW()),
+(7, 'Image Printer Paper', 'Medical Supply', 1, 15.00, 1, 'High-quality ultrasound image paper', NULL, NOW(), NOW()),
+
+-- Service 8: Cardiac Stress Test
+(8, 'Treadmill', 'Medical Equipment', 1, 1200.00, 0, 'Medical-grade exercise treadmill', NULL, NOW(), NOW()),
+(8, 'Blood Pressure Cuff (Ambulatory)', 'Medical Equipment', 1, 45.00, 0, 'Continuous BP monitoring cuff', NULL, NOW(), NOW()),
+(8, 'EKG Electrodes (Pack of 50)', 'Medical Supply', 1, 18.00, 1, 'Disposable EKG electrodes', NULL, NOW(), NOW()),
+(8, 'Oxygen Mask', 'Medical Supply', 1, 5.00, 1, 'Emergency oxygen mask', NULL, NOW(), NOW()),
+
+-- Service 31: Holter Monitor
+(31, 'Holter Monitor Device', 'Medical Equipment', 1, 800.00, 0, '24-hour ambulatory ECG recorder', NULL, NOW(), NOW()),
+(31, 'Holter Monitor Electrodes', 'Medical Supply', 10, 2.50, 1, 'Adhesive electrodes for Holter', NULL, NOW(), NOW()),
+(31, 'Holter Monitor Battery', 'Medical Supply', 2, 15.00, 1, 'Replacement battery for Holter', NULL, NOW(), NOW()),
+
+-- Service 32: Blood Pressure Monitoring
+(32, 'Ambulatory BP Monitor', 'Medical Equipment', 1, 450.00, 0, '24-hour blood pressure monitoring device', NULL, NOW(), NOW()),
+(32, 'BP Monitor Cuff', 'Medical Supply', 2, 20.00, 1, 'Replacement cuffs for BP monitor', NULL, NOW(), NOW()),
+(32, 'BP Monitor Battery', 'Medical Supply', 2, 10.00, 1, 'Replacement batteries', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 3 - Dental Services
+-- =====================================================
+-- Service 9: General Dental Checkup
+(9, 'Dental Mirror', 'Dental Equipment', 1, 8.00, 0, 'Standard dental examination mirror', NULL, NOW(), NOW()),
+(9, 'Dental Probe', 'Dental Equipment', 1, 6.00, 0, 'Dental explorer/probe', NULL, NOW(), NOW()),
+(9, 'Dental Chair', 'Dental Equipment', 1, 2500.00, 0, 'Electric dental chair', NULL, NOW(), NOW()),
+(9, 'Dental Light', 'Dental Equipment', 1, 450.00, 0, 'LED dental operating light', NULL, NOW(), NOW()),
+(9, 'Dental X-Ray Sensor', 'Dental Equipment', 1, 600.00, 0, 'Digital X-ray sensor', NULL, NOW(), NOW()),
+
+-- Service 10: Teeth Cleaning
+(10, 'Ultrasonic Scaler', 'Dental Equipment', 1, 350.00, 0, 'Ultrasonic dental scaler', NULL, NOW(), NOW()),
+(10, 'Dental Polish Prophy Paste', 'Dental Supply', 2, 8.00, 1, 'Prophylaxis polishing paste', NULL, NOW(), NOW()),
+(10, 'Dental Floss', 'Dental Supply', 1, 3.00, 1, 'Professional dental floss', NULL, NOW(), NOW()),
+(10, 'Disposable Dental Tips', 'Dental Supply', 5, 2.00, 1, 'Single-use dental tips', NULL, NOW(), NOW()),
+
+-- Service 11: Dental X-Ray
+(11, 'Dental X-Ray Machine', 'Dental Equipment', 1, 1800.00, 0, 'Digital dental X-ray machine', NULL, NOW(), NOW()),
+(11, 'X-Ray Film (Pack of 10)', 'Dental Supply', 1, 12.00, 1, 'Dental X-ray films', NULL, NOW(), NOW()),
+(11, 'Lead Apron', 'Dental Equipment', 1, 80.00, 0, 'X-ray protection lead apron', NULL, NOW(), NOW()),
+
+-- Service 12: Root Canal Treatment
+(12, 'Root Canal Kit', 'Dental Supply', 1, 45.00, 1, 'Complete endodontic procedure kit', NULL, NOW(), NOW()),
+(12, 'Endodontic Files (Assorted)', 'Dental Supply', 5, 12.00, 1, 'Various sizes for root canal', NULL, NOW(), NOW()),
+(12, 'Gutta-Percha Points', 'Dental Supply', 20, 1.50, 1, 'Root canal filling material', NULL, NOW(), NOW()),
+(12, 'Dental Dam', 'Dental Supply', 1, 8.00, 1, 'Rubber dam for isolation', NULL, NOW(), NOW()),
+(12, 'Irrigation Syringe', 'Dental Supply', 2, 5.00, 1, 'Root canal irrigation syringes', NULL, NOW(), NOW()),
+
+-- Service 13: Teeth Whitening
+(13, 'Whitening Gel', 'Dental Supply', 4, 15.00, 1, 'Professional teeth whitening gel', NULL, NOW(), NOW()),
+(13, 'Whitening Trays', 'Dental Supply', 2, 20.00, 1, 'Customizable whitening trays', NULL, NOW(), NOW()),
+(13, 'UV Curing Light', 'Dental Equipment', 1, 200.00, 0, 'LED curing light for whitening', NULL, NOW(), NOW()),
+(13, 'Lip Retractor', 'Dental Equipment', 1, 12.00, 0, 'Dental lip retractor', NULL, NOW(), NOW()),
+
+-- Service 33: Dental Crown
+(33, 'Crown Preparation Kit', 'Dental Supply', 1, 35.00, 1, 'Kit for crown preparation', NULL, NOW(), NOW()),
+(33, 'Dental Impression Material', 'Dental Supply', 2, 18.00, 1, 'Alginate impression material', NULL, NOW(), NOW()),
+(33, 'Temporary Crown Material', 'Dental Supply', 1, 25.00, 1, 'Material for temporary crowns', NULL, NOW(), NOW()),
+(33, 'Cement for Crowns', 'Dental Supply', 1, 15.00, 1, 'Permanent dental cement', NULL, NOW(), NOW()),
+
+-- Service 34: Dental Implant
+(34, 'Surgical Implant Kit', 'Dental Supply', 1, 200.00, 1, 'Complete surgical implant kit', NULL, NOW(), NOW()),
+(34, 'Dental Implant', 'Dental Supply', 1, 150.00, 1, 'Titanium dental implant', NULL, NOW(), NOW()),
+(34, 'Surgical Drill Set', 'Dental Equipment', 1, 350.00, 0, 'Implant surgical drill set', NULL, NOW(), NOW()),
+(34, 'Surgical Sutures', 'Dental Supply', 2, 8.00, 1, 'Non-absorbable sutures', NULL, NOW(), NOW()),
+(34, 'Sterile Surgical Gloves', 'Dental Supply', 2, 4.00, 1, 'Sterile surgical gloves', NULL, NOW(), NOW()),
+
+-- Service 35: Braces Consultation
+(35, 'Orthodontic Models', 'Dental Supply', 1, 20.00, 1, 'Study models for planning', NULL, NOW(), NOW()),
+(35, 'Orthodontic Brackets', 'Dental Supply', 10, 4.00, 1, 'Assorted orthodontic brackets', NULL, NOW(), NOW()),
+(35, 'Arch Wires', 'Dental Supply', 2, 12.00, 1, 'Various arch wire sizes', NULL, NOW(), NOW()),
+(35, 'Elastic Bands', 'Dental Supply', 20, 0.50, 1, 'Orthodontic elastic bands', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 4 - Dermatology Services
+-- =====================================================
+-- Service 14: Dermatology Consultation
+(14, 'Dermatoscope', 'Medical Equipment', 1, 300.00, 0, 'Dermatoscope for skin examination', NULL, NOW(), NOW()),
+(14, 'Woods Lamp', 'Medical Equipment', 1, 120.00, 0, 'UV Wood\'s lamp for skin evaluation', NULL, NOW(), NOW()),
+
+-- Service 15: Acne Treatment
+(15, 'Acne Extraction Kit', 'Medical Supply', 1, 25.00, 1, 'Professional acne extraction tools', NULL, NOW(), NOW()),
+(15, 'Chemical Peel Solution', 'Medical Supply', 1, 35.00, 1, 'Professional chemical peel solution', NULL, NOW(), NOW()),
+(15, 'Post-Treatment Cream', 'Medical Supply', 1, 18.00, 1, 'Soothing post-treatment cream', NULL, NOW(), NOW()),
+
+-- Service 16: Skin Biopsy
+(16, 'Biopsy Punch Set', 'Medical Supply', 1, 45.00, 1, 'Disposable biopsy punch tools', NULL, NOW(), NOW()),
+(16, 'Local Anesthetic', 'Medical Supply', 1, 12.00, 1, 'Lidocaine injection', NULL, NOW(), NOW()),
+(16, 'Suture Kit', 'Medical Supply', 1, 15.00, 1, 'Surgical suture kit', NULL, NOW(), NOW()),
+(16, 'Specimen Container', 'Medical Supply', 1, 3.00, 1, 'Formalin specimen container', NULL, NOW(), NOW()),
+
+-- Service 17: Laser Skin Treatment
+(17, 'Laser Device', 'Medical Equipment', 1, 5000.00, 0, 'Medical-grade laser treatment device', NULL, NOW(), NOW()),
+(17, 'Laser Cooling Gel', 'Medical Supply', 2, 15.00, 1, 'Cooling gel for laser treatment', NULL, NOW(), NOW()),
+(17, 'Protective Eye Shields', 'Medical Equipment', 1, 35.00, 0, 'Laser protection goggles', NULL, NOW(), NOW()),
+(17, 'Laser Handpiece', 'Medical Equipment', 1, 400.00, 0, 'Replacement laser handpiece', NULL, NOW(), NOW()),
+
+-- Service 18: Chemical Peel
+(18, 'Chemical Peel Set', 'Medical Supply', 1, 50.00, 1, 'Complete chemical peel kit', NULL, NOW(), NOW()),
+(18, 'Neutralizer Solution', 'Medical Supply', 1, 12.00, 1, 'Chemical peel neutralizer', NULL, NOW(), NOW()),
+(18, 'Post-Peel Cream', 'Medical Supply', 1, 20.00, 1, 'Post-treatment cream', NULL, NOW(), NOW()),
+
+-- Service 39: Botox Treatment
+(39, 'Botox Injection Kit', 'Medical Supply', 1, 60.00, 1, 'Complete Botox injection kit', NULL, NOW(), NOW()),
+(39, 'Botox Solution', 'Medical Supply', 1, 80.00, 1, 'Botox vial', NULL, NOW(), NOW()),
+(39, 'Micro Needles', 'Medical Supply', 1, 12.00, 1, 'Fine gauge injection needles', NULL, NOW(), NOW()),
+(39, 'Ice Pack', 'Medical Supply', 1, 8.00, 1, 'Pre-treatment ice pack', NULL, NOW(), NOW()),
+
+-- Service 40: Dermatology Surgery
+(40, 'Surgical Drape Kit', 'Medical Supply', 1, 12.00, 1, 'Sterile surgical drapes', NULL, NOW(), NOW()),
+(40, 'Electrosurgical Unit', 'Medical Equipment', 1, 450.00, 0, 'Electrosurgery device', NULL, NOW(), NOW()),
+(40, 'Surgical Blade Set', 'Medical Supply', 1, 18.00, 1, 'Assorted surgical blades', NULL, NOW(), NOW()),
+(40, 'Hemostat Forceps', 'Medical Equipment', 2, 25.00, 0, 'Surgical hemostats', NULL, NOW(), NOW()),
+(40, 'Suture Scissors', 'Medical Equipment', 1, 20.00, 0, 'Surgical scissors', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 5 - Laboratory & Imaging
+-- =====================================================
+-- Service 20: Blood Tests
+(20, 'Blood Collection Tubes (10pcs)', 'Lab Supply', 5, 2.50, 1, 'Vacutainer tubes for blood collection', NULL, NOW(), NOW()),
+(20, 'Needles (Pack of 10)', 'Lab Supply', 2, 3.00, 1, 'Blood collection needles', NULL, NOW(), NOW()),
+(20, 'Alcohol Swabs', 'Lab Supply', 10, 0.50, 1, 'Disposable alcohol wipes', NULL, NOW(), NOW()),
+(20, 'Tourniquet', 'Lab Supply', 1, 5.00, 1, 'Disposable tourniquet', NULL, NOW(), NOW()),
+(20, 'Lab Requisition Forms', 'Administrative', 1, 2.00, 1, 'Laboratory test request forms', NULL, NOW(), NOW()),
+
+-- Service 21: Urine Analysis
+(21, 'Urine Collection Cups (10pcs)', 'Lab Supply', 2, 2.00, 1, 'Sterile urine collection cups', NULL, NOW(), NOW()),
+(21, 'Urine Test Strips (50pcs)', 'Lab Supply', 1, 15.00, 1, 'Multiparameter urine test strips', NULL, NOW(), NOW()),
+(21, 'Microscope Slides', 'Lab Supply', 5, 1.50, 1, 'Glass microscope slides', NULL, NOW(), NOW()),
+
+-- Service 22: X-Ray Imaging
+(22, 'X-Ray Cassette', 'Imaging Equipment', 2, 45.00, 0, 'Digital X-ray cassette', NULL, NOW(), NOW()),
+(22, 'X-Ray Film', 'Imaging Supply', 10, 8.00, 1, 'X-ray films', NULL, NOW(), NOW()),
+(22, 'Lead Apron', 'Imaging Equipment', 1, 80.00, 0, 'Lead apron for patient protection', NULL, NOW(), NOW()),
+(22, 'X-Ray Markers', 'Imaging Supply', 1, 15.00, 1, 'Lead markers for X-ray positioning', NULL, NOW(), NOW()),
+
+-- Service 23: Ultrasound Scan
+(23, 'Ultrasound Machine', 'Imaging Equipment', 1, 3000.00, 0, 'Diagnostic ultrasound system', NULL, NOW(), NOW()),
+(23, 'Ultrasound Gel', 'Imaging Supply', 3, 10.00, 1, 'Conductive ultrasound gel', NULL, NOW(), NOW()),
+(23, 'Ultrasound Probe', 'Imaging Equipment', 2, 800.00, 0, 'Interchangeable ultrasound probes', NULL, NOW(), NOW()),
+(23, 'Image Printer', 'Imaging Equipment', 1, 400.00, 0, 'Thermal image printer', NULL, NOW(), NOW()),
+(23, 'Printer Paper', 'Imaging Supply', 2, 12.00, 1, 'Thermal printer paper', NULL, NOW(), NOW()),
+
+-- Service 24: CT Scan
+(24, 'CT Scanner', 'Imaging Equipment', 1, 15000.00, 0, 'Multi-slice CT scanner', NULL, NOW(), NOW()),
+(24, 'Contrast Medium', 'Medical Supply', 2, 45.00, 1, 'IV contrast solution for CT', NULL, NOW(), NOW()),
+(24, 'IV Catheter Kit', 'Medical Supply', 1, 8.00, 1, 'IV catheter for contrast injection', NULL, NOW(), NOW()),
+(24, 'CT Table Pad', 'Imaging Equipment', 1, 120.00, 0, 'CT scanner table pad', NULL, NOW(), NOW()),
+
+-- Service 41: MRI Scan
+(41, 'MRI Scanner', 'Imaging Equipment', 1, 25000.00, 0, '1.5T MRI system', NULL, NOW(), NOW()),
+(41, 'Gadolinium Contrast', 'Medical Supply', 2, 60.00, 1, 'MRI contrast agent', NULL, NOW(), NOW()),
+(41, 'MRI Coil Set', 'Imaging Equipment', 3, 1200.00, 0, 'Various MRI coils', NULL, NOW(), NOW()),
+(41, 'Ear Protection', 'Imaging Supply', 2, 25.00, 0, 'MRI-compatible earphones', NULL, NOW(), NOW()),
+(41, 'MRI Patient Alarm', 'Imaging Equipment', 1, 80.00, 0, 'Patient emergency alarm system', NULL, NOW(), NOW()),
+
+-- Service 42: Blood Donation Services
+(42, 'Blood Collection Bag', 'Lab Supply', 1, 12.00, 1, 'Sterile blood collection bag', NULL, NOW(), NOW()),
+(42, 'Blood Typing Kit', 'Lab Supply', 1, 10.00, 1, 'Blood type testing kit', NULL, NOW(), NOW()),
+(42, 'Needle (16G)', 'Lab Supply', 1, 2.00, 1, '16-gauge blood collection needle', NULL, NOW(), NOW()),
+(42, 'Antiseptic Solution', 'Lab Supply', 1, 5.00, 1, 'Skin antiseptic solution', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 6 - Physiotherapy
+-- =====================================================
+-- Service 26: Physiotherapy Assessment
+(26, 'Goniometer', 'PT Equipment', 1, 15.00, 0, 'Joint angle measurement tool', NULL, NOW(), NOW()),
+(26, 'Measuring Tape', 'PT Equipment', 1, 5.00, 0, 'Flexible measuring tape', NULL, NOW(), NOW()),
+(26, 'Reflex Hammer', 'PT Equipment', 1, 12.00, 0, 'Neurological reflex hammer', NULL, NOW(), NOW()),
+(26, 'Assessment Forms', 'Administrative', 3, 1.00, 1, 'Patient assessment documentation forms', NULL, NOW(), NOW()),
+
+-- Service 27: Physical Therapy Session
+(27, 'Therapy Table', 'PT Equipment', 1, 400.00, 0, 'Electric adjustable therapy table', NULL, NOW(), NOW()),
+(27, 'Therapy Balls', 'PT Equipment', 2, 25.00, 0, 'Exercise therapy balls', NULL, NOW(), NOW()),
+(27, 'Resistance Bands', 'PT Supply', 3, 12.00, 1, 'Various resistance levels', NULL, NOW(), NOW()),
+(27, 'Towel Sets', 'PT Supply', 4, 5.00, 1, 'Therapy towels', NULL, NOW(), NOW()),
+(27, 'Massage Oil', 'PT Supply', 1, 8.00, 1, 'Therapeutic massage oil', NULL, NOW(), NOW()),
+
+-- Service 28: Sports Injury Rehabilitation
+(28, 'Exercise Bike', 'PT Equipment', 1, 600.00, 0, 'Stationary exercise bike', NULL, NOW(), NOW()),
+(28, 'Treadmill', 'PT Equipment', 1, 800.00, 0, 'Rehabilitation treadmill', NULL, NOW(), NOW()),
+(28, 'Parallel Bars', 'PT Equipment', 1, 450.00, 0, 'Walking parallel bars', NULL, NOW(), NOW()),
+(28, 'Weights Set', 'PT Equipment', 1, 100.00, 0, 'Various therapy weights', NULL, NOW(), NOW()),
+(28, 'Balance Board', 'PT Equipment', 1, 35.00, 0, 'Balance training board', NULL, NOW(), NOW()),
+
+-- Service 29: Massage Therapy
+(29, 'Massage Table', 'PT Equipment', 1, 350.00, 0, 'Professional massage table', NULL, NOW(), NOW()),
+(29, 'Massage Oil Set', 'PT Supply', 2, 15.00, 1, 'Various therapeutic oils', NULL, NOW(), NOW()),
+(29, 'Hot Stones Set', 'PT Equipment', 1, 40.00, 0, 'Hot stone therapy set', NULL, NOW(), NOW()),
+(29, 'Massage Linens', 'PT Supply', 3, 20.00, 1, 'Fresh linens for massage', NULL, NOW(), NOW()),
+
+-- Service 43: Post-Surgery Rehabilitation
+(43, 'Cryotherapy Pack', 'PT Equipment', 2, 25.00, 0, 'Ice packs for therapy', NULL, NOW(), NOW()),
+(43, 'Heating Pad', 'PT Equipment', 1, 20.00, 0, 'Therapeutic heating pad', NULL, NOW(), NOW()),
+(43, 'TENS Unit', 'PT Equipment', 1, 150.00, 0, 'Transcutaneous electrical nerve stimulator', NULL, NOW(), NOW()),
+(43, 'Exercise Mat', 'PT Equipment', 1, 30.00, 0, 'Floor exercise mat', NULL, NOW(), NOW()),
+(43, 'Pillow Support', 'PT Equipment', 2, 15.00, 0, 'Therapy support pillows', NULL, NOW(), NOW()),
+
+-- Service 44: Geriatric Physiotherapy
+(44, 'Walker', 'PT Equipment', 1, 120.00, 0, 'Mobility walker', NULL, NOW(), NOW()),
+(44, 'Cane Set', 'PT Equipment', 1, 30.00, 0, 'Adjustable canes', NULL, NOW(), NOW()),
+(44, 'Elevation Wedge', 'PT Equipment', 2, 18.00, 0, 'Leg elevation wedge', NULL, NOW(), NOW()),
+(44, 'Grab Bars', 'PT Equipment', 1, 25.00, 0, 'Portable grab bars', NULL, NOW(), NOW()),
+
+-- =====================================================
+-- PROVIDER 7 - Mental Health Services
+-- =====================================================
+-- Service 30: Psychological Assessment
+(30, 'Assessment Forms', 'Administrative', 5, 2.00, 1, 'Psychological testing forms', NULL, NOW(), NOW()),
+(30, 'Cognitive Test Kit', 'Medical Supply', 1, 50.00, 1, 'Cognitive assessment tools', NULL, NOW(), NOW()),
+(30, 'Computer with Software', 'Equipment', 1, 800.00, 0, 'Testing computer with software', NULL, NOW(), NOW()),
+(30, 'Timer', 'Equipment', 1, 12.00, 0, 'Stopwatch timer', NULL, NOW(), NOW()),
+
+-- Service 31: Cognitive Behavioral Therapy
+(31, 'Workbook Materials', 'Administrative', 5, 8.00, 1, 'CBT workbooks and worksheets', NULL, NOW(), NOW()),
+(31, 'Therapy Cards', 'Therapy Supply', 1, 15.00, 1, 'CBT and emotion cards', NULL, NOW(), NOW()),
+(31, 'Art Therapy Materials', 'Therapy Supply', 1, 20.00, 1, 'Art supplies for therapy', NULL, NOW(), NOW()),
+
+-- Service 32: Psychiatric Consultation
+(32, 'Prescription Pad', 'Medical Supply', 1, 5.00, 1, 'Prescription forms', NULL, NOW(), NOW()),
+(32, 'Medical Reference Books', 'Equipment', 1, 120.00, 0, 'Psychiatric reference materials', NULL, NOW(), NOW()),
+(32, 'Computer for Records', 'Equipment', 1, 600.00, 0, 'Computer for EMR', NULL, NOW(), NOW()),
+
+-- Service 33: Counseling Session
+(33, 'Counseling Room Kit', 'Therapy Supply', 1, 10.00, 1, 'Counseling materials', NULL, NOW(), NOW()),
+(33, 'Therapy Journals', 'Therapy Supply', 2, 8.00, 1, 'Patient therapy journals', NULL, NOW(), NOW()),
+(33, 'Relaxation CD', 'Therapy Supply', 1, 12.00, 1, 'Guided relaxation audio', NULL, NOW(), NOW()),
+
+-- Service 45: Group Therapy
+(45, 'Group Room Setup', 'Equipment', 1, 50.00, 0, 'Group therapy room equipment', NULL, NOW(), NOW()),
+(45, 'Chairs (10)', 'Equipment', 10, 35.00, 0, 'Comfortable group chairs', NULL, NOW(), NOW()),
+(45, 'Whiteboard', 'Equipment', 1, 25.00, 0, 'Whiteboard for group activities', NULL, NOW(), NOW()),
+(45, 'Group Worksheets', 'Administrative', 10, 1.00, 1, 'Group therapy worksheets', NULL, NOW(), NOW()),
+
+-- Service 46: Family Therapy
+(46, 'Family Therapy Kit', 'Therapy Supply', 1, 25.00, 1, 'Family therapy resources', NULL, NOW(), NOW()),
+(46, 'Family Assessment Tools', 'Therapy Supply', 1, 30.00, 1, 'Family evaluation materials', NULL, NOW(), NOW()),
+(46, 'Recording Device', 'Equipment', 1, 80.00, 0, 'Audio recording device (consent required)', NULL, NOW(), NOW()),
+
+-- Service 47: Online Therapy Session
+(47, 'Webcam', 'Equipment', 1, 50.00, 0, 'HD webcam for virtual sessions', NULL, NOW(), NOW()),
+(47, 'Headset', 'Equipment', 1, 40.00, 0, 'Noise-canceling headset', NULL, NOW(), NOW()),
+(47, 'Virtual Background', 'Equipment', 1, 15.00, 1, 'Professional virtual background', NULL, NOW(), NOW()),
+(47, 'Therapy Software', 'Equipment', 1, 150.00, 0, 'Telehealth therapy platform', NULL, NOW(), NOW());
 
 desc provider_organisation;
 
@@ -2977,6 +2862,15 @@ desc management_rule;
 select * from recipe;
 select * from notification;
 select * from management_rule;
+select * from product_provider;
 delete from management_rule where id_management_rule = 19;
-
-
+desc wallet;
+desc payment;
+desc money_transaction;
+desc staff_role;
+desc provided_service;
+desc provided_service_category;
+desc service_staff_requirement;
+desc service_resource_requirement;
+desc ordered_service;
+desc ordered_item;
