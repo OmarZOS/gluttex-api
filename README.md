@@ -47,7 +47,7 @@ Create a user that can access from anywhere:
 
 To generate the `models.py` file, you can execute the following instruction:
 
-    sudo docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' gluttex-db
+    docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' gluttex-db
 
     sqlacodegen --outfile=api_server/core/models.py   mysql+pymysql://dev_user:dev_password@[$MYSQL_HOST]/gluttex
 

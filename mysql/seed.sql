@@ -209,60 +209,8 @@ INSERT INTO `product` (
 (2, 'Buckwheat Flour - 500g', 'BioCereal', 'Organic buckwheat flour, gluten-free', 7, 3, '1234567890046', 5.99, 90, 'pack', NULL, NOW(), NOW()),
 (2, 'Millet Flakes - 300g', 'BioCereal', 'Organic millet flakes for breakfast cereals', 7, 3, '1234567890047', 4.49, 100, 'pack', NULL, NOW(), NOW()),
 (2, 'Quinoa Flour - 500g', 'BioCereal', 'Organic quinoa flour rich in protein', 7, 3, '1234567890048', 6.49, 85, 'pack', NULL, NOW(), NOW()),
-(2, 'Gluten-Free Muesli - 400g', 'BioCereal', 'Organic muesli with dried fruits and nuts', 7, 3, '1234567890049', 5.79, 95, 'pack', NULL, NOW(), NOW()),
+(2, 'Gluten-Free Muesli - 400g', 'BioCereal', 'Organic muesli with dried fruits and nuts', 7, 3, '1234567890049', 5.79, 95, 'pack', NULL, NOW(), NOW());
 
--- =====================================================
--- PROVIDER 8 - Fresh Produce
--- =====================================================
-(2, 'Organic Apples (6pcs)', 'FreshFarm', 'Fresh organic apples from local farms', 8, 4, '1234567890050', 4.99, 100, 'pack', NULL, NOW(), NOW()),
-(2, 'Organic Bananas (bunch)', 'FreshFarm', 'Ripe organic bananas', 8, 4, '1234567890051', 2.99, 120, 'bunch', NULL, NOW(), NOW()),
-(2, 'Mixed Berries (250g)', 'FreshFarm', 'Fresh organic mixed berries', 8, 4, '1234567890052', 5.99, 80, 'pack', NULL, NOW(), NOW()),
-(2, 'Organic Avocados (4pcs)', 'FreshFarm', 'Ripe organic avocados', 8, 4, '1234567890053', 6.99, 60, 'pack', NULL, NOW(), NOW()),
-(2, 'Spinach (250g)', 'FreshFarm', 'Fresh organic spinach leaves', 8, 4, '1234567890054', 3.49, 100, 'pack', NULL, NOW(), NOW()),
-(2, 'Organic Carrots (1kg)', 'FreshFarm', 'Fresh organic carrots', 8, 4, '1234567890055', 2.49, 90, 'pack', NULL, NOW(), NOW()),
-(2, 'Tomatoes (500g)', 'FreshFarm', 'Ripe organic tomatoes', 8, 4, '1234567890056', 3.99, 110, 'pack', NULL, NOW(), NOW()),
-
--- =====================================================
--- PROVIDER 9 - Dairy & Alternatives
--- =====================================================
-(2, 'Almond Milk - 1L', 'DairyFree', 'Unsweetened almond milk with calcium', 9, 4, '1234567890057', 3.49, 80, 'carton', NULL, NOW(), NOW()),
-(2, 'Coconut Yogurt (6pcs)', 'DairyFree', 'Organic coconut yogurt cups', 9, 4, '1234567890058', 7.99, 60, 'pack', NULL, NOW(), NOW()),
-(2, 'Oat Milk - 1L', 'DairyFree', 'Smooth unsweetened oat milk', 9, 4, '1234567890059', 3.99, 90, 'carton', NULL, NOW(), NOW()),
-(2, 'Vegan Cheese Slices (10pcs)', 'DairyFree', 'Plant-based cheese slices', 9, 4, '1234567890060', 5.99, 70, 'pack', NULL, NOW(), NOW()),
-(2, 'Soy Yogurt (6pcs)', 'DairyFree', 'Organic soy yogurt cups', 9, 4, '1234567890061', 6.99, 65, 'pack', NULL, NOW(), NOW()),
-(2, 'Cashew Milk - 1L', 'DairyFree', 'Smooth unsweetened cashew milk', 9, 4, '1234567890062', 4.49, 75, 'carton', NULL, NOW(), NOW()),
-
--- =====================================================
--- PROVIDER 10 - Herbal & Tea Products
--- =====================================================
-(2, 'Chamomile Tea (20 bags)', 'HerbalEssence', 'Organic chamomile tea for relaxation', 10, 7, '1234567890063', 4.99, 100, 'box', NULL, NOW(), NOW()),
-(2, 'Green Tea (50 bags)', 'HerbalEssence', 'Organic green tea with antioxidants', 10, 7, '1234567890064', 6.99, 120, 'box', NULL, NOW(), NOW()),
-(2, 'Peppermint Tea (20 bags)', 'HerbalEssence', 'Organic peppermint tea for digestion', 10, 7, '1234567890065', 4.49, 110, 'box', NULL, NOW(), NOW()),
-(2, 'Turmeric Latte Blend', 'HerbalEssence', 'Golden milk turmeric latte blend', 10, 7, '1234567890066', 12.99, 50, 'jar', NULL, NOW(), NOW()),
-(2, 'Matcha Powder - 100g', 'HerbalEssence', 'Premium organic matcha powder', 10, 7, '1234567890067', 24.99, 30, 'tin', NULL, NOW(), NOW()),
-(2, 'Lemon Ginger Tea (20 bags)', 'HerbalEssence', 'Organic lemon and ginger tea', 10, 7, '1234567890068', 5.49, 100, 'box', NULL, NOW(), NOW()),
-(2, 'Sleep Tea (20 bags)', 'HerbalEssence', 'Organic sleep blend with valerian and lavender', 10, 7, '1234567890069', 6.49, 90, 'box', NULL, NOW(), NOW()),
-
--- =====================================================
--- PROVIDER 11 - Supplements & Vitamins
--- =====================================================
-(2, 'Vitamin C - 1000mg (60 tabs)', 'VitaHealth', 'High potency vitamin C supplement', 11, 9, '1234567890070', 14.99, 80, 'bottle', NULL, NOW(), NOW()),
-(2, 'Vitamin D3 - 2000 IU (90 caps)', 'VitaHealth', 'Vitamin D3 supplement for immune support', 11, 9, '1234567890071', 19.99, 70, 'bottle', NULL, NOW(), NOW()),
-(2, 'Omega-3 Fish Oil (60 caps)', 'VitaHealth', 'Pure omega-3 fish oil supplement', 11, 9, '1234567890072', 24.99, 60, 'bottle', NULL, NOW(), NOW()),
-(2, 'Probiotics (30 caps)', 'VitaHealth', 'High potency probiotic supplement', 11, 9, '1234567890073', 29.99, 50, 'bottle', NULL, NOW(), NOW()),
-(2, 'Magnesium Complex (60 tabs)', 'VitaHealth', 'Magnesium supplement for muscle health', 11, 9, '1234567890074', 18.99, 75, 'bottle', NULL, NOW(), NOW()),
-(2, 'Zinc - 50mg (60 tabs)', 'VitaHealth', 'Zinc supplement for immune function', 11, 9, '1234567890075', 12.99, 90, 'bottle', NULL, NOW(), NOW()),
-(2, 'Multivitamin (120 tabs)', 'VitaHealth', 'Complete multivitamin for daily health', 11, 9, '1234567890076', 29.99, 60, 'bottle', NULL, NOW(), NOW()),
-
--- =====================================================
--- PROVIDER 12 - Snacks & Convenience Foods
--- =====================================================
-(2, 'Crispy Chips (6pcs)', 'SnackTime', 'Gluten-free crispy chips variety pack', 12, 1, '1234567890077', 8.99, 100, 'pack', NULL, NOW(), NOW()),
-(2, 'Fruit Bars (12pcs)', 'SnackTime', 'Gluten-free fruit and nut bars', 12, 1, '1234567890078', 9.99, 90, 'box', NULL, NOW(), NOW()),
-(2, 'Protein Balls (6pcs)', 'SnackTime', 'Energy protein balls with nuts and dates', 12, 1, '1234567890079', 6.49, 80, 'pack', NULL, NOW(), NOW()),
-(2, 'Veggie Chips (6pcs)', 'SnackTime', 'Gluten-free vegetable chips variety', 12, 1, '1234567890080', 7.99, 100, 'pack', NULL, NOW(), NOW()),
-(2, 'Trail Mix - 200g', 'SnackTime', 'Mixed nuts, seeds, and dried fruits', 12, 1, '1234567890081', 5.49, 110, 'pack', NULL, NOW(), NOW()),
-(2, 'Pretzel Sticks (6pcs)', 'SnackTime', 'Gluten-free pretzel sticks', 12, 1, '1234567890082', 4.99, 120, 'pack', NULL, NOW(), NOW());
 
 -- Insert provided_service_category first
 INSERT INTO `gluttex`.`provided_service_category` (
@@ -1811,18 +1759,18 @@ INSERT INTO `gluttex`.`service_resource_requirement` (
 -- (NULL, 21, 52.5000, 'card', 'DEP-TXN-008', 'Partial deposit - cart unknown', NULL);
 
 -- select * from app_user;
--- desc app_user ;
--- insert into app_user (id_app_user,
--- app_user_name,
--- app_user_password,
--- app_user_type,
--- app_user_preferences,
--- app_user_image_url,
--- app_user_last_active,
--- app_user_last_updated,
--- app_user_creation)
--- values
--- (4, 'admin', '77b23d5396b51608e7189cf8895bd283c88639db5ed6211fa8bfbaecf477409f',  "admin",NULL , NULL , '2025-12-10 08:01:27', '2025-12-10 08:01:27', '2025-12-10 08:01:27' );
+desc app_user ;
+insert into app_user (id_app_user,
+app_user_name,
+app_user_password,
+app_user_type,
+app_user_preferences,
+app_user_image_url,
+app_user_last_active,
+app_user_last_updated,
+app_user_creation)
+values
+(4, 'admin', '77b23d5396b51608e7189cf8895bd283c88639db5ed6211fa8bfbaecf477409f',  "admin",NULL , NULL , '2025-12-10 08:01:27', '2025-12-10 08:01:27', '2025-12-10 08:01:27' );
 
 
 INSERT INTO `gluttex`.`management_rule` (

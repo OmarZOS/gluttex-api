@@ -163,7 +163,7 @@ services:
     hostname: gluttex-auth
     restart: unless-stopped
     command: uvicorn server:app --host 0.0.0.0 --ssl-keyfile /etc/ssl/private/key.pem --ssl-certfile /etc/ssl/certs/cert.pem --port 9090 --reload # 
-    image: omarzos/gluttex-auth
+    image: omarzos/emastan-auth:latest
     environment:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - AUTH_PORT=9090
@@ -175,7 +175,6 @@ services:
     networks:
       - gluttex-net
     volumes:
-      - ./auth_server/:/code
       - ./volumes/auth_db/:/auth_db/
     deploy:
       resources:
@@ -188,7 +187,7 @@ services:
     hostname: gluttex-fs
     restart: unless-stopped
     command: uvicorn server:app --host 0.0.0.0 --port 9099 --reload
-    image: omarzos/gluttex-fs
+    image: omarzos/emagrad-fs:latest
     ports:
       - 9099:9099
     environment:
@@ -198,7 +197,6 @@ services:
     networks:
       - gluttex-net
     volumes:
-      - ./file_server/:/code
       - ./volumes/fs/:/fs/
     deploy:
       resources:
@@ -211,13 +209,11 @@ services:
     hostname: gluttex-stream
     restart: unless-stopped
     command: uvicorn server:app --host 0.0.0.0 --port 9097 --reload
-    image: omarzos/gluttex-stream
+    image: omarzos/asif-stream
     ports:
       - 9097:9097
     environment:
       - FS_PORT=9097
-    volumes:
-      - ./stream_server/:/code
     networks:
       - gluttex-net
     deploy:
