@@ -4,22 +4,22 @@ COPY . /code
 
 
 # Install system dependencies for WeasyPrint
-RUN apk add --no-cache \
-    build-base \
-    python3-dev \
-    pango \
-    cairo \
-    cairo-dev \
-    pango-dev \
-    gdk-pixbuf \
-    glib-dev \
-    freetype-dev \
-    fontconfig-dev \
-    jpeg-dev \
-    openjpeg-dev \
-    tiff-dev \
-    libwebp-dev \
-    && pip install --no-cache-dir pillow
+# RUN apk add --no-cache \
+#     build-base \
+#     python3-dev \
+#     pango \
+#     cairo \
+#     cairo-dev \
+#     pango-dev \
+#     gdk-pixbuf \
+#     glib-dev \
+#     freetype-dev \
+#     fontconfig-dev \
+#     jpeg-dev \
+#     openjpeg-dev \
+#     tiff-dev \
+#     libwebp-dev \
+#     && pip install --no-cache-dir pillow
 
 
 # RUN pip install  --upgrade pip

@@ -183,7 +183,7 @@ class AuthClient:
             
         Returns:
             Authentication response with token and user data
-            
+
         Raises:
             AuthLoginException: If login fails
             AuthServiceUnavailableException: If auth service is unavailable

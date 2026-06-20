@@ -13,7 +13,7 @@ services:
       - "9091:9090"
 
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./setup/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
 
     networks:
       - gluttex-net
@@ -47,13 +47,13 @@ services:
     
     volumes:
       # Persist data
-      - rabbitmq_data:/var/lib/rabbitmq
-      - rabbitmq_logs:/var/log/rabbitmq
+      - ./volumes/rabbitmq/data:/var/lib/rabbitmq
+      - ./volumes/rabbitmq/logs:/var/log/rabbitmq
       
       # Custom configuration (optional)
-      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
-      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-      - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - ./setup/rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./setup/rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./setup/rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
     
     
     healthcheck:
@@ -86,7 +86,6 @@ services:
           cpus: '1'
           memory: 512M
 
-
   mysql:
     image: mysql
     container_name: gluttex-db
@@ -102,7 +101,7 @@ services:
     ports:
       - ${SQL_PORT}:3306
     volumes:
-      - ./mysql/model.sql:/data/application/init.sql
+      - ./setup/mysql/model.sql:/data/application/init.sql
       - ./volumes/data:/var/lib/mysql
     networks:
       - gluttex-net
@@ -223,10 +222,10 @@ services:
           memory: 512M
 
 volumes:
-  rabbitmq_data:
-    driver: local
-  rabbitmq_logs:
-    driver: local
+  # rabbitmq_data:
+  #   driver: local
+  # rabbitmq_logs:
+  #   driver: local
   volumes:
     driver: local
 

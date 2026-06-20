@@ -118,10 +118,6 @@ services:
     container_name: gluttex-auth
     hostname: gluttex-auth
     restart: unless-stopped
-    build:
-      context: auth_server/
-      args:
-        - AUTH_PORT=9090
     image: omarzos/gluttex-auth
     environment:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
@@ -132,7 +128,6 @@ services:
     networks:
       - gluttex-net
     volumes:
-      - ./auth_server/:/code
       - ./auth_db/:/auth_db/
     deploy:
       resources:
@@ -151,17 +146,12 @@ services:
     container_name: gluttex-fs
     hostname: gluttex-fs
     restart: unless-stopped
-    build:
-      context: file_server/
-      args:
-        - FS_PORT=9099
     image: omarzos/gluttex-fs
     environment:
       - FS_PORT=9099
     networks:
       - gluttex-net
     volumes:
-      - ./file_server/:/code
       - ./fs/:/fs/
     deploy:
       resources:

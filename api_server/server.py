@@ -31,7 +31,7 @@ from routers.business_routers.product_router import product_router
 from routers.business_routers.supplier_router import supplier_router
 from routers.business_routers.staff_router import staff_router
 from routers.business_routers.business_router import business_router
-from routers.business_routers.document_router import document_router
+# from routers.business_routers.document_router import document_router
 from routers.health_routers.recipe_router import recipe_router
 from routers.health_routers.health_router import health_router
 from routers.search_router import search_router
@@ -168,7 +168,7 @@ def setup_routers(app: FastAPI) -> None:
     app.include_router(supplier_router, prefix=api_version, tags=["Suppliers"])
     app.include_router(person_router, prefix=api_version, tags=["People"])
     app.include_router(staff_router, prefix=api_version, tags=["Staff"])
-    app.include_router(document_router, prefix=api_version, tags=["Documents"])
+    # app.include_router(document_router, prefix=api_version, tags=["Documents"])
     
     # Business sub-modules
     business_prefix = f"{api_version}/business"

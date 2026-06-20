@@ -24,12 +24,12 @@ pika
 prometheus-fastapi-instrumentator
 # prometheus_client
 
-Jinja2
-weasyprint
+# Jinja2
+# weasyprint
+# qrcode
+# segno
 # pillow
-python-dotenv
-qrcode
-segno
+# python-dotenv
 
 
 # shapely
