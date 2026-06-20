@@ -20,7 +20,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from core.exceptions.handler import setup_exception_handlers_with_config
 from core.response_models import SuccessResponseModel
 from config import settings
-from constants import SECRET_KEY
+from constants import API_SECRET_KEY
 
 # Import routers
 from routers.app_routers.user_router import app_user_router
@@ -95,7 +95,7 @@ def setup_middleware(app: FastAPI) -> None:
     # Session middleware
     app.add_middleware(
         SessionMiddleware,
-        secret_key=SECRET_KEY,
+        secret_key=API_SECRET_KEY,
         max_age=settings.SESSION_MAX_AGE,
         same_site=settings.SESSION_SAME_SITE,
         https_only=settings.SESSION_HTTPS_ONLY

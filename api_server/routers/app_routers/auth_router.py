@@ -1,18 +1,27 @@
 # routers/app_routers/auth_router.py
-from fastapi import APIRouter, Request, Depends, status
+from asyncio.log import logger
+
+from fastapi import APIRouter, File, HTTPException, Request, Depends, UploadFile, status
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
-from datetime import datetime
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta
 
-from core.responses.auth_responses import *
-from core.exceptions.handler import OAuthException
+from services.helpers.auth.auth_dependencies import JWTBearer, get_current_user, get_current_user_id, get_current_user_info
+from services.helpers.auth.user_dependencies import verify_user
+from services.helpers.auth.auth import create_access_token, create_refresh_token
+from core.exceptions.handler import AuthLoginException, OAuthException
 from core.exceptions.handler import APIException
 from core.messages import *
+from core.responses.auth_responses import AccountDeletionConfirmation, AvatarUploadResponse, ChangePassword_API, ChangePasswordResponse, DeleteAccountResponse, ErrorResponseModel, LogoutResponse, RefreshTokenRequest, TokenResponse, UserProfileResponse, UserProfileUpdate_API
 from core.api_models import AuthData_API
 from core.exceptions.error_responses import ErrorResponse, create_error_response
 from services.auth_service import AuthService
 from services.oauth_config_service import OAuthConfigService
+from services.user_service import UserService
+
+# Import authentication dependencies
+from core.models import AppUser
 
 
 # ==================== Router ====================
@@ -26,6 +35,11 @@ def get_auth_service() -> AuthService:
 def get_oauth_config() -> OAuthConfigService:
     return OAuthConfigService()
 
+def get_user_service() -> UserService:
+    return UserService()
+
+
+# ==================== Public Routes (No Auth Required) ====================
 
 @auth_router.get(
     "/login/{provider}",
@@ -170,35 +184,8 @@ async def auth_callback(
                 }
             }
         },
-        400: {
-            "description": "Bad Request - Invalid credentials format",
-            "model": ErrorResponseModel
-        },
         401: {
             "description": "Unauthorized - Invalid credentials",
-            "model": ErrorResponseModel,
-            "content": {
-                "application/json": {
-                    "example": {
-                        "success": False,
-                        "status_code": 401,
-                        "code": "INCORRECT_CREDENTIALS",
-                        "message": "Invalid username or password",
-                        "timestamp": "2024-01-01T12:00:00Z"
-                    }
-                }
-            }
-        },
-        422: {
-            "description": "Validation Error",
-            "model": ErrorResponseModel
-        },
-        429: {
-            "description": "Too Many Requests",
-            "model": ErrorResponseModel
-        },
-        500: {
-            "description": "Internal Server Error",
             "model": ErrorResponseModel
         }
     }
@@ -213,16 +200,391 @@ async def login_user(
     - **username**: User's username
     - **password**: User's password
     """
-    result = await auth_service.login_user(user)
-    print(result)
-    
-    return TokenResponse(
-        access_token=result["access_token"],
-        token_type="bearer",
-        expires_in=result.get("expires_in", 3600),
-        app_user_id=result["app_user_id"],
-        username=user.app_user_name
+    try:
+        # 1. Authenticate with auth server - returns client data
+        auth_result = await auth_service.login_user(user)
+        
+        logger.info(f"Auth result for {user.app_user_name}: {auth_result.keys()}")
+        
+        # 2. Create access token from client data
+        token_data = {
+            "app_user_id": auth_result.get("app_user_id"),
+            "username": auth_result.get("username"),
+            "email": auth_result.get("email"),
+            "first_name": auth_result.get("first_name"),
+            "last_name": auth_result.get("last_name"),
+            "iss": "gluttex-api",
+            "aud": ["gluttex-web", "gluttex-mobile"],
+        }
+        
+        # Pass client result to token creation
+        access_token = create_access_token(
+            data=token_data,
+            expires_delta=timedelta(seconds=auth_result.get("expires_in", 3600))
+        )
+        
+        refresh_token = create_refresh_token(
+            data={"app_user_id": auth_result.get("app_user_id")}
+        )
+        
+        # 3. Return response with token
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+            expires_in=auth_result.get("expires_in", 3600),
+            app_user_id=auth_result.get("app_user_id"),
+            username=auth_result.get("username"),
+            email=auth_result.get("email"),
+            first_name=auth_result.get("first_name"),
+            last_name=auth_result.get("last_name")
+        )
+        
+    except AuthLoginException as e:
+        logger.error(f"Login failed for {user.app_user_name}: {e}")
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "success": False,
+                "status_code": 401,
+                "code": e.details.get("error_code", "INVALID_CREDENTIALS"),
+                "message": str(e),
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+    except Exception as e:
+        logger.error(f"Unexpected login error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "success": False,
+                "status_code": 500,
+                "code": "INTERNAL_SERVER_ERROR",
+                "message": "An unexpected error occurred",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+
+
+@auth_router.post(
+    "/authentication/refresh",
+    response_model=TokenResponse,
+    summary="Refresh Token",
+    description="Refresh the access token using a refresh token.",
+    responses={
+        200: {
+            "description": "Token refreshed successfully",
+            "model": TokenResponse
+        },
+        401: {
+            "description": "Unauthorized - Invalid refresh token",
+            "model": ErrorResponseModel
+        }
+    }
+)
+async def refresh_token(
+    refresh_token_data: RefreshTokenRequest,
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    Refresh the access token.
+    """
+    try:
+        result = await auth_service.refresh_access_token(refresh_token_data.refresh_token)
+        
+        return TokenResponse(
+            access_token=result["access_token"],
+            refresh_token=result["refresh_token"],
+            token_type="bearer",
+            expires_in=result.get("expires_in", 3600),
+            app_user_id=result.get("app_user_id")
+        )
+        
+    except Exception as e:
+        logger.error(f"Token refresh failed: {e}")
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "success": False,
+                "status_code": 401,
+                "code": "INVALID_REFRESH_TOKEN",
+                "message": "Invalid refresh token",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+        )
+
+
+# ==================== Protected Routes (Auth Required) ====================
+
+@auth_router.get(
+    "/me",
+    response_model=UserProfileResponse,
+    summary="Get Current User Profile",
+    description="Get the current authenticated user's profile information.",
+    responses={
+        200: {
+            "description": "User profile retrieved successfully",
+            "model": UserProfileResponse
+        },
+        401: {
+            "description": "Unauthorized - Invalid or missing token",
+            "model": ErrorResponseModel
+        },
+        403: {
+            "description": "Forbidden - Account inactive",
+            "model": ErrorResponseModel
+        }
+    }
+)
+async def get_current_user_profile(
+    user: AppUser = Depends(verify_user),
+    user_info: Dict[str, Any] = Depends(get_current_user_info)
+):
+    """
+    Get current authenticated user's profile.
+    Requires valid JWT token.
+    """
+    return UserProfileResponse(
+        user_id=user.id_app_user,
+        username=user.app_user_name,
+        email=user.app_user_email,
+        first_name=user_info.get("first_name"),
+        last_name=user_info.get("last_name"),
+        user_type=user.app_user_type_desc,
+        created_at=user.app_user_created_at,
+        image_url=user.app_user_image_url
     )
+
+
+@auth_router.put(
+    "/me",
+    response_model=UserProfileResponse,
+    summary="Update Current User Profile",
+    description="Update the current authenticated user's profile information.",
+    responses={
+        200: {
+            "description": "User profile updated successfully",
+            "model": UserProfileResponse
+        },
+        401: {
+            "description": "Unauthorized - Invalid or missing token",
+            "model": ErrorResponseModel
+        },
+        422: {
+            "description": "Validation Error",
+            "model": ErrorResponseModel
+        }
+    }
+)
+async def update_current_user_profile(
+    user_update: UserProfileUpdate_API,
+    user_id: int = Depends(get_current_user_id),
+    user_service: UserService = Depends(get_user_service)
+):
+    """
+    Update current user's profile.
+    Requires valid JWT token.
+    """
+    try:
+        updated_user = await user_service.update_user_profile(
+            user_id=user_id,
+            update_data=user_update
+        )
+        
+        return UserProfileResponse(
+            user_id=updated_user.id_app_user,
+            username=updated_user.app_user_name,
+            email=updated_user.app_user_email,
+            first_name=updated_user.person.person_first_name,
+            last_name=updated_user.person.person_last_name,
+            user_type=updated_user.app_user_type_desc,
+            created_at=updated_user.app_user_created_at,
+            image_url=updated_user.app_user_image_url
+        )
+        
+    except Exception as e:
+        logger.error(f"Update user profile failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update user profile: {str(e)}"
+        )
+
+
+@auth_router.post(
+    "/me/change-password",
+    response_model=ChangePasswordResponse,
+    summary="Change Password",
+    description="Change the current user's password.",
+    responses={
+        200: {
+            "description": "Password changed successfully",
+            "model": ChangePasswordResponse
+        },
+        401: {
+            "description": "Unauthorized - Invalid or missing token",
+            "model": ErrorResponseModel
+        },
+        400: {
+            "description": "Bad Request - Invalid password",
+            "model": ErrorResponseModel
+        }
+    }
+)
+async def change_password(
+    password_data: ChangePassword_API,
+    user_id: int = Depends(get_current_user_id),
+    auth_service: AuthService = Depends(get_auth_service)
+):
+    """
+    Change current user's password.
+    Requires valid JWT token.
+    """
+    try:
+        # Verify current password
+        result = await auth_service.verify_password(
+            user_id=user_id,
+            current_password=password_data.current_password
+        )
+        
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Current password is incorrect"
+            )
+        
+        # Update password
+        await auth_service.change_password(
+            user_id=user_id,
+            new_password=password_data.new_password
+        )
+        
+        return ChangePasswordResponse(
+            success=True,
+            message="Password changed successfully",
+            user_id=user_id,
+            changed_at=datetime.utcnow()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Change password failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to change password"
+        )
+
+
+@auth_router.post(
+    "/me/upload-avatar",
+    response_model=AvatarUploadResponse,
+    summary="Upload Avatar",
+    description="Upload a new avatar image for the current user.",
+    responses={
+        200: {
+            "description": "Avatar uploaded successfully",
+            "model": AvatarUploadResponse
+        },
+        401: {
+            "description": "Unauthorized - Invalid or missing token",
+            "model": ErrorResponseModel
+        },
+        422: {
+            "description": "Validation Error",
+            "model": ErrorResponseModel
+        }
+    }
+)
+async def upload_avatar(
+    file: UploadFile = File(...),
+    user_id: int = Depends(get_current_user_id),
+    user_service: UserService = Depends(get_user_service)
+):
+    """
+    Upload a new avatar image.
+    Requires valid JWT token.
+    """
+    try:
+        avatar_url = await user_service.upload_avatar(
+            user_id=user_id,
+            file=file
+        )
+        
+        return AvatarUploadResponse(
+            success=True,
+            message="Avatar uploaded successfully",
+            avatar_url=avatar_url
+        )
+        
+    except Exception as e:
+        logger.error(f"Avatar upload failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to upload avatar: {str(e)}"
+        )
+
+
+@auth_router.delete(
+    "/me/delete-account",
+    response_model=DeleteAccountResponse,
+    summary="Delete Account",
+    description="Delete the current user's account.",
+    responses={
+        200: {
+            "description": "Account deleted successfully",
+            "model": DeleteAccountResponse
+        },
+        401: {
+            "description": "Unauthorized - Invalid or missing token",
+            "model": ErrorResponseModel
+        },
+        400: {
+            "description": "Bad Request",
+            "model": ErrorResponseModel
+        }
+    }
+)
+async def delete_account(
+    confirmation_data: AccountDeletionConfirmation,
+    user_id: int = Depends(get_current_user_id),
+    auth_service: AuthService = Depends(get_auth_service),
+    user_service: UserService = Depends(get_user_service)
+):
+    """
+    Delete the current user's account.
+    Requires valid JWT token.
+    """
+    try:
+        # Verify password
+        result = await auth_service.verify_password(
+            user_id=user_id,
+            current_password=confirmation_data.password
+        )
+        
+        if not result:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password verification failed"
+            )
+        
+        # Delete account
+        await user_service.delete_user(user_id)
+        
+        return DeleteAccountResponse(
+            success=True,
+            message="Account deleted successfully",
+            user_id=user_id,
+            deleted_at=datetime.utcnow()
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Account deletion failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete account: {str(e)}"
+        )
 
 
 @auth_router.get(
@@ -256,10 +618,12 @@ async def login_user(
 )
 async def logout(
     request: Request,
+    payload: Dict[str, Any] = Depends(JWTBearer()),
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
     Logs out the user by clearing the session.
+    Requires valid JWT token.
     """
     result = auth_service.logout_user(request)
     return LogoutResponse(
@@ -267,3 +631,56 @@ async def logout(
         message=result["message"],
         timestamp=datetime.now()
     )
+
+
+# ==================== Admin Routes (Admin Only) ====================
+
+@auth_router.get(
+    "/admin/users",
+    response_model=List[UserProfileResponse],
+    summary="Get All Users",
+    description="Get all users (Admin only).",
+    responses={
+        200: {
+            "description": "Users retrieved successfully",
+            "model": List[UserProfileResponse]
+        },
+        401: {
+            "description": "Unauthorized - Invalid or missing token",
+            "model": ErrorResponseModel
+        },
+        403: {
+            "description": "Forbidden - Admin only",
+            "model": ErrorResponseModel
+        }
+    }
+)
+async def get_all_users(
+    payload: Dict[str, Any] = Depends(get_current_user),
+    user_service: UserService = Depends(get_user_service)
+):
+    """
+    Get all users. Admin only.
+    Requires valid JWT token and admin privileges.
+    """
+    # Check if user is admin
+    if payload.get("user_type") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions"
+        )
+    
+    users = await user_service.get_all_users()
+    return [
+        UserProfileResponse(
+            user_id=user.id_app_user,
+            username=user.app_user_name,
+            email=user.app_user_email,
+            first_name=user.person.person_first_name,
+            last_name=user.person.person_last_name,
+            user_type=user.app_user_type_desc,
+            created_at=user.app_user_created_at,
+            image_url=user.app_user_image_url
+        )
+        for user in users
+    ]

@@ -13,3 +13,4 @@ itsdangerous
 python-multipart
 starlette
 geoalchemy2
+jwt

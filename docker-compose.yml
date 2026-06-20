@@ -111,7 +111,7 @@ services:
     restart: unless-stopped
     build:
       context: ./api_server
-      dockerfile: ./Dockerfile.dev
+      dockerfile: ./Dockerfile
       args:
         - API_PORT=9000
     command: uvicorn server:app --host 0.0.0.0 --port 9000 --reload
@@ -131,8 +131,10 @@ services:
       - AUTH_REGISTRATION_ENDPOINT=${AUTH_REGISTRATION_ENDPOINT}
       - AUTH_LOGIN_ENDPOINT=${AUTH_LOGIN_ENDPOINT}
       - AUTH_DELETE_ENDPOINT=${AUTH_DELETE_ENDPOINT}
-      - ALGORITHM=${ALGORITHM}
-      - API_SECRET_KEY=${SECRET_KEY}
+      - AUTH_ALGORITHM=${AUTH_ALGORITHM}
+      - AUTH_SECRET_KEY=${AUTH_SECRET_KEY}
+      - API_ALGORITHM=${API_ALGORITHM}
+      - API_SECRET_KEY=${API_SECRET_KEY}
       - AUTH_CHANGE_ENDPOINT=${AUTH_CHANGE_ENDPOINT}
       - FILE_UPLOAD_ENDPOINT=${FILE_UPLOAD_ENDPOINT}
       - FS_HOST=${FS_HOST}
@@ -145,6 +147,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASS=${RABBITMQ_PASS}
       - RABBITMQ_VHOST=${RABBITMQ_VHOST}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
       
     networks:
       - gluttex-net
@@ -166,8 +169,8 @@ services:
     environment:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - AUTH_PORT=9090
-      - API_SECRET_KEY=${SECRET_KEY}
-      - API_ALGORITHM=${ALGORITHM}
+      - API_SECRET_KEY=${AUTH_SECRET_KEY}
+      - API_ALGORITHM=${AUTH_ALGORITHM}
       - AUTH_DATABASE_URL=sqlite:///../auth_db/auth_db_data.db
     ports:
       - 9090:9090

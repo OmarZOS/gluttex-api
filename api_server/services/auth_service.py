@@ -1,4 +1,5 @@
 # services/auth_service.py (updated)
+from asyncio.log import logger
 import json
 import urllib
 import secrets
@@ -8,7 +9,7 @@ from typing import Dict, Any, Optional
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 from core.api_models import AppUser_API, AuthData_API
-from core.exceptions.handler import APIException, OAuthException, OAuthProviderNotSupportedException
+from core.exceptions.handler import APIException, AuthLoginException, OAuthException, OAuthProviderNotSupportedException
 from core.messages import *
 from constants import *
 # from services.user_service import UserService
@@ -251,12 +252,39 @@ class AuthService:
         }
     
     async def login_user(self, auth_data: AuthData_API) -> Dict[str, Any]:
-        """Authenticate user and return access token."""
-        return await self.auth_client.login(
-            username=auth_data.app_user_name,
-            user_id=auth_data.id_app_user,
-            password=auth_data.app_user_password
-        )
+        """
+        Authenticate user and return access token.
+        """
+        try:
+            # Call auth server to authenticate
+            result = await self.auth_client.login(
+                username=auth_data.app_user_name,
+                user_id=auth_data.id_app_user,
+                password=auth_data.app_user_password
+            )
+            
+            # result contains token data from auth server
+            # {
+            #   "access_token": "...",
+            #   "token_type": "bearer",
+            #   "expires_in": 3600,
+            #   "app_user_id": 123,
+            #   "username": "john_doe",
+            #   "email": "john@example.com",
+            #   "first_name": "John",
+            #   "last_name": "Doe"
+            # }
+            
+            # Add any additional data needed
+            result["app_user_id"] = auth_data.id_app_user
+            
+            logger.info(f"User {auth_data.app_user_name} authenticated successfully")
+            return result
+            
+        except AuthLoginException as e:
+            logger.error(f"Login failed for {auth_data.app_user_name}: {e}")
+            raise
+
     
     async def change_user_password(
         self,
