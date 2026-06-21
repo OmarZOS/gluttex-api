@@ -50,10 +50,13 @@ To avoid issues, always use position_wkt, which exposes the geometry in a safe, 
 
     id_location = Column(Integer, primary_key=True)
     location_position = Column(Geometry('POINT', srid=4326))
-    position_wkt = column_property(func.ST_AsText(location_position)) 
+    position_wkt = column_property(
+        func.ST_AsText(location_position)
+    )
     location_name = Column(String(45))
     location_address_id = Column(Integer)
     location_postal_code = Column(Integer)
+    
 
     # @property
     # def position_wkt(self):
@@ -173,6 +176,8 @@ class FinancialDocument(Base):
     invoice_created_at = Column(TIMESTAMP)
     invoice_updated_at = Column(TIMESTAMP)
     # Define composite primary key
+
+    
     
 
 

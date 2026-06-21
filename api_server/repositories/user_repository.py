@@ -23,7 +23,13 @@ class UserRepository:
                     AppUser.app_user_person: [
                         Person.person_details,
                         Person.person_blood_type,
-                        {Person.person_location: [Location.location_address, Location.location_name, Location.position_wkt]}
+                        
+                        {Person.person_location: [
+                            Location.location_address_id,
+                            Location.location_address,
+                            Location.location_name,
+                            Location.position_wkt
+                        ]}
                     ]
                 }
             ]
@@ -32,12 +38,15 @@ class UserRepository:
         
         users = storage_broker.get(
             table=AppUser,
+
             conditions=conditions,
             join_tables=[],
             eager_load_depth=eager_load_depth,
             offset=0,
             limit=1
         )
+
+        
         
         return users[0] if users else None
     
