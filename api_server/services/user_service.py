@@ -69,6 +69,14 @@ class UserService:
                 details={"username": user_data.app_user_name}
             )
         
+        if user_data.app_user_email:
+            if self.user_repo.get_by_email(user_data.app_user_email):
+                raise APIException(
+                    status_code=HTTP_409_CONFLICT,
+                    error_code=ErrorCode.APPUSER_ALREADY_EXISTS,
+                    details={"email": user_data.app_user_email}
+                )
+        
         logger.info("Creating user object")
         # Build AppUser object
         now = datetime.datetime.now()
@@ -85,7 +93,7 @@ class UserService:
         )
         
         # Attach Person if provided
-        if person_data and person_data.id_person:
+        if person_data :
             existing_person = self.person_repo.get_person_by_id(person_data.id_person)
             if existing_person:
                 app_user.app_user_person_id = existing_person.id_person
@@ -114,6 +122,9 @@ class UserService:
             "app_user_id": user.id_app_user,
             "password": user_data.app_user_password,
         }
+        if user_data.app_user_email:
+            user_auth_data["email"] = user_data.app_user_email
+
         
         try:
             logger.info(f"Creating auth record for user '{user.app_user_name}'")
