@@ -4,6 +4,7 @@
 *.cpython
 *.pyc
 .env
+.deploy.env
 *.env
 /fs
 /volumes

@@ -1,0 +1,9 @@
+# tests/integration/integration_config.yaml
+auth_server:
+  host: localhost
+  port: 9090
+  registration_endpoint: /auth/register
+  login_endpoint: /auth/login
+  change_password_endpoint: /auth/change-password
+  delete_user_endpoint: /auth/delete-user
+  health_check_endpoint: /health
