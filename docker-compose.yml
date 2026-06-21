@@ -199,8 +199,8 @@ services:
       - FS_CACHE_STORAGE=${FS_CACHE_STORAGE}
     networks:
       - gluttex-net
-    volumes:
-      - ./volumes/fs/:/fs/
+    # volumes:
+    #   - ./volumes/fs/:/fs/
     deploy:
       resources:
         limits:
