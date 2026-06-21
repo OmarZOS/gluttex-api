@@ -57,16 +57,6 @@ To avoid issues, always use position_wkt, which exposes the geometry in a safe, 
     location_address_id = Column(Integer)
     location_postal_code = Column(Integer)
     
-
-    # @property
-    # def position_wkt(self):
-    #     """Get position as WKT string (works on loaded objects)"""
-    #     if self.location_position is not None:
-    #         if hasattr(self.location_position, 'wkt'):
-    #             return self.location_position.wkt
-    #         return str(self.location_position)
-    #     return None
-
     location_address = relationship('Address', back_populates='location')
     location_image = relationship('LocationImage', back_populates='location')
     person = relationship('Person', back_populates='person_location')

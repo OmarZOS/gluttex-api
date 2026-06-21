@@ -347,10 +347,17 @@ async def get_current_user_profile(
     Get current authenticated user's profile.
     Requires valid JWT token.
     """
+    logger.info (f"id_app_user: {user.id_app_user}")
+    logger.info (f"app_user_name: {user.app_user_name}")
+    logger.info (f"app_user_email: {user.app_user_email}")
+    logger.info (f"app_user_preferences: {user.app_user_preferences}")
+    logger.info (f"app_user_creation: {user.app_user_creation}")
+    logger.info (f"app_user_image_url: {user.app_user_image_url}")
+    logger.info (f"app_user_image_url: {user.app_user_image_url}")
     return UserProfileResponse(
         user_id=user.id_app_user,
         username=user.app_user_name,
-        email=user.app_user_email,
+        email=str(user.app_user_email),
         app_user_preferences=user.app_user_preferences,
         app_user_creation=user.app_user_creation,
         user_type=user.app_user_image_url,
