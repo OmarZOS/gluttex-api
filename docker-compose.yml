@@ -177,8 +177,8 @@ services:
       - 9090:9090
     networks:
       - gluttex-net
-    volumes:
-      - ./volumes/auth_db/:/auth_db/
+    # volumes:
+    #   - ./volumes/auth_db/:/auth_db/
     deploy:
       resources:
         limits:
