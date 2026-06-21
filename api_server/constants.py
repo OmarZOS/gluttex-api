@@ -34,12 +34,15 @@ AUTH_SECRET_KEY = os.getenv("AUTH_SECRET_KEY",'')
 ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES",'')
 REFRESH_TOKEN_EXPIRE_DAYS = os.getenv("REFRESH_TOKEN_EXPIRE_DAYS",'')
 
-AUTH_SERVER_NAME = os.getenv("AUTH_SERVER_NAME",'')
+
+
+AUTH_SERVER_PROTOCOLE=os.getenv("AUTH_SERVER_PROTOCOLE",'http')
+AUTH_SERVER_NAME =  os.getenv("AUTH_SERVER_NAME",'gluttex-auth')
 AUTH_PORT = os.getenv("AUTH_PORT",9090)
-AUTH_REGISTRATION_ENDPOINT = os.getenv("AUTH_REGISTRATION_ENDPOINT",'')
-AUTH_LOGIN_ENDPOINT = os.getenv("AUTH_LOGIN_ENDPOINT",'')
-AUTH_CHANGE_ENDPOINT = os.getenv("AUTH_CHANGE_ENDPOINT",'')
-AUTH_DELETE_ENDPOINT = os.getenv("AUTH_DELETE_ENDPOINT",'')
+AUTH_REGISTRATION_ENDPOINT = os.getenv("AUTH_REGISTRATION_ENDPOINT",'/auth/register')
+AUTH_LOGIN_ENDPOINT = os.getenv("AUTH_LOGIN_ENDPOINT",'/auth/login')
+AUTH_CHANGE_ENDPOINT = os.getenv("AUTH_CHANGE_ENDPOINT",'/auth/change-password')
+AUTH_DELETE_ENDPOINT = os.getenv("AUTH_DELETE_ENDPOINT",'/auth/delete-user')
 
 
 FILE_UPLOAD_ENDPOINT= os.getenv("FILE_UPLOAD_ENDPOINT",'')
@@ -77,10 +80,10 @@ class RuleFlags:
     CAN_EXPORT = 1 << 4        # 16
 
 class ReactionType(str, Enum):
-    product = "product"
-    recipe = "recipe"
-    provider = "provider"
-    comment = "comment"
+    PRODUCT = "product"
+    RECIPE = "recipe"
+    PROVIDER = "provider"
+    COMMENT = "comment"
 
 PRODUCT_REACTION_IDS = {1,2,3,4,5}
 RECIPE_REACTION_IDS = {1,6,7,8,4}

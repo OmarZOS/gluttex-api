@@ -1,8 +1,10 @@
 # services/user_service.py
+import json
 import logging
 import datetime
 from typing import Optional
 
+from features.auth_client import AuthClient
 from core.api_models import AppUser_API, Person_API, Location_API, AppUserUpdate_API
 from core.exceptions.handler import (
     APIException,
@@ -26,7 +28,7 @@ from core.messages.http_status import (
     HTTP_417_EXPECTATION_FAILED
 )
 
-logger = logging.getLogger("FastAPIApp")
+logger = logging.getLogger(__name__)
 
 class UserService:
     """Service for user-related business logic"""
@@ -37,6 +39,7 @@ class UserService:
         self.location_repo = LocationRepository()
         self.auth_service = AuthService()
         self.person_service = PersonService()
+        self.auth_client = AuthClient()
     
     def get_all_users(self):
         """Get all users"""
@@ -57,7 +60,7 @@ class UserService:
         provider: Optional[str] = None
     ):
         """Create a new user"""
-        
+        logger.info("Getting user by name")
         # Check if user already exists
         if self.user_repo.get_by_name(user_data.app_user_name):
             raise APIException(
@@ -66,12 +69,13 @@ class UserService:
                 details={"username": user_data.app_user_name}
             )
         
+        logger.info("Creating user object")
         # Build AppUser object
         now = datetime.datetime.now()
         app_user = AppUser(
             app_user_name=user_data.app_user_name,
             app_user_password="",
-            app_user_preferences=user_data.app_user_preferences,
+            app_user_preferences=json.dumps(user_data.app_user_preferences),
             app_user_email= user_data.app_user_email,
             app_user_image_url=user_data.app_user_image_url,
             app_user_type=user_data.app_user_type.value,
@@ -81,7 +85,7 @@ class UserService:
         )
         
         # Attach Person if provided
-        if person_data:
+        if person_data and person_data.id_person:
             existing_person = self.person_repo.get_person_by_id(person_data.id_person)
             if existing_person:
                 app_user.app_user_person_id = existing_person.id_person
@@ -113,12 +117,17 @@ class UserService:
         
         try:
             logger.info(f"Creating auth record for user '{user.app_user_name}'")
-            user_auth_record = await self.auth_service.create_user_auth(user_auth_data)
+            user_auth_record = await self.auth_client.register_user(user_auth_data)
             self.update_user_password(user, user_auth_record["hashed_password"])
         except APIException as e:
             logger.error(f"Failed to create/update auth record: {e}")
-            if e.status_code == HTTP_417_EXPECTATION_FAILED:
-                self.user_repo.delete(user)
+            # if e.status_code == HTTP_417_EXPECTATION_FAILED:
+            deleted=  self.user_repo.delete(user)
+            if deleted:
+                logger.info(f"Deleted the user record")
+            else:
+                logger.error(f"Failed to delete the user record")
+
             raise APIException(
                 status_code=HTTP_410_GONE,
                 error_code=ErrorCode.USER_AUTH_CREATION_FAILED,

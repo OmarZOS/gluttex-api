@@ -4,7 +4,7 @@ from datetime import datetime
 from core.api_models import Payment_API, Deposit_API, AdditionalFee_API
 from core.exceptions.handler import APIException
 from core.messages import *
-from core.models import Payment, Deposit, AdditionalFee
+from core.models import Payment, AdditionalFee
 from repositories.cart_repository import FinancialRepository
 
 class FinancialService:
@@ -28,17 +28,6 @@ class FinancialService:
         
         return self.financial_repo.create_payment(payment)
     
-    def create_deposit(self, deposit_data: Deposit_API) -> Deposit:
-        """Create a deposit"""
-        deposit = Deposit(
-            deposit_cart_id=deposit_data.deposit_cart_id,
-            deposit_amount=deposit_data.deposit_amount,
-            deposit_method=deposit_data.deposit_method,
-            deposit_reference=deposit_data.deposit_reference,
-            deposit_notes=deposit_data.deposit_notes
-        )
-        
-        return self.financial_repo.create_deposit(deposit)
     
     def create_fee(self, fee_data: AdditionalFee_API) -> AdditionalFee:
         """Create an additional fee"""
@@ -74,7 +63,7 @@ class FinancialService:
         # Implementation depends on your repository
         pass
     
-    def get_deposits(self, cart_id: Optional[int] = None, offset: int = 0, limit: int = 100) -> List[Deposit]:
+    def get_deposits(self, cart_id: Optional[int] = None, offset: int = 0, limit: int = 100) :
         """Get deposits with filters"""
         # Implementation depends on your repository
         pass

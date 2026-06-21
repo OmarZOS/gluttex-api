@@ -111,7 +111,7 @@ services:
     restart: unless-stopped
     build:
       context: ./api_server
-      dockerfile: ./Dockerfile
+      dockerfile: ./Dockerfile.dev
       args:
         - API_PORT=9000
     command: uvicorn server:app --host 0.0.0.0 --port 9000 --reload
@@ -148,6 +148,7 @@ services:
       - RABBITMQ_PASS=${RABBITMQ_PASS}
       - RABBITMQ_VHOST=${RABBITMQ_VHOST}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS}
+      - AUTH_SERVER_PROTOCOLE=${AUTH_SERVER_PROTOCOLE}
       
     networks:
       - gluttex-net
@@ -164,7 +165,7 @@ services:
     container_name: gluttex-auth
     hostname: gluttex-auth
     restart: unless-stopped
-    command: uvicorn server:app --host 0.0.0.0 --ssl-keyfile /etc/ssl/private/key.pem --ssl-certfile /etc/ssl/certs/cert.pem --port 9090 --reload # 
+    command: uvicorn server:app --host 0.0.0.0 --port 9090 --reload # 
     image: omarzos/emastan-auth:latest
     environment:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}

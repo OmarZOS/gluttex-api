@@ -210,6 +210,7 @@ def get(
     
     try:
         engine = get_engine()
+        logger.info("Attempting to get objects")
         result = medicom_store.get_records(
             engine, table, conditions, join_tables, 
             eager_load_depth, offset, limit, serialize

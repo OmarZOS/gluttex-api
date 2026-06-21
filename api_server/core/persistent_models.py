@@ -29,6 +29,9 @@ Base = declarative_base()
 metadata = Base.metadata
 
 
+
+
+
 class Location(Base):
     """
         The Location model represents a geospatial point associated with an address and several domain entities (persons, providers, orders, and images).
@@ -62,11 +65,10 @@ To avoid issues, always use position_wkt, which exposes the geometry in a safe, 
     #     return None
 
     location_address = relationship('Address', back_populates='location')
-    person = relationship('Person', back_populates='person_location')
-    product_provider = relationship('ProductProvider', back_populates='product_provider_location')
     location_image = relationship('LocationImage', back_populates='location')
-    ordered_service = relationship('OrderedService', back_populates='ordered_service_location')
+    person = relationship('Person', back_populates='person_location')
     placed_order = relationship('PlacedOrder', back_populates='location')
+    product_provider = relationship('ProductProvider', back_populates='product_provider_location')
 
 class BusinessOperation(Base):
     """

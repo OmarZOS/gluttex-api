@@ -46,9 +46,7 @@ class CartRepository:
                 {
                     Cart.invoice: [Invoice.payment]
                 },
-                {
-                    Cart.receipt: [Receipt.receipt_payment, Receipt.deposit]
-                },
+                
                 {
                     Cart.person: [Person.person_details]
                 },
@@ -213,7 +211,7 @@ class ServiceRepository:
 
 # repositories/financial_repository.py
 from typing import Optional, List
-from core.models import Invoice, Payment, Receipt, Deposit
+from core.models import Invoice, Payment
 import storage.storage_broker as storage_broker
 
 class FinancialRepository:
@@ -229,15 +227,6 @@ class FinancialRepository:
         from features.insertion import insert_or_complete_or_raise
         return insert_or_complete_or_raise(payment)
     
-    def create_receipt(self, receipt: Receipt) -> Receipt:
-        """Create a receipt"""
-        from features.insertion import insert_or_complete_or_raise
-        return insert_or_complete_or_raise(receipt)
-    
-    def create_deposit(self, deposit: Deposit) -> Deposit:
-        """Create a deposit"""
-        from features.insertion import insert_or_complete_or_raise
-        return insert_or_complete_or_raise(deposit)
     
     def get_invoice_by_id(self, invoice_id: int) -> Optional[Invoice]:
         """Get invoice by ID"""

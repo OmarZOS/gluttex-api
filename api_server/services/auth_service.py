@@ -276,7 +276,7 @@ class AuthService:
             # }
             
             # Add any additional data needed
-            result["app_user_id"] = auth_data.id_app_user
+            # result["app_user_id"] = auth_data.id_app_user
             
             logger.info(f"User {auth_data.app_user_name} authenticated successfully")
             return result

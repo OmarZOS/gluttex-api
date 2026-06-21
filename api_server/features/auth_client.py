@@ -1,8 +1,4 @@
 # clients/auth_client.py
-"""
-Client for external authentication server API calls.
-Handles all communication with the authentication microservice.
-"""
 
 import json
 import logging
@@ -34,10 +30,10 @@ logger = logging.getLogger(__name__)
 
 class AuthEndpoint(str, Enum):
     """Authentication service endpoints"""
-    REGISTRATION = "registration"
-    LOGIN = "login"
-    CHANGE_PASSWORD = "change_password"
-    DELETE_USER = "delete_user"
+    REGISTRATION = "/auth/register"
+    LOGIN = "/auth/login"
+    CHANGE_PASSWORD = "/auth/change-password"
+    DELETE_USER = "/auth/delete-user"
 
 
 class AuthClient:
@@ -50,7 +46,7 @@ class AuthClient:
         Args:
             timeout: Request timeout in seconds
         """
-        self.base_url = f"https://{AUTH_SERVER_NAME}:{AUTH_PORT}"
+        self.base_url = f"http://{AUTH_SERVER_NAME}:{AUTH_PORT}"
         self.registration_endpoint = AUTH_REGISTRATION_ENDPOINT
         self.login_endpoint = AUTH_LOGIN_ENDPOINT
         self.change_password_endpoint = AUTH_CHANGE_ENDPOINT
@@ -79,7 +75,7 @@ class AuthClient:
     def _get_endpoint_url(self, endpoint: AuthEndpoint) -> str:
         """Get full URL for an auth endpoint"""
         endpoint_map = {
-            AuthEndpoint.REGISTRATION: self.registration_endpoint,
+            AuthEndpoint.REGISTRATION: self.registration_endpoint,  
             AuthEndpoint.LOGIN: self.login_endpoint,
             AuthEndpoint.CHANGE_PASSWORD: self.change_password_endpoint,
             AuthEndpoint.DELETE_USER: self.delete_user_endpoint
@@ -98,74 +94,73 @@ class AuthClient:
         """
         Register a new user with the authentication server.
         
-        Args:
-            user_data: User registration data containing:
-                - username: User's username
-                - app_user_id: User's ID from main database
-                - password: User's password
-                
-        Returns:
-            Response from auth server with hashed password
-            
-        Raises:
-            AuthRegistrationException: If registration fails
-            AuthServiceUnavailableException: If auth service is unavailable
-            AuthNetworkException: If network error occurs
+        Based on OpenAPI spec UserCreate:
+        - Required: username, app_user_id, password
+        - Optional: email, first_name, last_name, phone_number, date_of_birth, gender, profile_picture, roles
         """
         url = self._get_endpoint_url(AuthEndpoint.REGISTRATION)
         username = user_data.get("username")
         
         logger.info(f"Registering user '{username}' with authentication service")
+        logger.info(f"Sending to: {url}")
+        logger.info(f"Request data: {json.dumps(user_data)}")
         
         try:
             response = await send_post_request(
                 url, 
                 json_data=user_data,
-                # timeout=self.timeout
             )
-            response.raise_for_status()
             
-            result = response.json()
-            logger.info(f"Successfully registered user '{username}'")
-            return result
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"Successfully registered user '{username}'")
+                return result
             
-        except TimeoutError as e:
-            logger.error(f"Timeout registering user '{username}': {e}")
-            raise AuthNetworkException(
-                error=f"Request timeout: {str(e)}",
-                endpoint="registration",
-                details={"username": username, "timeout": self.timeout}
-            )
-        
-        except ConnectionError as e:
-            logger.error(f"Connection error registering user '{username}': {e}")
-            raise AuthServiceUnavailableException(
-                service="authentication",
-                error=f"Connection failed: {str(e)}"
-            )
-        
+            elif response.status_code == 409:
+                error_data = response.json() if response.text else {}
+                error_code = error_data.get("code", "CONFLICT")
+                error_message = error_data.get("message", "User already exists")
+                details = error_data.get("details", {})
+                
+                raise AuthRegistrationException(
+                    error=error_message,
+                    username=username,
+                    details={
+                        "status_code": 409,
+                        "error_code": error_code,
+                        "server_response": error_data
+                    }
+                )
+            
+            elif response.status_code == 400:
+                error_data = response.json() if response.text else {}
+                raise AuthRegistrationException(
+                    error=f"Invalid registration data: {error_data.get('message', '')}",
+                    username=username,
+                    details={"status_code": 400, "response": error_data}
+                )
+            
+            elif response.status_code == 422:
+                error_data = response.json() if response.text else {}
+                raise AuthRegistrationException(
+                    error=f"Validation error: {error_data.get('message', '')}",
+                    username=username,
+                    details={"status_code": 422, "response": error_data}
+                )
+            
+            else:
+                raise AuthRegistrationException(
+                    error=f"Validation error: {response.response.text}",
+                    username=username,
+                    details={"status_code": 422, "response": response.response.text}
+                )
+                # response.raise_for_status()
+                 
+                
+        except AuthRegistrationException:
+            raise
         except Exception as e:
             logger.error(f"Failed to register user '{username}': {e}")
-            
-            # Check for specific HTTP status codes in response
-            if hasattr(e, 'response') and e.response is not None:
-                status_code = e.response.status_code
-                
-                if status_code == 409:
-                    # Conflict - user already exists
-                    raise AuthRegistrationException(
-                        error="User already exists",
-                        username=username,
-                        details={"status_code": status_code}
-                    )
-                elif status_code == 400:
-                    # Bad request - invalid data
-                    raise AuthRegistrationException(
-                        error="Invalid registration data",
-                        username=username,
-                        details={"status_code": status_code}
-                    )
-            
             raise AuthRegistrationException(
                 error=str(e),
                 username=username,
@@ -175,37 +170,46 @@ class AuthClient:
     async def login(self, username: str, user_id: int, password: str) -> Dict[str, Any]:
         """
         Authenticate with auth server and return token.
+        
+        Based on OpenAPI spec:
+        - Uses application/x-www-form-urlencoded
+        - Required: username, password
+        - Optional: grant_type, scope, client_id, client_secret
         """
         url = self._get_endpoint_url(AuthEndpoint.LOGIN)
         
+        # The OAuth2 password flow expects form data
         form_data = {
             "username": username,
             "password": password,
             "grant_type": "password",
+            "scope": "",
         }
         
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
         
         logger.info(f"Authenticating user '{username}' with auth server")
+
+        logger.info(f"Request data: {json.dumps(form_data)}")
+
         
         try:
             response = await send_post_request(
                 url,
                 payload_data=form_data,
-                flags=headers,
+                headers=headers,
             )
             
             if response.status_code == 200:
                 result = response.json()
-                
-                # Extract and return token data
+                logger.info(f"Successfully authenticated user '{username}'")
                 return {
                     "access_token": result.get("access_token"),
                     "token_type": result.get("token_type", "bearer"),
                     "expires_in": result.get("expires_in", 3600),
                     "expires_at": result.get("expires_at"),
-                    "app_user_id": user_id,
-                    "username": username,
+                    "app_user_id": result.get("app_user_id", str(user_id)),  # Auth server returns as string
+                    "username": result.get("username", username),
                     "email": result.get("email"),
                     "first_name": result.get("first_name"),
                     "last_name": result.get("last_name"),
@@ -213,28 +217,45 @@ class AuthClient:
                     "iss": result.get("iss"),
                 }
             
-            # Handle various error codes
-            elif response.status_code == 401:
-                error_data = response.json()
+            elif response.status_code in [401, 403]:
+                error_data = response.json() if response.text else {}
+                error_message = error_data.get("message") or error_data.get("detail") or error_data.get("error") or "Authentication failed"
                 raise AuthLoginException(
-                    error=error_data.get("message", "Invalid credentials"),
+                    error=error_message,
                     username=username,
                     details={
-                        "status_code": 401,
+                        "status_code": response.status_code,
                         "error_code": error_data.get("error_code", "INVALID_CREDENTIALS")
                     }
                 )
             
-            else:
+            elif response.status_code == 404:
                 raise AuthLoginException(
-                    error=f"Auth server error: {response.status_code}",
-                    username=username
+                    error="User not found",
+                    username=username,
+                    details={"status_code": 404}
                 )
+            
+            elif response.status_code == 422:
+                error_data = response.json() if response.text else {}
+                raise AuthLoginException(
+                    error=f"Validation error: {error_data.get('message', '')}",
+                    username=username,
+                    details={"status_code": 422, "response": error_data}
+                )
+            
+            else:
+                response.raise_for_status()
+                return response.json()
                 
+        except AuthLoginException:
+            raise
         except Exception as e:
             logger.error(f"Auth client error: {e}")
-            raise
-
+            raise AuthLoginException(
+                error=str(e) or "Authentication failed",
+                username=username
+            )
     
     async def change_password(
         self,
@@ -246,172 +267,194 @@ class AuthClient:
         """
         Update a user's password through the authentication server.
         
-        Args:
-            user_id: User's ID from main database
-            username: User's username
-            new_password: New password to set
-            token: Authentication token for authorization
-            
-        Returns:
-            Response with new password hash
-            
-        Raises:
-            AuthPasswordChangeException: If password change fails
-            AuthTokenExpiredException: If token has expired
-            AuthTokenInvalidException: If token is invalid
-            AuthServiceUnavailableException: If auth service is unavailable
+        Based on OpenAPI spec UserUpdate:
+        - Requires authentication via Bearer token
+        - Required: username, app_user_id
+        - Optional: new_password, new_username, email, first_name, last_name, etc.
         """
         url = self._get_endpoint_url(AuthEndpoint.CHANGE_PASSWORD)
         
+        # Only send fields that are allowed by the API
         user_update = {
-            "app_user_id": user_id,
             "username": username,
-            "new_username": username,
-            "new_password": new_password
+            "app_user_id": user_id,
         }
         
-        headers = {"Authorization": f"Bearer {token}"}
+        # Add optional fields if they exist
+        if new_password:
+            user_update["new_password"] = new_password
         
-        logger.info(f"Changing password for user '{username}'")
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        logger.info(f"Changing password for user '{username}' (user_id: {user_id})")
+        logger.debug(f"Request data: {user_update}")
         
         try:
             response = await send_post_request(
                 url,
                 json_data=user_update,
                 headers=headers,
-                # timeout=self.timeout
             )
-            response.raise_for_status()
             
-            result = response.json()
-            logger.info(f"Successfully changed password for user '{username}'")
-            return result
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"Successfully changed password for user '{username}'")
+                return result
             
-        except TimeoutError as e:
-            logger.error(f"Timeout changing password for '{username}': {e}")
-            raise AuthNetworkException(
-                error=f"Password change timeout: {str(e)}",
-                endpoint="change_password",
-                details={"username": username}
-            )
-        
-        except ConnectionError as e:
-            logger.error(f"Connection error changing password for '{username}': {e}")
-            raise AuthServiceUnavailableException(
-                service="authentication",
-                error=f"Connection failed: {str(e)}"
-            )
-        
+            elif response.status_code == 401:
+                error_data = response.json() if response.text else {}
+                error_detail = error_data.get("detail", "")
+                if "expired" in error_detail.lower():
+                    raise AuthTokenExpiredException(token=token)
+                else:
+                    raise AuthTokenInvalidException(error=error_detail or "Invalid token")
+            
+            elif response.status_code == 403:
+                error_data = response.json() if response.text else {}
+                raise AuthPasswordChangeException(
+                    error=error_data.get("detail", "Not authorized to change this user's password"),
+                    user_id=user_id,
+                    username=username,
+                    details={"status_code": 403, "response": error_data}
+                )
+            
+            elif response.status_code == 404:
+                error_data = response.json() if response.text else {}
+                raise AuthPasswordChangeException(
+                    error=error_data.get("detail", "User not found"),
+                    user_id=user_id,
+                    username=username,
+                    details={"status_code": 404, "response": error_data}
+                )
+            
+            elif response.status_code == 422:
+                error_data = response.json() if response.text else {}
+                raise AuthPasswordChangeException(
+                    error=f"Validation error: {error_data.get('detail', '')}",
+                    user_id=user_id,
+                    username=username,
+                    details={"status_code": 422, "response": error_data}
+                )
+            
+            else:
+                response.raise_for_status()
+                return response.json()
+                
+        except (AuthTokenExpiredException, AuthTokenInvalidException, AuthPasswordChangeException):
+            raise
         except Exception as e:
             logger.error(f"Password change failed for user '{username}': {e}")
-            
-            # Check for token-related errors
-            if hasattr(e, 'response') and e.response is not None:
-                status_code = e.response.status_code
-                
-                if status_code == 401:
-                    # Unauthorized - token issue
-                    try:
-                        error_data = e.response.json()
-                        error_detail = error_data.get("detail", "")
-                        
-                        if "expired" in error_detail.lower():
-                            raise AuthTokenExpiredException(token=token)
-                        else:
-                            raise AuthTokenInvalidException(error=error_detail)
-                    except:
-                        raise AuthTokenInvalidException(error="Invalid token")
-                
-                elif status_code == 403:
+            if hasattr(e, 'response') and e.response:
+                try:
+                    error_data = e.response.json()
                     raise AuthPasswordChangeException(
-                        error="Not authorized to change this user's password",
+                        error=error_data.get("detail", str(e)),
                         user_id=user_id,
                         username=username,
-                        details={"status_code": status_code}
+                        details={"status_code": e.response.status_code, "response": error_data}
                     )
-            
+                except:
+                    pass
             raise AuthPasswordChangeException(
-                error=str(e),
+                error=str(e) or "Failed to change password",
                 user_id=user_id,
-                username=username,
-                details={"endpoint": "change_password"}
+                username=username
             )
     
-    async def delete_user(self, user_id: int, username: str, password: str) -> None:
+    async def delete_user(self, user_id: int, username: str, token: str) -> None:
         """
         Delete a user through the authentication server.
         
-        Args:
-            user_id: User's ID from main database
-            username: User's username
-            password: User's password for verification
-            
-        Raises:
-            AuthUserDeletionException: If deletion fails
-            AuthServiceUnavailableException: If auth service is unavailable
+        Based on OpenAPI spec:
+        - Requires authentication via Bearer token
+        - Required: username, app_user_id
         """
         url = self._get_endpoint_url(AuthEndpoint.DELETE_USER)
         
         user_data = {
-            "app_user_id": user_id,
             "username": username,
-            "new_password": password  # Used as verification
+            "app_user_id": user_id,
         }
         
-        logger.info(f"Deleting user '{username}' from authentication service")
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        
+        logger.info(f"Deleting user '{username}' (user_id: {user_id}) from authentication service")
+        logger.debug(f"Request data: {user_data}")
         
         try:
             response = await send_delete_request(
                 url,
                 input_data=user_data,
-                # timeout=self.timeout
+                headers=headers,
             )
-            response.raise_for_status()
             
-            logger.info(f"Successfully deleted user '{username}'")
+            if response.status_code in [200, 204]:
+                logger.info(f"Successfully deleted user '{username}'")
+                return
             
-        except TimeoutError as e:
-            logger.error(f"Timeout deleting user '{username}': {e}")
-            raise AuthNetworkException(
-                error=f"User deletion timeout: {str(e)}",
-                endpoint="delete_user",
-                details={"username": username}
-            )
-        
-        except ConnectionError as e:
-            logger.error(f"Connection error deleting user '{username}': {e}")
-            raise AuthServiceUnavailableException(
-                service="authentication",
-                error=f"Connection failed: {str(e)}"
-            )
-        
+            elif response.status_code == 401:
+                error_data = response.json() if response.text else {}
+                error_detail = error_data.get("detail", "")
+                if "expired" in error_detail.lower():
+                    raise AuthTokenExpiredException(token=token)
+                else:
+                    raise AuthTokenInvalidException(error=error_detail or "Invalid token")
+            
+            elif response.status_code == 403:
+                error_data = response.json() if response.text else {}
+                raise AuthUserDeletionException(
+                    error=error_data.get("detail", "Not authorized to delete this user"),
+                    user_id=user_id,
+                    username=username,
+                    details={"status_code": 403, "response": error_data}
+                )
+            
+            elif response.status_code == 404:
+                error_data = response.json() if response.text else {}
+                raise AuthUserDeletionException(
+                    error=error_data.get("detail", "User not found in authentication service"),
+                    user_id=user_id,
+                    username=username,
+                    details={"status_code": 404, "response": error_data}
+                )
+            
+            elif response.status_code == 422:
+                error_data = response.json() if response.text else {}
+                raise AuthUserDeletionException(
+                    error=f"Validation error: {error_data.get('detail', '')}",
+                    user_id=user_id,
+                    username=username,
+                    details={"status_code": 422, "response": error_data}
+                )
+            
+            else:
+                response.raise_for_status()
+                
+        except (AuthTokenExpiredException, AuthTokenInvalidException, AuthUserDeletionException):
+            raise
         except Exception as e:
             logger.error(f"Failed to delete user '{username}': {e}")
-            
-            # Check for specific HTTP status codes
-            if hasattr(e, 'response') and e.response is not None:
-                status_code = e.response.status_code
-                
-                if status_code == 404:
+            if hasattr(e, 'response') and e.response:
+                try:
+                    error_data = e.response.json()
                     raise AuthUserDeletionException(
-                        error="User not found in authentication service",
+                        error=error_data.get("detail", str(e)),
                         user_id=user_id,
                         username=username,
-                        details={"status_code": status_code}
+                        details={"status_code": e.response.status_code, "response": error_data}
                     )
-                elif status_code == 401:
-                    raise AuthUserDeletionException(
-                        error="Invalid credentials for user deletion",
-                        user_id=user_id,
-                        username=username,
-                        details={"status_code": status_code}
-                    )
-            
+                except:
+                    pass
             raise AuthUserDeletionException(
                 error=str(e),
                 user_id=user_id,
-                username=username,
-                details={"endpoint": "delete_user"}
+                username=username
             )
     
     async def health_check(self) -> bool:
@@ -422,9 +465,8 @@ class AuthClient:
             True if service is healthy, False otherwise
         """
         try:
-            # Try a simple connection test
-            url = f"{self.base_url}/health"  # Assuming health endpoint exists
-            response = await send_post_request(url, timeout=5)
+            url = f"{self.base_url}/metrics"
+            response = await send_post_request(url)
             return response.status_code == 200
         except Exception as e:
             logger.warning(f"Auth service health check failed: {e}")

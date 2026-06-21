@@ -5,6 +5,7 @@ from enum import Enum
 
 
 class ErrorCode(str, Enum):
+
     """Standardized error codes - used in API responses"""
     
     # Generic errors
@@ -13,11 +14,19 @@ class ErrorCode(str, Enum):
     TIMEDOUT = "TIMEDOUT"
     UNKNOWN = "UNKNOWN"
     
+
+    REACTION_VALIDATION_ERROR = "REACTION_VALIDATION_ERROR"
     VALIDATION_ERROR = "VALIDATION_ERROR" 
     LOCATION_VALIDATION_FAILED = "LOCATION_VALIDATION_FAILED"
+    REACTION_CREATION_FAILED = "REACTION_CREATION_FAILED"
+
+    TARGET_NOT_FOUND = "TARGET_NOT_FOUND"
 
     SEARCH_ERROR ="SEARCH_ERROR"
     SEARCH_EXECUTION_FAILED="SEARCH_EXECUTION_FAILED"
+
+    PASSWORD_UPDATE_FAILED= "PASSWORD_UPDATE_FAILED"
+    USER_NOT_FOUND = "USER_NOT_FOUND"
 
     ORDER_INSERT_FAILED = "ORDER_INSERT_FAILED"
     # Authentication errors
@@ -215,3 +224,5 @@ class ErrorCode(str, Enum):
     
     # Success (for consistency)
     PUT_SUCCESS = "PUT_SUCCESS"
+
+    

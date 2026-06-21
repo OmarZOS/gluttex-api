@@ -22,7 +22,7 @@ from core.exceptions.specific.delivery_exceptions import (
     AddressNotFoundException,
     DeliveryAlreadyDeliveredException
 )
-from core.models import Delivery, Address
+from core.models import Delivery
 from repositories.delivery_repository import DeliveryRepository
 from repositories.address_repository import AddressRepository
 from services.location_service import LocationService

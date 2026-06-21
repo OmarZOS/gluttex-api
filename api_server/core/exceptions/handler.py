@@ -312,18 +312,22 @@ class InsufficientStockException(APIException):
 
 # User Exceptions
 class UserNotFoundException(APIException):
-    def __init__(self, user_id: int = None, username: str = None):
+    def __init__(self, user_id: int = None, username: str = None, user_email: str = None):
         details = {}
         if user_id:
             details["user_id"] = user_id
         if username:
             details["username"] = username
+        if user_email:
+            details["user_email"] = username
         
         message = "User not found"
         if user_id:
             message = f"User with ID '{user_id}' not found"
         elif username:
             message = f"User '{username}' not found"
+        elif user_email:
+            message = f"Email '{user_email}' not found"
         
         super().__init__(
             status_code=HTTP_404_NOT_FOUND,
@@ -1124,22 +1128,41 @@ class AuthServiceUnavailableException(AuthClientException):
         )
 
 
-class AuthRegistrationException(AuthClientException):
-    """Exception for user registration failures"""
+class AuthRegistrationException(APIException):
+    """Exception raised when user registration fails."""
     
-    def __init__(self, error: str, username: str = None, details: dict = None):
-        error_details = details or {}
-        error_details["registration_error"] = error
+    def __init__(
+        self,
+        error: str,
+        username: str = None,
+        details: dict = None
+    ):
+        # Extract error_code from details if present
+        error_code = ErrorCode.USER_AUTH_CREATION_FAILED
+        status_code = HTTP_400_BAD_REQUEST
         
-        if username:
-            error_details["username"] = username
+        if details:
+            if "error_code" in details:
+                error_code = details["error_code"]
+            elif "code" in details:
+                error_code = details["code"]
+            
+            if "status_code" in details:
+                status_code = details["status_code"]
+        
+        # If the error_code is USERNAME_ALREADY_REGISTERED, use 409
+        if error_code == "USERNAME_ALREADY_REGISTERED":
+            status_code = HTTP_409_CONFLICT
         
         super().__init__(
-            message="Failed to register user with authentication service",
-            error_code=ErrorCode.USER_AUTH_CREATION_FAILED,
-            status_code=HTTP_410_GONE,
-            details=error_details
+            status_code=status_code,
+            error_code=error_code,
+            message=error,
+            details=details or {}
         )
+        self.username = username
+
+
 
 
 class AuthLoginException(AuthClientException):

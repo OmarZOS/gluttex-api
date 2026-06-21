@@ -16,7 +16,7 @@ class PersonRepository:
                 Person,
                 {Person.id_person: person_id},
                 None,
-                [Person.person_blood_type, {Person.person_location:[Location.position_wkt,Location.location_address,Location.location_name,Location.id_location]}, Person.person_details]
+                [Person.person_blood_type, {Person.person_location:[Location.position_wkt,Location.location_name,Location.id_location]}, Person.person_details]
             )
         else:
             records = storage_broker.get(

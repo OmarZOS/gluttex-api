@@ -117,10 +117,10 @@ class UserProfileResponse(BaseModel):
     user_id: int = Field(..., description="User ID")
     username: str = Field(..., description="Username")
     email: str = Field(..., description="Email address")
-    first_name: Optional[str] = Field(None, description="First name")
+    app_user_preferences: Optional[str] = Field(None, description="Preferences")
+    app_user_creation: Optional[datetime] = Field(None, description="Account creation date")
     last_name: Optional[str] = Field(None, description="Last name")
     user_type: Optional[str] = Field(None, description="User type description")
-    created_at: Optional[datetime] = Field(None, description="Account creation date")
     image_url: Optional[str] = Field(None, description="Profile image URL")
     
     class Config:

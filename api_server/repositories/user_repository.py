@@ -18,7 +18,7 @@ class UserRepository:
         
         if eager_load:
             eager_load_depth = [
-                AppUser.app_user_type,
+                
                 {
                     AppUser.app_user_person: [
                         Person.person_details,
@@ -28,7 +28,7 @@ class UserRepository:
                 }
             ]
         else:
-            eager_load_depth = [AppUser.app_user_type, {AppUser.app_user_person: [Person.person_details]}]
+            eager_load_depth = [ {AppUser.app_user_person: [Person.person_details]}]
         
         users = storage_broker.get(
             table=AppUser,
@@ -43,7 +43,7 @@ class UserRepository:
     
     def get_by_name(self, username: str) -> List[AppUser]:
         """Get user by username"""
-        return storage_broker.get(AppUser, {AppUser.app_user_name: username})
+        return storage_broker.get(table= AppUser, conditions={AppUser.app_user_name: username})
     
     def get_by_email(self, email: str) -> List[AppUser]:
         """Get user by email"""

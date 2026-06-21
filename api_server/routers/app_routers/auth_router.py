@@ -1,5 +1,6 @@
 # routers/app_routers/auth_router.py
 from asyncio.log import logger
+import json
 
 from fastapi import APIRouter, File, HTTPException, Request, Depends, UploadFile, status
 from fastapi.responses import RedirectResponse
@@ -216,6 +217,8 @@ async def login_user(
             "iss": "gluttex-api",
             "aud": ["gluttex-web", "gluttex-mobile"],
         }
+
+        logger.info(f"Creating token for : {json.dumps(token_data)}")
         
         # Pass client result to token creation
         access_token = create_access_token(
@@ -348,10 +351,9 @@ async def get_current_user_profile(
         user_id=user.id_app_user,
         username=user.app_user_name,
         email=user.app_user_email,
-        first_name=user_info.get("first_name"),
-        last_name=user_info.get("last_name"),
-        user_type=user.app_user_type_desc,
-        created_at=user.app_user_created_at,
+        app_user_preferences=user.app_user_preferences,
+        app_user_creation=user.app_user_creation,
+        user_type=user.app_user_image_url,
         image_url=user.app_user_image_url
     )
 

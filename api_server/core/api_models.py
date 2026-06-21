@@ -6,7 +6,7 @@ All models include proper types, default values, and validation.
 
 from datetime import datetime, date
 from typing import Optional, Dict, List, Any
-from pydantic import BaseModel, Field, field_validator, validator
+from pydantic import BaseModel, Field, field_validator, model_validator, validator
 from enum import Enum
 from constants import ReactionType
 
@@ -33,10 +33,6 @@ class CartStatus(str, Enum):
     CHECKED_OUT = "CHECKED_OUT"
     ABANDONED = "ABANDONED"
 
-class Gender(str, Enum):
-    MALE = "MALE"
-    FEMALE = "FEMALE"
-    OTHER = "OTHER"
 
 class GlutenStatus(str, Enum):
     GLUTEN_FREE = "gluten_free"
@@ -69,10 +65,8 @@ class API_Resolution(BaseModel):
 
 class Gender(str, Enum):
     """Gender enum"""
-    MALE = "Male"
-    FEMALE = "Female"
-    OTHER = "Other"
-    PREFER_NOT_TO_SAY = "Prefer not to say"
+    MALE = "male"
+    FEMALE = "female"
     
     @classmethod
     def from_db(cls, value: str) -> "Gender":
@@ -80,7 +74,7 @@ class Gender(str, Enum):
         try:
             return cls(value)
         except ValueError:
-            return cls.PREFER_NOT_TO_SAY
+            return cls.MALE
     
     def to_db(self) -> str:
         """Convert enum to database value"""
@@ -98,6 +92,22 @@ class BloodType(str, Enum):
     O_NEGATIVE = "O-"
     UNKNOWN = "Unknown"
     
+    @classmethod
+    def to_list(cls) -> List[str]:
+        """Convert database value to enum"""
+        try:
+            return [v for v in [cls.A_POSITIVE,cls.A_NEGATIVE
+,cls.B_POSITIVE
+,cls.B_NEGATIVE
+,cls.AB_POSITIVE
+,cls.AB_NEGATIVE
+,cls.O_POSITIVE
+,cls.O_NEGATIVE
+,cls.UNKNOWN]]
+        except ValueError:
+            return cls.UNKNOWN
+    
+
     @classmethod
     def from_db(cls, value: str) -> "BloodType":
         """Convert database value to enum"""
@@ -340,13 +350,11 @@ class Person_API(BaseModel):
     person_last_name: Optional[str] = Field(default=None, max_length=100, description="Last name")
     person_birth_date: Optional[date] = Field(default=None, description="Birth date (YYYY-MM-DD)")
     person_gender: Optional[Gender] = Field(default=None, description="Gender")
-    person_country_code: Optional[CountryCode] = Field(default=CountryCode.DZ, description="Nationality (ISO 3166-1 alpha-2 country code)")
-
+    person_country_code: Optional[CountryCode] = Field(default=CountryCode.DZ, description="Nationality")
     
     # Blood type
     blood_type: BloodType = Field(default=BloodType.UNKNOWN, description="Blood type")
     
-    # Optional: Full name helper
     @property
     def full_name(self) -> str:
         """Get full name"""
@@ -357,32 +365,54 @@ class Person_API(BaseModel):
             parts.append(self.person_last_name)
         return " ".join(parts) if parts else "Unknown"
     
-    @validator('person_birth_date')
-    def validate_birth_date(cls, v):
+    # --- FIXED VALIDATORS ---
+    
+    @field_validator('person_birth_date')
+    @classmethod
+    def validate_birth_date(cls, v: Optional[date]) -> Optional[date]:
         """Validate birth date is not in the future"""
         if v and v > date.today():
             raise ValueError('Birth date cannot be in the future')
         return v
     
-    @validator('person_gender')
-    def validate_gender(cls, v):
+    @field_validator('person_gender')
+    @classmethod
+    def validate_gender(cls, v: Optional[Gender]) -> Optional[Gender]:
         """Validate gender is valid"""
-        if v and v not in Gender:
-            raise ValueError(f'Invalid gender. Must be one of: {", ".join([g.value for g in Gender])}')
+        if v is not None:
+            # Get all valid gender values
+            valid_genders = [g.value.lower() for g in Gender]
+            if v not in valid_genders:
+                raise ValueError(f'Invalid gender. Must be one of: {", ".join(valid_genders)}')
         return v
     
-    @validator('blood_type')
-    def validate_blood_type(cls, v):
+    @field_validator('blood_type')
+    @classmethod
+    def validate_blood_type(cls, v: BloodType) -> BloodType:
         """Validate blood type is valid"""
-        if v and v not in BloodType:
-            raise ValueError(f'Invalid blood type. Must be one of: {", ".join([b.value for b in BloodType])}')
+        if v is not None:
+            # Get all valid blood type values
+            valid_blood_types = [b.value for b in BloodType]
+            if v not in valid_blood_types:
+                raise ValueError(f'Invalid blood type. Must be one of: {", ".join(valid_blood_types)}')
+        return v
+    
+    @field_validator('person_country_code')
+    @classmethod
+    def validate_country_code(cls, v: Optional[CountryCode]) -> Optional[CountryCode]:
+        """Validate country code is valid"""
+        if v is not None:
+            valid_codes = [c.value for c in CountryCode]
+            if v not in valid_codes:
+                raise ValueError(f'Invalid country code. Must be a valid ISO 3166-1 alpha-2 code')
         return v
     
     class Config:
-        use_enum_values = True  # Serialize enums as strings
+        use_enum_values = True
         json_encoders = {
             Gender: lambda v: v.value if v else None,
-            BloodType: lambda v: v.value if v else None
+            BloodType: lambda v: v.value if v else None,
+            CountryCode: lambda v: v.value if v else None
         }
     
     def to_db_dict(self) -> dict:
@@ -392,8 +422,10 @@ class Person_API(BaseModel):
             data['person_gender'] = data['person_gender'].value
         if 'blood_type' in data and data['blood_type']:
             data['blood_type'] = data['blood_type'].value
+        if 'person_country_code' in data and data['person_country_code']:
+            data['person_country_code'] = data['person_country_code'].value
         return data
-    
+
 class Location_API(BaseModel):
     """Location and address model"""
     id_location: int = Field(default=0, ge=0, description="Location ID")
@@ -443,6 +475,22 @@ class AppUser_API(BaseModel):
     id_app_user: int = Field(default=0, ge=0, description="User ID")
     app_user_name: Optional[str] = Field(default=None, min_length=3, max_length=50, description="Username")
     app_user_password: Optional[str] = Field(default=None, min_length=6, description="Password (hashed)")
+    
+    @field_validator('app_user_password')
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        """Validate password strength"""
+        if len(v) < 6:
+            raise ValueError('Password must be at least 6 characters long')
+        # Optional: Add more password requirements
+        if not any(c.isupper() for c in v):
+            raise ValueError('Password must contain at least one uppercase letter')
+        if not any(c.islower() for c in v):
+            raise ValueError('Password must contain at least one lowercase letter')
+        if not any(c.isdigit() for c in v):
+            raise ValueError('Password must contain at least one digit')
+        return v
+    
     app_user_person_id: Optional[int] = Field(default=None, description="Person reference")
     app_user_preferences: Optional[dict] = Field(default=None, description="User preferences (JSON)")
     app_user_email: Optional[str] = Field(default=None, max_length=100, description="Email address")
@@ -733,13 +781,139 @@ class Notification_API(BaseModel):
 # REACTION MODELS
 # ============================================================================
 
+# ============================================================================
+# REACTION ENUMS
+# ============================================================================
+
+class ReactionType(str, Enum):
+    """Types of reactions available in the system"""
+    PRODUCT = "product"
+    RECIPE = "recipe"
+    PROVIDER = "provider"    
+    COMMENT = "comment"
+
+class ReactionValue(str, Enum):
+    """Possible reaction values"""
+    LIKE = "like"
+    DISLIKE = "dislike"
+    LOVE = "love"
+    HELPFUL = "helpful"
+    NOT_HELPFUL = "not_helpful"
+    STAR = "star"
+
+class ProviderReactionValue(str, Enum):
+    """Provider reaction values (rating)"""
+    ONE_STAR = "1"
+    TWO_STARS = "2"
+    THREE_STARS = "3"
+    FOUR_STARS = "4"
+    FIVE_STARS = "5"
+
 class ReactionBase(BaseModel):
-    """Base reaction model"""
+    """Base reaction model for API requests"""
     user_id: int = Field(..., gt=0, description="User ID")
-    reaction_id: int = Field(..., gt=0, description="Reaction ID")
-    value: Optional[float] = Field(default=None, description="Reaction value (for ratings)")
-    type: ReactionType = Field(..., description="Reaction type")
-    target_id: int = Field(..., gt=0, description="Target ID (product/recipe/provider/comment)")
+    reaction_type: ReactionType = Field(..., description="Type of reaction (product, recipe, provider, comment)")
+    target_id: int = Field(..., gt=0, description="Target ID (product/recipe/provider/comment ID)")
+    reaction_value: Optional[ReactionValue] = Field(default=None, description="Reaction value (like, dislike, love, etc.)")
+    rating_value: Optional[float] = Field(default=None, ge=0, le=5, description="Rating value (1-5) for provider reactions")
+    
+    @field_validator('rating_value')
+    @classmethod
+    def validate_rating(cls, v: Optional[float]) -> Optional[float]:
+        """Validate rating is between 1 and 5"""
+        if v is not None and (v < 1 or v > 5):
+            raise ValueError('Rating must be between 1 and 5')
+        return v
+
+class CommentReaction_API(BaseModel):
+    """Comment reaction model"""
+    id_comment_reaction: Optional[int] = Field(default=0, description="Comment reaction ID")
+    comment_reacting_user: int = Field(..., gt=0, description="User ID")
+    reacted_on_comment: int = Field(..., gt=0, description="Comment ID")
+    comment_reaction: ReactionValue = Field(default=ReactionValue.LIKE, description="Reaction value")
+
+class Config:
+    from_attributes = True
+
+class CommentReactionResponse(CommentReaction_API):
+    """Comment reaction response with user and comment details"""
+    user_name: Optional[str] = Field(default=None, description="Username")
+    user_image: Optional[str] = Field(default=None, description="User profile image")
+    comment_content: Optional[str] = Field(default=None, description="Comment content")
+    created_at: Optional[datetime] = Field(default=None, description="Creation timestamp")
+    updated_at: Optional[datetime] = Field(default=None, description="Last update timestamp")
+
+# ============================================================================
+# REACTION STATISTICS
+# ============================================================================
+
+class ReactionStatistics(BaseModel):
+    """Reaction statistics for a target"""
+    target_id: int = Field(..., description="Target ID")
+    target_type: ReactionType = Field(..., description="Target type")
+    total_reactions: int = Field(default=0, description="Total number of reactions")
+    like_count: int = Field(default=0, description="Number of likes")
+    dislike_count: int = Field(default=0, description="Number of dislikes")
+    love_count: int = Field(default=0, description="Number of loves")
+    helpful_count: int = Field(default=0, description="Number of helpful ratings")
+    average_rating: Optional[float] = Field(default=None, description="Average rating (for providers)")
+    total_ratings: int = Field(default=0, description="Total number of ratings (for providers)")
+    
+    class Config:
+        from_attributes = True
+
+# ============================================================================
+# API REQUEST/RESPONSE WRAPPERS
+# ============================================================================
+
+class ReactionRequest(BaseModel):
+    """Request model for adding/updating a reaction"""
+    reaction: ReactionBase = Field(..., description="Reaction details")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "reaction": {
+                    "user_id": 123,
+                    "reaction_type": "product",
+                    "target_id": 456,
+                    "reaction_value": "like",
+                    "rating_value": 4.5
+                }
+            }
+        }
+
+class ReactionBulkRequest(BaseModel):
+    """Request model for bulk reactions"""
+    reactions: List[ReactionBase] = Field(..., description="List of reactions")
+    
+    @field_validator('reactions')
+    @classmethod
+    def validate_reactions(cls, v: List[ReactionBase]) -> List[ReactionBase]:
+        """Validate at least one reaction is provided"""
+        if not v:
+            raise ValueError('At least one reaction is required')
+        if len(v) > 100:
+            raise ValueError('Maximum 100 reactions per request')
+        return v
+
+class ReactionBulkResponse(BaseModel):
+    """Response model for bulk reactions"""
+    success: bool = Field(..., description="Indicates if all reactions were processed")
+    processed_count: int = Field(..., description="Number of reactions processed")
+    failed_count: int = Field(..., description="Number of reactions that failed")
+    errors: Optional[List[Dict[str, Any]]] = Field(default=None, description="Error details for failed reactions")
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "processed_count": 5,
+                "failed_count": 0,
+                "errors": None
+            }
+        }
+
 
 class Reaction_API(BaseModel):
     """Reaction model"""
@@ -830,6 +1004,26 @@ class OrderedItem_API(BaseModel):
     @field_validator('ordered_quantity')
     @classmethod
     def validate_quantity(cls, v: Optional[int]) -> int:
-        if v is not None and v <= 0:
+        """Validate quantity is positive"""
+        if v is None:
+            return 1
+        if v <= 0:
             raise ValueError('Quantity must be greater than 0')
-        return v or 1
+        return v
+    
+    @field_validator('product_discount', 'applied_vat')
+    @classmethod
+    def validate_percentage(cls, v: Optional[float]) -> Optional[float]:
+        """Validate percentage values are between 0 and 100"""
+        if v is not None and (v < 0 or v > 100):
+            raise ValueError('Value must be between 0 and 100')
+        return v
+    
+    @model_validator(mode='after')
+    def validate_total_price_consistency(self) -> 'OrderedItem_API':
+        """Validate that unit_price * ordered_quantity makes sense with discount"""
+        # This is a cross-field validation
+        if self.ordered_quantity and self.unit_price:
+            # You could add additional validation here if needed
+            pass
+        return self

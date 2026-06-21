@@ -31,7 +31,7 @@ from core.exceptions.specific.cart_exceptions import (
 )
 from core.exceptions.handler import (ProductNotFoundException,
     InsufficientStockException)
-from core.models import Cart, Delivery, OrderedItem, OrderedService, Product, Invoice, Payment, Receipt, Deposit
+from core.models import Cart, Delivery, OrderedItem, OrderedService, Product, Invoice, Payment
 from repositories.cart_repository import CartRepository, FinancialRepository
 from repositories.product_repository import ProductRepository
 from services.person_service import PersonService
@@ -210,67 +210,6 @@ class CartService:
                 error=str(e)
             )
     
-    def _create_receipt_for_payment(self, payment: Payment, cart: Cart) -> Receipt:
-        """
-        Create a receipt for a payment.
-        
-        Args:
-            payment: Payment object
-            cart: Cart object
-            
-        Returns:
-            Created Receipt object
-        """
-        receipt = Receipt(
-            receipt_payment_id=payment.payment_id,
-            receipt_number=f"RCPT-{datetime.now().strftime('%Y%m%d')}-{cart.cart_id:04d}",
-            receipt_amount=payment.payment_amount,
-            receipt_cart_ref=cart.cart_id,
-            receipt_notes=f"Receipt for Payment #{payment.payment_id}"
-        )
-        
-        try:
-            result = self.financial_repo.create_receipt(receipt)
-            logger.info(f"Created receipt for payment {payment.payment_id}")
-            return result
-        except Exception as e:
-            logger.error(f"Failed to create receipt for payment {payment.payment_id}: {e}")
-            raise CartReceiptCreationException(
-                cart_id=cart.cart_id,
-                payment_id=payment.payment_id,
-                error=str(e)
-            )
-    
-    def _create_deposit_for_cart(self, cart: Cart, amount: float) -> Deposit:
-        """
-        Create a deposit for a cart.
-        
-        Args:
-            cart: Cart object
-            amount: Deposit amount
-            
-        Returns:
-            Created Deposit object
-        """
-        deposit = Deposit(
-            deposit_cart_id=cart.cart_id,
-            deposit_amount=amount,
-            deposit_method="cash",
-            deposit_reference=f"DEP-{datetime.now().strftime('%Y%m%d%H%M%S')}",
-            deposit_notes=f"Deposit for Cart #{cart.cart_id}"
-        )
-        
-        try:
-            result = self.financial_repo.create_deposit(deposit)
-            logger.info(f"Created deposit of {amount} for cart {cart.cart_id}")
-            return result
-        except Exception as e:
-            logger.error(f"Failed to create deposit for cart {cart.cart_id}: {e}")
-            raise CartDepositCreationException(
-                cart_id=cart.cart_id,
-                amount=amount,
-                error=str(e)
-            )
     
     def _update_cart_status(self, cart: Cart, api_cart: Cart_API, financial_docs: Dict[str, Any]) -> None:
         """

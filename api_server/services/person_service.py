@@ -112,36 +112,52 @@ class PersonService:
             
         Returns:
             Person ORM object (not persisted)
-            
         """
+        from core.models import Person, PersonDetails
+        
         person = Person()
         
-        
-        # Handle person details
-        existing_details = self.person_repo.get_person_details_by_id(
-            person_data.id_person_details
+        # Create person details
+        person_details = PersonDetails(
+            person_first_name=person_data.person_first_name,
+            person_last_name=person_data.person_last_name,
+            person_birth_date=getattr(person_data, 'person_birth_date', None),
+            person_gender=getattr(person_data, 'person_gender', None),
+            person_country_code=getattr(person_data, 'person_country_code', None),
         )
-        if existing_details:
-            person.person_details_id = existing_details.id_person_details
-        else:
-            person.person_details = PersonDetails(
-                person_first_name=person_data.person_first_name,
-                person_last_name=person_data.person_last_name,
-                person_birth_date=person_data.person_birth_date,
-                person_gender=person_data.person_gender,
-                person_country_code=person_data.person_country_code,
+        
+        # Check if we should use existing details
+        if hasattr(person_data, 'id_person_details') and person_data.id_person_details:
+            existing_details = self.person_repo.get_person_details_by_id(
+                person_data.id_person_details
             )
+            if existing_details:
+                person.person_details_id = existing_details.id_person_details
+            else:
+                person.person_details = person_details
+        else:
+            person.person_details = person_details
+        
+        # Set blood type
+        if hasattr(person_data, 'blood_type') and person_data.blood_type.lower() != "unknown":
+            person.person_blood_type = person_data.blood_type
+        else:
+            person.person_blood_type = None
         
         # Handle location
         if location_data:
-            location = self.location_service.get_location_object(location_data.id_location)
-            if location:
-                person.person_location_id = location.id_location
+            if hasattr(location_data, 'id_location') and location_data.id_location:
+                location = self.location_service.get_location_object(location_data.id_location)
+                if location:
+                    person.person_location_id = location.id_location
+                else:
+                    person.person_location = self.location_service.build_location_model(location_data)
             else:
                 person.person_location = self.location_service.build_location_model(location_data)
         
         logger.debug(f"Generated person object for: {person_data.person_first_name} {person_data.person_last_name}")
         return person
+
     
     def refresh_or_insert_person(
         self,

@@ -69,7 +69,7 @@ def get_all_users(
     """
     logger.info(f"Fetching all users (offset={offset}, limit={limit})")
     
-    result = user_service.get_all_users(offset, limit)
+    result = user_service.get_all_users()
     
     return result
 
@@ -354,10 +354,10 @@ def update_user_record_endpoint(
     summary="Add or update reaction",
     description="Insert a reaction or update an existing one",
     responses={
-        201: {
-            "description": "Reaction processed successfully",
-            "model": SuccessResponseModel[ReactionResponseModel]
-        },
+        # 201: {
+        #     "description": "Reaction processed successfully",
+        #     "model": SuccessResponseModel[ReactionResponseModel]
+        # },
         400: {
             "description": "Bad Request - Invalid reaction data",
             "model": ErrorResponseModel
@@ -378,21 +378,12 @@ def reaction_endpoint(
     
     - **reaction**: Reaction details (request body)
     """
-    logger.info(f"Processing reaction - user:{reaction.user_id}, target:{reaction.target_id}, type:{reaction.type}")
+    logger.info(f"Processing reaction - user:{reaction.user_id}, target:{reaction.target_id}, type:{reaction.reaction_type}")
     
     result = social_service.handle_reaction(reaction)
     
-    return SuccessResponseModel(
-        success=True,
-        message="Reaction processed successfully",
-        data=result,
-        details={
-            "user_id": reaction.user_id,
-            "target_id": reaction.target_id,
-            "reaction_type": reaction.type.value if hasattr(reaction.type, 'value') else reaction.type,
-            "value": reaction.value
-        }
-    )
+    return result
+    
 
 
 # ==================== Additional User Endpoints ====================
@@ -466,8 +457,4 @@ def get_user_by_email(
     if not result:
         raise UserNotFoundException(username=email)
     
-    return SuccessResponseModel(
-        success=True,
-        data=result,
-        message=f"User with email {email} retrieved successfully"
-    )
+    return result
