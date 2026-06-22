@@ -1,4 +1,6 @@
 # config.py
+import os
+
 from pydantic_settings import BaseSettings
 from typing import List, Optional
 
@@ -13,7 +15,7 @@ class Settings(BaseSettings):
     # Server Settings
     HOST: str = "0.0.0.0"
     PORT: int = 8000
-    DEBUG: bool = False
+    DEBUG: str = os.getenv("ENV_MODE","DEV")
     
     # CORS Settings
     CORS_ORIGINS: List[str] = ["*"]

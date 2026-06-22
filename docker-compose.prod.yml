@@ -98,6 +98,7 @@ services:
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASS=${RABBITMQ_PASS}
       - RABBITMQ_VHOST=${RABBITMQ_VHOST}
+      - ENV_MODE="PRODUCTION"
     networks:
       - gluttex-net
     deploy:

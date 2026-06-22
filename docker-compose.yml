@@ -226,10 +226,6 @@ services:
           memory: 512M
 
 volumes:
-  # rabbitmq_data:
-  #   driver: local
-  # rabbitmq_logs:
-  #   driver: local
   volumes:
     driver: local
 

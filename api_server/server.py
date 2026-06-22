@@ -17,6 +17,7 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from storage.seed import seed_database_if_needed
 from core.exceptions.handler import setup_exception_handlers_with_config
 from core.response_models import SuccessResponseModel
 from config import settings
@@ -44,10 +45,13 @@ from routers.business_routers.business_operation_router import business_operatio
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO if not settings.DEBUG else logging.DEBUG,
+    level=logging.INFO if not (settings.DEBUG== "PRODUCTION") else logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+
 
 
 # ==================== Lifespan Context Manager ====================
@@ -59,12 +63,12 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("Starting up Gluttex API...")
-    logger.info(f"Environment: {'Development' if settings.DEBUG else 'Production'}")
+    logger.info(f"Environment: {settings.DEBUG}")
     logger.info(f"API Version: {settings.API_VERSION}")
     
-    # Initialize database connection pool if needed
-    # await init_db_pool()
-    
+    # Seed database in DEV mode
+    seed_database_if_needed()
+
     yield
     
     # Shutdown
@@ -206,7 +210,7 @@ def setup_root_endpoints(app: FastAPI) -> None:
             data={
                 "service": settings.API_TITLE,
                 "version": settings.API_VERSION,
-                "environment": "development" if settings.DEBUG else "production",
+                "environment": settings.DEBUG,
                 "docs": "/api/docs",
                 "redoc": "/api/redoc",
                 "openapi": "/api/openapi.json"
@@ -302,7 +306,7 @@ def create_app() -> FastAPI:
     )
     
     # Setup instrumentation (Prometheus metrics)
-    if not settings.DEBUG:
+    if not (settings.DEBUG == "PRODUCTION"):
         instrumentator = Instrumentator(
             should_group_status_codes=True,
             should_ignore_untemplated=True,
@@ -315,7 +319,7 @@ def create_app() -> FastAPI:
         logger.info("Prometheus metrics instrumentation enabled")
     
     # Setup exception handlers
-    setup_exception_handlers_with_config(app, debug=settings.DEBUG)
+    setup_exception_handlers_with_config(app, debug=(settings.DEBUG == "PRODUCTION"))
     
     # Setup middleware (order matters!)
     setup_middleware(app)
@@ -345,8 +349,8 @@ if __name__ == "__main__":
         "main:app",
         host=settings.HOST,
         port=settings.PORT,
-        reload=settings.DEBUG,
-        log_level="info" if not settings.DEBUG else "debug",
+        reload=(settings.DEBUG == "PRODUCTION"),
+        log_level="info" if not (settings.DEBUG== "PRODUCTION") else "debug",
         access_log=True,
         workers=settings.WORKERS if hasattr(settings, 'WORKERS') else 1,
     )
