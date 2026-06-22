@@ -8,6 +8,7 @@ from sqlalchemy import inspect
 import logging
 from typing import Dict, Any
 
+from storage.seeds.iproduct import seed_random_iproducts
 import config
 from storage.storage_broker import get_engine, session_scope, get, text
 from storage.seeds.product_category import seed_product_categories
@@ -75,6 +76,11 @@ def seed_database(
         logger.info("Seeding ingredients...")
         results["ingredients"] = seed_ingredients(use_quantifiers=with_quantifiers)
         
+        # Seed ingredients
+        logger.info("Seeding iproducts...")
+        results["iproducts"] = seed_random_iproducts()
+        
+
         results["total"] = sum([
             results["product_categories"],
             results["recipe_categories"],
@@ -82,6 +88,8 @@ def seed_database(
             results["service_categories"],
             results["staff_roles"],
             results["ingredients"],
+            results["iproducts"],
+            
         ])
         
         logger.info(f"✅ Seeding complete! Total records inserted: {results['total']}")
@@ -131,6 +139,7 @@ def get_seed_status() -> Dict[str, Any]:
             ('provided_service_category', 'has_service_categories', 'service_category_count'),
             ('staff_role', 'has_staff_roles', 'staff_role_count'),
             ('ingredient', 'has_ingredients', 'ingredient_count'),
+            ('iproduct', 'has_iproducts', 'iproduct_count'),
         ]
         
         for table_name, has_flag, count_field in table_checks:
@@ -149,6 +158,7 @@ def get_seed_status() -> Dict[str, Any]:
             status["has_service_categories"],
             status["has_staff_roles"],
             status["has_ingredients"],
+            status["has_iproducts"],
         ])
         
         return status
@@ -164,12 +174,14 @@ def get_seed_status() -> Dict[str, Any]:
             "has_service_categories": False,
             "has_staff_roles": False,
             "has_ingredients": False,
+            "has_iproducts": False,
             "product_category_count": 0,
             "recipe_category_count": 0,
             "product_provider_type_count": 0,
             "service_category_count": 0,
             "staff_role_count": 0,
             "ingredient_count": 0,
+            "iproduct_count": 0,
             "needs_seeding": True,
             "error": str(e)
         }
