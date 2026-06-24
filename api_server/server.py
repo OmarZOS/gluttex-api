@@ -178,7 +178,7 @@ def setup_routers(app: FastAPI) -> None:
     business_prefix = f"{api_version}/business"
     app.include_router(order_router, prefix=business_prefix, tags=["Business Orders"])
     app.include_router(cart_router, prefix=business_prefix, tags=["Business Carts"])
-    app.include_router(delivery_router, prefix=business_prefix, tags=["Business Deliveries"])
+    app.include_router(delivery_router, prefix=f"{business_prefix}/delivery", tags=["Business Deliveries"])
     app.include_router(service_router, prefix=business_prefix, tags=["Business Services"])
     app.include_router(financial_router, prefix=business_prefix, tags=["Business Finance"])
     app.include_router(business_operation_router, prefix=business_prefix, tags=["Business Operations"])

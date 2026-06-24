@@ -561,7 +561,6 @@ class Product_API(BaseModel):
     """Main product model"""
     id_product: Optional[int] = Field(default=0, ge=0, description="Product ID")
     product_provider_id: Optional[int] = Field(default=None, description="Provider ID")
-    id_product_category: Optional[int] = Field(default=None, description="Product category ID")
     product_category_id: Optional[int] = Field(default=None, description="Category ID (alias)")
     product_price: Optional[float] = Field(default=0.0, ge=0, description="Product price")
     product_quantity: Optional[float] = Field(default=0.0, ge=0, description="Available quantity")

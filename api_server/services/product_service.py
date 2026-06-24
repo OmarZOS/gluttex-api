@@ -239,10 +239,10 @@ class ProductService:
                 )
         
         # Validate category
-        product_category = self.product_repo.get_product_category_by_id(product_api.id_product_category)
+        product_category = self.product_repo.get_product_category_by_id(product_api.product_category_id)
         if not product_category:
-            logger.warning(f"Product category not found with ID: {product_api.id_product_category}")
-            raise ProductCategoryNotFoundException(category_id=product_api.id_product_category)
+            logger.warning(f"Product category not found with ID: {product_api.product_category_id}")
+            raise ProductCategoryNotFoundException(category_id=product_api.product_category_id)
         
         # Build product
         product = self._build_product_model(product_api)
@@ -447,6 +447,7 @@ class ProductService:
             product_quantity=product_api.product_quantity,
             product_description=product_api.product_description,
             product_owner=product_api.product_owner,
+            product_provider_id=product_api.product_provider_id,
             created=datetime.now(),
             last_updated=datetime.now(),
         )

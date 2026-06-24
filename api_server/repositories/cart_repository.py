@@ -157,6 +157,18 @@ class ServiceRepository:
             limit=limit
         )
     
+    def get_category_by_id(self, category_id: int) -> ProvidedServiceCategory:
+        """Get services by category"""
+        data = storage_broker.get(
+            ProvidedServiceCategory,
+            {ProvidedServiceCategory.provided_service_category_id: category_id},
+            [],
+            [],
+            offset=0,
+            limit=1
+        )
+        return data[0] if len(data)>0 else None
+    
     def get_services_by_provider(self, provider_id: int, offset: int = 0, limit: int = 100) -> List[ProvidedService]:
         """Get services by provider"""
         return storage_broker.get(
@@ -167,6 +179,39 @@ class ServiceRepository:
             offset=offset,
             limit=limit
         )
+    
+    def get_services(self, offset: int = 0, limit: int = 100) -> List[ProvidedService]:
+        """Get services by provider"""
+        return storage_broker.get(
+            ProvidedService,
+            {},
+            [],
+            [],
+            offset=offset,
+            limit=limit
+        )
+    
+    def get_package_items_by_service(self, id:int) -> List[ProvidedService]:
+        return storage_broker.get(
+            ServicePackageItem,
+            {ServicePackageItem.service_package_item_service_id: id},
+            [],
+            [],
+            offset=0,
+            limit=10
+        )
+    
+    def get_cart_items_by_service(self, id:int) -> List[ProvidedService]:
+        return storage_broker.get(
+            OrderedService,
+            {OrderedService.ordered_service_service_id: id},
+            [],
+            [],
+            offset=0,
+            limit=10
+        )
+    
+    
     
     def get_active_services(self, provider_id: Optional[int] = None) -> List[ProvidedService]:
         """Get active services"""
@@ -186,6 +231,21 @@ class ServiceRepository:
         from features.insertion import update_record_in_api
         return update_record_in_api(service)
     
+    def delete_service_resource_requirements(self, service: ServiceResourceRequirement) -> bool:
+        """Delete a service req"""
+        from features.insertion import delete_record_from_api
+        return delete_record_from_api(service)
+    
+    def delete_service_staff_requirements(self, service: ServiceStaffRequirement) -> bool:
+        """Delete a service req"""
+        from features.insertion import delete_record_from_api
+        return delete_record_from_api(service)
+    
+    def delete_service(self, service: ProvidedService) -> bool:
+        """Delete a service"""
+        from features.insertion import delete_record_from_api
+        return delete_record_from_api(service)
+
     def delete_service(self, service: ProvidedService) -> bool:
         """Delete a service"""
         from features.insertion import delete_record_from_api
@@ -208,6 +268,7 @@ class ServiceRepository:
             [],
             []
         )
+    
 
 # repositories/financial_repository.py
 from typing import Optional, List

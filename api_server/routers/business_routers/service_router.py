@@ -64,7 +64,7 @@ def get_services(
         elif provider_id > 0:
             result = service_service.get_services_by_provider(provider_id, offset, limit)
         else:
-            result = service_service.get_services_by_provider(0, offset, limit)
+            result = service_service.get_services( offset, limit)
         
         logger.info(f"Found {len(result)} services")
         return result
