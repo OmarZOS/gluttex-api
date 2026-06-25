@@ -194,6 +194,7 @@ def update_supplier(
     provider: ProductProvider_API,
     image: Optional[ProviderImage_API] = None,
     location: Optional[Location_API] = None,
+    user_id: int = Depends(get_current_user_id),
     supplier_service: SupplierService = Depends(get_supplier_service)
 ):
     """
@@ -306,6 +307,7 @@ def get_organisation(
 def create_organisation(
     organisation: ProviderOrganisation_API,
     org_image: Optional[OrganisationImage_API] = None,
+    user_id: int = Depends(get_current_user_id),
     organisation_service: OrganisationService = Depends(get_organisation_service)
 ):
     """
@@ -331,6 +333,7 @@ def update_organisation(
     org_id: str,
     organisation: ProviderOrganisation_API,
     org_image: Optional[OrganisationImage_API] = None,
+    user_id: int = Depends(get_current_user_id),
     organisation_service: OrganisationService = Depends(get_organisation_service)
 ):
     """
