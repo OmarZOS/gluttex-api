@@ -216,48 +216,6 @@ def delete_user_endpoint(
     return result
 
 
-@app_user_router.put(
-    "/app_user/update_password",
-    # response_model=SuccessResponseModel,
-    summary="Update user password",
-    description="Update the user password",
-    responses={
-        # 200: {
-        #     "description": "Password updated successfully",
-        #     "model": SuccessResponseModel
-        # },
-        400: {
-            "description": "Bad Request - Invalid password",
-            "model": ErrorResponseModel
-        },
-        401: {
-            "description": "Unauthorized - Invalid token",
-            "model": ErrorResponseModel
-        },
-        **get_crud_error_responses(include_404=True)
-    }
-)
-async def update_user_password_endpoint(
-    user: AppUserUpdate_API,
-    token: str = Query(..., description="Authentication token"),
-    user_service: UserService = Depends(get_user_service)
-):
-    """
-    Update the user password.
-    
-    - **user**: User update details (request body)
-    - **token**: Authentication token (query parameter)
-    """
-    logger.info(f"Updating password for user ID: {user.id_app_user}")
-    
-    result = await user_service.update_user_password_with_auth(user, token)
-    
-    return SuccessResponseModel(
-        success=True,
-        message="Password updated successfully",
-        data=result,
-        details={"user_id": user.id_app_user}
-    )
 
 
 @app_user_router.put(

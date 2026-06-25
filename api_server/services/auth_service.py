@@ -11,6 +11,9 @@ from datetime import datetime, timezone, timedelta
 from fastapi import Request
 from fastapi.responses import RedirectResponse
 
+from core.messages.error_codes import ErrorCode
+from core.messages.http_status import HTTP_417_EXPECTATION_FAILED
+from features.auth_manager import AuthManager
 from repositories.user_repository import UserRepository
 from core.api_models import AppUser_API, AuthData_API
 from core.exceptions.handler import APIException, AuthLoginException, OAuthException, OAuthProviderNotSupportedException
@@ -41,7 +44,7 @@ class AuthService:
     
     def __init__(self):
         self.auth_client = AuthClient()
-        # self.user_service = UserService()  # Uncomment when needed
+        self.auth_manager = AuthManager()  # Uncomment when needed
     
     @staticmethod
     def generate_random_password(length: int = 32) -> str:
@@ -817,7 +820,7 @@ class AuthService:
         token: str
     ) -> Dict[str, Any]:
         """Change user password through auth server."""
-        response = await self.auth_client.change_password(
+        response = await self.auth_manager.change_password(
             user_id=user_id,
             username=username,
             new_password=new_password,
@@ -826,16 +829,18 @@ class AuthService:
         
         new_password_hash = response.get("hashed_password")
         
-        # Update password in local database
-        from core.api_models import AppUserUpdate_API
-        user_update = AppUserUpdate_API(
-            id_app_user=user_id,
-            username=username,
-            new_password=new_password
-        )
-        
-        # return self.user_service.update_user_password(user_update, new_password_hash)
-        return response  # Placeholder
+        user = self.user_repo.get_by_id(user_id)
+        user.app_user_password = new_password_hash
+
+        try:
+            return self.user_repo.update(user)
+        except Exception as e:
+            raise APIException(
+                status_code=HTTP_417_EXPECTATION_FAILED,
+                error_code=ErrorCode.USER_UPDATE_FAILED,
+                details={"user_id": user.id_app_user, "error": str(e)}
+            )
+
     
     async def delete_user(self, user_id: int, username: str, password: str) -> None:
         """Delete user from auth server."""

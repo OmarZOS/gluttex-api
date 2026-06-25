@@ -4,7 +4,7 @@ import logging
 import datetime
 from typing import Optional
 
-from features.auth_client import AuthClient
+from features.auth_manager import AuthManager
 from core.api_models import AppUser_API, Person_API, Location_API, AppUserUpdate_API
 from core.exceptions.handler import (
     APIException,
@@ -15,7 +15,6 @@ from core.models import AppUser
 from repositories.user_repository import UserRepository
 from repositories.person_repository import PersonRepository
 from repositories.location_repository import LocationRepository
-from services.auth_service import AuthService
 from services.person_service import PersonService
 
 # Import from your new structure
@@ -37,9 +36,8 @@ class UserService:
         self.user_repo = UserRepository()
         self.person_repo = PersonRepository()
         self.location_repo = LocationRepository()
-        self.auth_service = AuthService()
         self.person_service = PersonService()
-        self.auth_client = AuthClient()
+        self.auth_manager = AuthManager()
     
     def get_all_users(self):
         """Get all users"""
@@ -128,7 +126,7 @@ class UserService:
         
         try:
             logger.info(f"Creating auth record for user '{user.app_user_name}'")
-            user_auth_record = await self.auth_client.register_user(user_auth_data)
+            user_auth_record = await self.auth_manager.register_user(user_auth_data)
             self.update_user_password(user, user_auth_record["hashed_password"])
         except APIException as e:
             logger.error(f"Failed to create/update auth record: {e}")
@@ -219,28 +217,3 @@ class UserService:
         user = self.get_user_by_id(user_data.id_app_user)
         return self.user_repo.delete(user)
     
-    async def update_user_password_with_auth(
-        self,
-        user_data: AppUserUpdate_API,
-        token: str
-    ):
-        """Update password with authentication server sync"""
-        
-        user_update = {
-            "app_user_id": user_data.id_app_user,
-            "username": user_data.username,
-            "new_username": user_data.username,
-            "new_password": user_data.new_password
-        }
-        
-        try:
-            auth_response = await self.auth_service.update_password(user_update, token)
-            new_password_hash = auth_response.get("hashed_password")
-            return self.update_user_password(user_data, new_password_hash)
-        except APIException as e:
-            raise APIException(
-                status_code=e.status_code,
-                error_code=e.error_code,
-                message=e.message,
-                details=e.details
-            )

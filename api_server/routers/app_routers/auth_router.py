@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 
-from services.helpers.auth.auth_dependencies import JWTBearer, get_current_user, get_current_user_id, get_current_user_info
+from services.helpers.auth.auth_dependencies import JWTBearer, get_current_user, get_current_user_access_token, get_current_user_id, get_current_user_info
 from services.helpers.auth.user_dependencies import verify_user
 from services.helpers.auth.auth import create_access_token, create_refresh_token
 from core.exceptions.handler import AuthLoginException, OAuthException
@@ -216,6 +216,8 @@ async def login_user(
             "last_name": auth_result.get("last_name"),
             "iss": "gluttex-api",
             "aud": ["gluttex-web", "gluttex-mobile"],
+            "access_token": auth_result.get("access_token"),
+            "refresh_token": auth_result.get("refresh_token"),
         }
 
         logger.info(f"Creating token for : {json.dumps(token_data)}")
@@ -441,7 +443,7 @@ async def update_current_user_profile(
 )
 async def change_password(
     password_data: ChangePassword_API,
-    user_id: int = Depends(get_current_user_id),
+    user_info: int = Depends(get_current_user_info),
     auth_service: AuthService = Depends(get_auth_service)
 ):
     """
@@ -449,28 +451,30 @@ async def change_password(
     Requires valid JWT token.
     """
     try:
-        # Verify current password
-        result = await auth_service.verify_password(
-            user_id=user_id,
-            current_password=password_data.current_password
-        )
+        # # Verify current password
+        # result = await auth_service.verify_password(
+        #     user_id=user_id,
+        #     current_password=password_data.current_password
+        # )
         
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Current password is incorrect"
-            )
+        # if not result:
+        #     raise HTTPException(
+        #         status_code=status.HTTP_400_BAD_REQUEST,
+        #         detail="Current password is incorrect"
+        #     )
         
         # Update password
-        await auth_service.change_password(
-            user_id=user_id,
-            new_password=password_data.new_password
+        await auth_service.change_user_password(
+            user_id=user_info["user_id"],
+            username= user_info["username"],
+            new_password=password_data.new_password,
+            token= user_info["access_token"]
         )
         
         return ChangePasswordResponse(
             success=True,
             message="Password changed successfully",
-            user_id=user_id,
+            user_id=user_info["user_id"],
             changed_at=datetime.utcnow()
         )
         

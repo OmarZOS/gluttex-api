@@ -323,6 +323,37 @@ async def get_current_user_id(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid user ID format in token"
         )
+    
+# Get user Token from access token
+async def get_current_user_access_token(
+    payload: Dict[str, Any] = Depends(get_current_user)
+) -> int:
+    """
+    Get current user ID from access token.
+    
+    Args:
+        payload: JWT token payload
+        
+    Returns:
+        User ID as integer
+        
+    Raises:
+        HTTPException: If user ID is not found or invalid
+    """
+    user_id = payload.get("access_token")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Auth token not found in api token"
+        )
+    
+    try:
+        return int(user_id)
+    except (ValueError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user ID format in token"
+        )
 
 
 # Get user info from access token
@@ -344,6 +375,7 @@ async def get_current_user_info(
         "email": payload.get("email"),
         "first_name": payload.get("first_name"),
         "last_name": payload.get("last_name"),
+        "access_token": payload.get("access_token"),
         "exp": payload.get("exp"),
         "iat": payload.get("iat"),
         "iss": payload.get("iss"),

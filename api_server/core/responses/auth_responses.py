@@ -56,13 +56,13 @@ class UserProfileUpdate_API(BaseModel):
 
 class ChangePassword_API(BaseModel):
     """Change password request model."""
-    current_password: str = Field(..., description="Current password")
+    # current_password: str = Field(..., description="Current password")
     new_password: str = Field(..., min_length=6, description="New password (min 6 characters)")
     
     class Config:
         json_schema_extra = {
             "example": {
-                "current_password": "old_password",
+                # "current_password": "old_password",
                 "new_password": "new_password123"
             }
         }
