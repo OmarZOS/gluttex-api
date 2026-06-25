@@ -168,7 +168,7 @@ class SupplierService:
         self,
         provider: ProductProvider_API,
         location: Location_API,
-        image: Optional[ProviderImage_API] = None
+        image: Optional[ProviderImage_API] = None,
     ) -> ProductProvider:
         """
         Create a new supplier.

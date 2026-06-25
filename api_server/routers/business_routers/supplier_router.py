@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, List
 import logging
 
+from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.exceptions.specific.supplier_exceptions import SupplierNotFoundException
 from core.api_models import (
     Location_API, ProductProvider_API, ProviderImage_API,
@@ -165,11 +166,13 @@ def create_supplier(
     provider: ProductProvider_API,
     location: Location_API,
     image: Optional[ProviderImage_API] = None,
+    user_id: int = Depends(get_current_user_id),
     supplier_service: SupplierService = Depends(get_supplier_service)
 ):
     """
     Create a new supplier.
     """
+    provider.id_provider_owner = user_id
     logger.info(f"Creating new supplier: {provider.provider_name}")
     return supplier_service.create_supplier(provider, location, image)
 
