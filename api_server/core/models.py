@@ -1348,9 +1348,10 @@ class ProductConsumption(Base):
         Index('fk_product_consumption_service_resource_requirement1_idx', 'resource_req_ref')
     )
 
-    resource_req_ref = Column(Integer, primary_key=True, nullable=False)
-    consuming_service_id = Column(Integer, primary_key=True, nullable=False)
-    consumed_product_id = Column(Integer, primary_key=True, nullable=False)
+    id_product_consumption = Column(Integer, primary_key=True)
+    resource_req_ref = Column(Integer)
+    consuming_service_id = Column(Integer)
+    consumed_product_id = Column(Integer)
     product_reserved_quantity = Column(Integer)
 
     consumed_product = relationship('Product', back_populates='product_consumption')
