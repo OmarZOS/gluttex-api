@@ -107,13 +107,15 @@ class Wallet(Base):
     id_wallet = Column(Integer, primary_key=True)
     wallet_type = Column(Enum('user', 'provider', 'organization', 'system', 'virtual', 'business'), server_default=text("'user'"))
     wallet_currency = Column(Enum('DZD', 'USD', 'EUR'), server_default=text("'DZD'"))
-    wallet_balance = Column(Float(asdecimal=True))
+    wallet_balance = Column(DECIMAL(20, 8))
     wallet_status = Column(Enum('active', 'inactive', 'suspended', 'closed', 'pending_verification'), server_default=text("'pending_verification'"))
+    wallet_version = Column(Integer, server_default=text("'0'"))
 
     delivery_broker = relationship('DeliveryBroker', back_populates='delivery_broker_wallet')
     provider_organisation = relationship('ProviderOrganisation', back_populates='provider_organisation_wallet')
     money_transaction = relationship('MoneyTransaction', foreign_keys='[MoneyTransaction.money_transaction_wallet_destination_id]', back_populates='money_transaction_wallet_destination')
     money_transaction_ = relationship('MoneyTransaction', foreign_keys='[MoneyTransaction.money_transaction_wallet_source_id]', back_populates='money_transaction_wallet_source')
+    ledger_entry = relationship('LedgerEntry', back_populates='wallet')
     app_user = relationship('AppUser', back_populates='app_user_wallet')
     product_provider = relationship('ProductProvider', back_populates='product_provider_wallet')
 
@@ -367,7 +369,7 @@ class MoneyTransaction(Base):
 
     id_money_transaction = Column(Integer, primary_key=True)
     money_transaction_document_url = Column(String(255))
-    money_transaction_amount = Column(Float(asdecimal=True), server_default=text("'0'"))
+    money_transaction_amount = Column(DECIMAL(20, 8), server_default=text("'0.00000000'"))
     money_transaction_reference = Column(String(255))
     money_transaction_creation = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     money_transaction_last_updated = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
@@ -379,6 +381,7 @@ class MoneyTransaction(Base):
     payment = relationship('Payment', back_populates='money_transaction')
     money_transaction_wallet_destination = relationship('Wallet', foreign_keys=[money_transaction_wallet_destination_id], back_populates='money_transaction')
     money_transaction_wallet_source = relationship('Wallet', foreign_keys=[money_transaction_wallet_source_id], back_populates='money_transaction_')
+    ledger_entry = relationship('LedgerEntry', back_populates='money_transaction')
 
 
 class OrganisationImage(Base):
@@ -414,6 +417,25 @@ class StaffRole(Base):
     provided_service_category = relationship('ProvidedServiceCategory', back_populates='staff_role')
     person_details = relationship('PersonDetails', back_populates='staff_role')
     service_staff_requirement = relationship('ServiceStaffRequirement', back_populates='staff_role')
+
+
+class LedgerEntry(Base):
+    __tablename__ = 'ledger_entry'
+    __table_args__ = (
+        ForeignKeyConstraint(['money_transaction_id'], ['money_transaction.id_money_transaction'], name='fk_ledger_entry_money_transaction1'),
+        ForeignKeyConstraint(['wallet_id'], ['wallet.id_wallet'], name='fk_ledger_entry_wallet1'),
+        Index('fk_ledger_entry_money_transaction1_idx', 'money_transaction_id'),
+        Index('fk_ledger_entry_wallet1_idx', 'wallet_id')
+    )
+
+    id_ledger_entry = Column(Integer, primary_key=True)
+    wallet_id = Column(Integer, nullable=False)
+    money_transaction_id = Column(Integer, nullable=False)
+    ledger_entry_type = Column(Enum('CREDIT', 'DEBIT'))
+    ledger_entry_amount = Column(DECIMAL(20, 8))
+
+    money_transaction = relationship('MoneyTransaction', back_populates='ledger_entry')
+    wallet = relationship('Wallet', back_populates='ledger_entry')
 
 
 class PersonDetails(Base):
@@ -940,8 +962,10 @@ class Product(Base):
     last_updated = Column(DateTime, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
     created = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
     product_description = Column(String(300))
-    product_price = Column(Float(asdecimal=True))
-    product_quantity = Column(Integer)
+    product_price = Column(Float(asdecimal=True), server_default=text("'0'"))
+    product_base_price = Column(Float(asdecimal=True), server_default=text("'0'"))
+    product_quantity = Column(Integer, server_default=text("'0'"))
+    product_reserved_quantity = Column(Integer, server_default=text("'0'"))
     product_quantifier = Column(String(45))
     product_owner = Column(Integer)
     product_origin_id = Column(Integer)
@@ -955,6 +979,7 @@ class Product(Base):
     product_image = relationship('ProductImage', back_populates='product_ref')
     product_reaction = relationship('ProductReaction', back_populates='product')
     service_resource_requirement = relationship('ServiceResourceRequirement', back_populates='product')
+    product_consumption = relationship('ProductConsumption', back_populates='consumed_product')
 
 
 class ProvidedService(Base):
@@ -1172,6 +1197,7 @@ class OrderedService(Base):
 
     ordered_service_cart = relationship('Cart', back_populates='ordered_service')
     ordered_service_service = relationship('ProvidedService', back_populates='ordered_service')
+    product_consumption = relationship('ProductConsumption', back_populates='consuming_service')
 
 
 class ProductImage(Base):
@@ -1285,6 +1311,7 @@ class ServiceResourceRequirement(Base):
 
     product = relationship('Product', back_populates='service_resource_requirement')
     service_resource_requirement_service = relationship('ProvidedService', back_populates='service_resource_requirement')
+    product_consumption = relationship('ProductConsumption', back_populates='service_resource_requirement')
 
 
 class ServiceStaffRequirement(Base):
@@ -1309,3 +1336,23 @@ class ServiceStaffRequirement(Base):
 
     staff_role = relationship('StaffRole', back_populates='service_staff_requirement')
     service_staff_requirement_service = relationship('ProvidedService', back_populates='service_staff_requirement')
+
+class ProductConsumption(Base):
+    __tablename__ = 'product_consumption'
+    __table_args__ = (
+        ForeignKeyConstraint(['consumed_product_id'], ['product.id_product'], name='fk_product_consumption_product1'),
+        ForeignKeyConstraint(['consuming_service_id'], ['ordered_service.ordered_service_id'], name='fk_product_consumption_ordered_service1'),
+        ForeignKeyConstraint(['resource_req_ref'], ['service_resource_requirement.service_resource_requirement_id'], name='fk_product_consumption_service_resource_requirement1'),
+        Index('fk_product_consumption_ordered_service1_idx', 'consuming_service_id'),
+        Index('fk_product_consumption_product1_idx', 'consumed_product_id'),
+        Index('fk_product_consumption_service_resource_requirement1_idx', 'resource_req_ref')
+    )
+
+    resource_req_ref = Column(Integer, primary_key=True, nullable=False)
+    consuming_service_id = Column(Integer, primary_key=True, nullable=False)
+    consumed_product_id = Column(Integer, primary_key=True, nullable=False)
+    product_reserved_quantity = Column(Integer)
+
+    consumed_product = relationship('Product', back_populates='product_consumption')
+    consuming_service = relationship('OrderedService', back_populates='product_consumption')
+    service_resource_requirement = relationship('ServiceResourceRequirement', back_populates='product_consumption')
