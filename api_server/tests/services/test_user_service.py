@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Optional
 
 from services.user_service import UserService
-from core.api_models import AppUser_API, Person_API, Location_API, AppUserUpdate_API
+from core.models.api_models import AppUser_API, Person_API, Location_API, AppUserUpdate_API
 from core.exceptions.handler import APIException, UserNotFoundException
-from core.models import AppUser
+from core.models.models import AppUser
 from core.messages.error_codes import ErrorCode
 from core.messages.http_status import (
     HTTP_409_CONFLICT,

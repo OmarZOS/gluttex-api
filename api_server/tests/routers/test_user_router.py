@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 import json
 
 from routers.app_routers import user_router
-from core.api_models import AppUser_API, AppUserUpdate_API, Person_API, Location_API, ReactionBase
+from core.models.api_models import AppUser_API, AppUserUpdate_API, Person_API, Location_API, ReactionBase
 from core.exceptions.handler import UserNotFoundException, APIException
 from core.response_models import SuccessResponseModel
 from core.messages.http_status import HTTP_404_NOT_FOUND, HTTP_409_CONFLICT

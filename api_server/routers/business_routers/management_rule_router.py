@@ -7,8 +7,8 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, List
 import logging
 
-from core.api_models import ManagementRule_API
-from core.models import ManagementRule
+from core.models.api_models import ManagementRule_API
+from core.models.models import ManagementRule
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.staff_exceptions import (
     RuleNotFoundException,

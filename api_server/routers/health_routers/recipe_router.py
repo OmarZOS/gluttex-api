@@ -1,7 +1,7 @@
 # routers/recipe_router.py (updated)
 from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
-from core.api_models import Recipe_API, RecipeImage_API, Ingredient_API
+from core.models.api_models import Recipe_API, RecipeImage_API, Ingredient_API
 from services.recipe_service import RecipeService
 
 recipe_router = APIRouter()

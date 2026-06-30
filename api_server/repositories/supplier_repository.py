@@ -1,11 +1,11 @@
 # repositories/supplier_repository.py
 from typing import Optional, List, Dict, Any, Tuple
-from core.models import (
+from core.models.models import (
     ProductProvider, ProductProviderType, ProviderDetails, 
     ProviderImage, ProviderOrganisation, OrganisationImage
 )
-from core.persistent_models import Location
-from core.models import Address
+from core.models.persistent_models import Location
+from core.models.models import Address
 import storage.storage_broker as storage_broker
 from sqlalchemy import func
 from geoalchemy2.elements import WKTElement
@@ -287,7 +287,7 @@ class SupplierRepository:
 
 # repositories/organisation_repository.py
 from typing import Optional, List
-from core.models import ProviderOrganisation, OrganisationImage
+from core.models.models import ProviderOrganisation, OrganisationImage
 import storage.storage_broker as storage_broker
 
 class OrganisationRepository:

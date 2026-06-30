@@ -5,8 +5,8 @@ Test model relationships and ensure they're properly configured.
 import pytest
 from sqlalchemy.orm import aliased
 
-from core.persistent_models import *
-from core.models import *
+from core.models.persistent_models import *
+from core.models.models import *
 
 # class TestModelRelationships:
 #     """Test that all model relationships are properly configured."""

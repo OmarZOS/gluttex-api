@@ -1,8 +1,8 @@
 # services/search_service.py
 from typing import List, Dict, Any, Optional, Tuple
-from core.models import  Product, Recipe, AppUser, Person, ProviderDetails, ProductProvider
-from core.persistent_models import Location
-from core.models import PersonDetails
+from core.models.models import  Product, Recipe, AppUser, Person, ProviderDetails, ProductProvider
+from core.models.persistent_models import Location
+from core.models.models import PersonDetails
 from storage.storage_broker import search_records
 from repositories.supplier_repository import SupplierRepository
 

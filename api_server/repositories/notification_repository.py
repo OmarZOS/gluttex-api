@@ -1,6 +1,6 @@
 # repositories/notification_repository.py
 from typing import List, Optional, Dict, Any
-from core.models import Notification
+from core.models.models import Notification
 import storage.storage_broker as storage_broker
 
 class NotificationRepository:

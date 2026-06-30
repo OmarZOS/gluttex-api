@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 
-from core.api_models import Recipe_API, RecipeImage_API, Ingredient_API
+from core.models.api_models import Recipe_API, RecipeImage_API, Ingredient_API
 from core.exceptions.specific.recipe_exceptions import (
     IngredientUpdateFailedException,
     RecipeNotFoundException,
@@ -21,7 +21,7 @@ from core.exceptions.specific.recipe_exceptions import (
     IngredientInsertFailedException,
     IngredientDeleteFailedException
 )
-from core.models import Recipe, RecipeContainsIngredient, RecipeImage, Ingredient
+from core.models.models import Recipe, RecipeContainsIngredient, RecipeImage, Ingredient
 from repositories.recipe_repository import RecipeRepository
 from services.user_service import UserService
 

@@ -7,11 +7,11 @@ import logging
 from typing import Optional, List, Dict, Any
 
 from core.exceptions.specific.supplier_exceptions import *
-from core.api_models import (
+from core.models.api_models import (
     Location_API, ProductProvider_API, ProviderImage_API,
     ProviderOrganisation_API, OrganisationImage_API
 )
-from core.models import (
+from core.models.models import (
     ProductProvider, ProductProviderType, ProviderDetails,
     ProviderImage, ProviderOrganisation, OrganisationImage
 )

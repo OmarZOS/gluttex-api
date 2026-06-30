@@ -9,7 +9,7 @@ import logging
 
 from core.exceptions.specific.delivery_exceptions import AddressNotFoundException
 from core.exceptions.handler import LocationDeleteFailedException, LocationNotFoundException
-from core.api_models import Location_API, Delivery_API
+from core.models.api_models import Location_API, Delivery_API
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from services.location_service import LocationService
 

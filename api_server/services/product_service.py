@@ -10,7 +10,7 @@ from fastapi import BackgroundTasks
 import logging
 
 from core.exceptions.specific.supplier_exceptions import ImageInsertFailedException, ImageUpdateFailedException
-from core.api_models import Product_API, ProductImage_API, Iproduct_API
+from core.models.api_models import Product_API, ProductImage_API, Iproduct_API
 from core.exceptions.specific.product_exceptions import (
     ProductNotFoundException,
     ProductAlreadyExistsException,
@@ -22,7 +22,7 @@ from core.exceptions.specific.product_exceptions import (
     ProductImageNotFoundException,
     ProductQuantityNotEnoughException
 )
-from core.models import Product, ProductImage, Iproduct
+from core.models.models import Product, ProductImage, Iproduct
 from repositories.product_repository import ProductRepository
 from repositories.iproduct_repository import IProductRepository
 from services.helpers.ai_service import AIService

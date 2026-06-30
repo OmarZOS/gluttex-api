@@ -10,7 +10,7 @@ from decimal import Decimal
 import random
 
 from storage.storage_broker import insert_record, get, session_scope
-from core import models
+from core.models import models
 
 logger = logging.getLogger(__name__)
 

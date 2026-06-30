@@ -1,6 +1,6 @@
 # services/social_service.py
 from typing import Optional
-from core.api_models import ReactionBase
+from core.models.api_models import ReactionBase
 from core.exceptions.handler import APIException
 from core.messages import *
 from services.reaction_service import ReactionService

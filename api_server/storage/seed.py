@@ -18,7 +18,7 @@ from storage.seeds.provided_service_category import seed_service_categories
 from storage.seeds.staff_role import seed_staff_roles
 from storage.seeds.ingredient import seed_ingredients
 from config import settings
-from core import models
+from core.models import models
 
 logger = logging.getLogger(__name__)
 

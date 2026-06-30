@@ -1,6 +1,6 @@
 # repositories/reaction_repository.py
 from typing import Optional, List, Union
-from core.models import (
+from core.models.models import (
     ProductReaction, RecipeReaction, ProviderReaction, 
     CommentReaction, Product, Recipe, ProductProvider, Comment, AppUser
 )

@@ -1,9 +1,9 @@
 # services/location_service.py
 from typing import Optional, List, Dict, Any
 from geoalchemy2.elements import WKTElement
-from core.api_models import Location_API, Delivery_API
-from core.models import Address
-from core.persistent_models import Location
+from core.models.api_models import Location_API, Delivery_API
+from core.models.models import Address
+from core.models.persistent_models import Location
 from core.exceptions.specific.location_exceptions import (
     
     LocationNotFoundError,

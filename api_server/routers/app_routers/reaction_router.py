@@ -4,7 +4,7 @@ from typing import Optional
 import logging
 
 from core.messages.http_status import HTTP_400_BAD_REQUEST, HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
-from core.api_models import ReactionBase, ReactionStatistics, ReactionBulkRequest, ReactionBulkResponse
+from core.models.api_models import ReactionBase, ReactionStatistics, ReactionBulkRequest, ReactionBulkResponse
 from core.exceptions.handler import APIException
 from core.messages import *
 from core.response_models import SuccessResponseModel, ErrorResponseModel, get_crud_error_responses

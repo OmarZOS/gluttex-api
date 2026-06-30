@@ -1,6 +1,6 @@
 # services/business_operation_service.py
 from typing import List, Dict, Any
-from core.persistent_models import BusinessOperation
+from core.models.persistent_models import BusinessOperation
 from storage import storage_broker
 
 class BusinessOperationService:

@@ -1,6 +1,6 @@
 # repositories/medical_repository.py (complete)
 from typing import Optional, List
-from core.models import Patient, Serology, SerologyIndicator, Symptom, SymptomsOccurence, PresentedSymptom
+from core.models.models import Patient, Serology, SerologyIndicator, Symptom, SymptomsOccurence, PresentedSymptom
 import storage.storage_broker as storage_broker
 
 class MedicalRepository:

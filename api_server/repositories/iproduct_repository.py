@@ -1,5 +1,5 @@
 from typing import Optional, List
-from core.models import Iproduct
+from core.models.models import Iproduct
 import storage.storage_broker as storage_broker
 
 class IProductRepository:

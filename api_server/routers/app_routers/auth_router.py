@@ -15,14 +15,14 @@ from core.exceptions.handler import AuthLoginException, OAuthException
 from core.exceptions.handler import APIException
 from core.messages import *
 from core.responses.auth_responses import AccountDeletionConfirmation, AvatarUploadResponse, ChangePassword_API, ChangePasswordResponse, DeleteAccountResponse, ErrorResponseModel, LogoutResponse, RefreshTokenRequest, TokenResponse, UserProfileResponse, UserProfileUpdate_API
-from core.api_models import AuthData_API
+from core.models.api_models import AuthData_API
 from core.exceptions.error_responses import ErrorResponse, create_error_response
 from services.auth_service import AuthService
 from services.oauth_config_service import OAuthConfigService
 from services.user_service import UserService
 
 # Import authentication dependencies
-from core.models import AppUser
+from core.models.models import AppUser
 
 
 # ==================== Router ====================

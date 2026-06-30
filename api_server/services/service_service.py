@@ -4,7 +4,7 @@ import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
-from core.api_models import ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
+from core.models.api_models import ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
 from core.exceptions.specific.service_exceptions import (
     ServiceException,
     ServiceNotFoundException,
@@ -19,7 +19,7 @@ from core.exceptions.specific.service_exceptions import (
     ServiceStaffRequirementNotFoundException
 )
 from core.messages import *
-from core.models import ProvidedService, ServiceResourceRequirement, ServiceStaffRequirement
+from core.models.models import ProvidedService, ServiceResourceRequirement, ServiceStaffRequirement
 from repositories.cart_repository import ServiceRepository
 from repositories.supplier_repository import SupplierRepository
 

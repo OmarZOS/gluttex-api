@@ -1,6 +1,6 @@
 # repositories/cart_repository.py
 from typing import Optional, List, Dict, Any
-from core.models import *
+from core.models.models import *
 import storage.storage_broker as storage_broker
 
 class CartRepository:
@@ -123,7 +123,7 @@ class CartRepository:
 
 # repositories/service_repository.py
 from typing import Optional, List
-from core.models import ProvidedService, ServiceResourceRequirement, ServiceStaffRequirement
+from core.models.models import ProvidedService, ServiceResourceRequirement, ServiceStaffRequirement
 import storage.storage_broker as storage_broker
 
 class ServiceRepository:
@@ -272,7 +272,7 @@ class ServiceRepository:
 
 # repositories/financial_repository.py
 from typing import Optional, List
-from core.models import Invoice, Payment
+from core.models.models import Invoice, Payment
 import storage.storage_broker as storage_broker
 
 class FinancialRepository:

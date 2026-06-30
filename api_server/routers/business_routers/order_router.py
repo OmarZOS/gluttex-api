@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks, Query, status
 from typing import List, Optional
 import logging
 
-from core.api_models import OrderedItem_API, PlacedOrder_API
+from core.models.api_models import OrderedItem_API, PlacedOrder_API
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.order_exceptions import (
     OrderNotFoundException,

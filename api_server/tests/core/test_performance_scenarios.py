@@ -2,8 +2,8 @@
 """
 Test performance-related scenarios and edge cases.
 """
-from core.persistent_models import *
-from core.models import *
+from core.models.persistent_models import *
+from core.models.models import *
 import pytest
 import time
 from unittest.mock import MagicMock, patch

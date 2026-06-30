@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from services.helpers.auth.auth_dependencies import JWTBearer
 from repositories.user_repository import UserRepository
-from core.models import AppUser
+from core.models.models import AppUser
 
 def get_user_repository() -> UserRepository:
     return UserRepository()

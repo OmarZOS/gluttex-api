@@ -8,7 +8,7 @@ from datetime import datetime
 import logging
 
 from services.helpers.stock_manager import StockManager, StockTransaction
-from core.api_models import OrderedItem_API, PlacedOrder_API
+from core.models.api_models import OrderedItem_API, PlacedOrder_API
 from core.exceptions.handler import UserNotFoundException
 from core.exceptions.specific.order_exceptions import (
     OrderNotFoundException,
@@ -25,7 +25,7 @@ from core.exceptions.specific.product_exceptions import (
     ProductQuantityNotEnoughException
 )
 from core.messages import *
-from core.models import PlacedOrder, OrderedItem, Product
+from core.models.models import PlacedOrder, OrderedItem, Product
 from repositories.order_repository import OrderRepository, OrderItemRepository
 from repositories.product_repository import ProductRepository
 from repositories.user_repository import UserRepository

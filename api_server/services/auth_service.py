@@ -15,7 +15,7 @@ from core.messages.error_codes import ErrorCode
 from core.messages.http_status import HTTP_417_EXPECTATION_FAILED
 from features.auth_manager import AuthManager
 from repositories.user_repository import UserRepository
-from core.api_models import AppUser_API, AuthData_API
+from core.models.api_models import AppUser_API, AuthData_API
 from core.exceptions.handler import APIException, AuthLoginException, OAuthException, OAuthProviderNotSupportedException
 from core.messages import *
 from constants import *

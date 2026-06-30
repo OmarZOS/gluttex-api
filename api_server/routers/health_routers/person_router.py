@@ -8,7 +8,7 @@ from typing import Optional, List
 import logging
 
 from core.responses.person_responses import BloodTypeResponseModel, PersonResponseModel
-from core.api_models import Person_API, Location_API
+from core.models.api_models import Person_API, Location_API
 from core.response_models import (
     SuccessResponseModel,
     ErrorResponseModel,

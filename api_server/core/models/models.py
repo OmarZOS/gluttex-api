@@ -1,7 +1,7 @@
 from sqlalchemy import BigInteger, Column, DECIMAL, Date, DateTime, Enum, Float, ForeignKeyConstraint, Index, Integer, JSON, String, TIMESTAMP, Table, Text, text
 from sqlalchemy.dialects.mysql import TINYINT
 
-from core.persistent_models import Location,Base, metadata
+from core.models.persistent_models import Location,Base, metadata
 from geoalchemy2.types import Geometry
 from sqlalchemy.orm import declarative_base, relationship
 

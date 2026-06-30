@@ -3,7 +3,7 @@ import json
 import base64
 from typing import Dict, Any
 from datetime import datetime
-from core.api_models import Iproduct_API
+from core.models.api_models import Iproduct_API
 from communication.ai.openai.gpt import call_openai_vision, call_openai
 
 class AIService:

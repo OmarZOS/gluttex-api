@@ -9,7 +9,7 @@ from typing import List, Tuple, Dict, Any, Optional
 from datetime import datetime, timedelta
 
 from services.helpers.stock_manager import StockManager, StockTransaction
-from core.api_models import (
+from core.models.api_models import (
     Cart_API, OrderedItem_API, OrderedService_API, Delivery_API,
     Person_API, Payment_API
 )
@@ -31,7 +31,7 @@ from core.exceptions.specific.cart_exceptions import (
 )
 from core.exceptions.handler import (ProductNotFoundException,
     InsufficientStockException)
-from core.models import Cart, Delivery, OrderedItem, OrderedService, Product, Invoice, Payment
+from core.models.models import Cart, Delivery, OrderedItem, OrderedService, Product, Invoice, Payment
 from repositories.cart_repository import CartRepository, FinancialRepository
 from repositories.product_repository import ProductRepository
 from services.person_service import PersonService
@@ -362,7 +362,7 @@ class CartService:
         Returns:
             Built Cart object
         """
-        from core.models import Cart
+        from core.models.models import Cart
         
         now = datetime.now()
         
@@ -397,7 +397,7 @@ class CartService:
             cart.delivery = delivery
         else:
             # Create default empty delivery
-            from core.models import Delivery
+            from core.models.models import Delivery
             cart.delivery = Delivery()
         
         # Add financial flags

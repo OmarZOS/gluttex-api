@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import List, Optional
 import logging
 
-from core.api_models import (
+from core.models.api_models import (
     ProvidedService_API, 
     ServiceResourceRequirement_API, 
     ServiceStaffRequirement_API

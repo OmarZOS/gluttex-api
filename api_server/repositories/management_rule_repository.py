@@ -1,7 +1,7 @@
 # repositories/management_rule_repository.py
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from core.models import ManagementRule, AppUser, ProductProvider, Person
+from core.models.models import ManagementRule, AppUser, ProductProvider, Person
 import storage.storage_broker as storage_broker
 from datetime import datetime, timedelta
 
@@ -222,7 +222,7 @@ class ManagementRuleRepository:
 
 # repositories/staff_repository.py (if you want separate staff-specific operations)
 from typing import Optional, List
-from core.models import ManagementRule
+from core.models.models import ManagementRule
 import storage.storage_broker as storage_broker
 
 class StaffRepository:

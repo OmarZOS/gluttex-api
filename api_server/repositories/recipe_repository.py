@@ -1,6 +1,6 @@
 # repositories/recipe_repository.py
 from typing import Optional, List
-from core.models import (
+from core.models.models import (
     Recipe, RecipeCategory, RecipeContainsIngredient, 
     RecipeImage, Ingredient, RecipeReaction
 )

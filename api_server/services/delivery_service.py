@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import BackgroundTasks
 import logging
 
-from core.api_models import Delivery_API
+from core.models.api_models import Delivery_API
 from core.exceptions.specific.delivery_exceptions import (
     DeliveryNotFoundException,
     DeliveryCreationFailedException,
@@ -22,7 +22,7 @@ from core.exceptions.specific.delivery_exceptions import (
     AddressNotFoundException,
     DeliveryAlreadyDeliveredException
 )
-from core.models import Delivery
+from core.models.models import Delivery
 from repositories.delivery_repository import DeliveryRepository
 from repositories.address_repository import AddressRepository
 from services.location_service import LocationService

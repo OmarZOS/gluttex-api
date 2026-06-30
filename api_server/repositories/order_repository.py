@@ -1,6 +1,6 @@
 # repositories/order_repository.py
 from typing import Optional, List, Dict, Any
-from core.models import PlacedOrder, OrderedItem, Product, AppUser, Person
+from core.models.models import PlacedOrder, OrderedItem, Product, AppUser, Person
 import storage.storage_broker as storage_broker
 
 class OrderRepository:
@@ -136,7 +136,7 @@ class OrderRepository:
 
 # repositories/order_item_repository.py
 from typing import Optional, List
-from core.models import OrderedItem
+from core.models.models import OrderedItem
 import storage.storage_broker as storage_broker
 
 class OrderItemRepository:

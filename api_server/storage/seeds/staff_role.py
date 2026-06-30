@@ -7,7 +7,7 @@ import logging
 from typing import Dict, Any, List, Optional
 
 from storage.storage_broker import insert_record, get, session_scope
-from core import models
+from core.models import models
 
 logger = logging.getLogger(__name__)
 
@@ -366,7 +366,7 @@ def get_staff_roles_by_category_name(category_name: str) -> List[Dict[str, Any]]
     Returns:
         List of role dictionaries
     """
-    from core import models
+    from core.models import models
     
     with session_scope() as session:
         # First get the category ID

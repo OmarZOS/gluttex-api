@@ -10,7 +10,7 @@ from fastapi import BackgroundTasks
 
 from services.helpers.notification_builder_service import NotificationBuilderService
 from repositories.user_repository import UserRepository
-from core.api_models import ManagementRule_API, Notification_API
+from core.models.api_models import ManagementRule_API, Notification_API
 from core.exceptions.specific.staff_exceptions import (
     StaffException,
     RuleNotFoundException,
@@ -28,7 +28,7 @@ from core.exceptions.specific.staff_exceptions import (
     StaffPermissionDeniedException
 )
 from core.messages.error_codes import ErrorCode
-from core.models import ManagementRule
+from core.models.models import ManagementRule
 from repositories.management_rule_repository import ManagementRuleRepository
 from repositories.supplier_repository import OrganisationRepository, SupplierRepository
 from services.notification_service import NotificationService

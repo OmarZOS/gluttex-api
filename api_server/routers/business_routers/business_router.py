@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Any
 import logging
 
 from core.exceptions.specific.finance_exceptions import FinancialItemNotFoundException, PaymentCreationFailedException
-from core.api_models import (
+from core.models.api_models import (
     Cart_API, Delivery_API, Payment_API, Deposit_API, AdditionalFee_API,
     OrderedItem_API, OrderedService_API, Person_API, PlacedOrder_API,
     ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API

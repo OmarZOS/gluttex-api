@@ -1,10 +1,10 @@
 # services/medical_service.py
 from typing import List, Optional, Dict, Any
 from datetime import datetime
-from core.api_models import Serology_API, Symptoms_API
+from core.models.api_models import Serology_API, Symptoms_API
 from core.exceptions.handler import APIException
 from core.messages import *
-from core.models import Serology, SerologyIndicator, Symptom, SymptomsOccurence, PresentedSymptom
+from core.models.models import Serology, SerologyIndicator, Symptom, SymptomsOccurence, PresentedSymptom
 from repositories.medical_repository import MedicalRepository
 
 class MedicalService:

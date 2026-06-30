@@ -3,11 +3,11 @@ import logging
 from typing import Union, Optional, Dict, Any, List
 from core.messages.http_status import *
 from constants import ReactionType
-from core.api_models import ReactionBase, ReactionValue
+from core.models.api_models import ReactionBase, ReactionValue
 from core.exceptions.handler import APIException, UserNotFoundException
 from core.messages import *
 from core.messages.error_codes import ErrorCode
-from core.models import (
+from core.models.models import (
     ProductReaction, RecipeReaction, ProviderReaction, 
     CommentReaction, AppUser, Product, Recipe, 
     ProductProvider, Comment

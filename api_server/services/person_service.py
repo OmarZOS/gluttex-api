@@ -8,12 +8,12 @@ from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 from core.exceptions.specific.person_exceptions import *
-from core.api_models import BloodType, Person_API, Location_API
+from core.models.api_models import BloodType, Person_API, Location_API
 from core.exceptions.handler import (
     DatabaseException
 )
-from core.models import Person, PersonDetails
-from core.persistent_models import Location
+from core.models.models import Person, PersonDetails
+from core.models.persistent_models import Location
 from repositories.person_repository import PersonRepository
 from services.location_service import LocationService
 
@@ -113,7 +113,7 @@ class PersonService:
         Returns:
             Person ORM object (not persisted)
         """
-        from core.models import Person, PersonDetails
+        from core.models.models import Person, PersonDetails
         
         person = Person()
         

@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict, Any
-from core.models import (
+from core.models.models import (
     Product, Iproduct, ProductCategory, ProductImage, 
     ProductProvider, ProductReaction
 )

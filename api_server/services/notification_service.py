@@ -3,7 +3,7 @@ import json
 import logging
 import datetime
 from typing import List, Optional, Dict, Any
-from core.api_models import Notification_API
+from core.models.api_models import Notification_API
 from core.exceptions.specific.notification_exceptions import (
     NotificationException,
     NotificationNotFoundException,
@@ -14,7 +14,7 @@ from core.exceptions.specific.notification_exceptions import (
     NotificationBulkOperationException,
     NotificationValidationException
 )
-from core.models import Notification
+from core.models.models import Notification
 from repositories.notification_repository import NotificationRepository
 from communication.publisher import notify_invitation_to_role_received
 

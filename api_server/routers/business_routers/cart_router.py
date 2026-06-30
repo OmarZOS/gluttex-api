@@ -20,7 +20,7 @@ from core.exceptions.specific.cart_exceptions import (
     CartServiceNotFoundException,
     CartPaymentRequiredException
 )
-from core.api_models import (
+from core.models.api_models import (
     Cart_API, OrderedItem_API, OrderedService_API, Delivery_API, Person_API
 )
 from core.response_models import (

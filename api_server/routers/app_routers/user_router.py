@@ -9,7 +9,7 @@ import logging
 
 from core.exceptions.handler import UserNotFoundException
 from core.responses.user_responses import ReactionResponseModel, UserResponseModel
-from core.api_models import AppUser_API, AppUserUpdate_API, Location_API, Person_API, ReactionBase
+from core.models.api_models import AppUser_API, AppUserUpdate_API, Location_API, Person_API, ReactionBase
 from core.response_models import (
     SuccessResponseModel,
     PaginatedResponseModel,

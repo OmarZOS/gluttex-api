@@ -1,6 +1,6 @@
 from typing import Optional, List
-from core.models import Address
-from core.persistent_models import Location
+from core.models.models import Address
+from core.models.persistent_models import Location
 import storage.storage_broker as storage_broker
 
 class LocationRepository:

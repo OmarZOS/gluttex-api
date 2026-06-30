@@ -194,7 +194,7 @@ services:
     hostname: gluttex-finance
     restart: unless-stopped
     command: uvicorn server:app --host 0.0.0.0 --port 9098 --reload
-    image: omarzos/finance-api
+    image: omarzos/finance-api:latest
     ports:
       - 9098:9098
     environment:
@@ -207,35 +207,57 @@ services:
       - SQL_PORT=${SQL_PORT}
     networks:
       - gluttex-net
-    volumes:
-      - ./:/code
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 512M
 
-  # gluttex-fs:
-  #   container_name: gluttex-fs
-  #   hostname: gluttex-fs
-  #   restart: unless-stopped
-  #   command: uvicorn server:app --host 0.0.0.0 --port 9099 --reload
-  #   image: omarzos/emagrad-fs:latest
-  #   ports:
-  #     - 9099:9099
-  #   environment:
-  #     - FS_PORT=9099
-  #     - FS_BASE_STORAGE=${FS_BASE_STORAGE}
-  #     - FS_CACHE_STORAGE=${FS_CACHE_STORAGE}
-  #   networks:
-  #     - gluttex-net
-  #   # volumes:
-  #   #   - ./volumes/fs/:/fs/
-  #   deploy:
-  #     resources:
-  #       limits:
-  #         cpus: '0.5'
-  #         memory: 512M
+  gluttex-silo:
+    container_name: gluttex-silo
+    hostname: gluttex-silo
+    restart: unless-stopped
+    command: uvicorn server:app --host 0.0.0.0 --port 9096 
+    image: omarzos/esilo-api:latest
+    ports:
+      - 9096:9096
+    environment:
+      - ESILO_PORT=9096
+      - SQL_SCHEMA=${SQL_SCHEMA}
+      - SQL_HOST=${SQL_HOST}
+      - SQL_USER=${SQL_USER}
+      - SQL_PASSWORD=${SQL_PASSWORD}
+      - SQL_DATABASE=${SQL_DATABASE}
+      - SQL_PORT=${SQL_PORT}
+    networks:
+      - gluttex-net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  gluttex-fs:
+    container_name: gluttex-fs
+    hostname: gluttex-fs
+    restart: unless-stopped
+    command: uvicorn server:app --host 0.0.0.0 --port 9099 --reload
+    image: omarzos/emagrad-fs:latest
+    ports:
+      - 9099:9099
+    environment:
+      - FS_PORT=9099
+      - FS_BASE_STORAGE=${FS_BASE_STORAGE}
+      - FS_CACHE_STORAGE=${FS_CACHE_STORAGE}
+    networks:
+      - gluttex-net
+    # volumes:
+    #   - ./volumes/fs/:/fs/
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
 
   # gluttex-stream:
   #   container_name: gluttex-stream

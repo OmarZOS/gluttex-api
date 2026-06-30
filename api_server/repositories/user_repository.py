@@ -1,8 +1,8 @@
 # repositories/user_repository.py
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import joinedload, selectinload
-from core.persistent_models import Location
-from core.models import AppUser,  Person
+from core.models.persistent_models import Location
+from core.models.models import AppUser,  Person
 import storage.storage_broker as storage_broker
 
 class UserRepository:

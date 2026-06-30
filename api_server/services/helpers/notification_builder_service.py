@@ -2,8 +2,8 @@ import json
 import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
-from core.api_models import Notification_API
-from core.models import Notification
+from core.models.api_models import Notification_API
+from core.models.models import Notification
 from services.notification_service import NotificationService
 
 logger = logging.getLogger("FastAPIApp")

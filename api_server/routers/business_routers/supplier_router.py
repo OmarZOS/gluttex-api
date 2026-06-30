@@ -9,7 +9,7 @@ import logging
 
 from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.exceptions.specific.supplier_exceptions import SupplierNotFoundException
-from core.api_models import (
+from core.models.api_models import (
     Location_API, ProductProvider_API, ProviderImage_API,
     ProviderOrganisation_API, OrganisationImage_API
 )
@@ -17,7 +17,7 @@ from core.response_models import (
     ErrorResponseModel,
     get_crud_error_responses
 )
-from core.models import ProductProvider, ProviderOrganisation
+from core.models.models import ProductProvider, ProviderOrganisation
 from services.supplier_service import SupplierService
 from services.supplier_service import OrganisationService
 

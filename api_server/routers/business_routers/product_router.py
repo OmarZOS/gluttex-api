@@ -10,7 +10,7 @@ from typing import Optional, List
 import asyncio
 import logging
 
-from core.api_models import Iproduct_API, Product_API, ProductImage_API
+from core.models.api_models import Iproduct_API, Product_API, ProductImage_API
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.product_exceptions import (
     ProductNotFoundException,

@@ -1,7 +1,7 @@
 # repositories/person_repository.py
 from typing import Optional, List
-from core.persistent_models import Location
-from core.models import Person, PersonDetails
+from core.models.persistent_models import Location
+from core.models.models import Person, PersonDetails
 import storage.storage_broker as storage_broker
 
 class PersonRepository:

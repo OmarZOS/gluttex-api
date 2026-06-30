@@ -1,5 +1,5 @@
 from typing import Optional, List
-from core.models import Address
+from core.models.models import Address
 import storage.storage_broker as storage_broker
 
 class AddressRepository:

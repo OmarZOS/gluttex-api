@@ -1,7 +1,7 @@
 # routers/notification_router.py
 from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
-from core.api_models import Notification_API
+from core.models.api_models import Notification_API
 from core.exceptions.handler import APIException
 from core.messages import *
 from services.notification_service import NotificationService

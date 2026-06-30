@@ -5,8 +5,8 @@ from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from sqlalchemy.orm import InstrumentedAttribute
 import sqlalchemy as sa
-from core.models import AppUser, Product
-from core.persistent_models import Base
+from core.models.models import AppUser, Product
+from core.models.persistent_models import Base
 from core.exceptions.handler import APIException
 
 # class TestDatabaseUtilities:

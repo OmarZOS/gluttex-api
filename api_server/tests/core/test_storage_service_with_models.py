@@ -5,18 +5,18 @@ from sqlalchemy.exc import SQLAlchemyError, OperationalError
 from sqlalchemy.orm import InstrumentedAttribute
 from sqlalchemy import desc, and_, or_
 import sqlalchemy as sa
-from core.models import *
+from core.models.models import *
 from core.exceptions.handler import APIException
 
 # Import your models
 
-from core.models import (
+from core.models.models import (
     Product, AppUser, Cart, Invoice, Person, 
     ProductProvider, Recipe, ProductReaction, OrderedItem,
     
 )
 
-from core.persistent_models import (
+from core.models.persistent_models import (
     BusinessOperation, FinancialDocument
 )
 

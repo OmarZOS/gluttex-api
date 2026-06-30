@@ -1,6 +1,6 @@
 # repositories/delivery_repository.py
 from typing import Optional, List, Dict, Any
-from core.models import Delivery
+from core.models.models import Delivery
 import storage.storage_broker as storage_broker
 
 class DeliveryRepository:

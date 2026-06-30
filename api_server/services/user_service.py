@@ -5,13 +5,13 @@ import datetime
 from typing import Optional
 
 from features.auth_manager import AuthManager
-from core.api_models import AppUser_API, Person_API, Location_API, AppUserUpdate_API
+from core.models.api_models import AppUser_API, Person_API, Location_API, AppUserUpdate_API
 from core.exceptions.handler import (
     APIException,
     UserNotFoundException,
     # Add these specific exceptions to your core/exceptions.py
 )
-from core.models import AppUser
+from core.models.models import AppUser
 from repositories.user_repository import UserRepository
 from repositories.person_repository import PersonRepository
 from repositories.location_repository import LocationRepository

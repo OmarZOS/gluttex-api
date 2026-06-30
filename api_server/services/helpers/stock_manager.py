@@ -13,7 +13,7 @@ from core.exceptions.specific.product_exceptions import (
     ProductNotFoundException,
     ProductQuantityNotEnoughException
 )
-from core.models import Product, OrderedItem
+from core.models.models import Product, OrderedItem
 from repositories.product_repository import ProductRepository
 from communication.publisher import send_to_product_subscribers
 
