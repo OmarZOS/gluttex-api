@@ -311,3 +311,6 @@ class InventoryServiceClient:
     def bulk_release(self, request: BulkInventoryRequest) -> BulkOperationResponse:
         """Bulk release inventory"""
         pass
+
+
+    
