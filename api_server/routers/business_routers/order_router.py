@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, BackgroundTasks, Query, status, HTTPExce
 from typing import List, Optional, Dict, Any
 import logging
 
+from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.models.api_models import OrderedItem_API, PlacedOrder_API
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.order_exceptions import (
@@ -57,6 +58,7 @@ async def create_order(
     submitted_order: PlacedOrder_API,
     background_tasks: BackgroundTasks,
     payment_method: str = Query("card", description="Payment method: card, cash, bank_transfer"),
+    user_id: int = Depends(get_current_user_id),
     order_service: OrderService = Depends(get_order_service),
 ):
     """
@@ -81,6 +83,7 @@ async def create_order(
         )
     
     try:
+        submitted_order.ordering_user_id = user_id  # Ensure the order is associated with the authenticated user
         # Create the order using the service
         quantities, order, result = await order_service.create_order(
             items=ordered_items,
@@ -307,6 +310,7 @@ def update_order(
     updated_items: List[OrderedItem_API],
     updated_order: PlacedOrder_API,
     background_tasks: BackgroundTasks,
+    user_id: int = Depends(get_current_user_id),
     order_service: OrderService = Depends(get_order_service)
 ):
     """
@@ -320,6 +324,12 @@ def update_order(
         if not existing_order:
             raise OrderNotFoundException(order_id=order_id)
         
+        if existing_order.ordering_user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to update this order"
+            )
+
         # Validate status transition if trying to change status
         if updated_order.placed_order_state:
             current_status = getattr(existing_order, 'placed_order_state', 'PENDING')
@@ -374,6 +384,7 @@ def update_order(
 def delete_order(
     order_id: int,
     force_delete: bool = Query(False, description="Force delete even if order has items"),
+    user_id: int = Depends(get_current_user_id),
     order_service: OrderService = Depends(get_order_service)
 ):
     """
@@ -429,6 +440,7 @@ def delete_order(
 def update_order_status(
     order_id: int,
     status: str = Query(..., description="New order status"),
+    user_id: int = Depends(get_current_user_id),
     order_service: OrderService = Depends(get_order_service)
 ):
     """

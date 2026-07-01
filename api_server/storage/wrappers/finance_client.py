@@ -1,16 +1,12 @@
-
-
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, field_validator
-
-from constants import FINANCE_SERVER_URL
-from core.models.finance_models import DailyPaymentStats, InvoicePaymentSummary, PaymentCreate, PaymentRefund, PaymentResponse
+# storage/wrappers/finance_client.py
 
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator
 import logging
 from datetime import datetime
+import json
 
+from constants import FINANCE_SERVER_URL
 from core.models.finance_models import (
     DailyPaymentStats, 
     InvoicePaymentSummary, 
@@ -36,6 +32,65 @@ class FinanceServiceClient:
     base_url = FINANCE_SERVER_URL
     timeout = 30  # Default timeout in seconds
     
+    def _parse_response(self, response) -> Dict:
+        """
+        Parse HTTP response to JSON dictionary.
+        Handles both Response objects and already parsed dicts.
+        """
+        try:
+            # If response is already a dict, return it
+            if isinstance(response, dict):
+                return response
+            
+            # If response has .json() method, use it
+            if hasattr(response, 'json'):
+                try:
+                    return response.json()
+                except Exception as e:
+                    logger.warning(f"Failed to parse response.json(): {e}")
+            
+            # If response has .text, try to parse it
+            if hasattr(response, 'text'):
+                try:
+                    return json.loads(response.text)
+                except Exception as e:
+                    logger.warning(f"Failed to parse response.text: {e}")
+            
+            # If response is a string, try to parse it
+            if isinstance(response, str):
+                try:
+                    return json.loads(response)
+                except Exception as e:
+                    logger.warning(f"Failed to parse response string: {e}")
+            
+            # If response has .content, try to parse it
+            if hasattr(response, 'content'):
+                try:
+                    return json.loads(response.content.decode('utf-8'))
+                except Exception as e:
+                    logger.warning(f"Failed to parse response.content: {e}")
+            
+            # If we have a response object with status_code but no content
+            if hasattr(response, 'status_code'):
+                logger.warning(f"Response object with status {response.status_code} but no parsable content")
+                return {"status_code": response.status_code, "success": False}
+            
+            # Return empty dict as fallback
+            logger.warning(f"Could not parse response: {type(response)}")
+            return {}
+            
+        except Exception as e:
+            logger.error(f"Failed to parse response: {e}")
+            return {}
+    
+    def _get_status_code(self, response) -> int:
+        """Extract status code from response."""
+        if isinstance(response, dict):
+            return response.get('status_code', 500)
+        if hasattr(response, 'status_code'):
+            return response.status_code
+        return 500
+    
     async def create_payment(self, payment_data: PaymentCreate) -> PaymentResponse:
         """
         Create a new payment with pending status.
@@ -57,6 +112,7 @@ class FinanceServiceClient:
             request_data = payment_data.model_dump(exclude_none=True)
             
             logger.info(f"Creating payment for invoice {payment_data.invoice_id}")
+            logger.info(f"Request data: {request_data}")
             
             response = await send_post_request(
                 endpoint=endpoint,
@@ -64,10 +120,22 @@ class FinanceServiceClient:
                 headers={"Content-Type": "application/json"}
             )
             
-            if response.get("status_code") in [200, 201]:
-                return PaymentResponse(**response.get("data", {}))
+            # Parse the response
+            parsed_response = self._parse_response(response)
+            status_code = self._get_status_code(response)
+            
+            logger.info(f"Response status: {status_code}")
+            logger.info(f"Response data: {parsed_response}")
+            
+            if status_code in [200, 201]:
+                # Check if the response has the expected data structure
+                if 'data' in parsed_response:
+                    return PaymentResponse(**parsed_response.get('data', {}))
+                else:
+                    # Try to parse the whole response as PaymentResponse
+                    return PaymentResponse(**parsed_response)
             else:
-                error_msg = response.get("data", {}).get("detail", "Unknown error")
+                error_msg = parsed_response.get('detail', parsed_response.get('message', 'Unknown error'))
                 raise Exception(f"Payment creation failed: {error_msg}")
                 
         except Exception as e:
@@ -101,10 +169,20 @@ class FinanceServiceClient:
                 headers={"Content-Type": "application/json"}
             )
             
-            if response.get("status_code") == 200:
-                return PaymentResponse(**response.get("data", {}))
+            # Parse the response
+            parsed_response = self._parse_response(response)
+            status_code = self._get_status_code(response)
+            
+            logger.info(f"Response status: {status_code}")
+            logger.info(f"Response data: {parsed_response}")
+            
+            if status_code == 200:
+                if 'data' in parsed_response:
+                    return PaymentResponse(**parsed_response.get('data', {}))
+                else:
+                    return PaymentResponse(**parsed_response)
             else:
-                error_msg = response.get("data", {}).get("detail", "Unknown error")
+                error_msg = parsed_response.get('detail', parsed_response.get('message', 'Unknown error'))
                 raise Exception(f"Payment confirmation failed: {error_msg}")
                 
         except Exception as e:
@@ -136,10 +214,17 @@ class FinanceServiceClient:
                 headers={"Content-Type": "application/json"}
             )
             
-            if response.get("status_code") == 200:
-                return PaymentResponse(**response.get("data", {}))
+            # Parse the response
+            parsed_response = self._parse_response(response)
+            status_code = self._get_status_code(response)
+            
+            if status_code == 200:
+                if 'data' in parsed_response:
+                    return PaymentResponse(**parsed_response.get('data', {}))
+                else:
+                    return PaymentResponse(**parsed_response)
             else:
-                error_msg = response.get("data", {}).get("detail", "Unknown error")
+                error_msg = parsed_response.get('detail', parsed_response.get('message', 'Unknown error'))
                 raise Exception(f"Payment rejection failed: {error_msg}")
                 
         except Exception as e:
@@ -166,10 +251,17 @@ class FinanceServiceClient:
                 params={}
             )
             
-            if response.get("status_code") == 200:
-                return InvoicePaymentSummary(**response.get("data", {}))
+            # Parse the response
+            parsed_response = self._parse_response(response)
+            status_code = self._get_status_code(response)
+            
+            if status_code == 200:
+                if 'data' in parsed_response:
+                    return InvoicePaymentSummary(**parsed_response.get('data', {}))
+                else:
+                    return InvoicePaymentSummary(**parsed_response)
             else:
-                error_msg = response.get("data", {}).get("detail", "Unknown error")
+                error_msg = parsed_response.get('detail', parsed_response.get('message', 'Unknown error'))
                 raise Exception(f"Failed to get invoice payments: {error_msg}")
                 
         except Exception as e:
@@ -196,10 +288,17 @@ class FinanceServiceClient:
                 params={}
             )
             
-            if response.get("status_code") == 200:
-                return PaymentResponse(**response.get("data", {}))
+            # Parse the response
+            parsed_response = self._parse_response(response)
+            status_code = self._get_status_code(response)
+            
+            if status_code == 200:
+                if 'data' in parsed_response:
+                    return PaymentResponse(**parsed_response.get('data', {}))
+                else:
+                    return PaymentResponse(**parsed_response)
             else:
-                error_msg = response.get("data", {}).get("detail", "Unknown error")
+                error_msg = parsed_response.get('detail', parsed_response.get('message', 'Unknown error'))
                 raise Exception(f"Failed to get payment details: {error_msg}")
                 
         except Exception as e:
@@ -231,10 +330,17 @@ class FinanceServiceClient:
                 headers={"Content-Type": "application/json"}
             )
             
-            if response.get("status_code") == 200:
-                return PaymentResponse(**response.get("data", {}))
+            # Parse the response
+            parsed_response = self._parse_response(response)
+            status_code = self._get_status_code(response)
+            
+            if status_code == 200:
+                if 'data' in parsed_response:
+                    return PaymentResponse(**parsed_response.get('data', {}))
+                else:
+                    return PaymentResponse(**parsed_response)
             else:
-                error_msg = response.get("data", {}).get("detail", "Unknown error")
+                error_msg = parsed_response.get('detail', parsed_response.get('message', 'Unknown error'))
                 raise Exception(f"Refund failed: {error_msg}")
                 
         except Exception as e:
@@ -268,10 +374,17 @@ class FinanceServiceClient:
                 params=params
             )
             
-            if response.get("status_code") == 200:
-                return DailyPaymentStats(**response.get("data", {}))
+            # Parse the response
+            parsed_response = self._parse_response(response)
+            status_code = self._get_status_code(response)
+            
+            if status_code == 200:
+                if 'data' in parsed_response:
+                    return DailyPaymentStats(**parsed_response.get('data', {}))
+                else:
+                    return DailyPaymentStats(**parsed_response)
             else:
-                error_msg = response.get("data", {}).get("detail", "Unknown error")
+                error_msg = parsed_response.get('detail', parsed_response.get('message', 'Unknown error'))
                 raise Exception(f"Failed to get daily stats: {error_msg}")
                 
         except Exception as e:
@@ -293,12 +406,15 @@ class FinanceServiceClient:
                 params={}
             )
             
-            if response.get("status_code") == 200:
-                return response.get("data", {"status": "healthy"})
+            # Parse the response
+            parsed_response = self._parse_response(response)
+            status_code = self._get_status_code(response)
+            
+            if status_code == 200:
+                return parsed_response.get('data', {"status": "healthy"})
             else:
-                return {"status": "unhealthy", "error": response.get("data", {}).get("detail", "Unknown error")}
+                return {"status": "unhealthy", "error": parsed_response.get('detail', 'Unknown error')}
                 
         except Exception as e:
             logger.error(f"Health check failed: {e}")
             return {"status": "unhealthy", "error": str(e)}
-

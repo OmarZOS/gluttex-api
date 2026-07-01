@@ -298,10 +298,10 @@ class ProductService:
         logger.info(f"Updating product with ID: {product_id}")
         
         # Validate category
-        product_category = self.product_repo.get_product_category_by_id(product_api.id_product_category)
+        product_category = self.product_repo.get_product_category_by_id(product_api.product_category_id)
         if not product_category:
-            logger.warning(f"Product category not found with ID: {product_api.id_product_category}")
-            raise ProductCategoryNotFoundException(category_id=product_api.id_product_category)
+            logger.warning(f"Product category not found with ID: {product_api.product_category_id}")
+            raise ProductCategoryNotFoundException(category_id=product_api.product_category_id)
         
         # Get existing product
         product = self.get_product_by_id(product_id)

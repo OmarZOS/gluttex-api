@@ -104,15 +104,18 @@ class OrderRepository:
         from features.insertion import update_record_in_api
         return update_record_in_api(order)
     
-    def delete_order(self, order: PlacedOrder) -> bool:
-        """Delete an order"""
-        from features.insertion import delete_record_from_api
-        return delete_record_from_api(order)
     
     def delete_order_item(self, item: OrderedItem) -> bool:
         """Delete an order item"""
         from features.insertion import delete_record_from_api
         return delete_record_from_api(item)
+        
+    def delete_order(self, order: PlacedOrder) -> bool:
+        """Delete an order"""
+        from features.insertion import delete_record_from_api
+        for item in order.ordered_item:
+            self.delete_order_item(item)
+        return delete_record_from_api(order)
     
     def create_order_item(self, item: OrderedItem) -> OrderedItem:
         """Create an order item"""

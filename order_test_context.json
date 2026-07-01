@@ -1,0 +1,71 @@
+{
+  "users": [
+    {
+      "id": 6,
+      "username": "testuser_7d3d7fab",
+      "email": "test_af8d66c7@example.com",
+      "password": "Test_ea2b0b9f!@#",
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBfdXNlcl9pZCI6IjYiLCJ1c2VybmFtZSI6InRlc3R1c2VyXzdkM2Q3ZmFiIiwiZW1haWwiOiJ0ZXN0X2FmOGQ2NmM3QGV4YW1wbGUuY29tIiwiZmlyc3RfbmFtZSI6bnVsbCwibGFzdF9uYW1lIjpudWxsLCJpc3MiOiJnbHV0dGV4LWFwaSIsImF1ZCI6WyJnbHV0dGV4LXdlYiIsImdsdXR0ZXgtbW9iaWxlIl0sImFjY2Vzc190b2tlbiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSjBaWE4wZFhObGNsODNaRE5rTjJaaFlpSXNJbUZ3Y0Y5MWMyVnlYMmxrSWpvaU5pSXNJblZ6WlhKdVlXMWxJam9pZEdWemRIVnpaWEpmTjJRelpEZG1ZV0lpTENKbGJXRnBiQ0k2SW5SbGMzUmZZV1k0WkRZMll6ZEFaWGhoYlhCc1pTNWpiMjBpTENKbWFYSnpkRjl1WVcxbElqcHVkV3hzTENKc1lYTjBYMjVoYldVaU9tNTFiR3dzSW1WNGNDSTZNVGM0TWprME56STNOU3dpYVdGMElqb3hOemd5T1RRMU5EYzFmUS5FVE9xMkE2b0hxcDc5X1F1QjVRYzVzTF9oeVRyTmJQTUFTTUFHYkx5WHJJIiwicmVmcmVzaF90b2tlbiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUpoY0hCZmRYTmxjbDlwWkNJNk1Dd2lkWE5sY201aGJXVWlPaUowWlhOMGRYTmxjbDgzWkROa04yWmhZaUlzSW5SNWNHVWlPaUp5WldaeVpYTm9JaXdpYVdGMElqb3hOemd5T1RRMU5EYzFMQ0psZUhBaU9qRTNPRFUxTXpjME56VXNJbWx6Y3lJNkltZHNkWFIwWlhndFlYQnBJbjAuWm0yektrSWotV0dJWUlIMlBYa3ZGY2gzcTZaN3l1QUx4dG0tZXpSN0t5byIsImV4cCI6MTc4Mjk0NzI3NSwiaWF0IjoxNzgyOTQ1NDc1fQ.jYfr59ND-pKn_tajMzfdrCm7asR--NVgt-W9xujOaLE",
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBfdXNlcl9pZCI6IjYiLCJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6IjIwMjYtMDctMDhUMjI6Mzc6NTUuMzIwNzQyIiwiaWF0IjoiMjAyNi0wNy0wMVQyMjozNzo1NS4zMjA3NDcifQ.Ln8XQkhSPIGm8nsDPbph2ij1EndIHENHvuLcbSXW39A",
+      "token_expires_at": "2026-07-02T01:07:55.323573",
+      "user_data": {
+        "app_user_name": "testuser_7d3d7fab",
+        "app_user_password": "Test_ea2b0b9f!@#",
+        "app_user_email": "test_af8d66c7@example.com",
+        "app_user_type": "customer",
+        "app_user_preferences": {
+          "theme": "dark",
+          "notifications": true,
+          "language": "en"
+        }
+      },
+      "person_data": {},
+      "location_data": {}
+    },
+    {
+      "id": 7,
+      "username": "testuser_6987e0db",
+      "email": "test_7cabe075@example.com",
+      "password": "Test_dc6b9da3!@#",
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBfdXNlcl9pZCI6IjciLCJ1c2VybmFtZSI6InRlc3R1c2VyXzY5ODdlMGRiIiwiZW1haWwiOiJ0ZXN0XzdjYWJlMDc1QGV4YW1wbGUuY29tIiwiZmlyc3RfbmFtZSI6bnVsbCwibGFzdF9uYW1lIjpudWxsLCJpc3MiOiJnbHV0dGV4LWFwaSIsImF1ZCI6WyJnbHV0dGV4LXdlYiIsImdsdXR0ZXgtbW9iaWxlIl0sImFjY2Vzc190b2tlbiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUp6ZFdJaU9pSjBaWE4wZFhObGNsODJPVGczWlRCa1lpSXNJbUZ3Y0Y5MWMyVnlYMmxrSWpvaU55SXNJblZ6WlhKdVlXMWxJam9pZEdWemRIVnpaWEpmTmprNE4yVXdaR0lpTENKbGJXRnBiQ0k2SW5SbGMzUmZOMk5oWW1Vd056VkFaWGhoYlhCc1pTNWpiMjBpTENKbWFYSnpkRjl1WVcxbElqcHVkV3hzTENKc1lYTjBYMjVoYldVaU9tNTFiR3dzSW1WNGNDSTZNVGM0TWprME56STNOU3dpYVdGMElqb3hOemd5T1RRMU5EYzFmUS5BQnFrOUJRY2ZCTnBZM1FPV0N3VE5vVmFITVlOLVRmTUxnMmRidHlrMkRBIiwicmVmcmVzaF90b2tlbiI6ImV5SmhiR2NpT2lKSVV6STFOaUlzSW5SNWNDSTZJa3BYVkNKOS5leUpoY0hCZmRYTmxjbDlwWkNJNk1Dd2lkWE5sY201aGJXVWlPaUowWlhOMGRYTmxjbDgyT1RnM1pUQmtZaUlzSW5SNWNHVWlPaUp5WldaeVpYTm9JaXdpYVdGMElqb3hOemd5T1RRMU5EYzFMQ0psZUhBaU9qRTNPRFUxTXpjME56VXNJbWx6Y3lJNkltZHNkWFIwWlhndFlYQnBJbjAuc3MyN05RR1gtblB1UmRYLTdhZzB0bV9SejEtV29HYmdTWmNkNEdOdVJhTSIsImV4cCI6MTc4Mjk0NzI3NSwiaWF0IjoxNzgyOTQ1NDc1fQ.gprzJVf8asmqVmUJYJjhTnl8WfZBTRSFXe4iClmzqn0",
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBfdXNlcl9pZCI6IjciLCJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6IjIwMjYtMDctMDhUMjI6Mzc6NTUuMzU1MTYxIiwiaWF0IjoiMjAyNi0wNy0wMVQyMjozNzo1NS4zNTUxNjUifQ.OQSmL_Q7V7U26TKJ2zwJQpr8j01GkbunXpdrEMgoO80",
+      "token_expires_at": "2026-07-02T01:07:55.399499",
+      "user_data": {
+        "app_user_name": "testuser_6987e0db",
+        "app_user_password": "Test_dc6b9da3!@#",
+        "app_user_email": "test_7cabe075@example.com",
+        "app_user_type": "customer",
+        "app_user_preferences": {
+          "theme": "dark",
+          "notifications": true,
+          "language": "en"
+        }
+      },
+      "person_data": {},
+      "location_data": {}
+    }
+  ],
+  "created_orders": [
+    13,
+    14,
+    14,
+    16,
+    17,
+    17,
+    18,
+    18
+  ],
+  "created_products": [
+    6,
+    7
+  ],
+  "created_suppliers": [
+    7
+  ],
+  "created_organisations": [
+    11
+  ],
+  "created_payments": [],
+  "created_invoices": [],
+  "timestamp": "2026-07-02T00:37:56.647847"
+}

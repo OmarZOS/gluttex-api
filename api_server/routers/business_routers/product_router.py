@@ -10,6 +10,7 @@ from typing import Optional, List
 import asyncio
 import logging
 
+from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.models.api_models import Iproduct_API, Product_API, ProductImage_API
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.product_exceptions import (
@@ -25,7 +26,6 @@ from services.helpers.ai_service import AIService
 logger = logging.getLogger(__name__)
 
 product_router = APIRouter()
-
 
 # ==================== Dependency Injection ====================
 
@@ -60,6 +60,7 @@ def get_ai_service() -> AIService:
 )
 async def product_updates(
     product_id: int,
+    user_id: int = Depends(get_current_user_id),
     product_service: ProductService = Depends(get_product_service)
 ):
     """
@@ -324,6 +325,7 @@ def update_product_details(
     product: Product_API,
     image: ProductImage_API,
     background_tasks: BackgroundTasks,
+    user_id: int = Depends(get_current_user_id),
     product_service: ProductService = Depends(get_product_service)
 ):
     """
@@ -349,6 +351,7 @@ async def insert_product_details(
     product: Product_API,
     image: Optional[ProductImage_API] = None,
     iproduct: Optional[Iproduct_API] = None,
+    user_id: int = Depends(get_current_user_id),
     product_service: ProductService = Depends(get_product_service)
 ):
     """
@@ -372,6 +375,7 @@ async def insert_product_details(
 def delete_product_by_id(
     product_id: int,
     force_delete: bool = Query(False, description="Force delete even if product has dependencies"),
+    user_id: int = Depends(get_current_user_id),
     product_service: ProductService = Depends(get_product_service)
 ):
     """

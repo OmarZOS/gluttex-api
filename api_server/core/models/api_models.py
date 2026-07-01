@@ -738,7 +738,7 @@ class ProductProvider_API(BaseModel):
 class ProviderOrganisation_API(BaseModel):
     """Provider organization model"""
     id_provider_organisation: int = Field(default=0, ge=0, description="Organization ID")
-    app_user_id: Optional[int] = Field(..., gt=0, description="User ID")
+    app_user_id: Optional[int] = Field(default=0, description="User ID")
     provider_organisation_name: Optional[str] = Field(default="", max_length=200, description="Organization name")
     provider_organisation_desc: Optional[str] = Field(default="", max_length=500, description="Organization description")
 
