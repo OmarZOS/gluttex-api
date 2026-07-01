@@ -4,6 +4,7 @@
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator
 
+from constants import SILO_SERVER_URL
 from core.models.inventory_models import AvailableQuantityResponse, BulkInventoryRequest, BulkOperationResponse, CheckAndReserveResponse, ConfirmRequest, InventoryOperationResponse, ReleaseRequest, ReserveRequest, StockStatusResponse
 from core.models.finance_models import DailyPaymentStats, InvoicePaymentSummary, PaymentCreate, PaymentRefund, PaymentResponse
 
@@ -20,9 +21,8 @@ logger = logging.getLogger(__name__)
 class InventoryServiceClient:
     """Client for Inventory API"""
     
-    def __init__(self, base_url: str):
-        self.base_url = base_url.rstrip('/')
-        self.timeout = 30
+    base_url = SILO_SERVER_URL
+    timeout = 30
     
     async def reserve_inventory(self, items: List[Dict], item_type: str = 'ordered_item') -> Dict:
         """

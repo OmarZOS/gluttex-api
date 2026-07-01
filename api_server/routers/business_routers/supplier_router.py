@@ -202,7 +202,7 @@ def update_supplier(
     """
     logger.info(f"Updating supplier with ID: {provider_id}")
     provider.id_product_provider = provider_id
-    return supplier_service.update_supplier(provider, image, location)
+    return supplier_service.update_supplier(provider, image, location,user_id)
 
 
 @supplier_router.delete(
@@ -224,13 +224,14 @@ def update_supplier(
 def delete_supplier(
     provider_id: str,
     force_delete: bool = Query(False, description="Force delete even if supplier has products"),
+    user_id: int = Depends(get_current_user_id),
     supplier_service: SupplierService = Depends(get_supplier_service)
 ):
     """
     Delete a supplier.
     """
     logger.info(f"Deleting supplier with ID: {provider_id} (force={force_delete})")
-    supplier_service.delete_supplier(provider_id)
+    supplier_service.delete_supplier(provider_id,user_id)
     return None  # 204 No Content
 
 
@@ -314,6 +315,7 @@ def create_organisation(
     Create a new organisation.
     """
     logger.info(f"Creating new organisation: {organisation.provider_organisation_name}")
+    organisation.app_user_id = user_id
     return organisation_service.create_organisation(organisation, org_image)
 
 
@@ -341,6 +343,8 @@ def update_organisation(
     """
     logger.info(f"Updating organisation with ID: {org_id}")
     organisation.id_provider_organisation = org_id
+    organisation.app_user_id = user_id
+
     return organisation_service.update_organisation(organisation, org_image)
 
 
@@ -363,11 +367,12 @@ def update_organisation(
 def delete_organisation(
     org_id: str,
     force_delete: bool = Query(False, description="Force delete even if organisation has suppliers"),
+    user_id: int = Depends(get_current_user_id),
     organisation_service: OrganisationService = Depends(get_organisation_service)
 ):
     """
     Delete an organisation.
     """
     logger.info(f"Deleting organisation with ID: {org_id} (force={force_delete})")
-    organisation_service.delete_organisation(org_id)
+    organisation_service.delete_organisation(org_id,user_id)
     return None  # 204 No Content

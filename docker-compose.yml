@@ -117,7 +117,7 @@ services:
     command: uvicorn server:app --host 0.0.0.0 --port ${API_PORT} --reload
     image: omarzos/gluttex-api
     ports:
-      - ${API_PORT}
+      - ${API_PORT}:${API_PORT}
     environment:
       - API_PORT=${API_PORT}
       - SQL_SCHEMA=${SQL_SCHEMA}
@@ -175,18 +175,18 @@ services:
     container_name: gluttex-auth
     hostname: gluttex-auth
     restart: unless-stopped
-    command: uvicorn server:app --host 0.0.0.0 --port 9090 --reload # 
+    command: uvicorn server:app --host 0.0.0.0 --port ${AUTH_PORT} --reload # 
     image: omarzos/emastan-auth:latest
     environment:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
-      - AUTH_PORT=9090
+      - AUTH_PORT=${AUTH_PORT}
       - API_SECRET_KEY=${AUTH_SECRET_KEY}
       - API_ALGORITHM=${AUTH_ALGORITHM}
       - AUTH_DATABASE_URL=sqlite:///../auth_db/auth_db_data.db
       - DEFAULT_ADMIN_USERNAME=${DEFAULT_ADMIN_USERNAME}
       - DEFAULT_ADMIN_PASSWORD=${DEFAULT_ADMIN_PASSWORD}
     ports:
-      - 9090:9090
+      - ${AUTH_PORT}:${AUTH_PORT}
     networks:
       - gluttex-net
     # volumes:
@@ -204,7 +204,7 @@ services:
     command: uvicorn server:app --host 0.0.0.0 --port ${FINANCE_SERVER_PORT} --reload
     image: omarzos/finance-api:latest
     ports:
-      - ${FINANCE_SERVER_PORT}
+      - ${FINANCE_SERVER_PORT}:${FINANCE_SERVER_PORT}
     environment:
       - FINANCE_PORT=${FINANCE_SERVER_PORT}
       - SQL_SCHEMA=${SQL_SCHEMA}
@@ -228,7 +228,7 @@ services:
     command: uvicorn server:app --host 0.0.0.0 --port ${SILO_SERVER_PORT} 
     image: omarzos/esilo-api:latest
     ports:
-      - ${SILO_SERVER_PORT}
+      - ${SILO_SERVER_PORT}:${SILO_SERVER_PORT}
     environment:
       - ESILO_PORT=${SILO_SERVER_PORT}
       - SQL_SCHEMA=${SQL_SCHEMA}
@@ -252,7 +252,7 @@ services:
     command: uvicorn server:app --host 0.0.0.0 --port ${FS_PORT} --reload
     image: omarzos/emagrad-fs:latest
     ports:
-      - ${FS_PORT}
+      - ${FS_PORT}:${FS_PORT}
     environment:
       - FS_PORT=${FS_PORT}
       - FS_BASE_STORAGE=${FS_BASE_STORAGE}

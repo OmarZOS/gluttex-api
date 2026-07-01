@@ -3,9 +3,8 @@
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator
 
+from constants import FINANCE_SERVER_URL
 from core.models.finance_models import DailyPaymentStats, InvoicePaymentSummary, PaymentCreate, PaymentRefund, PaymentResponse
-
-
 
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field, field_validator
@@ -34,9 +33,8 @@ logger = logging.getLogger(__name__)
 class FinanceServiceClient:
     """Client for Finance API"""
     
-    def __init__(self, base_url: str):
-        self.base_url = base_url.rstrip('/')
-        self.timeout = 30  # Default timeout in seconds
+    base_url = FINANCE_SERVER_URL
+    timeout = 30  # Default timeout in seconds
     
     async def create_payment(self, payment_data: PaymentCreate) -> PaymentResponse:
         """

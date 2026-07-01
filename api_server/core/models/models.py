@@ -70,11 +70,11 @@ class NamingContribution(Base):
     product_provider_type = relationship('ProductProviderType', back_populates='naming_contribution')
     provided_service_category = relationship('ProvidedServiceCategory', back_populates='naming_contribution')
     provider_details = relationship('ProviderDetails', back_populates='naming_contribution')
-    provider_organisation = relationship('ProviderOrganisation', back_populates='naming_contribution')
     recipe_category = relationship('RecipeCategory', back_populates='naming_contribution')
     symptom = relationship('Symptom', back_populates='naming_contribution')
     iproduct = relationship('Iproduct', back_populates='naming_contribution')
     staff_role = relationship('StaffRole', back_populates='naming_contribution')
+    provider_organisation = relationship('ProviderOrganisation', back_populates='naming_contribution')
 
 
 class Plan(Base):
@@ -112,11 +112,11 @@ class Wallet(Base):
     wallet_version = Column(Integer, server_default=text("'0'"))
 
     delivery_broker = relationship('DeliveryBroker', back_populates='delivery_broker_wallet')
-    provider_organisation = relationship('ProviderOrganisation', back_populates='provider_organisation_wallet')
     money_transaction = relationship('MoneyTransaction', foreign_keys='[MoneyTransaction.money_transaction_wallet_destination_id]', back_populates='money_transaction_wallet_destination')
     money_transaction_ = relationship('MoneyTransaction', foreign_keys='[MoneyTransaction.money_transaction_wallet_source_id]', back_populates='money_transaction_wallet_source')
     ledger_entry = relationship('LedgerEntry', back_populates='wallet')
     app_user = relationship('AppUser', back_populates='app_user_wallet')
+    provider_organisation = relationship('ProviderOrganisation', back_populates='provider_organisation_wallet')
     product_provider = relationship('ProductProvider', back_populates='product_provider_wallet')
 
 
@@ -134,6 +134,7 @@ class DeliveryBroker(Base):
     delivery_broker_image_url = Column(String(255))
     delivery_broker_wallet_id = Column(Integer)
     delivery_broker_price_matrix = Column(Text)
+    verified_delivery_broker = Column(TINYINT)
 
     delivery_broker_wallet = relationship('Wallet', back_populates='delivery_broker')
     delivery = relationship('Delivery', back_populates='delivery_broker')
@@ -154,8 +155,6 @@ class Ingredient(Base):
 
     naming_contribution = relationship('NamingContribution', back_populates='ingredient')
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='contained_ingredient')
-
-
 
 
 class Payment(Base):
@@ -255,31 +254,6 @@ class ProviderDetails(Base):
     product_provider = relationship('ProductProvider', back_populates='product_provider_details')
 
 
-class ProviderOrganisation(Base):
-    __tablename__ = 'provider_organisation'
-    __table_args__ = (
-        ForeignKeyConstraint(['provider_organisation_naming'], ['naming_contribution.id_naming_contribution'], name='fk_provider_organisation_2'),
-        ForeignKeyConstraint(['provider_organisation_wallet_id'], ['wallet.id_wallet'], name='fk_provider_organisation_1'),
-        Index('fk_provider_organisation_1_idx', 'provider_organisation_wallet_id'),
-        Index('fk_provider_organisation_2_idx', 'provider_organisation_naming')
-    )
-
-    idprovider_organisation = Column(Integer, primary_key=True)
-    provider_organisation_naming = Column(Integer)
-    provider_organisation_wallet_id = Column(Integer)
-    provider_organisation_name = Column(String(255))
-    provider_organisation_icon_url = Column(String(255))
-    provider_organisation_desc = Column(String(255))
-
-    naming_contribution = relationship('NamingContribution', back_populates='provider_organisation')
-    provider_organisation_wallet = relationship('Wallet', back_populates='provider_organisation')
-    organisation_image = relationship('OrganisationImage', back_populates='org_ref')
-    product_provider = relationship('ProductProvider', back_populates='product_provider_org')
-    conversation = relationship('Conversation', back_populates='conversation_org')
-    management_rule = relationship('ManagementRule', back_populates='provider_organisation')
-    service_contribution = relationship('ServiceContribution', back_populates='provider_organisation')
-
-
 class RecipeCategory(Base):
     __tablename__ = 'recipe_category'
     __table_args__ = (
@@ -314,7 +288,7 @@ class Symptom(Base):
 class Iproduct(Base):
     __tablename__ = 'iproduct'
     __table_args__ = (
-        ForeignKeyConstraint(['iproduct_category_id'], ['product_category.id_product_category'], onupdate='RESTRICT', name='fk_iproduct_1'),
+        ForeignKeyConstraint(['iproduct_category_id'], ['product_category.id_product_category'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_iproduct_1'),
         ForeignKeyConstraint(['iproduct_naming_ref'], ['naming_contribution.id_naming_contribution'], name='fk_iproduct_2'),
         Index('fk_iproduct_1_idx', 'iproduct_category_id'),
         Index('fk_iproduct_2_idx', 'iproduct_naming_ref')
@@ -339,6 +313,7 @@ class Iproduct(Base):
 
     iproduct_category = relationship('ProductCategory', back_populates='iproduct')
     naming_contribution = relationship('NamingContribution', back_populates='iproduct')
+    prescribed_item = relationship('PrescribedItem', back_populates='iproduct')
     product = relationship('Product', back_populates='product_origin')
 
 
@@ -384,20 +359,6 @@ class MoneyTransaction(Base):
     ledger_entry = relationship('LedgerEntry', back_populates='money_transaction')
 
 
-class OrganisationImage(Base):
-    __tablename__ = 'organisation_image'
-    __table_args__ = (
-        ForeignKeyConstraint(['org_ref_id'], ['provider_organisation.idprovider_organisation'], name='fk_organisation_image_1'),
-        Index('fk_organisation_image_1_idx', 'org_ref_id')
-    )
-
-    id_org_image = Column(Integer, primary_key=True)
-    org_image_url = Column(String(255))
-    org_ref_id = Column(Integer)
-
-    org_ref = relationship('ProviderOrganisation', back_populates='organisation_image')
-
-
 class StaffRole(Base):
     __tablename__ = 'staff_role'
     __table_args__ = (
@@ -415,8 +376,27 @@ class StaffRole(Base):
 
     naming_contribution = relationship('NamingContribution', back_populates='staff_role')
     provided_service_category = relationship('ProvidedServiceCategory', back_populates='staff_role')
+    care_giver = relationship('CareGiver', back_populates='staff_role')
     person_details = relationship('PersonDetails', back_populates='staff_role')
     service_staff_requirement = relationship('ServiceStaffRequirement', back_populates='staff_role')
+
+
+class CareGiver(Base):
+    __tablename__ = 'care_giver'
+    __table_args__ = (
+        ForeignKeyConstraint(['staff_role_id'], ['staff_role.id_staff_role'], name='fk_care_giver_staff_role1'),
+        Index('fk_doctor_staff_role1_idx', 'staff_role_id')
+    )
+
+    id_care_giver = Column(Integer, primary_key=True)
+    staff_role_id = Column(Integer)
+    verified_care_giver = Column(TINYINT)
+    care_giver_license = Column(String(255))
+    care_giver_type = Column(Enum('DOCTOR', 'PHARMACIST', 'PHYSICIAN', 'DIETITIAN', 'PHYSICAL_THERAPIST', 'NURSE'))
+
+    staff_role = relationship('StaffRole', back_populates='care_giver')
+    person = relationship('Person', back_populates='doctor')
+    diagnosis = relationship('Diagnosis', back_populates='doctor')
 
 
 class LedgerEntry(Base):
@@ -460,6 +440,7 @@ class PersonDetails(Base):
     person_updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
     person_job_title = Column(String(255))
     person_job_ref = Column(Integer)
+    verified_person_details = Column(TINYINT)
 
     staff_role = relationship('StaffRole', back_populates='person_details')
     person = relationship('Person', back_populates='person_details')
@@ -468,17 +449,21 @@ class PersonDetails(Base):
 class Person(Base):
     __tablename__ = 'person'
     __table_args__ = (
+        ForeignKeyConstraint(['doctor_id'], ['care_giver.id_care_giver'], name='fk_person_doctor1'),
         ForeignKeyConstraint(['person_details_id'], ['person_details.id_person_details'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_person_1'),
         ForeignKeyConstraint(['person_location_id'], ['location.id_location'], name='fk_person_3'),
         Index('fk_person_1_idx', 'person_details_id'),
-        Index('fk_person_3_idx', 'person_location_id')
+        Index('fk_person_3_idx', 'person_location_id'),
+        Index('fk_person_doctor1_idx', 'doctor_id')
     )
 
     id_person = Column(Integer, primary_key=True)
     person_details_id = Column(Integer)
     person_blood_type = Column(Enum('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'))
     person_location_id = Column(Integer)
+    doctor_id = Column(Integer)
 
+    doctor = relationship('CareGiver', back_populates='person')
     person_details = relationship('PersonDetails', back_populates='person')
     person_location = relationship('Location', back_populates='person')
     app_user = relationship('AppUser', back_populates='app_user_person')
@@ -512,6 +497,7 @@ class AppUser(Base):
     app_user_email = Column(String(255))
     app_user_wallet_id = Column(Integer)
     app_user_login_option = Column(Enum('google', 'gluttex'))
+    verified_app_user = Column(TINYINT)
 
     app_user_person = relationship('Person', back_populates='app_user')
     plan = relationship('Plan', back_populates='app_user')
@@ -519,19 +505,20 @@ class AppUser(Base):
     comment = relationship('Comment', back_populates='app_user')
     notification = relationship('Notification', back_populates='app_user')
     placed_order = relationship('PlacedOrder', back_populates='ordering_user')
-    product_provider = relationship('ProductProvider', back_populates='app_user')
+    provider_organisation = relationship('ProviderOrganisation', back_populates='app_user')
     recipe = relationship('Recipe', back_populates='recipe_owner')
     report = relationship('Report', back_populates='app_user')
+    comment_reaction = relationship('CommentReaction', back_populates='app_user')
+    product_provider = relationship('ProductProvider', back_populates='app_user')
+    recipe_reaction = relationship('RecipeReaction', back_populates='app_user')
     additional_fee = relationship('AdditionalFee', back_populates='additional_fee_user')
     cart = relationship('Cart', foreign_keys='[Cart.cart_client_user]', back_populates='app_user')
     cart_ = relationship('Cart', foreign_keys='[Cart.cart_selling_user]', back_populates='app_user_')
-    comment_reaction = relationship('CommentReaction', back_populates='app_user')
     conversation = relationship('Conversation', foreign_keys='[Conversation.conversation_destination_user_id]', back_populates='conversation_destination_user')
     conversation_ = relationship('Conversation', foreign_keys='[Conversation.conversation_sender_user_id]', back_populates='conversation_sender_user')
     management_rule = relationship('ManagementRule', back_populates='app_user')
     product = relationship('Product', back_populates='app_user')
     provider_reaction = relationship('ProviderReaction', back_populates='app_user')
-    recipe_reaction = relationship('RecipeReaction', back_populates='app_user')
     product_reaction = relationship('ProductReaction', back_populates='app_user')
     service_contribution = relationship('ServiceContribution', back_populates='app_user')
 
@@ -548,6 +535,7 @@ class Patient(Base):
     patient_disease_severity = Column(Enum('mild', 'moderate', 'severe', 'critical'), server_default=text("'mild'"))
 
     patient_person = relationship('Person', back_populates='patient')
+    diagnosis = relationship('Diagnosis', back_populates='patient')
     serology = relationship('Serology', back_populates='patient')
     symptoms_occurence = relationship('SymptomsOccurence', back_populates='patient')
 
@@ -573,6 +561,25 @@ class Comment(Base):
     comment = relationship('Comment', remote_side=[idcomment], back_populates='comment_reverse')
     comment_reverse = relationship('Comment', remote_side=[replying_to], back_populates='comment')
     comment_reaction = relationship('CommentReaction', back_populates='comment')
+
+
+class Diagnosis(Base):
+    __tablename__ = 'diagnosis'
+    __table_args__ = (
+        ForeignKeyConstraint(['doctor_id'], ['care_giver.id_care_giver'], name='fk_diagnosis_doctor1'),
+        ForeignKeyConstraint(['patient_id'], ['patient.id_patient'], name='fk_diagnosis_patient1'),
+        Index('fk_diagnosis_doctor1_idx', 'doctor_id'),
+        Index('fk_diagnosis_patient1_idx', 'patient_id')
+    )
+
+    id_diagnosis = Column(Integer, primary_key=True)
+    patient_id = Column(Integer)
+    doctor_id = Column(Integer)
+    diagnosis_date = Column(Date)
+
+    doctor = relationship('CareGiver', back_populates='diagnosis')
+    patient = relationship('Patient', back_populates='diagnosis')
+    prescription = relationship('Prescription', back_populates='diagnosis')
 
 
 class Notification(Base):
@@ -620,48 +627,34 @@ class PlacedOrder(Base):
     ordered_item = relationship('OrderedItem', back_populates='placed_order')
 
 
-class ProductProvider(Base):
-    __tablename__ = 'product_provider'
+class ProviderOrganisation(Base):
+    __tablename__ = 'provider_organisation'
     __table_args__ = (
-        ForeignKeyConstraint(['product_provider_details_id'], ['provider_details.idprovider_details_id'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_product_provider_3'),
-        ForeignKeyConstraint(['product_provider_location_id'], ['location.id_location'], name='fk_product_provider_4'),
-        ForeignKeyConstraint(['product_provider_org_id'], ['provider_organisation.idprovider_organisation'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_product_provider_2'),
-        ForeignKeyConstraint(['product_provider_owner'], ['app_user.id_app_user'], name='fk_product_provider_5'),
-        ForeignKeyConstraint(['product_provider_type_id'], ['product_provider_type.id_product_provider_type'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_product_provider_1'),
-        ForeignKeyConstraint(['product_provider_wallet_id'], ['wallet.id_wallet'], name='fk_product_provider_6'),
-        Index('fk_product_provider_1_idx', 'product_provider_type_id'),
-        Index('fk_product_provider_2_idx', 'product_provider_org_id'),
-        Index('fk_product_provider_3_idx', 'product_provider_details_id'),
-        Index('fk_product_provider_4_idx', 'product_provider_location_id'),
-        Index('fk_product_provider_5_idx', 'product_provider_owner'),
-        Index('fk_product_provider_6_idx', 'product_provider_wallet_id')
+        ForeignKeyConstraint(['app_user_id'], ['app_user.id_app_user'], name='fk_provider_organisation_app_user1'),
+        ForeignKeyConstraint(['provider_organisation_naming'], ['naming_contribution.id_naming_contribution'], name='fk_provider_organisation_2'),
+        ForeignKeyConstraint(['provider_organisation_wallet_id'], ['wallet.id_wallet'], name='fk_provider_organisation_1'),
+        Index('fk_provider_organisation_1_idx', 'provider_organisation_wallet_id'),
+        Index('fk_provider_organisation_2_idx', 'provider_organisation_naming'),
+        Index('fk_provider_organisation_app_user1_idx', 'app_user_id')
     )
 
-    id_product_provider = Column(Integer, primary_key=True)
-    product_provider_details_id = Column(Integer)
-    product_provider_type_id = Column(Integer)
-    product_provider_location_id = Column(Integer)
-    product_provider_org_id = Column(Integer)
-    product_provider_owner = Column(Integer)
-    product_provider_wallet_id = Column(Integer)
+    idprovider_organisation = Column(Integer, primary_key=True)
+    provider_organisation_naming = Column(Integer)
+    provider_organisation_wallet_id = Column(Integer)
+    provider_organisation_name = Column(String(255))
+    provider_organisation_icon_url = Column(String(255))
+    provider_organisation_desc = Column(String(255))
+    app_user_id = Column(Integer)
+    verified_organisation = Column(TINYINT)
 
-    product_provider_details = relationship('ProviderDetails', back_populates='product_provider')
-    product_provider_location = relationship('Location', back_populates='product_provider')
-    product_provider_org = relationship('ProviderOrganisation', back_populates='product_provider')
-    app_user = relationship('AppUser', back_populates='product_provider')
-    product_provider_type = relationship('ProductProviderType', back_populates='product_provider')
-    product_provider_wallet = relationship('Wallet', back_populates='product_provider')
-    additional_fee = relationship('AdditionalFee', back_populates='additional_fee_on_provider')
-    cart = relationship('Cart', back_populates='cart_product_provider')
-    conversation = relationship('Conversation', back_populates='conversation_provider')
-    delivery = relationship('Delivery', back_populates='delivery_provider')
-    management_rule = relationship('ManagementRule', back_populates='product_provider')
-    product = relationship('Product', back_populates='product_provider')
-    provided_service = relationship('ProvidedService', back_populates='provided_service_product_provider')
-    provider_image = relationship('ProviderImage', back_populates='provider_ref')
-    provider_reaction = relationship('ProviderReaction', back_populates='product_provider')
-    service_package = relationship('ServicePackage', back_populates='service_package_product_provider')
-    service_contribution = relationship('ServiceContribution', back_populates='product_provider')
+    app_user = relationship('AppUser', back_populates='provider_organisation')
+    naming_contribution = relationship('NamingContribution', back_populates='provider_organisation')
+    provider_organisation_wallet = relationship('Wallet', back_populates='provider_organisation')
+    organisation_image = relationship('OrganisationImage', back_populates='org_ref')
+    product_provider = relationship('ProductProvider', back_populates='product_provider_org')
+    conversation = relationship('Conversation', back_populates='conversation_org')
+    management_rule = relationship('ManagementRule', back_populates='provider_organisation')
+    service_contribution = relationship('ServiceContribution', back_populates='provider_organisation')
 
 
 class Recipe(Base):
@@ -743,6 +736,164 @@ class SymptomsOccurence(Base):
     presented_symptom = relationship('PresentedSymptom', back_populates='symptoms_occurence')
 
 
+class CommentReaction(Base):
+    __tablename__ = 'comment_reaction'
+    __table_args__ = (
+        ForeignKeyConstraint(['comment_reacting_user'], ['app_user.id_app_user'], onupdate='RESTRICT', name='fk_product_reaction_11'),
+        ForeignKeyConstraint(['reacted_on_comment'], ['comment.idcomment'], name='fk_product_reaction_30'),
+        Index('fk_product_reaction_1_idx', 'comment_reacting_user'),
+        Index('fk_product_reaction_30_idx', 'reacted_on_comment')
+    )
+
+    id_comment_reaction = Column(Integer, primary_key=True)
+    comment_reacting_user = Column(Integer)
+    comment_reaction = Column(Enum('like', 'dislike', 'love', 'helpful', 'not_helpful', 'star'), server_default=text("'like'"))
+    reacted_on_comment = Column(Integer)
+
+    app_user = relationship('AppUser', back_populates='comment_reaction')
+    comment = relationship('Comment', back_populates='comment_reaction')
+
+
+class OrganisationImage(Base):
+    __tablename__ = 'organisation_image'
+    __table_args__ = (
+        ForeignKeyConstraint(['org_ref_id'], ['provider_organisation.idprovider_organisation'], name='fk_organisation_image_1'),
+        Index('fk_organisation_image_1_idx', 'org_ref_id')
+    )
+
+    id_org_image = Column(Integer, primary_key=True)
+    org_image_url = Column(String(255))
+    org_ref_id = Column(Integer)
+
+    org_ref = relationship('ProviderOrganisation', back_populates='organisation_image')
+
+
+class Prescription(Base):
+    __tablename__ = 'prescription'
+    __table_args__ = (
+        ForeignKeyConstraint(['diagnosis_id'], ['diagnosis.id_diagnosis'], name='fk_prescription_diagnosis1'),
+        Index('fk_prescription_diagnosis1_idx', 'diagnosis_id')
+    )
+
+    id_prescription = Column(Integer, primary_key=True)
+    diagnosis_id = Column(Integer)
+
+    diagnosis = relationship('Diagnosis', back_populates='prescription')
+    prescribed_item = relationship('PrescribedItem', back_populates='prescription')
+
+
+class PresentedSymptom(Base):
+    __tablename__ = 'presented_symptom'
+    __table_args__ = (
+        ForeignKeyConstraint(['presented_symptom_ref_symptom'], ['symptom.id_symptom'], name='fk_presented_symptom_1'),
+        ForeignKeyConstraint(['presented_symptom_ref_symptoms_occurence'], ['symptoms_occurence.id_symptoms_occurence'], name='fk_presented_symptom_2'),
+        Index('fk_presented_symptom_1_idx', 'presented_symptom_ref_symptom'),
+        Index('fk_presented_symptom_2_idx', 'presented_symptom_ref_symptoms_occurence')
+    )
+
+    id_presented_symptom = Column(Integer, primary_key=True)
+    presented_symptom_ref_symptoms_occurence = Column(Integer)
+    presented_symptom_ref_symptom = Column(Integer)
+
+    symptom = relationship('Symptom', back_populates='presented_symptom')
+    symptoms_occurence = relationship('SymptomsOccurence', back_populates='presented_symptom')
+
+
+class ProductProvider(Base):
+    __tablename__ = 'product_provider'
+    __table_args__ = (
+        ForeignKeyConstraint(['product_provider_details_id'], ['provider_details.idprovider_details_id'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_product_provider_3'),
+        ForeignKeyConstraint(['product_provider_location_id'], ['location.id_location'], name='fk_product_provider_4'),
+        ForeignKeyConstraint(['product_provider_org_id'], ['provider_organisation.idprovider_organisation'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_product_provider_2'),
+        ForeignKeyConstraint(['product_provider_owner'], ['app_user.id_app_user'], name='fk_product_provider_5'),
+        ForeignKeyConstraint(['product_provider_type_id'], ['product_provider_type.id_product_provider_type'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_product_provider_1'),
+        ForeignKeyConstraint(['product_provider_wallet_id'], ['wallet.id_wallet'], name='fk_product_provider_6'),
+        Index('fk_product_provider_1_idx', 'product_provider_type_id'),
+        Index('fk_product_provider_2_idx', 'product_provider_org_id'),
+        Index('fk_product_provider_3_idx', 'product_provider_details_id'),
+        Index('fk_product_provider_4_idx', 'product_provider_location_id'),
+        Index('fk_product_provider_5_idx', 'product_provider_owner'),
+        Index('fk_product_provider_6_idx', 'product_provider_wallet_id')
+    )
+
+    id_product_provider = Column(Integer, primary_key=True)
+    product_provider_details_id = Column(Integer)
+    product_provider_type_id = Column(Integer)
+    product_provider_location_id = Column(Integer)
+    product_provider_org_id = Column(Integer)
+    product_provider_owner = Column(Integer)
+    product_provider_wallet_id = Column(Integer)
+    verified_provider = Column(TINYINT)
+
+    product_provider_details = relationship('ProviderDetails', back_populates='product_provider')
+    product_provider_location = relationship('Location', back_populates='product_provider')
+    product_provider_org = relationship('ProviderOrganisation', back_populates='product_provider')
+    app_user = relationship('AppUser', back_populates='product_provider')
+    product_provider_type = relationship('ProductProviderType', back_populates='product_provider')
+    product_provider_wallet = relationship('Wallet', back_populates='product_provider')
+    additional_fee = relationship('AdditionalFee', back_populates='additional_fee_on_provider')
+    cart = relationship('Cart', back_populates='cart_product_provider')
+    conversation = relationship('Conversation', back_populates='conversation_provider')
+    delivery = relationship('Delivery', back_populates='delivery_provider')
+    management_rule = relationship('ManagementRule', back_populates='product_provider')
+    product = relationship('Product', back_populates='product_provider')
+    provided_service = relationship('ProvidedService', back_populates='provided_service_product_provider')
+    provider_image = relationship('ProviderImage', back_populates='provider_ref')
+    provider_reaction = relationship('ProviderReaction', back_populates='product_provider')
+    service_package = relationship('ServicePackage', back_populates='service_package_product_provider')
+    service_contribution = relationship('ServiceContribution', back_populates='product_provider')
+
+
+class RecipeContainsIngredient(Base):
+    __tablename__ = 'recipe_contains_ingredient'
+    __table_args__ = (
+        ForeignKeyConstraint(['contained_ingredient_id'], ['ingredient.id_ingredient'], name='fk_recipe_contains_ingredient_2'),
+        ForeignKeyConstraint(['containing_recipe_id'], ['recipe.id_recipe'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_recipe_contains_ingredient_1'),
+        Index('fk_recipe_contains_ingredient_1_idx', 'containing_recipe_id'),
+        Index('fk_recipe_contains_ingredient_2_idx', 'contained_ingredient_id')
+    )
+
+    idrecipe_contains_ingredient_id = Column(Integer, primary_key=True)
+    containing_recipe_id = Column(Integer)
+    contained_ingredient_id = Column(Integer)
+    contained_quantity = Column(String(45))
+
+    contained_ingredient = relationship('Ingredient', back_populates='recipe_contains_ingredient')
+    containing_recipe = relationship('Recipe', back_populates='recipe_contains_ingredient')
+
+
+class RecipeImage(Base):
+    __tablename__ = 'recipe_image'
+    __table_args__ = (
+        ForeignKeyConstraint(['recipe_ref_id'], ['recipe.id_recipe'], name='fk_recipe_image_1'),
+        Index('fk_recipe_image_1_idx', 'recipe_ref_id')
+    )
+
+    id_recipe_image = Column(Integer, primary_key=True)
+    recipe_image_url = Column(String(255))
+    recipe_ref_id = Column(Integer)
+
+    recipe_ref = relationship('Recipe', back_populates='recipe_image')
+
+
+class RecipeReaction(Base):
+    __tablename__ = 'recipe_reaction'
+    __table_args__ = (
+        ForeignKeyConstraint(['reacted_on_recipe'], ['recipe.id_recipe'], name='fk_recipe_reaction_1'),
+        ForeignKeyConstraint(['recipe_reacting_user'], ['app_user.id_app_user'], name='fk_product_reaction_10'),
+        Index('fk_product_reaction_1_idx', 'recipe_reacting_user'),
+        Index('fk_recipe_reaction_1_idx', 'reacted_on_recipe')
+    )
+
+    id_recipe_reaction = Column(Integer, primary_key=True)
+    recipe_reacting_user = Column(Integer)
+    recipe_reaction = Column(Enum('like', 'dislike', 'love', 'helpful', 'not_helpful', 'star'), server_default=text("'like'"))
+    reacted_on_recipe = Column(Integer)
+
+    recipe = relationship('Recipe', back_populates='recipe_reaction')
+    app_user = relationship('AppUser', back_populates='recipe_reaction')
+
+
 class AdditionalFee(Base):
     __tablename__ = 'additional_fee'
     __table_args__ = (
@@ -806,24 +957,6 @@ class Cart(Base):
     app_user_ = relationship('AppUser', foreign_keys=[cart_selling_user], back_populates='cart_')
     ordered_item = relationship('OrderedItem', back_populates='cart')
     ordered_service = relationship('OrderedService', back_populates='ordered_service_cart')
-
-
-class CommentReaction(Base):
-    __tablename__ = 'comment_reaction'
-    __table_args__ = (
-        ForeignKeyConstraint(['comment_reacting_user'], ['app_user.id_app_user'], onupdate='RESTRICT', name='fk_product_reaction_11'),
-        ForeignKeyConstraint(['reacted_on_comment'], ['comment.idcomment'], name='fk_product_reaction_30'),
-        Index('fk_product_reaction_1_idx', 'comment_reacting_user'),
-        Index('fk_product_reaction_30_idx', 'reacted_on_comment')
-    )
-
-    id_comment_reaction = Column(Integer, primary_key=True)
-    comment_reacting_user = Column(Integer)
-    comment_reaction = Column(Enum('like', 'dislike', 'love', 'helpful', 'not_helpful', 'star'), server_default=text("'like'"))
-    reacted_on_comment = Column(Integer)
-
-    app_user = relationship('AppUser', back_populates='comment_reaction')
-    comment = relationship('Comment', back_populates='comment_reaction')
 
 
 class Conversation(Base):
@@ -923,21 +1056,22 @@ class ManagementRule(Base):
     app_user = relationship('AppUser', back_populates='management_rule')
 
 
-class PresentedSymptom(Base):
-    __tablename__ = 'presented_symptom'
+class PrescribedItem(Base):
+    __tablename__ = 'prescribed_item'
     __table_args__ = (
-        ForeignKeyConstraint(['presented_symptom_ref_symptom'], ['symptom.id_symptom'], name='fk_presented_symptom_1'),
-        ForeignKeyConstraint(['presented_symptom_ref_symptoms_occurence'], ['symptoms_occurence.id_symptoms_occurence'], name='fk_presented_symptom_2'),
-        Index('fk_presented_symptom_1_idx', 'presented_symptom_ref_symptom'),
-        Index('fk_presented_symptom_2_idx', 'presented_symptom_ref_symptoms_occurence')
+        ForeignKeyConstraint(['iproduct_id'], ['iproduct.id_iproduct'], name='fk_table1_iproduct1'),
+        ForeignKeyConstraint(['prescription_id'], ['prescription.id_prescription'], name='fk_table1_prescription1'),
+        Index('fk_table1_iproduct1_idx', 'iproduct_id'),
+        Index('fk_table1_prescription1_idx', 'prescription_id')
     )
 
-    id_presented_symptom = Column(Integer, primary_key=True)
-    presented_symptom_ref_symptoms_occurence = Column(Integer)
-    presented_symptom_ref_symptom = Column(Integer)
+    prescription_id = Column(Integer, primary_key=True, nullable=False)
+    iproduct_id = Column(Integer, primary_key=True, nullable=False)
+    prescribed_amount = Column(Float(asdecimal=True))
+    prescribed_recurrence = Column(String(45))
 
-    symptom = relationship('Symptom', back_populates='presented_symptom')
-    symptoms_occurence = relationship('SymptomsOccurence', back_populates='presented_symptom')
+    iproduct = relationship('Iproduct', back_populates='prescribed_item')
+    prescription = relationship('Prescription', back_populates='prescribed_item')
 
 
 class Product(Base):
@@ -1051,56 +1185,6 @@ class ProviderReaction(Base):
     product_provider = relationship('ProductProvider', back_populates='provider_reaction')
 
 
-class RecipeContainsIngredient(Base):
-    __tablename__ = 'recipe_contains_ingredient'
-    __table_args__ = (
-        ForeignKeyConstraint(['contained_ingredient_id'], ['ingredient.id_ingredient'], name='fk_recipe_contains_ingredient_2'),
-        ForeignKeyConstraint(['containing_recipe_id'], ['recipe.id_recipe'], ondelete='RESTRICT', onupdate='RESTRICT', name='fk_recipe_contains_ingredient_1'),
-        Index('fk_recipe_contains_ingredient_1_idx', 'containing_recipe_id'),
-        Index('fk_recipe_contains_ingredient_2_idx', 'contained_ingredient_id')
-    )
-
-    idrecipe_contains_ingredient_id = Column(Integer, primary_key=True)
-    containing_recipe_id = Column(Integer)
-    contained_ingredient_id = Column(Integer)
-    contained_quantity = Column(String(45))
-
-    contained_ingredient = relationship('Ingredient', back_populates='recipe_contains_ingredient')
-    containing_recipe = relationship('Recipe', back_populates='recipe_contains_ingredient')
-
-
-class RecipeImage(Base):
-    __tablename__ = 'recipe_image'
-    __table_args__ = (
-        ForeignKeyConstraint(['recipe_ref_id'], ['recipe.id_recipe'], name='fk_recipe_image_1'),
-        Index('fk_recipe_image_1_idx', 'recipe_ref_id')
-    )
-
-    id_recipe_image = Column(Integer, primary_key=True)
-    recipe_image_url = Column(String(255))
-    recipe_ref_id = Column(Integer)
-
-    recipe_ref = relationship('Recipe', back_populates='recipe_image')
-
-
-class RecipeReaction(Base):
-    __tablename__ = 'recipe_reaction'
-    __table_args__ = (
-        ForeignKeyConstraint(['reacted_on_recipe'], ['recipe.id_recipe'], name='fk_recipe_reaction_1'),
-        ForeignKeyConstraint(['recipe_reacting_user'], ['app_user.id_app_user'], name='fk_product_reaction_10'),
-        Index('fk_product_reaction_1_idx', 'recipe_reacting_user'),
-        Index('fk_recipe_reaction_1_idx', 'reacted_on_recipe')
-    )
-
-    id_recipe_reaction = Column(Integer, primary_key=True)
-    recipe_reacting_user = Column(Integer)
-    recipe_reaction = Column(Enum('like', 'dislike', 'love', 'helpful', 'not_helpful', 'star'), server_default=text("'like'"))
-    reacted_on_recipe = Column(Integer)
-
-    recipe = relationship('Recipe', back_populates='recipe_reaction')
-    app_user = relationship('AppUser', back_populates='recipe_reaction')
-
-
 class ServicePackage(Base):
     __tablename__ = 'service_package'
     __table_args__ = (
@@ -1159,7 +1243,8 @@ class OrderedItem(Base):
 
     id_ordered_item = Column(Integer, primary_key=True)
     ordered_product_id = Column(Integer)
-    ordered_quantity = Column(Integer)
+    ordered_quantity = Column(Integer, server_default=text("'0'"))
+    reserved_quantity = Column(Integer, server_default=text("'0'"))
     applied_vat = Column(Float(asdecimal=True))
     order_ref = Column(Integer)
     unit_price = Column(Float(asdecimal=True))
@@ -1167,6 +1252,8 @@ class OrderedItem(Base):
     ordered_item_cart_ref = Column(Integer)
     ordered_item_delivery_status = Column(Enum('pending', 'processing', 'shipped', 'delivered', 'cancelled', 'returned', 'partial'), server_default=text("'pending'"))
     ordered_item_delivery_fee = Column(Float(asdecimal=True), server_default=text("'0'"))
+    ordered_item_last_mod = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'))
+    placed_order_creation = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
 
     placed_order = relationship('PlacedOrder', back_populates='ordered_item')
     cart = relationship('Cart', back_populates='ordered_item')
@@ -1336,6 +1423,7 @@ class ServiceStaffRequirement(Base):
 
     staff_role = relationship('StaffRole', back_populates='service_staff_requirement')
     service_staff_requirement_service = relationship('ProvidedService', back_populates='service_staff_requirement')
+
 
 class ProductConsumption(Base):
     __tablename__ = 'product_consumption'

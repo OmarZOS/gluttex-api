@@ -8,6 +8,7 @@ import logging
 from typing import List, Tuple, Dict, Any, Optional
 from datetime import datetime, timedelta
 
+from repositories.financial_repository import FinancialRepository
 from services.helpers.stock_manager import StockManager, StockTransaction
 from core.models.api_models import (
     Cart_API, OrderedItem_API, OrderedService_API, Delivery_API,
@@ -32,7 +33,7 @@ from core.exceptions.specific.cart_exceptions import (
 from core.exceptions.handler import (ProductNotFoundException,
     InsufficientStockException)
 from core.models.models import Cart, Delivery, OrderedItem, OrderedService, Product, Invoice, Payment
-from repositories.cart_repository import CartRepository, FinancialRepository
+from repositories.cart_repository import CartRepository
 from repositories.product_repository import ProductRepository
 from services.person_service import PersonService
 from repositories.user_repository import UserRepository

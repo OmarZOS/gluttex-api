@@ -196,6 +196,8 @@ class SupplierService:
                 supplier_id=provider.id_product_provider,
                 supplier_name=provider.provider_name
             )
+
+        
         
         # Build supplier model (validates supplier type internally)
         new_supplier = self._build_supplier_model(provider, location)
@@ -222,7 +224,8 @@ class SupplierService:
         self,
         provider: ProductProvider_API,
         image: Optional[ProviderImage_API] = None,
-        location: Optional[Location_API] = None
+        location: Optional[Location_API] = None,
+        user_id: Optional[int] = 0
     ) -> ProductProvider:
         """
         Update an existing supplier.
@@ -247,7 +250,15 @@ class SupplierService:
         
         # Fetch existing supplier
         supplier_old = self.get_supplier_by_id(provider.id_product_provider)
-        
+
+        if user_id != supplier_old.product_provider_owner:
+            logger.warning(f"User ID mismatch for supplier {provider.id_product_provider}")
+            raise SupplierUpdateFailedException(
+                supplier_id=provider.id_product_provider,
+                error="User ID mismatch"
+            )
+
+
         # Update details
         if supplier_old.product_provider_details:
             supplier_old.product_provider_details.provider_name = provider.provider_name
@@ -279,7 +290,7 @@ class SupplierService:
                 error=str(e)
             )
     
-    def delete_supplier(self, provider_id: str) -> Dict[str, Any]:
+    def delete_supplier(self, provider_id: str,user_id:int) -> Dict[str, Any]:
         """
         Delete a supplier and associated images.
         
@@ -297,6 +308,13 @@ class SupplierService:
         
         supplier = self.get_supplier_by_id(provider_id)
         
+        if user_id != supplier.product_provider_owner:
+            logger.warning(f"User ID mismatch for supplier {provider_id}")
+            raise SupplierDeleteFailedException(
+                supplier_id=provider_id,
+                error="User ID mismatch"
+            )
+
         # Delete all associated images
         images = self.supplier_repo.get_supplier_images(provider_id)
         for img in images:
@@ -464,6 +482,7 @@ class OrganisationService:
         
         # Build organisation model
         model_org = ProviderOrganisation(
+            app_user_id=org.app_user_id,
             provider_organisation_name=org.provider_organisation_name,
             provider_organisation_desc=org.provider_organisation_desc
         )
@@ -516,7 +535,14 @@ class OrganisationService:
             if existing:
                 logger.warning(f"Organisation name already exists: {organisation.provider_organisation_name}")
                 raise OrganisationNameAlreadyUsedException(org_name=organisation.provider_organisation_name)
-        
+                
+        if org_old.app_user_id != organisation.app_user_id:
+            logger.warning(f"User ID mismatch for organisation {organisation.id_provider_organisation}")
+            raise OrganisationUpdateFailedException(
+                org_id=organisation.id_provider_organisation,
+                error="User ID mismatch"
+            )
+
         # Update fields
         org_old.provider_organisation_name = organisation.provider_organisation_name
         org_old.provider_organisation_desc = organisation.provider_organisation_desc
@@ -537,7 +563,7 @@ class OrganisationService:
                 error=str(e)
             )
     
-    def delete_organisation(self, org_id: str) -> Dict[str, Any]:
+    def delete_organisation(self, org_id: str,user_id:int) -> Dict[str, Any]:
         """
         Delete an organisation and associated images.
         
@@ -554,6 +580,13 @@ class OrganisationService:
         logger.info(f"Deleting organisation with ID: {org_id}")
         
         org = self.get_org_by_id(org_id)
+
+        if user_id != org.app_user_id:
+            logger.warning(f"User ID mismatch for organisation {org_id}")
+            raise OrganisationDeleteFailedException(
+                org_id=org_id,
+                error="User ID mismatch"
+            )
         
         # Delete associated images
         images = self.org_repo.get_org_images(org_id)
