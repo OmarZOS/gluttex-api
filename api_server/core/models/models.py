@@ -1005,7 +1005,7 @@ class Delivery(Base):
     id_delivery = Column(Integer, primary_key=True)
     recipient_person = Column(Integer)
     recipient_provider = Column(Integer)
-    delivery_package_count = Column(String(45))
+    delivery_package_count = Column(Integer)
     delivery_total_weight = Column(DECIMAL(10, 0))
     delivery_cargo_dimensions = Column(String(255))
     delivery_goods_description = Column(Text)

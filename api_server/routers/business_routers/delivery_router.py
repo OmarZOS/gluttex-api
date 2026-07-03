@@ -34,7 +34,7 @@ def get_delivery_service() -> DeliveryService:
 # ==================== Delivery CRUD Endpoints ====================
 
 @delivery_router.post(
-    "/",
+    "",
     status_code=status.HTTP_201_CREATED,
     # response_model=Delivery_API,
     summary="Create delivery",
@@ -58,7 +58,7 @@ def create_delivery(
 
 
 @delivery_router.get(
-    "/",
+    "",
     # response_model=List[Delivery_API],
     summary="Get all deliveries",
     description="Get all deliveries with pagination and filters",

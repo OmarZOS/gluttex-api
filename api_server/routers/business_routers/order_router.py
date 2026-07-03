@@ -56,7 +56,6 @@ def get_order_service() -> OrderService:
 async def create_order(
     ordered_items: List[OrderedItem_API],
     submitted_order: PlacedOrder_API,
-    background_tasks: BackgroundTasks,
     payment_method: str = Query("card", description="Payment method: card, cash, bank_transfer"),
     user_id: int = Depends(get_current_user_id),
     order_service: OrderService = Depends(get_order_service),
@@ -309,7 +308,6 @@ def update_order(
     order_id: int,
     updated_items: List[OrderedItem_API],
     updated_order: PlacedOrder_API,
-    background_tasks: BackgroundTasks,
     user_id: int = Depends(get_current_user_id),
     order_service: OrderService = Depends(get_order_service)
 ):

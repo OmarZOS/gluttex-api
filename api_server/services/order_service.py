@@ -204,12 +204,15 @@ class OrderService:
             ordered_items: List[OrderedItem] = []
             order_total_price: float = 0
             
+            delivery_provider_ids = set()
+
+
             for api_item in items:
                 # Get product for price calculation
                 product = self.product_repo.get_product_by_id(api_item.ordered_product_id)
                 if not product:
                     raise ProductNotFoundException(product_id=api_item.ordered_product_id)
-                
+                delivery_provider_ids.add(product.product_owner)
                 # Build item (without saving yet)
                 item = self._build_ordered_item_model(api_item)
                 item.unit_price = float(product.product_price)
@@ -231,6 +234,7 @@ class OrderService:
                 total_price=max(0, order_total_price),
                 placed_order_state=self._validate_order_status(order_data.placed_order_state or 'PENDING'),
             )
+            placed_order.ordered_item = ordered_items
             
             # Save order to get ID
             created_order = self.order_repo.create_order(placed_order)
@@ -258,15 +262,12 @@ class OrderService:
             logger.info(f"✅ Created invoice: {created_invoice.invoice_id}")
             
             # Create Delivery if data provided
-            if delivery_data:
+            for provider_id in delivery_provider_ids:
                 delivery = Delivery(
-                    delivery_order_ref=created_order.id_placed_order,
-                    delivery_address=delivery_data.get('address'),
-                    delivery_city=delivery_data.get('city'),
-                    delivery_country=delivery_data.get('country', 'DZ'),
-                    delivery_phone=delivery_data.get('phone'),
-                    delivery_status='pending',
-                    delivery_notes=delivery_data.get('notes')
+                    delivery_invoice_ref=created_invoice.invoice_id,
+                    delivery_source_type='placed_order',
+                    delivery_source_id=created_order.id_placed_order,
+                    delivery_provider_id=provider_id
                 )
                 created_delivery = self.delivery_repo.create(delivery)
                 logger.info(f"✅ Created delivery: {created_delivery.id_delivery}")

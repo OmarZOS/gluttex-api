@@ -14,8 +14,8 @@ class DeliveryRepository:
                 {Delivery.id_delivery: delivery_id},
                 [],
                 [
-                    Delivery.cart,
-                    Delivery.placed_order,
+                    # Delivery.cart,
+                    # Delivery.placed_order,
                     Delivery.delivery_provider,
                     Delivery.delivery_broker
                 ],
@@ -48,14 +48,15 @@ class DeliveryRepository:
         if provider_id != 0:
             conditions[Delivery.delivery_provider_id] = provider_id
         if order_id != 0:
-            conditions[Delivery.delivery_placed_order] = order_id
+            conditions[Delivery.delivery_source_id] = order_id
+            conditions[Delivery.delivery_source_type] = "placed_order"
         if broker_id != 0:
             conditions[Delivery.delivery_broker_id] = broker_id
         
         if eager_load:
             eager_load_depth = [
-                Delivery.cart,
-                Delivery.placed_order,
+                # Delivery.cart,
+                # Delivery.placed_order,
                 Delivery.delivery_provider,
                 Delivery.delivery_broker
             ]
@@ -139,7 +140,7 @@ class DeliveryRepository:
                 query = query.filter(Delivery.delivery_status == status)
             else:
                 # Only allow deletion of PENDING deliveries in bulk by default
-                query = query.filter(Delivery.delivery_status == 'PENDING')
+                query = query.filter(Delivery.delivery_status == 'pending')
             
             deliveries_to_delete = query.all()
             deleted_count = 0

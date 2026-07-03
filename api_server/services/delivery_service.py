@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import BackgroundTasks
 import logging
 
-from core.models.api_models import Delivery_API
+from core.models.api_models import Delivery_API, DeliveryUpdate_API
 from core.exceptions.specific.delivery_exceptions import (
     DeliveryNotFoundException,
     DeliveryCreationFailedException,
@@ -33,26 +33,29 @@ logger = logging.getLogger(__name__)
 class DeliveryService:
     """Service for delivery-related business logic"""
     
-    # Valid delivery statuses
+    # Valid delivery statuses (matching database enum)
     VALID_STATUSES = [
-        'PENDING', 'PROCESSING', 'READY_FOR_PICKUP', 'IN_TRANSIT',
-        'OUT_FOR_DELIVERY', 'DELIVERED', 'FAILED', 'CANCELLED', 'RETURNED'
+        'pending', 'processing', 'confirmed', 'shipped',
+        'in_transit', 'out_for_delivery', 'delivered',
+        'failed', 'cancelled', 'returned', 'refunded'
     ]
     
     # Statuses that cannot be modified
-    FROZEN_STATUSES = ['DELIVERED', 'CANCELLED']
+    FROZEN_STATUSES = ['delivered', 'cancelled', 'returned', 'refunded']
     
     # Status transitions that are allowed
     ALLOWED_TRANSITIONS = {
-        'PENDING': ['PROCESSING', 'CANCELLED'],
-        'PROCESSING': ['READY_FOR_PICKUP', 'CANCELLED'],
-        'READY_FOR_PICKUP': ['IN_TRANSIT', 'CANCELLED'],
-        'IN_TRANSIT': ['OUT_FOR_DELIVERY', 'FAILED', 'RETURNED'],
-        'OUT_FOR_DELIVERY': ['DELIVERED', 'FAILED', 'RETURNED'],
-        'FAILED': ['PENDING', 'CANCELLED'],
-        'RETURNED': ['PENDING', 'PROCESSING'],
-        'DELIVERED': [],
-        'CANCELLED': []
+        'pending': ['processing', 'cancelled'],
+        'processing': ['confirmed', 'cancelled'],
+        'confirmed': ['shipped', 'cancelled'],
+        'shipped': ['in_transit', 'cancelled'],
+        'in_transit': ['out_for_delivery', 'failed', 'returned'],
+        'out_for_delivery': ['delivered', 'failed', 'returned'],
+        'failed': ['pending', 'cancelled'],
+        'returned': ['pending', 'processing'],
+        'delivered': [],
+        'cancelled': [],
+        'refunded': []
     }
     
     def __init__(self):
@@ -74,12 +77,21 @@ class DeliveryService:
             )
         
         # Validate package count
-        if delivery_data.delivery_package_count is not None and delivery_data.delivery_package_count < 0:
-            raise DeliveryValidationFailedException(
-                field="delivery_package_count",
-                value=delivery_data.delivery_package_count,
-                reason="Package count cannot be negative"
-            )
+        if delivery_data.delivery_package_count is not None:
+            try:
+                count = int(delivery_data.delivery_package_count)
+                if count < 0:
+                    raise DeliveryValidationFailedException(
+                        field="delivery_package_count",
+                        value=delivery_data.delivery_package_count,
+                        reason="Package count cannot be negative"
+                    )
+            except ValueError:
+                raise DeliveryValidationFailedException(
+                    field="delivery_package_count",
+                    value=delivery_data.delivery_package_count,
+                    reason="Package count must be a valid integer"
+                )
         
         # Validate fee
         if delivery_data.delivery_fee is not None and delivery_data.delivery_fee < 0:
@@ -91,51 +103,74 @@ class DeliveryService:
         
         # Validate status for new deliveries
         if not is_update and delivery_data.delivery_status:
-            if delivery_data.delivery_status not in self.VALID_STATUSES:
+            if delivery_data.delivery_status.value not in self.VALID_STATUSES:
                 raise DeliveryStatusInvalidException(
-                    requested_status=delivery_data.delivery_status,
+                    requested_status=delivery_data.delivery_status.value,
                     allowed_statuses=self.VALID_STATUSES
                 )
         
-        # Validate recipient information
-        has_recipient = (
-            (delivery_data.recipient_person and delivery_data.recipient_person != 0) or
-            (delivery_data.recipient_provider and delivery_data.recipient_provider != 0) or
-            (delivery_data.delivery_placed_order and delivery_data.delivery_placed_order != 0)
-        )
-        
-        if not has_recipient and not is_update:
-            raise DeliveryValidationFailedException(
-                field="recipient",
-                reason="Either recipient person, provider, or order reference is required"
+        # Validate recipient information for new deliveries
+        if not is_update:
+            has_recipient = (
+                (delivery_data.recipient_person and delivery_data.recipient_person != 0) or
+                (delivery_data.recipient_provider and delivery_data.recipient_provider != 0) or
+                (delivery_data.delivery_invoice_ref and delivery_data.delivery_invoice_ref != 0)
             )
+            
+            if not has_recipient:
+                raise DeliveryValidationFailedException(
+                    field="recipient",
+                    reason="Either recipient person, provider, or invoice reference is required"
+                )
+        
+        # Validate source type
+        if delivery_data.delivery_source_type:
+            valid_source_types = ['cart', 'placed_order']
+            if delivery_data.delivery_source_type.value not in valid_source_types:
+                raise DeliveryValidationFailedException(
+                    field="delivery_source_type",
+                    value=delivery_data.delivery_source_type.value,
+                    reason=f"Source type must be one of: {', '.join(valid_source_types)}"
+                )
+        
+        # Validate shipping method
+        if delivery_data.delivery_shipping_method:
+            valid_methods = ['standard', 'express', 'overnight', 'pickup', 'courier', 'same_day', 'international']
+            if delivery_data.delivery_shipping_method.value not in valid_methods:
+                raise DeliveryValidationFailedException(
+                    field="delivery_shipping_method",
+                    value=delivery_data.delivery_shipping_method.value,
+                    reason=f"Shipping method must be one of: {', '.join(valid_methods)}"
+                )
     
     def _validate_status_transition(self, current_status: str, new_status: str):
         """Validate if status transition is allowed"""
         
-        if current_status == new_status:
+        current = current_status.lower()
+        new = new_status.lower()
+        
+        if current == new:
             return True
         
         # Cannot change frozen statuses
-        if current_status in self.FROZEN_STATUSES:
+        if current in self.FROZEN_STATUSES:
             raise DeliveryCannotBeUpdatedException(
                 delivery_id=None,  # Will be set by caller
-                current_status=current_status,
-                attempted_action=f"change status to {new_status}",
+                current_status=current,
+                attempted_action=f"change status to {new}",
                 allowed_actions=["view"]
             )
         
         # Check if transition is allowed
-        allowed = self.ALLOWED_TRANSITIONS.get(current_status, [])
-        if new_status not in allowed:
+        allowed = self.ALLOWED_TRANSITIONS.get(current, [])
+        if new not in allowed:
             raise DeliveryStatusInvalidException(
-                current_status=current_status,
-                requested_status=new_status,
+                requested_status=new,
                 allowed_statuses=allowed
             )
         
         # Check if delivery is already delivered
-        if current_status == 'DELIVERED':
+        if current == 'delivered':
             raise DeliveryAlreadyDeliveredException(
                 delivery_id=None,  # Will be set by caller
                 action="update status"
@@ -157,11 +192,11 @@ class DeliveryService:
             logger.debug("Creating new delivery")
         
         # Update basic delivery information
-        if delivery_data.delivery_package_count is not None and delivery_data.delivery_package_count != 0:
-            delivery.delivery_package_count = str(delivery_data.delivery_package_count)
+        if delivery_data.delivery_package_count is not None:
+            delivery.delivery_package_count = delivery_data.delivery_package_count
         
-        if delivery_data.delivery_total_weight is not None and delivery_data.delivery_total_weight != 0:
-            delivery.delivery_total_weight = float(delivery_data.delivery_total_weight)
+        if delivery_data.delivery_total_weight is not None:
+            delivery.delivery_total_weight = delivery_data.delivery_total_weight
         
         if delivery_data.delivery_cargo_dimensions is not None:
             delivery.delivery_cargo_dimensions = delivery_data.delivery_cargo_dimensions
@@ -176,51 +211,49 @@ class DeliveryService:
             delivery.delivery_merchant_name = delivery_data.delivery_merchant_name
         
         if delivery_data.delivery_shipping_method is not None:
-            delivery.delivery_shipping_method = delivery_data.delivery_shipping_method
+            delivery.delivery_shipping_method = delivery_data.delivery_shipping_method.value
         
         if delivery_data.delivery_special_instructions is not None:
             delivery.delivery_special_instructions = delivery_data.delivery_special_instructions
         
         if delivery_data.delivery_status is not None:
             if existing_delivery:
-                self._validate_status_transition(existing_delivery.delivery_status, delivery_data.delivery_status)
-            delivery.delivery_status = delivery_data.delivery_status
+                self._validate_status_transition(
+                    existing_delivery.delivery_status,
+                    delivery_data.delivery_status.value
+                )
+            delivery.delivery_status = delivery_data.delivery_status.value
         elif not existing_delivery:
-            delivery.delivery_status = 'PENDING'
+            delivery.delivery_status = 'pending'
         
         if delivery_data.delivery_fee is not None:
-            delivery.delivery_fee = float(delivery_data.delivery_fee)
+            delivery.delivery_fee = delivery_data.delivery_fee
         
         # Update recipient information
-        if delivery_data.recipient_person is not None and delivery_data.recipient_person != 0:
+        if delivery_data.recipient_person is not None:
             delivery.recipient_person = delivery_data.recipient_person
         
-        if delivery_data.recipient_provider is not None and delivery_data.recipient_provider != 0:
+        if delivery_data.recipient_provider is not None:
             delivery.recipient_provider = delivery_data.recipient_provider
         
-        # Update order reference
-        if delivery_data.delivery_placed_order is not None and delivery_data.delivery_placed_order != 0:
-            delivery.delivery_placed_order = delivery_data.delivery_placed_order
-        
-        # Update provider and broker information
-        if delivery_data.delivery_provider_id is not None and delivery_data.delivery_provider_id != 0:
-            delivery.delivery_provider_id = delivery_data.delivery_provider_id
-        
-        if delivery_data.delivery_broker_id is not None and delivery_data.delivery_broker_id != 0:
+        # Update broker information
+        if delivery_data.delivery_broker_id is not None:
             delivery.delivery_broker_id = delivery_data.delivery_broker_id
         
-        # Handle ID if provided (for new deliveries, keep id_delivery as None/0)
-        # For new deliveries, don't set id_delivery at all (let DB auto-generate)
-        # For updates, only set if it's provided and non-zero
-        if existing_delivery and delivery_data.id_delivery != 0:
-            delivery.id_delivery = delivery_data.id_delivery
-        elif not existing_delivery:
-            # For new deliveries, id_delivery should be None (will be set by DB)
-            # But we need to handle the test expectation of 0
-            if delivery_data.id_delivery != 0:
-                delivery.id_delivery = delivery_data.id_delivery
-            # Otherwise leave as None (the test expects 0, but that's inconsistent with DB auto-increment)
-            # Let's explicitly set to None for new deliveries without an ID
+        # Update provider information
+        if delivery_data.delivery_provider_id is not None:
+            delivery.delivery_provider_id = delivery_data.delivery_provider_id
+        
+        # Update invoice reference
+        if delivery_data.delivery_invoice_ref is not None:
+            delivery.delivery_invoice_ref = delivery_data.delivery_invoice_ref
+        
+        # Update source information
+        if delivery_data.delivery_source_type is not None:
+            delivery.delivery_source_type = delivery_data.delivery_source_type.value
+        
+        if delivery_data.delivery_source_id is not None:
+            delivery.delivery_source_id = delivery_data.delivery_source_id
         
         # Handle address
         if delivery_data.delivery_address_id is not None and delivery_data.delivery_address_id != 0:
@@ -229,12 +262,6 @@ class DeliveryService:
             if address is None:
                 raise AddressNotFoundException(address_id=delivery_data.delivery_address_id)
             delivery.delivery_address_id = delivery_data.delivery_address_id
-        elif delivery_data.delivery_address_id == 0:
-            # Create new address from delivery data
-            address = self.location_service.build_address_from_delivery(delivery_data)
-            created_address = self.address_repo.create_address(address)
-            delivery.delivery_address_id = created_address.id_address
-            logger.debug(f"Created new address {created_address.id_address} for delivery")
         
         # Handle current address (tracking)
         if delivery_data.delivery_current_address_id is not None and delivery_data.delivery_current_address_id != 0:
@@ -242,7 +269,7 @@ class DeliveryService:
             if current_address is None:
                 raise AddressNotFoundException(address_id=delivery_data.delivery_current_address_id)
             delivery.delivery_current_address_id = delivery_data.delivery_current_address_id
-    
+        
         # Update timestamp
         delivery.delivery_updated_at = datetime.now()
         
@@ -309,7 +336,8 @@ class DeliveryService:
         Raises:
             DeliveryStatusInvalidException: If status is invalid
         """
-        if status not in self.VALID_STATUSES:
+        status_lower = status.lower()
+        if status_lower not in self.VALID_STATUSES:
             logger.warning(f"Invalid status requested: {status}")
             raise DeliveryStatusInvalidException(
                 requested_status=status,
@@ -317,7 +345,7 @@ class DeliveryService:
             )
         
         logger.debug(f"Fetching deliveries with status: {status}")
-        return self.delivery_repo.get_by_status(status)
+        return self.delivery_repo.get_by_status(status_lower)
     
     def create_delivery(self, delivery_data: Delivery_API) -> Delivery:
         """
@@ -333,7 +361,7 @@ class DeliveryService:
             DeliveryValidationFailedException: If validation fails
             DeliveryCreationFailedException: If creation fails
         """
-        logger.info(f"Creating new delivery for order: {delivery_data.delivery_placed_order}")
+        logger.info(f"Creating new delivery for source: {delivery_data.delivery_source_type} {delivery_data.delivery_source_id}")
         
         # Validate data
         self._validate_delivery_data(delivery_data, is_update=False)
@@ -350,7 +378,7 @@ class DeliveryService:
             logger.error(f"Failed to create delivery: {e}")
             raise DeliveryCreationFailedException(
                 error=str(e),
-                order_id=delivery_data.delivery_placed_order,
+                order_id=delivery_data.delivery_source_id,
                 provider_id=delivery_data.delivery_provider_id
             )
     
@@ -428,8 +456,9 @@ class DeliveryService:
         """
         logger.info(f"Updating status for delivery {delivery_id} to '{new_status}'")
         
-        # Create minimal delivery API object
-        status_update = Delivery_API(delivery_status=new_status)
+        # Create minimal delivery API object with status
+        from core.models.api_models import DeliveryStatus
+        status_update = Delivery_API(delivery_status=DeliveryStatus(new_status.lower()))
         
         try:
             return self.update_delivery(delivery_id, status_update, background_tasks)
@@ -498,12 +527,13 @@ class DeliveryService:
         tracking_update = Delivery_API(delivery_current_address_id=current_address_id)
         return self.update_delivery(delivery_id, tracking_update, background_tasks)
     
-    def delete_delivery(self, delivery_id: int) -> Dict[str, Any]:
+    def delete_delivery(self, delivery_id: int, force_delete: bool = False) -> Dict[str, Any]:
         """
         Delete a delivery.
         
         Args:
             delivery_id: Delivery ID to delete
+            force_delete: Force delete even if delivery is in transit
             
         Returns:
             Dictionary with success message
@@ -512,17 +542,18 @@ class DeliveryService:
             DeliveryNotFoundException: If delivery not found
             DeliveryDeleteFailedException: If deletion fails
         """
-        logger.info(f"Deleting delivery with ID: {delivery_id}")
+        logger.info(f"Deleting delivery with ID: {delivery_id} (force={force_delete})")
         
         # Get existing delivery
         existing_delivery = self.get_delivery_by_id(delivery_id)
         
-        # Check if delivery can be deleted (only PENDING, CANCELLED, or FAILED)
-        if existing_delivery.delivery_status not in ['PENDING', 'CANCELLED', 'FAILED']:
+        # Check if delivery can be deleted
+        deletable_statuses = ['pending', 'cancelled', 'failed']
+        if not force_delete and existing_delivery.delivery_status not in deletable_statuses:
             logger.warning(f"Cannot delete delivery {delivery_id} with status: {existing_delivery.delivery_status}")
             raise DeliveryDeleteFailedException(
                 delivery_id=delivery_id,
-                error=f"Cannot delete delivery with status: {existing_delivery.delivery_status}"
+                error=f"Cannot delete delivery with status: {existing_delivery.delivery_status}. Use force_delete=True to override."
             )
         
         # Delete from database
@@ -569,8 +600,11 @@ class DeliveryService:
         logger.info(f"Bulk deleting deliveries - provider:{provider_id}, order:{order_id}, status:{status}, force:{force_delete}")
         
         try:
+            # Convert status to lowercase if provided
+            status_lower = status.lower() if status else None
+            
             deleted_count = self.delivery_repo.bulk_delete_by_criteria(
-                provider_id, order_id, status, force_delete
+                provider_id, order_id, status_lower, force_delete
             )
             
             logger.info(f"Bulk deleted {deleted_count} deliveries")
@@ -581,13 +615,12 @@ class DeliveryService:
                 "filters": {
                     "provider_id": provider_id if provider_id > 0 else None,
                     "order_id": order_id if order_id > 0 else None,
-                    "status": status,
+                    "status": status_lower,
                     "force_delete": force_delete
                 }
             }
         except Exception as e:
             logger.error(f"Failed to bulk delete deliveries: {e}")
-            # Pass the error in the details parameter
             raise DeliveryBulkDeleteFailedException(
                 provider_id=provider_id if provider_id > 0 else None,
                 order_id=order_id if order_id > 0 else None,
@@ -621,10 +654,11 @@ class DeliveryService:
             DeliveryBulkUpdateFailedException: If some updates fail
             DeliveryStatusInvalidException: If status is invalid
         """
-        logger.info(f"Bulk updating status for {len(delivery_ids)} deliveries to '{new_status}'")
+        status_lower = new_status.lower()
+        logger.info(f"Bulk updating status for {len(delivery_ids)} deliveries to '{status_lower}'")
         
         # Validate status first
-        if new_status not in self.VALID_STATUSES:
+        if status_lower not in self.VALID_STATUSES:
             raise DeliveryStatusInvalidException(
                 requested_status=new_status,
                 allowed_statuses=self.VALID_STATUSES
@@ -635,7 +669,7 @@ class DeliveryService:
         
         for delivery_id in delivery_ids:
             try:
-                updated_delivery = self.update_delivery_status(delivery_id, new_status, background_tasks)
+                updated_delivery = self.update_delivery_status(delivery_id, status_lower, background_tasks)
                 updated_deliveries.append(updated_delivery)
             except Exception as e:
                 logger.error(f"Failed to update delivery {delivery_id}: {e}")
@@ -648,7 +682,7 @@ class DeliveryService:
             logger.warning(f"Bulk update completed with {len(updated_deliveries)} successes and {len(failed_deliveries)} failures")
             raise DeliveryBulkUpdateFailedException(
                 delivery_ids=delivery_ids,
-                target_status=new_status,
+                target_status=status_lower,
                 success_count=len(updated_deliveries),
                 failed_count=len(failed_deliveries),
                 failed_ids=[f['delivery_id'] for f in failed_deliveries],
@@ -676,7 +710,7 @@ class DeliveryService:
         
         for status in self.VALID_STATUSES:
             count = self.delivery_repo.count_by_status(status)
-            stats["by_status"][status.lower()] = count
+            stats["by_status"][status] = count
             stats["total"] += count
         
         logger.debug(f"Delivery stats: {stats['total']} total deliveries")
@@ -714,7 +748,6 @@ class DeliveryService:
             data: Update data to send
         """
         # This would integrate with your SSE subscriber system
-        # Similar to product notifications
         logger.debug(f"Notifying subscribers for delivery {delivery_id}")
         # Implementation depends on your notification system
         pass

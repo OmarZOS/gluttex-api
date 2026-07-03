@@ -631,32 +631,257 @@ class ServiceStaffRequirement_API(BaseModel):
 # DELIVERY MODELS
 # ============================================================================
 
+class DeliveryShippingMethod(str, Enum):
+    """Delivery shipping methods"""
+    STANDARD = "standard"
+    EXPRESS = "express"
+    OVERNIGHT = "overnight"
+    PICKUP = "pickup"
+    COURIER = "courier"
+    SAME_DAY = "same_day"
+    INTERNATIONAL = "international"
+
+
+class DeliveryStatus(str, Enum):
+    """Delivery status values"""
+    PENDING = "pending"
+    PROCESSING = "processing"
+    CONFIRMED = "confirmed"
+    SHIPPED = "shipped"
+    IN_TRANSIT = "in_transit"
+    OUT_FOR_DELIVERY = "out_for_delivery"
+    DELIVERED = "delivered"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    RETURNED = "returned"
+    REFUNDED = "refunded"
+
+
+class DeliverySourceType(str, Enum):
+    """Delivery source types"""
+    CART = "cart"
+    PLACED_ORDER = "placed_order"
+
+
+# ============================================================================
+# DELIVERY API MODEL
+# ============================================================================
+
 class Delivery_API(BaseModel):
-    """Delivery information"""
+    """Delivery information model matching the database schema"""
+    
+    # Primary key
     id_delivery: Optional[int] = Field(default=0, ge=0, description="Delivery ID")
+    
+    # Recipient information
     recipient_person: Optional[int] = Field(default=None, description="Recipient person ID")
     recipient_provider: Optional[int] = Field(default=None, description="Recipient provider ID")
-    delivery_package_count: Optional[int] = Field(default=1, ge=1, description="Number of packages")
-    delivery_total_weight: Optional[float] = Field(default=0.0, ge=0, description="Total weight (kg)")
-    delivery_cargo_dimensions: Optional[str] = Field(default="", max_length=100, description="Dimensions (LxWxH)")
-    delivery_goods_description: Optional[str] = Field(default="", max_length=500, description="Goods description")
-    hs_code: Optional[str] = Field(default="", max_length=20, description="HS code")
-    delivery_merchant_name: Optional[str] = Field(default="", max_length=200, description="Merchant name")
-    delivery_shipping_method: Optional[str] = Field(default="standard", max_length=50, description="Shipping method")
-    delivery_special_instructions: Optional[str] = Field(default="", max_length=500, description="Special instructions")
-    delivery_status: Optional[str] = Field(default="PENDING", max_length=50, description="Delivery status")
-    delivery_address_id: Optional[int] = Field(default=None, description="Delivery address ID")
-    delivery_current_address_id: Optional[int] = Field(default=None, description="Current location address ID")
-    delivery_fee: Optional[float] = Field(default=0.0, ge=0, description="Delivery fee")
-    delivery_placed_order: Optional[int] = Field(default=None, description="Associated order ID")
-    delivery_provider_id: Optional[int] = Field(default=None, description="Delivery provider ID")
-    delivery_broker_id: Optional[int] = Field(default=None, description="Broker ID")
     
-    # Address fields
-    address_street: Optional[str] = Field(default="", max_length=255, description="Street")
-    address_city: Optional[str] = Field(default="", max_length=100, description="City")
-    address_postal_code: Optional[str] = Field(default="", max_length=20, description="Postal code")
-    address_country: Optional[str] = Field(default="", max_length=100, description="Country")
+    # Cargo details
+    delivery_package_count: Optional[int] = Field(default=0, ge=0, description="Number of packages")
+    delivery_total_weight: Optional[float] = Field(default=None, ge=0, description="Total weight (kg)")
+    delivery_cargo_dimensions: Optional[str] = Field(default=None, max_length=255, description="Cargo dimensions (LxWxH)")
+    delivery_goods_description: Optional[str] = Field(default=None, description="Goods description")
+    hs_code: Optional[str] = Field(default=None, max_length=255, description="HS code")
+    delivery_merchant_name: Optional[str] = Field(default=None, max_length=255, description="Merchant name")
+    
+    # Shipping details
+    delivery_shipping_method: DeliveryShippingMethod = Field(
+        default=DeliveryShippingMethod.STANDARD,
+        description="Shipping method"
+    )
+    delivery_special_instructions: Optional[str] = Field(
+        default=None, 
+        max_length=45,
+        description="Special instructions for delivery"
+    )
+    
+    # Status and tracking
+    delivery_status: DeliveryStatus = Field(
+        default=DeliveryStatus.PENDING,
+        description="Current delivery status"
+    )
+    delivery_fee: Optional[float] = Field(default=0.0, ge=0, description="Delivery fee")
+    
+    # Address references
+    delivery_address_id: Optional[int] = Field(default=None, description="Delivery address ID")
+    delivery_current_address_id: Optional[int] = Field(default=None, description="Current tracking address ID")
+    
+    # Relationships
+    delivery_provider_id: Optional[int] = Field(default=None, description="Provider ID")
+    delivery_broker_id: Optional[int] = Field(default=None, description="Broker ID")
+    delivery_invoice_ref: Optional[int] = Field(default=None, description="Invoice reference")
+    
+    # Source tracking
+    delivery_source_type: Optional[DeliverySourceType] = Field(
+        default=None,
+        description="Source type (cart or placed_order)"
+    )
+    delivery_source_id: Optional[int] = Field(
+        default=None,
+        description="Source ID (cart_id or placed_order_id)"
+    )
+    
+    # Timestamps (read-only, populated by database)
+    delivery_created_at: Optional[datetime] = Field(
+        default=None,
+        description="Creation timestamp (auto-generated)"
+    )
+    delivery_updated_at: Optional[datetime] = Field(
+        default=None,
+        description="Last update timestamp (auto-generated)"
+    )
+    
+    # ==================== VALIDATORS ====================
+    
+    @field_validator('delivery_total_weight')
+    @classmethod
+    def validate_weight(cls, v: Optional[float]) -> Optional[float]:
+        """Validate total weight is positive"""
+        if v is not None and v < 0:
+            raise ValueError('Total weight must be greater than or equal to 0')
+        return v
+    
+    @field_validator('delivery_fee')
+    @classmethod
+    def validate_fee(cls, v: Optional[float]) -> Optional[float]:
+        """Validate delivery fee is positive"""
+        if v is not None and v < 0:
+            raise ValueError('Delivery fee must be greater than or equal to 0')
+        return v
+    
+    @field_validator('delivery_package_count')
+    @classmethod
+    def validate_package_count(cls, v: Optional[str]) -> Optional[str]:
+        """Validate package count is a positive integer string"""
+        if v is not None:
+            if v <= 0:
+                raise ValueError('Package count must be greater than 0')
+        return v
+    
+    @field_validator('delivery_source_type')
+    @classmethod
+    def validate_source_type(cls, v: Optional[DeliverySourceType]) -> Optional[DeliverySourceType]:
+        """Validate source type is valid"""
+        if v is not None and v not in [DeliverySourceType.CART, DeliverySourceType.PLACED_ORDER]:
+            raise ValueError('Source type must be either "cart" or "placed_order"')
+        return v
+    
+    @field_validator('delivery_status')
+    @classmethod
+    def validate_status(cls, v: Optional[DeliveryStatus]) -> Optional[DeliveryStatus]:
+        """Validate delivery status is valid"""
+        valid_statuses = [s.value for s in DeliveryStatus]
+        if v is not None and v.value not in valid_statuses:
+            raise ValueError(f'Invalid delivery status. Must be one of: {", ".join(valid_statuses)}')
+        return v
+    
+    @field_validator('delivery_shipping_method')
+    @classmethod
+    def validate_shipping_method(cls, v: Optional[DeliveryShippingMethod]) -> Optional[DeliveryShippingMethod]:
+        """Validate shipping method is valid"""
+        valid_methods = [m.value for m in DeliveryShippingMethod]
+        if v is not None and v.value not in valid_methods:
+            raise ValueError(f'Invalid shipping method. Must be one of: {", ".join(valid_methods)}')
+        return v
+    
+    # ==================== HELPER METHODS ====================
+    
+    def to_db_dict(self) -> Dict[str, Any]:
+        """Convert to database dictionary, excluding None values and read-only fields"""
+        data = self.model_dump(exclude_none=True)
+        # Remove read-only fields that are auto-generated
+        data.pop('delivery_created_at', None)
+        data.pop('delivery_updated_at', None)
+        # Convert enums to strings
+        if 'delivery_status' in data and data['delivery_status']:
+            data['delivery_status'] = data['delivery_status'].value
+        if 'delivery_shipping_method' in data and data['delivery_shipping_method']:
+            data['delivery_shipping_method'] = data['delivery_shipping_method'].value
+        if 'delivery_source_type' in data and data['delivery_source_type']:
+            data['delivery_source_type'] = data['delivery_source_type'].value
+        return data
+    
+    @classmethod
+    def from_db_model(cls, db_delivery) -> 'Delivery_API':
+        """Create Delivery_API from database model"""
+        return cls(
+            id_delivery=db_delivery.id_delivery,
+            recipient_person=db_delivery.recipient_person,
+            recipient_provider=db_delivery.recipient_provider,
+            delivery_package_count=db_delivery.delivery_package_count,
+            delivery_total_weight=float(db_delivery.delivery_total_weight) if db_delivery.delivery_total_weight else None,
+            delivery_cargo_dimensions=db_delivery.delivery_cargo_dimensions,
+            delivery_goods_description=db_delivery.delivery_goods_description,
+            hs_code=db_delivery.hs_code,
+            delivery_merchant_name=db_delivery.delivery_merchant_name,
+            delivery_shipping_method=db_delivery.delivery_shipping_method,
+            delivery_special_instructions=db_delivery.delivery_special_instructions,
+            delivery_status=db_delivery.delivery_status,
+            delivery_fee=float(db_delivery.delivery_fee) if db_delivery.delivery_fee else 0.0,
+            delivery_address_id=db_delivery.delivery_address_id,
+            delivery_current_address_id=db_delivery.delivery_current_address_id,
+            delivery_provider_id=db_delivery.delivery_provider_id,
+            delivery_broker_id=db_delivery.delivery_broker_id,
+            delivery_invoice_ref=db_delivery.delivery_invoice_ref,
+            delivery_source_type=db_delivery.delivery_source_type,
+            delivery_source_id=db_delivery.delivery_source_id,
+            delivery_created_at=db_delivery.delivery_created_at,
+            delivery_updated_at=db_delivery.delivery_updated_at
+        )
+
+
+# ============================================================================
+# DELIVERY UPDATE MODEL (for partial updates)
+# ============================================================================
+
+class DeliveryUpdate_API(BaseModel):
+    """Model for partial delivery updates"""
+    
+    recipient_person: Optional[int] = Field(default=None, description="Recipient person ID")
+    recipient_provider: Optional[int] = Field(default=None, description="Recipient provider ID")
+    delivery_package_count: Optional[int] = Field(default=1, ge=0)
+    delivery_total_weight: Optional[float] = Field(default=None, ge=0)
+    delivery_cargo_dimensions: Optional[str] = Field(default=None, max_length=255)
+    delivery_goods_description: Optional[str] = Field(default=None)
+    hs_code: Optional[str] = Field(default=None, max_length=255)
+    delivery_merchant_name: Optional[str] = Field(default=None, max_length=255)
+    delivery_shipping_method: Optional[DeliveryShippingMethod] = Field(default=None)
+    delivery_special_instructions: Optional[str] = Field(default=None, max_length=45)
+    delivery_status: Optional[DeliveryStatus] = Field(default=None)
+    delivery_fee: Optional[float] = Field(default=None, ge=0)
+    delivery_address_id: Optional[int] = Field(default=None)
+    delivery_current_address_id: Optional[int] = Field(default=None)
+    delivery_provider_id: Optional[int] = Field(default=None)
+    delivery_broker_id: Optional[int] = Field(default=None)
+    delivery_invoice_ref: Optional[int] = Field(default=None)
+    
+    def to_db_dict(self) -> Dict[str, Any]:
+        """Convert to database dictionary, excluding None values"""
+        data = self.model_dump(exclude_none=True)
+        # Convert enums to strings
+        if 'delivery_status' in data and data['delivery_status']:
+            data['delivery_status'] = data['delivery_status'].value
+        if 'delivery_shipping_method' in data and data['delivery_shipping_method']:
+            data['delivery_shipping_method'] = data['delivery_shipping_method'].value
+        return data
+
+
+# ============================================================================
+# DELIVERY RESPONSE MODEL (with additional details)
+# ============================================================================
+
+class DeliveryResponse_API(Delivery_API):
+    """Extended delivery response with related data"""
+    
+    provider_name: Optional[str] = Field(default=None, description="Provider name")
+    broker_name: Optional[str] = Field(default=None, description="Broker name")
+    invoice_number: Optional[str] = Field(default=None, description="Invoice number")
+    address_details: Optional[Dict[str, Any]] = Field(default=None, description="Address details")
+    current_address_details: Optional[Dict[str, Any]] = Field(default=None, description="Current address details")
+    
+    class Config:
+        from_attributes = True
 
 # ============================================================================
 # CART & PAYMENT MODELS

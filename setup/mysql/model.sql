@@ -1577,7 +1577,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`delivery` (
   `id_delivery` INT NOT NULL AUTO_INCREMENT,
   `recipient_person` INT NULL,
   `recipient_provider` INT NULL,
-  `delivery_package_count` VARCHAR(45) NULL,
+  `delivery_package_count` INT NULL,
   `delivery_total_weight` DECIMAL NULL,
   `delivery_cargo_dimensions` VARCHAR(255) NULL,
   `delivery_goods_description` TEXT NULL,

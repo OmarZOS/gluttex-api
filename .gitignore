@@ -11,3 +11,6 @@
 /letsencrypt
 auth_test.html
 auth_db_data.db
+test_context.json
+
+

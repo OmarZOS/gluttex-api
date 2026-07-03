@@ -2,6 +2,7 @@
 """
 Order Router Test Runner with Inventory Sync
 Creates products and syncs them to the inventory service before creating orders.
+Uses the same context file as the main test runner.
 Run with: python test_order_runner.py
 """
 
@@ -77,7 +78,7 @@ class TestContext:
     created_invoices: List[int] = field(default_factory=list)
     test_results: List[Dict[str, Any]] = field(default_factory=list)
     
-    def save(self, filename: str = "order_test_context.json"):
+    def save(self, filename: str = "test_context.json"):
         data = {
             'users': [u.to_dict() for u in self.users],
             'created_orders': self.created_orders,
@@ -92,7 +93,7 @@ class TestContext:
             json.dump(data, f, indent=2)
         print(f"💾 Test context saved to {filename}")
     
-    def load(self, filename: str = "order_test_context.json"):
+    def load(self, filename: str = "test_context.json"):
         if Path(filename).exists():
             with open(filename, 'r') as f:
                 data = json.load(f)
@@ -318,60 +319,18 @@ class OrderTestRunner:
             print(f"   ❌ Login error: {e}")
             return False
     
-    # ==================== INVENTORY SYNC ====================
-    
-    async def sync_product_to_inventory(self, product_id: int, quantity: int, token: str) -> bool:
-        """Sync a product to the inventory service (SILO)"""
-        print(f"   🔄 Syncing product {product_id} to inventory...")
+    async def login_all_users(self) -> int:
+        print("\n🔐 Logging in all users...")
+        success_count = 0
         
-        try:
-            # The inventory service might have a sync endpoint or we need to create the product
-            # Using the bulk stock endpoint to check if product exists
-            check_response = await self.client.post(
-                f"{self.silo_url}/esilo/inventory/stock/bulk",
-                json={"product_ids": [product_id]},
-                headers={"Content-Type": "application/json"}
-            )
-            
-            if check_response.status_code == 200:
-                data = check_response.json()
-                if data.get('items') and product_id in data['items']:
-                    print(f"   ✅ Product {product_id} already exists in inventory")
-                    return True
-            
-            # Product doesn't exist in inventory - create it via the main API
-            # The main API should handle creating the product in inventory when product is created
-            # If not, we need to call the inventory service directly
-            
-            # Try to create product in inventory via the main API's product endpoint
-            # This should already be handled when product was created
-            
-            # Alternative: Direct inventory API call to create product
-            # This depends on your inventory service API
-            create_response = await self.client.post(
-                f"{self.silo_url}/esilo/inventory/products",
-                json={
-                    "product_id": product_id,
-                    "initial_quantity": quantity,
-                    "reserved_quantity": 0
-                },
-                headers={"Content-Type": "application/json"}
-            )
-            
-            if create_response.status_code in [200, 201]:
-                print(f"   ✅ Product {product_id} synced to inventory")
-                return True
-            else:
-                print(f"   ⚠️ Could not sync product {product_id}: {create_response.status_code}")
-                # The product might still work if the main API handles it
-                return True  # Assume it works
-                
-        except Exception as e:
-            print(f"   ⚠️ Error syncing product: {e}")
-            # The product might still work if the main API handles it
-            return True
+        for user in self.context.users:
+            if await self.login_user(user):
+                success_count += 1
+        
+        print(f"\n✅ Logged in {success_count}/{len(self.context.users)} users")
+        return success_count
     
-    # ==================== SETUP: Create Supplier, Products, and Sync ====================
+    # ==================== SETUP: Create Supplier and Products ====================
     
     async def setup_supplier_and_products(self, user: TestUser) -> Dict[str, Any]:
         """Create a supplier, products, and sync them to inventory"""
@@ -447,7 +406,7 @@ class OrderTestRunner:
         self.context.created_suppliers.append(supplier_id)
         print(f"   ✅ Created supplier: {supplier_id}")
         
-        # Create products and sync to inventory
+        # Create products
         products = []
         for i in range(3):
             product_data = generate_random_product_data(supplier_id, user.id)
@@ -476,28 +435,40 @@ class OrderTestRunner:
                 })
                 print(f"   ✅ Created product {i+1}: {product_id} - {product_data['product_name']}")
                 
-                # Sync product to inventory
-                await self.sync_product_to_inventory(product_id, product_data["product_quantity"], user.access_token)
+                # Sync product to inventory via the main API's product creation
+                # The product should already be synced if the main API handles it
+                try:
+                    # Verify product exists in inventory
+                    check_response = await self.client.post(
+                        f"{self.silo_url}/esilo/inventory/stock/bulk",
+                        json={"product_ids": [product_id]},
+                        headers={"Content-Type": "application/json"}
+                    )
+                    if check_response.status_code == 200:
+                        data = check_response.json()
+                        if str(product_id) in data:
+                            print(f"   ✅ Product {product_id} verified in inventory")
+                        else:
+                            print(f"   ⚠️ Product {product_id} not found in inventory, syncing...")
+                            # Try to create in inventory
+                            create_response = await self.client.post(
+                                f"{self.silo_url}/esilo/inventory/products",
+                                json={
+                                    "product_id": product_id,
+                                    "initial_quantity": product_data["product_quantity"],
+                                    "reserved_quantity": 0
+                                },
+                                headers={"Content-Type": "application/json"}
+                            )
+                            if create_response.status_code in [200, 201]:
+                                print(f"   ✅ Product {product_id} synced to inventory")
+                            else:
+                                print(f"   ⚠️ Could not sync product {product_id}: {create_response.status_code}")
+                except Exception as e:
+                    print(f"   ⚠️ Could not verify/sync product {product_id}: {e}")
             else:
                 print(f"   ❌ Failed to create product {i+1}: {product_response.status_code}")
                 print(f"      {product_response.text[:200]}")
-        
-        # Verify products exist in inventory
-        print("\n   🔍 Verifying products in inventory...")
-        for product in products:
-            try:
-                check_response = await self.client.post(
-                    f"{self.silo_url}/esilo/inventory/stock/bulk",
-                    json={"product_ids": [product["id"]]},
-                    headers={"Content-Type": "application/json"}
-                )
-                if check_response.status_code == 200:
-                    data = check_response.json()
-                    print(f"   ✅ Product {product['id']} verified in inventory")
-                else:
-                    print(f"   ⚠️ Product {product['id']} not found in inventory: {check_response.status_code}")
-            except Exception as e:
-                print(f"   ⚠️ Could not verify product {product['id']}: {e}")
         
         return {
             "org_id": org_id,
@@ -520,8 +491,8 @@ class OrderTestRunner:
             print("   ❌ No products available to create order")
             return None
         
-        # Select products (use all available products for testing)
-        selected_products = products[:2]  # Use first 2 products
+        # Select products
+        selected_products = products[:2] if len(products) >= 2 else products
         
         # Create ordered items
         ordered_items = []
@@ -611,7 +582,7 @@ class OrderTestRunner:
     
     async def run_tests(self, skip_user_creation: bool = False, 
                        skip_login: bool = False,
-                       context_file: str = "order_test_context.json"):
+                       context_file: str = "test_context.json"):
         print("\n" + "="*70)
         print("🚀 ORDER ROUTER TEST RUNNER (with Inventory Sync)")
         print("="*70)
@@ -620,25 +591,26 @@ class OrderTestRunner:
         print(f"🕐 Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("="*70)
         
-        # Load context
+        # Load context from the main test context file
         if Path(context_file).exists():
             loaded = self.context.load(context_file)
             if loaded:
                 print(f"📂 Loaded {len(self.context.users)} users from context")
-                print(f"📦 Loaded {len(self.context.created_products)} products")
-                print(f"📋 Loaded {len(self.context.created_orders)} orders")
+                print(f"📦 Loaded {len(self.context.created_products)} products from context")
+                print(f"📋 Loaded {len(self.context.created_orders)} orders from context")
+        else:
+            print(f"⚠️ Context file {context_file} not found. Creating new data...")
         
-        # Create users if needed
+        # Create users if needed (only if no users in context)
         if not skip_user_creation and not self.context.users:
             print("\n📝 Creating Test Users")
             print("="*70)
-            # Create 2 users
             for i in range(2):
                 user = await self.create_user()
                 if user:
                     print(f"   ✅ Created user {i+1}: {user.username}")
         elif self.context.users:
-            print(f"\n📋 Using {len(self.context.users)} existing users")
+            print(f"\n📋 Using {len(self.context.users)} existing users from context")
         
         if not self.context.users:
             print("\n❌ No users available. Cannot continue.")
@@ -648,8 +620,7 @@ class OrderTestRunner:
         if not skip_login:
             print("\n🔐 Logging In Users")
             print("="*70)
-            for user in self.context.users:
-                await self.login_user(user)
+            await self.login_all_users()
         else:
             print("\n⏭️ Skipping login step")
         
@@ -702,21 +673,17 @@ class OrderTestRunner:
         print("🧪 Running Order Tests")
         print("="*70)
         
-        # Test 1: Create Order with card
-        print("\n📝 CREATE ORDER TEST (Card)")
-        order_id = await self.test_create_order(test_user, products, "card")
+        # Test: Create Order with different payment methods
+        print("\n📝 CREATE ORDER TESTS")
+        payment_methods = ["card", "cash", "bank_transfer"]
         
-        if order_id and order_id > 0:
-            print(f"\n✅ Order created successfully with ID: {order_id}")
-            
-            # Test 2: Create Order with different payment methods
-            print("\n💳 ORDER WITH DIFFERENT PAYMENT METHODS")
-            for payment_method in ["cash", "bank_transfer"]:
-                order_id = await self.test_create_order(test_user, products, payment_method)
-                if order_id and order_id > 0:
-                    self.context.created_orders.append(order_id)
-        else:
-            print("\n❌ Failed to create order. Check the logs above.")
+        for payment_method in payment_methods:
+            order_id = await self.test_create_order(test_user, products, payment_method)
+            if order_id and order_id > 0:
+                self.context.created_orders.append(order_id)
+                print(f"\n✅ Order created successfully with ID: {order_id} using {payment_method}")
+            else:
+                print(f"\n❌ Failed to create order with {payment_method}. Check the logs above.")
         
         # Save context
         print("\n💾 Saving Test Context")
@@ -756,7 +723,8 @@ class OrderTestRunner:
         print(f"   📋 Orders: {len(self.context.created_orders)}")
         
         if self.context.created_orders:
-            print(f"\n📋 Order IDs: {', '.join(map(str, self.context.created_orders))}")
+            unique_orders = list(set(self.context.created_orders))
+            print(f"\n📋 Order IDs: {', '.join(map(str, unique_orders))}")
         
         if failed == 0:
             print("\n🎉 ALL TESTS PASSED!")
@@ -782,7 +750,7 @@ async def main():
     parser.add_argument("--silo-url", default="http://gluttex-silo:9096")
     parser.add_argument("--skip-user-creation", action="store_true")
     parser.add_argument("--skip-login", action="store_true")
-    parser.add_argument("--context-file", default="order_test_context.json")
+    parser.add_argument("--context-file", default="test_context.json")  # Use main context file
     parser.add_argument("--clear-context", action="store_true")
     
     args = parser.parse_args()
