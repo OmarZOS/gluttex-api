@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Delivery Updater Script
-Fetches deliveries by provider and updates delivery details.
+Fetches deliveries by provider and updates delivery details with address and tracking info.
 Uses users from the test context file.
 Run with: python update_deliveries.py
 """
@@ -46,11 +46,122 @@ class Config:
 
 
 # ============================================================================
+# LOCATION GENERATOR
+# ============================================================================
+
+class LocationGenerator:
+    """Generate random location data for deliveries matching Location_API"""
+    
+    CITIES = [
+        "Algiers", "Oran", "Constantine", "Annaba", "Blida", 
+        "Setif", "Tizi Ouzou", "Bejaia", "Batna", "Sidi Bel Abbes",
+        "Biskra", "Tebessa", "El Oued", "Ghardaia", "Tamanrasset"
+    ]
+    STREETS = [
+        "Main St", "Didouche Mourad", "1er Novembre", 
+        "Larbi Ben Mhidi", "Krim Belkacem", 
+        "Freres Bouadou", "Independance",
+        "Ali Khodja", "Colonel Amirouche", "Emir Abdelkader",
+        "Liberte", "Ben Boulaid", "Mohamed Khider"
+    ]
+    COUNTRIES = ["DZ", "FR", "US", "CA", "DE", "GB", "IT", "ES", "MA", "TN"]
+    
+    @classmethod
+    def _get_city_coordinates(cls, city: str) -> tuple:
+        """Get approximate coordinates for a city"""
+        coords = {
+            "Algiers": (36.7538, 3.0588),
+            "Oran": (35.6969, -0.6331),
+            "Constantine": (36.3650, 6.6147),
+            "Annaba": (36.9020, 7.7557),
+            "Blida": (36.4700, 2.8277),
+            "Setif": (36.1911, 5.4137),
+            "Tizi Ouzou": (36.7111, 4.0458),
+            "Bejaia": (36.7558, 5.0843),
+            "Batna": (35.5550, 6.1741),
+            "Sidi Bel Abbes": (35.1937, -0.6322),
+            "Biskra": (34.8500, 5.7333),
+            "Tebessa": (35.4042, 8.1242),
+            "El Oued": (33.3667, 6.8500),
+            "Ghardaia": (32.4833, 3.6667),
+            "Tamanrasset": (22.7850, 5.5228)
+        }
+        return coords.get(city, (36.7538, 3.0588))
+    
+    @classmethod
+    def generate_location(cls, location_name: Optional[str] = None) -> Dict[str, Any]:
+        """Generate a complete Location_API structure"""
+        city = random.choice(cls.CITIES)
+        country = random.choice(cls.COUNTRIES)
+        lat, lon = cls._get_city_coordinates(city)
+        
+        # Add slight random offset
+        lat += random.uniform(-0.02, 0.02)
+        lon += random.uniform(-0.02, 0.02)
+        
+        # Ensure street name is not too long (max 255 chars)
+        street = f"{random.randint(1, 999)} {random.choice(cls.STREETS)}"
+        if len(street) > 200:
+            street = street[:200]
+        
+        return {
+            "id_location": 0,
+            "location_latitude": round(lat, 6),
+            "location_longitude": round(lon, 6),
+            "location_name": location_name or random.choice(["Home", "Work", "Clinic", "Office", "Shop", "Warehouse", "Distribution Center"]),
+            "location_address_id": 0,
+            "id_address": 0,
+            "address_street": street,
+            "address_city": city,
+            "address_postal_code": f"{random.randint(1000, 9999)}",
+            "address_country": country
+        }
+    
+    @classmethod
+    def generate_tracking_location(cls, step: int, total_steps: int = 6) -> Dict[str, Any]:
+        """Generate a tracking location based on progress through the delivery"""
+        progress = step / total_steps
+        
+        # Start from a random city and move toward destination
+        if step == 0:
+            city = random.choice(["Algiers", "Oran", "Constantine"])
+            location_name = "Distribution Center"
+        else:
+            city = random.choice(cls.CITIES)
+            location_name = f"Tracking Point {step}"
+        
+        lat, lon = cls._get_city_coordinates(city)
+        
+        # Add random offset based on progress (closer to destination = less random)
+        offset = 0.02 * (1 - progress)
+        lat += random.uniform(-offset, offset)
+        lon += random.uniform(-offset, offset)
+        
+        # Ensure street name is not too long (max 255 chars)
+        street = f"TP{step} - {random.randint(1, 999)} {random.choice(cls.STREETS)}"
+        if len(street) > 200:
+            street = street[:200]
+        
+        return {
+            "id_location": 0,
+            "location_latitude": round(lat, 6),
+            "location_longitude": round(lon, 6),
+            "location_name": location_name,
+            "location_address_id": 0,
+            "id_address": 0,
+            "address_street": street,
+            "address_city": city,
+            "address_postal_code": f"{random.randint(1000, 9999)}",
+            "address_country": random.choice(cls.COUNTRIES)
+        }
+
+
+# ============================================================================
 # DELIVERY UPDATER
 # ============================================================================
 
 class DeliveryUpdater:
-    """Updates delivery details for orders"""
+    """Updates delivery details for orders with address and tracking"""
     
     def __init__(self, base_url: str = Config.BASE_URL):
         self.base_url = base_url
@@ -64,7 +175,11 @@ class DeliveryUpdater:
             "deliveries_updated": 0,
             "deliveries_failed": 0,
             "status_transitions": 0,
-            "deliveries_skipped": 0
+            "deliveries_skipped": 0,
+            "locations_created": 0,
+            "tracking_updates": 0,
+            "addresses_created": 0,
+            "addresses_failed": 0
         }
     
     async def __aenter__(self):
@@ -270,10 +385,42 @@ class DeliveryUpdater:
             self.print_status(f"❌ Error updating status: {e}", "❌")
             return False
     
-    def generate_random_delivery_details(self) -> Dict[str, Any]:
-        """Generate random delivery details matching the Delivery_API model"""
-        return {
-            "delivery_package_count": random.randint(1, 5),
+    async def update_delivery_tracking(self, delivery_id: int, current_address_id: int) -> bool:
+        """Update delivery tracking location by address ID"""
+        self.print_status(f"Updating delivery {delivery_id} tracking to address {current_address_id}", "📍")
+        
+        if not self.auth_token:
+            return False
+        
+        try:
+            response = await self.client.patch(
+                f"{self.base_url}/api/v1/business/delivery/{delivery_id}/tracking",
+                params={"current_address_id": current_address_id},
+                headers={"Authorization": f"Bearer {self.auth_token}"}
+            )
+            
+            if response.status_code == 200:
+                self.stats["tracking_updates"] += 1
+                self.print_status(f"✅ Delivery {delivery_id} tracking updated", "📍")
+                return True
+            else:
+                self.print_status(f"❌ Failed to update tracking: {response.status_code}", "❌")
+                print(f"   Response: {response.text[:200]}")
+                return False
+                
+        except Exception as e:
+            self.print_status(f"❌ Error updating tracking: {e}", "❌")
+            return False
+    
+    def generate_delivery_update_payload(self, delivery: Dict) -> Dict[str, Any]:
+        """Generate the full delivery update payload with locations"""
+        
+        # Generate locations using Location_API structure
+        destination_location = LocationGenerator.generate_location("Destination")
+        
+        # Base delivery details
+        payload = {
+            "delivery_package_count": str(random.randint(1, 5)),
             "delivery_total_weight": round(random.uniform(0.5, 50.0), 1),
             "delivery_cargo_dimensions": f"{random.randint(10, 100)}x{random.randint(10, 100)}x{random.randint(10, 100)}",
             "delivery_goods_description": f"Package containing {random.choice(['medical supplies', 'pharmaceuticals', 'equipment', 'documents', 'samples'])}",
@@ -287,16 +434,86 @@ class DeliveryUpdater:
                 "Fragile - handle with care",
                 "Temperature sensitive",
                 "Deliver between 9am-5pm",
-                "Ring the doorbell twice"
+                "Ring the doorbell twice",
+                "Leave with security guard",
+                "Do not leave outside"
             ]),
-            "delivery_fee": round(random.uniform(0, 50), 2)
+            "delivery_fee": round(random.uniform(0, 50), 2),
+            # Add destination address fields
+            "delivery_address": destination_location.get("address_street"),
+            "delivery_city": destination_location.get("address_city"),
+            "delivery_postal_code": destination_location.get("address_postal_code"),
+            "delivery_country": destination_location.get("address_country"),
+            "delivery_latitude": destination_location.get("location_latitude"),
+            "delivery_longitude": destination_location.get("location_longitude"),
+            "delivery_location_name": destination_location.get("location_name")
         }
+        
+        # Preserve existing fields
+        preserve_fields = [
+            'recipient_person', 'recipient_provider', 'delivery_source_type',
+            'delivery_source_id', 'delivery_invoice_ref', 'delivery_provider_id',
+            'delivery_broker_id', 'delivery_address_id', 'delivery_current_address_id'
+        ]
+        for field in preserve_fields:
+            if delivery.get(field):
+                payload[field] = delivery.get(field)
+        
+        return payload
+    
+    async def create_tracking_address(self, location: Dict[str, Any]) -> Optional[int]:
+        """Create a tracking address and return its ID"""
+        self.print_status(f"Creating tracking address...", "📍")
+        
+        if not self.auth_token:
+            return None
+        
+        # Build address data matching the Location_API structure
+        address_data = {
+            "address_street": location.get("address_street"),
+            "address_city": location.get("address_city"),
+            "address_postal_code": location.get("address_postal_code"),
+            "address_country": location.get("address_country"),
+            "location_latitude": location.get("location_latitude"),
+            "location_longitude": location.get("location_longitude"),
+            "location_name": location.get("location_name")
+        }
+        
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/addresses",
+                json=address_data,
+                headers={"Authorization": f"Bearer {self.auth_token}"}
+            )
+            
+            if response.status_code == 201:
+                result = response.json()
+                address_id = result.get('id_address')
+                if address_id:
+                    self.stats["addresses_created"] += 1
+                    self.print_status(f"✅ Tracking address created: {address_id}", "📍")
+                    return address_id
+                else:
+                    self.stats["addresses_failed"] += 1
+                    self.print_status(f"⚠️ Tracking address created but no ID returned", "⚠️")
+                    return None
+            else:
+                self.stats["addresses_failed"] += 1
+                self.print_status(f"❌ Failed to create tracking address: {response.status_code}", "❌")
+                print(f"   Response: {response.text[:200]}")
+                return None
+                
+        except Exception as e:
+            self.stats["addresses_failed"] += 1
+            self.print_status(f"❌ Error creating tracking address: {e}", "❌")
+            return None
     
     async def process_delivery(self, delivery: Dict) -> bool:
         """
         Process a single delivery:
-        1. Update delivery details (PUT)
+        1. Update delivery details with destination address (PUT)
         2. Update delivery status through lifecycle (PATCH)
+        3. Create tracking addresses and update tracking at each step
         """
         delivery_id = delivery.get('id_delivery')
         if not delivery_id:
@@ -313,45 +530,46 @@ class DeliveryUpdater:
         self.print_status(f"\n🔧 Processing delivery {delivery_id}", "🔧")
         print(f"   Current status: {current_status}")
         
-        # Step 1: Generate and update delivery details
-        details = self.generate_random_delivery_details()
+        # Step 1: Generate and update delivery details with locations
+        payload = self.generate_delivery_update_payload(delivery)
         
-        # Preserve existing fields if they exist
-        if delivery.get('delivery_address_id'):
-            details['delivery_address_id'] = delivery.get('delivery_address_id')
-        if delivery.get('delivery_current_address_id'):
-            details['delivery_current_address_id'] = delivery.get('delivery_current_address_id')
-        if delivery.get('recipient_person'):
-            details['recipient_person'] = delivery.get('recipient_person')
-        if delivery.get('recipient_provider'):
-            details['recipient_provider'] = delivery.get('recipient_provider')
-        if delivery.get('delivery_source_type'):
-            details['delivery_source_type'] = delivery.get('delivery_source_type')
-        if delivery.get('delivery_source_id'):
-            details['delivery_source_id'] = delivery.get('delivery_source_id')
-        if delivery.get('delivery_invoice_ref'):
-            details['delivery_invoice_ref'] = delivery.get('delivery_invoice_ref')
-        if delivery.get('delivery_provider_id'):
-            details['delivery_provider_id'] = delivery.get('delivery_provider_id')
+        print(f"   📍 Destination: {payload.get('delivery_address')}, {payload.get('delivery_city')}")
         
-        success = await self.update_delivery_details(delivery_id, details)
+        success = await self.update_delivery_details(delivery_id, payload)
         
         if not success:
             self.stats["deliveries_failed"] += 1
             return False
         
-        # Step 2: Update delivery status through lifecycle
-        # Find where to start in the status flow
+        self.stats["locations_created"] += 1
+        
+        # Step 2: Update delivery status through lifecycle with tracking
         try:
             start_index = Config.STATUS_FLOW.index(current_status) + 1
         except ValueError:
             start_index = 0
         
-        for status in Config.STATUS_FLOW[start_index:]:
+        for step_index, status in enumerate(Config.STATUS_FLOW[start_index:]):
+            # Update status first
             result = await self.update_delivery_status(delivery_id, status)
             if not result:
                 self.print_status(f"Failed to transition to {status}", "❌")
                 break
+            
+            # Only create tracking address and update tracking if not delivered
+            if status != 'delivered' and status not in ['cancelled', 'returned']:
+                # Generate new current location for this step
+                new_location = LocationGenerator.generate_tracking_location(
+                    start_index + step_index + 1, 
+                    len(Config.STATUS_FLOW)
+                )
+                
+                # Create tracking address and update delivery
+                new_tracking_id = await self.create_tracking_address(new_location)
+                if new_tracking_id:
+                    await self.update_delivery_tracking(delivery_id, new_tracking_id)
+                    print(f"   📍 Updated tracking to step {start_index + step_index + 1}")
+            
             await asyncio.sleep(0.3)  # Small delay between updates
         
         return True
@@ -376,6 +594,8 @@ class DeliveryUpdater:
                 break
             
             print(f"\n📦 Processing delivery {processed_count + 1}/{min(len(deliveries), limit)}")
+            print(f"   ID: {delivery.get('id_delivery')}")
+            print(f"   Current status: {delivery.get('delivery_status')}")
             
             success = await self.process_delivery(delivery)
             if success:
@@ -398,6 +618,10 @@ class DeliveryUpdater:
         print(f"   ❌ Deliveries failed: {self.stats['deliveries_failed']}")
         print(f"   ⏭️ Deliveries skipped: {self.stats['deliveries_skipped']}")
         print(f"   🔄 Status transitions: {self.stats['status_transitions']}")
+        print(f"   📍 Locations created: {self.stats['locations_created']}")
+        print(f"   📍 Tracking updates: {self.stats['tracking_updates']}")
+        print(f"   📍 Addresses created: {self.stats['addresses_created']}")
+        print(f"   📍 Addresses failed: {self.stats['addresses_failed']}")
         print("="*70)
 
 
@@ -406,7 +630,7 @@ class DeliveryUpdater:
 # ============================================================================
 
 async def main():
-    parser = argparse.ArgumentParser(description="Update delivery details for orders")
+    parser = argparse.ArgumentParser(description="Update delivery details for orders with addresses and tracking")
     parser.add_argument("--url", default=Config.BASE_URL, help="Base URL of the API")
     parser.add_argument("--provider", type=int, default=Config.DEFAULT_PROVIDER_ID, 
                        help="Provider ID to process")
@@ -424,7 +648,7 @@ async def main():
     Config.DEFAULT_PROVIDER_ID = args.provider
     
     print("\n" + "="*70)
-    print("🚚 DELIVERY UPDATER SERVICE")
+    print("🚚 DELIVERY UPDATER SERVICE (with Addresses & Tracking)")
     print("="*70)
     print(f"📍 Base URL: {args.url}")
     print(f"🏢 Provider: {args.provider}")

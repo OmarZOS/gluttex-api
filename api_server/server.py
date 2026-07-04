@@ -42,6 +42,8 @@ from routers.business_routers.delivery_router import delivery_router
 from routers.business_routers.service_router import service_router
 from routers.business_routers.financial_router import financial_router
 from routers.business_routers.business_operation_router import business_operation_router
+from routers.business_routers.address_router import address_router
+
 
 # Configure logging
 logging.basicConfig(
@@ -182,10 +184,11 @@ def setup_routers(app: FastAPI) -> None:
     app.include_router(service_router, prefix=business_prefix, tags=["Business Services"])
     app.include_router(financial_router, prefix=business_prefix, tags=["Business Finance"])
     app.include_router(business_operation_router, prefix=business_prefix, tags=["Business Operations"])
-    
     # Health and wellness routes
     app.include_router(health_router, prefix=api_version, tags=["Health"])
     app.include_router(recipe_router, prefix=api_version, tags=["Recipes"])
+    app.include_router(address_router, prefix=f"{api_version}/addresses", tags=["Addresses"])
+    
     
     # Notification routes
     app.include_router(notification_router, prefix=f"{api_version}/notifications", tags=["Notifications"])

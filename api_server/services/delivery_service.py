@@ -8,7 +8,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import BackgroundTasks
 import logging
 
-from core.models.api_models import Delivery_API, DeliveryUpdate_API
+from core.models.api_models import Delivery_API, DeliveryStatus, DeliveryUpdate_API
 from core.exceptions.specific.delivery_exceptions import (
     DeliveryNotFoundException,
     DeliveryCreationFailedException,
@@ -149,13 +149,14 @@ class DeliveryService:
         current = current_status.lower()
         new = new_status.lower()
         
+        # If status hasn't changed, it's always valid
         if current == new:
             return True
         
         # Cannot change frozen statuses
         if current in self.FROZEN_STATUSES:
             raise DeliveryCannotBeUpdatedException(
-                delivery_id=None,  # Will be set by caller
+                delivery_id=None,
                 current_status=current,
                 attempted_action=f"change status to {new}",
                 allowed_actions=["view"]
@@ -167,13 +168,6 @@ class DeliveryService:
             raise DeliveryStatusInvalidException(
                 requested_status=new,
                 allowed_statuses=allowed
-            )
-        
-        # Check if delivery is already delivered
-        if current == 'delivered':
-            raise DeliveryAlreadyDeliveredException(
-                delivery_id=None,  # Will be set by caller
-                action="update status"
             )
         
         return True
@@ -216,13 +210,20 @@ class DeliveryService:
         if delivery_data.delivery_special_instructions is not None:
             delivery.delivery_special_instructions = delivery_data.delivery_special_instructions
         
+        # Update status with validation - only validate if status is actually changing
         if delivery_data.delivery_status is not None:
+            new_status = delivery_data.delivery_status.value
+            
             if existing_delivery:
-                self._validate_status_transition(
-                    existing_delivery.delivery_status,
-                    delivery_data.delivery_status.value
-                )
-            delivery.delivery_status = delivery_data.delivery_status.value
+                # Only validate if status is actually changing
+                if existing_delivery.delivery_status != new_status:
+                    self._validate_status_transition(
+                        existing_delivery.delivery_status,
+                        new_status
+                    )
+                # If status hasn't changed, just set it (no validation needed)
+            
+            delivery.delivery_status = new_status
         elif not existing_delivery:
             delivery.delivery_status = 'pending'
         
@@ -506,14 +507,6 @@ class DeliveryService:
     ) -> Delivery:
         """
         Update the current tracking location of a delivery.
-        
-        Args:
-            delivery_id: Delivery ID to update
-            current_address_id: Current tracking address ID
-            background_tasks: Optional background tasks for notifications
-            
-        Returns:
-            Updated Delivery object
         """
         logger.info(f"Updating tracking for delivery {delivery_id} to address {current_address_id}")
         
@@ -523,8 +516,18 @@ class DeliveryService:
             logger.warning(f"Current address not found with ID: {current_address_id}")
             raise AddressNotFoundException(address_id=current_address_id)
         
-        # Create minimal delivery API object
-        tracking_update = Delivery_API(delivery_current_address_id=current_address_id)
+        # Get existing delivery first to preserve its status
+        existing_delivery = self.get_delivery_by_id(delivery_id)
+        
+        # Create a minimal delivery API object with only the tracking address
+        # and explicitly set the current status to avoid validation
+        from core.models.api_models import DeliveryStatus
+        tracking_update = Delivery_API(
+            delivery_current_address_id=current_address_id,
+            delivery_status=DeliveryStatus(existing_delivery.delivery_status)  # Preserve current status
+        )
+        
+        # Update delivery - this will skip status validation since status hasn't changed
         return self.update_delivery(delivery_id, tracking_update, background_tasks)
     
     def delete_delivery(self, delivery_id: int, force_delete: bool = False) -> Dict[str, Any]:

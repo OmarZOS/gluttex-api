@@ -277,19 +277,19 @@ class LocationService:
                 details={"error": str(e), "location_data": location_data.dict()}
             )
     
-    def update_address(self, address_id: str, address_data: Dict[str, Any]) -> Address:
+    def update_address(self, address_id: str, address_data: Location_API) -> Address:
         """Update an existing address"""
         try:
             address = self.get_address_by_id(address_id)
             
-            if address_data.get('address_street'):
-                address.address_street = address_data['address_street']
-            if address_data.get('address_city'):
-                address.address_city = address_data['address_city']
-            if address_data.get('address_postal_code'):
-                address.address_postal_code = address_data['address_postal_code']
-            if address_data.get('address_country'):
-                address.address_country = address_data['address_country']
+            if address_data.address_street:
+                address.address_street = address_data.address_street
+            if address_data.address_city:
+                address.address_city = address_data.address_city
+            if address_data.address_postal_code:
+                address.address_postal_code = address_data.address_postal_code
+            if address_data.address_country:
+                address.address_country = address_data.address_country
             
             return self.address_repo.update_address(address)
             

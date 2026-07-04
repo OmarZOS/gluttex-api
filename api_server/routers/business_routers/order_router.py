@@ -9,7 +9,7 @@ from typing import List, Optional, Dict, Any
 import logging
 
 from services.helpers.auth.auth_dependencies import get_current_user_id
-from core.models.api_models import OrderedItem_API, PlacedOrder_API
+from core.models.api_models import Delivery_Info_API, OrderedItem_API, PlacedOrder_API
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.order_exceptions import (
     OrderNotFoundException,
@@ -56,7 +56,8 @@ def get_order_service() -> OrderService:
 async def create_order(
     ordered_items: List[OrderedItem_API],
     submitted_order: PlacedOrder_API,
-    payment_method: str = Query("card", description="Payment method: card, cash, bank_transfer"),
+    payment_method: str = Query("cash", description="Payment method: card, cash, bank_transfer"),
+    delivery_info: Delivery_Info_API = None,
     user_id: int = Depends(get_current_user_id),
     order_service: OrderService = Depends(get_order_service),
 ):
@@ -88,7 +89,8 @@ async def create_order(
             items=ordered_items,
             order_data=submitted_order,
             payment_method=payment_method,
-            user_id=submitted_order.ordering_user_id
+            user_id=submitted_order.ordering_user_id,
+            delivery_data = delivery_info
         )
         
         logger.info(f"Order created successfully with ID: {order.id_placed_order}")

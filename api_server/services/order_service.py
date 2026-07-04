@@ -10,10 +10,11 @@ from datetime import datetime, timedelta
 import logging
 import asyncio
 
+from services.location_service import LocationService
 from repositories.financial_repository import FinancialRepository
 from storage.wrappers.finance_client import FinanceServiceClient
 from storage.wrappers.inventory_client import InventoryServiceClient
-from core.models.api_models import OrderedItem_API, PlacedOrder_API
+from core.models.api_models import Delivery_Info_API, OrderedItem_API, PlacedOrder_API
 from core.exceptions.handler import UserNotFoundException
 from core.exceptions.specific.order_exceptions import (
     OrderNotFoundException,
@@ -69,6 +70,9 @@ class OrderService:
         self.user_repo = UserRepository()
         self.invoice_repo = FinancialRepository()
         self.delivery_repo = DeliveryRepository()
+        self.location_service = LocationService()
+
+
         self.pricing_service = PricingService()
         
         # Initialize microservice clients
@@ -132,7 +136,7 @@ class OrderService:
         order_data: PlacedOrder_API,
         payment_method: str = 'card',
         user_id: int = None,
-        delivery_data: Optional[Dict] = None
+        delivery_data: Optional[Delivery_Info_API] = None
     ) -> Tuple[List[int], PlacedOrder, Dict]:
         """
         Create a new order with multiple items using microservices.
@@ -212,7 +216,7 @@ class OrderService:
                 product = self.product_repo.get_product_by_id(api_item.ordered_product_id)
                 if not product:
                     raise ProductNotFoundException(product_id=api_item.ordered_product_id)
-                delivery_provider_ids.add(product.product_owner)
+                delivery_provider_ids.add(product.product_provider_id)
                 # Build item (without saving yet)
                 item = self._build_ordered_item_model(api_item)
                 item.unit_price = float(product.product_price)
@@ -247,6 +251,34 @@ class OrderService:
                 created_items.append(saved_item)
                 logger.info(f"✅ Created order item: {saved_item.id_ordered_item} for product {saved_item.ordered_product_id}")
             
+            deliveries = []
+            # Create Delivery if data provided
+            for provider_id in delivery_provider_ids:
+                delivery_address_id =  None
+                if delivery_data:
+                    if delivery_data.destination_address:
+                        if delivery_data.destination_address.id_address>0:
+                            delivery_address_id = delivery_data.destination_address.id_address
+                        else:
+                            # Create new address in the system (assuming a method exists)
+                            delivery_address = self.location_service.create_address_from_location(delivery_data.destination_address)
+                            delivery_address_id = delivery_address.id_address
+
+                delivery = Delivery(
+                    # delivery_invoice_ref=created_invoice.invoice_id,
+                    delivery_source_type='placed_order',
+                    delivery_address_id = delivery_address_id if delivery_address_id else None,
+                    delivery_source_id=created_order.id_placed_order,
+                    delivery_provider_id=provider_id,
+                    delivery_fee = delivery_data.delivery_fee if delivery_data else 0.0,
+                )
+
+                order_total_price += delivery_data.delivery_fee if delivery_data else 0.0
+                deliveries.append(delivery)
+
+                # created_delivery = self.delivery_repo.create(delivery)
+                # logger.info(f"✅ Created delivery: {created_delivery.id_delivery}")
+            
             # Create Invoice
             invoice = Invoice(
                 invoice_number=f"INV-{created_order.id_placed_order}-{datetime.now().strftime('%Y%m%d')}",
@@ -256,22 +288,13 @@ class OrderService:
                 invoice_due_date=datetime.now().date() + timedelta(days=30),
                 invoice_notes=f"Order #{created_order.id_placed_order}",
                 invoice_type='invoice',
-                invoice_tax_applied=1
+                invoice_tax_applied=19,
+                delivery = deliveries
             )
             created_invoice = self.invoice_repo.create_invoice(invoice)
             logger.info(f"✅ Created invoice: {created_invoice.invoice_id}")
-            
-            # Create Delivery if data provided
-            for provider_id in delivery_provider_ids:
-                delivery = Delivery(
-                    delivery_invoice_ref=created_invoice.invoice_id,
-                    delivery_source_type='placed_order',
-                    delivery_source_id=created_order.id_placed_order,
-                    delivery_provider_id=provider_id
-                )
-                created_delivery = self.delivery_repo.create(delivery)
-                logger.info(f"✅ Created delivery: {created_delivery.id_delivery}")
-            
+
+
             # ==================== STEP 3: Reserve Inventory (SILO) ====================
             logger.info("Step 3: Reserving inventory...")
             

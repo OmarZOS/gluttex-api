@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Order Router Test Runner with Inventory Sync
-Creates products and syncs them to the inventory service before creating orders.
+Order Router Test Runner with Inventory Sync and Delivery Support
+Creates products, syncs them to inventory, and creates orders with delivery info.
 Uses the same context file as the main test runner.
 Run with: python test_order_runner.py
 """
@@ -76,6 +76,7 @@ class TestContext:
     created_organisations: List[int] = field(default_factory=list)
     created_payments: List[int] = field(default_factory=list)
     created_invoices: List[int] = field(default_factory=list)
+    created_deliveries: List[int] = field(default_factory=list)
     test_results: List[Dict[str, Any]] = field(default_factory=list)
     
     def save(self, filename: str = "test_context.json"):
@@ -87,6 +88,7 @@ class TestContext:
             'created_organisations': self.created_organisations,
             'created_payments': self.created_payments,
             'created_invoices': self.created_invoices,
+            'created_deliveries': self.created_deliveries,
             'timestamp': datetime.now().isoformat()
         }
         with open(filename, 'w') as f:
@@ -104,6 +106,7 @@ class TestContext:
             self.created_organisations = data.get('created_organisations', [])
             self.created_payments = data.get('created_payments', [])
             self.created_invoices = data.get('created_invoices', [])
+            self.created_deliveries = data.get('created_deliveries', [])
             print(f"📂 Test context loaded from {filename}")
             return True
         return False
@@ -120,6 +123,74 @@ class OrderStatus(str, Enum):
     DELIVERED = "DELIVERED"
     CANCELLED = "CANCELLED"
     REFUNDED = "REFUNDED"
+
+
+# ============================================================================
+# LOCATION GENERATOR
+# ============================================================================
+
+class LocationGenerator:
+    """Generate random location data for deliveries"""
+    
+    CITIES = [
+        "Algiers", "Oran", "Constantine", "Annaba", "Blida", 
+        "Setif", "Tizi Ouzou", "Bejaia", "Batna", "Sidi Bel Abbes",
+        "Biskra", "Tebessa", "El Oued", "Ghardaia", "Tamanrasset"
+    ]
+    STREETS = [
+        "Main St", "Rue Didouche Mourad", "Avenue du 1er Novembre", 
+        "Rue Larbi Ben Mhidi", "Boulevard Krim Belkacem", 
+        "Rue des Freres Bouadou", "Avenue de l'Independance",
+        "Rue Ali Khodja", "Boulevard Colonel Amirouche", "Rue Emir Abdelkader",
+        "Rue de la Liberte", "Avenue Ben Boulaid", "Rue Mohamed Khider"
+    ]
+    COUNTRIES = ["DZ", "FR", "US", "CA", "DE", "GB", "IT", "ES", "MA", "TN"]
+    
+    @classmethod
+    def _get_city_coordinates(cls, city: str) -> tuple:
+        """Get approximate coordinates for a city"""
+        coords = {
+            "Algiers": (36.7538, 3.0588),
+            "Oran": (35.6969, -0.6331),
+            "Constantine": (36.3650, 6.6147),
+            "Annaba": (36.9020, 7.7557),
+            "Blida": (36.4700, 2.8277),
+            "Setif": (36.1911, 5.4137),
+            "Tizi Ouzou": (36.7111, 4.0458),
+            "Bejaia": (36.7558, 5.0843),
+            "Batna": (35.5550, 6.1741),
+            "Sidi Bel Abbes": (35.1937, -0.6322),
+            "Biskra": (34.8500, 5.7333),
+            "Tebessa": (35.4042, 8.1242),
+            "El Oued": (33.3667, 6.8500),
+            "Ghardaia": (32.4833, 3.6667),
+            "Tamanrasset": (22.7850, 5.5228)
+        }
+        return coords.get(city, (36.7538, 3.0588))
+    
+    @classmethod
+    def generate_location(cls, location_name: Optional[str] = None) -> Dict[str, Any]:
+        """Generate a complete Location_API structure"""
+        city = random.choice(cls.CITIES)
+        country = random.choice(cls.COUNTRIES)
+        lat, lon = cls._get_city_coordinates(city)
+        
+        # Add slight random offset
+        lat += random.uniform(-0.02, 0.02)
+        lon += random.uniform(-0.02, 0.02)
+        
+        return {
+            "id_location": 0,
+            "location_latitude": round(lat, 6),
+            "location_longitude": round(lon, 6),
+            "location_name": location_name or random.choice(["Home", "Work", "Clinic", "Office", "Shop", "Warehouse", "Distribution Center"]),
+            "location_address_id": 0,
+            "id_address": 0,
+            "address_street": f"{random.randint(1, 999)} {random.choice(cls.STREETS)}",
+            "address_city": city,
+            "address_postal_code": f"{random.randint(1000, 9999)}",
+            "address_country": country
+        }
 
 
 # ============================================================================
@@ -175,6 +246,14 @@ def generate_random_iproduct_data() -> Dict[str, Any]:
         "iproduct_info_source": "openai",
         "iproduct_info_confidence": round(random.uniform(0.5, 1.0), 2),
         "iproduct_category_id": random.choice(categories)
+    }
+
+def generate_delivery_info() -> Dict[str, Any]:
+    """Generate Delivery_Info_API structure with destination address and fee"""
+    destination = LocationGenerator.generate_location("Destination")
+    return {
+        "destination_address": destination,
+        "delivery_fee": round(random.uniform(0, 50), 2)
     }
 
 
@@ -435,10 +514,8 @@ class OrderTestRunner:
                 })
                 print(f"   ✅ Created product {i+1}: {product_id} - {product_data['product_name']}")
                 
-                # Sync product to inventory via the main API's product creation
-                # The product should already be synced if the main API handles it
+                # Sync product to inventory
                 try:
-                    # Verify product exists in inventory
                     check_response = await self.client.post(
                         f"{self.silo_url}/esilo/inventory/stock/bulk",
                         json={"product_ids": [product_id]},
@@ -450,7 +527,6 @@ class OrderTestRunner:
                             print(f"   ✅ Product {product_id} verified in inventory")
                         else:
                             print(f"   ⚠️ Product {product_id} not found in inventory, syncing...")
-                            # Try to create in inventory
                             create_response = await self.client.post(
                                 f"{self.silo_url}/esilo/inventory/products",
                                 json={
@@ -478,9 +554,16 @@ class OrderTestRunner:
     
     # ==================== ORDER TESTS ====================
     
-    async def test_create_order(self, user: TestUser, products: List[Dict], payment_method: str = "card") -> Optional[int]:
-        """Test creating an order"""
-        print(f"\n📦 Creating order for user: {user.username}")
+    async def test_create_order(
+        self, 
+        user: TestUser, 
+        products: List[Dict], 
+        payment_method: str = "card",
+        include_delivery: bool = True
+    ) -> Optional[int]:
+        """Test creating an order with optional delivery info"""
+        delivery_text = "with delivery" if include_delivery else "without delivery"
+        print(f"\n📦 Creating order {delivery_text} for user: {user.username}")
         
         headers = self.get_auth_headers(user)
         if not headers:
@@ -518,14 +601,22 @@ class OrderTestRunner:
             "payment_ref": f"PAY-{uuid.uuid4().hex[:8]}"
         }
         
-        print(f"   📝 Order items: {len(ordered_items)}")
-        print(f"   💳 Payment method: {payment_method}")
-        print(f"   👤 User ID: {user.id}")
-        
+        # Prepare request data
         request_data = {
             "ordered_items": ordered_items,
             "submitted_order": order_data
         }
+        
+        # Add delivery info if requested
+        if include_delivery:
+            delivery_info = generate_delivery_info()
+            request_data["delivery_info"] = delivery_info
+            print(f"   📍 Destination: {delivery_info['destination_address']['address_city']}")
+            print(f"   💰 Delivery fee: {delivery_info['delivery_fee']}")
+        
+        print(f"   📝 Order items: {len(ordered_items)}")
+        print(f"   💳 Payment method: {payment_method}")
+        print(f"   👤 User ID: {user.id}")
         
         try:
             response = await self.client.post(
@@ -559,23 +650,45 @@ class OrderTestRunner:
                     self.context.created_orders.append(order_id)
                     print(f"   ✅ Created order: {order_id}")
                     print(f"   💰 Total: {result.get('order', {}).get('placed_order_total', 'N/A')}")
-                    self.print_result("Create Order", True, f"Order {order_id} created")
+                    print(f"   💳 Payment ID: {result.get('payment_id', 'N/A')}")
+                    print(f"   📄 Invoice ID: {result.get('invoice_id', 'N/A')}")
+                    
+                    # If delivery was included, check for delivery
+                    if include_delivery:
+                        # Try to get delivery ID from response or fetch from order
+                        try:
+                            order_response = await self.client.get(
+                                f"{self.base_url}/api/v1/orders/{order_id}",
+                                params={"include_items": True},
+                                headers=headers
+                            )
+                            if order_response.status_code == 200:
+                                order_data = order_response.json()
+                                delivery = order_data.get('delivery', {})
+                                delivery_id = delivery.get('id_delivery', 0)
+                                if delivery_id > 0:
+                                    self.context.created_deliveries.append(delivery_id)
+                                    print(f"   📦 Delivery ID: {delivery_id}")
+                        except Exception as e:
+                            print(f"   ⚠️ Could not get delivery details: {e}")
+                    
+                    self.print_result(f"Create Order {delivery_text}", True, f"Order {order_id} created")
                     return order_id
                 else:
                     print(f"   ⚠️ Could not extract order ID from response: {result}")
-                    self.print_result("Create Order", True, "Order created but ID extraction failed")
+                    self.print_result(f"Create Order {delivery_text}", True, "Order created but ID extraction failed")
                     return 0
             else:
                 print(f"   ❌ Failed to create order: {response.status_code}")
                 print(f"      {response.text[:500]}")
-                self.print_result("Create Order", False, f"Status: {response.status_code}")
+                self.print_result(f"Create Order {delivery_text}", False, f"Status: {response.status_code}")
                 return None
                 
         except Exception as e:
             print(f"   ❌ Order creation error: {e}")
             import traceback
             traceback.print_exc()
-            self.print_result("Create Order", False, str(e))
+            self.print_result(f"Create Order {delivery_text}", False, str(e))
             return None
     
     # ==================== MAIN RUNNER ====================
@@ -584,7 +697,7 @@ class OrderTestRunner:
                        skip_login: bool = False,
                        context_file: str = "test_context.json"):
         print("\n" + "="*70)
-        print("🚀 ORDER ROUTER TEST RUNNER (with Inventory Sync)")
+        print("🚀 ORDER ROUTER TEST RUNNER (with Delivery Support)")
         print("="*70)
         print(f"📍 Base URL: {self.base_url}")
         print(f"📍 SILO URL: {self.silo_url}")
@@ -601,7 +714,7 @@ class OrderTestRunner:
         else:
             print(f"⚠️ Context file {context_file} not found. Creating new data...")
         
-        # Create users if needed (only if no users in context)
+        # Create users if needed
         if not skip_user_creation and not self.context.users:
             print("\n📝 Creating Test Users")
             print("="*70)
@@ -642,7 +755,6 @@ class OrderTestRunner:
             products = setup_data.get('products', [])
         else:
             products = []
-            # Get product details from context
             for product_id in self.context.created_products:
                 try:
                     headers = self.get_auth_headers(test_user)
@@ -673,17 +785,33 @@ class OrderTestRunner:
         print("🧪 Running Order Tests")
         print("="*70)
         
-        # Test: Create Order with different payment methods
-        print("\n📝 CREATE ORDER TESTS")
-        payment_methods = ["card", "cash", "bank_transfer"]
+        # Test 1: Create Order with Delivery (Card)
+        print("\n📝 CREATE ORDER WITH DELIVERY (Card)")
+        order_id = await self.test_create_order(test_user, products, "card", True)
+        if order_id and order_id > 0:
+            self.context.created_orders.append(order_id)
+            print(f"\n✅ Order created successfully with ID: {order_id} using card with delivery")
         
-        for payment_method in payment_methods:
-            order_id = await self.test_create_order(test_user, products, payment_method)
-            if order_id and order_id > 0:
-                self.context.created_orders.append(order_id)
-                print(f"\n✅ Order created successfully with ID: {order_id} using {payment_method}")
-            else:
-                print(f"\n❌ Failed to create order with {payment_method}. Check the logs above.")
+        # Test 2: Create Order with Delivery (Cash)
+        print("\n📝 CREATE ORDER WITH DELIVERY (Cash)")
+        order_id = await self.test_create_order(test_user, products, "cash", True)
+        if order_id and order_id > 0:
+            self.context.created_orders.append(order_id)
+            print(f"\n✅ Order created successfully with ID: {order_id} using cash with delivery")
+        
+        # Test 3: Create Order with Delivery (Bank Transfer)
+        print("\n📝 CREATE ORDER WITH DELIVERY (Bank Transfer)")
+        order_id = await self.test_create_order(test_user, products, "bank_transfer", True)
+        if order_id and order_id > 0:
+            self.context.created_orders.append(order_id)
+            print(f"\n✅ Order created successfully with ID: {order_id} using bank_transfer with delivery")
+        
+        # Test 4: Create Order Without Delivery (Card)
+        print("\n📝 CREATE ORDER WITHOUT DELIVERY (Card)")
+        order_id = await self.test_create_order(test_user, products, "card", False)
+        if order_id and order_id > 0:
+            self.context.created_orders.append(order_id)
+            print(f"\n✅ Order created successfully with ID: {order_id} using card without delivery")
         
         # Save context
         print("\n💾 Saving Test Context")
@@ -721,10 +849,16 @@ class OrderTestRunner:
         print(f"   🏥 Suppliers: {len(self.context.created_suppliers)}")
         print(f"   📦 Products: {len(self.context.created_products)}")
         print(f"   📋 Orders: {len(self.context.created_orders)}")
+        print(f"   📍 Deliveries: {len(self.context.created_deliveries)}")
         
         if self.context.created_orders:
             unique_orders = list(set(self.context.created_orders))
             print(f"\n📋 Order IDs: {', '.join(map(str, unique_orders))}")
+        
+        if self.context.created_deliveries:
+            unique_deliveries = list(set(self.context.created_deliveries))
+            if unique_deliveries:
+                print(f"📍 Delivery IDs: {', '.join(map(str, unique_deliveries))}")
         
         if failed == 0:
             print("\n🎉 ALL TESTS PASSED!")
@@ -745,12 +879,12 @@ class OrderTestRunner:
 async def main():
     import argparse
     
-    parser = argparse.ArgumentParser(description="Order Router Test Runner with Inventory Sync")
+    parser = argparse.ArgumentParser(description="Order Router Test Runner with Delivery Support")
     parser.add_argument("--url", default="http://localhost:9000")
     parser.add_argument("--silo-url", default="http://gluttex-silo:9096")
     parser.add_argument("--skip-user-creation", action="store_true")
     parser.add_argument("--skip-login", action="store_true")
-    parser.add_argument("--context-file", default="test_context.json")  # Use main context file
+    parser.add_argument("--context-file", default="test_context.json")
     parser.add_argument("--clear-context", action="store_true")
     
     args = parser.parse_args()

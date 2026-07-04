@@ -867,6 +867,13 @@ class DeliveryUpdate_API(BaseModel):
         return data
 
 
+class Delivery_Info_API(BaseModel):
+    """Location and address model"""
+    destination_address : Location_API = Field(..., description="Destination address")
+    delivery_fee: Optional[float] = Field(default=0.0, description="Delivery fee")
+    
+
+
 # ============================================================================
 # DELIVERY RESPONSE MODEL (with additional details)
 # ============================================================================
