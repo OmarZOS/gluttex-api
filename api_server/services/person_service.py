@@ -146,7 +146,7 @@ class PersonService:
         
         # Handle location
         if location_data:
-            if hasattr(location_data, 'id_location') and location_data.id_location:
+            if location_data.id_location:
                 location = self.location_service.get_location_object(location_data.id_location)
                 if location:
                     person.person_location_id = location.id_location
@@ -162,7 +162,7 @@ class PersonService:
     def refresh_or_insert_person(
         self,
         person_data: Person_API,
-        location_data: Location_API
+        location_data: Location_API = None
     ) -> Person:
         """
         Insert a new person or update an existing one.
@@ -208,16 +208,17 @@ class PersonService:
             existing_person.person_blood_type = person_data.blood_type if (person_data.blood_type != BloodType.UNKNOWN ) else None
             
             # Handle location
-            location = self.location_service.get_location_object(location_data.id_location)
-            if location:
-                location = self.location_service.update_location(
-                    location_data.id_location, 
-                    location_data
-                )
-                existing_person.person_location_id = location.id_location
-            else:
-                new_location = self.location_service.create_location(location_data)
-                existing_person.person_location_id = new_location.id_location
+            if location_data:
+                location = self.location_service.get_location_object(location_data.id_location)
+                if location:
+                    location = self.location_service.update_location(
+                        location_data.id_location, 
+                        location_data
+                    )
+                    existing_person.person_location_id = location.id_location
+                else:
+                    new_location = self.location_service.create_location(location_data)
+                    existing_person.person_location_id = new_location.id_location
             
             try:
                 updated_person = self.person_repo.update_person(existing_person)
@@ -244,11 +245,12 @@ class PersonService:
                 person.person_details_id = self.create_person_details(person_data).id_person_details
             
             # Handle location
-            location = self.location_service.get_location_object(location_data.id_location)
-            if location:
-                person.person_location_id = location.id_location
-            else:
-                person.person_location_id = self.location_service.create_location(location_data).id_location
+            if location_data:
+                location = self.location_service.get_location_object(location_data.id_location)
+                if location:
+                    person.person_location_id = location.id_location
+                else:
+                    person.person_location_id = self.location_service.create_location(location_data).id_location
             
             try:
                 created_person = self.person_repo.create_person(person)

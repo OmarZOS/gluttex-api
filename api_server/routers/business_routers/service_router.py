@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import List, Optional
 import logging
 
+from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.models.api_models import (
     ProvidedService_API, 
     ServiceResourceRequirement_API, 
@@ -124,6 +125,7 @@ def create_service(
     service: ProvidedService_API,
     requirements: List[ServiceResourceRequirement_API],
     staff_requirements: List[ServiceStaffRequirement_API],
+    user_id: int = Depends(get_current_user_id),
     service_service: ServiceService = Depends(get_service_service)
 ):
     """
@@ -165,6 +167,7 @@ def create_service(
 def update_service(
     service_id: int,
     service: ProvidedService_API,
+    user_id: int = Depends(get_current_user_id),
     service_service: ServiceService = Depends(get_service_service)
 ):
     """
@@ -204,6 +207,7 @@ def update_service(
 def toggle_service(
     service_id: int,
     is_active: bool = Query(..., description="True to activate, False to deactivate"),
+    user_id: int = Depends(get_current_user_id),
     service_service: ServiceService = Depends(get_service_service)
 ):
     """
@@ -250,6 +254,7 @@ def toggle_service(
 def delete_service(
     service_id: int,
     force_delete: bool = Query(False, description="Force delete even if service has requirements"),
+    user_id: int = Depends(get_current_user_id),
     service_service: ServiceService = Depends(get_service_service)
 ):
     """
@@ -265,6 +270,8 @@ def delete_service(
         has_requirements = hasattr(existing_service, 'requirements') and existing_service.requirements
         has_staff_requirements = hasattr(existing_service, 'staff_requirements') and existing_service.staff_requirements
         
+        
+
         if (has_requirements or has_staff_requirements) and not force_delete:
             raise ServiceDeleteFailedException(
                 service_id=service_id,

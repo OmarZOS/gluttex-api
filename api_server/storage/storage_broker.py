@@ -210,12 +210,12 @@ def get(
     
     try:
         engine = get_engine()
-        logger.info("Attempting to get objects")
+        # logger.info("Attempting to get objects")
         result = medicom_store.get_records(
             engine, table, conditions, join_tables, 
             eager_load_depth, offset, limit, serialize
         )
-        logger.debug(f"Retrieved {len(result)} records")
+        # logger.debug(f"Retrieved {len(result)} records")
         return result
     except Exception as e:
         _handle_storage_exception(

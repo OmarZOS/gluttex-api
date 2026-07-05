@@ -55,54 +55,6 @@ def get_financial_service() -> FinancialService:
         **get_crud_error_responses(include_404=True, include_409=True)
     }
 )
-def add_cart(
-    api_ordered_items: List[OrderedItem_API],
-    api_provided_services: List[OrderedService_API],
-    api_cart: Optional[Cart_API] = None,
-    delivery: Optional[Delivery_API] = None,
-    client: Optional[Person_API] = None,
-    provider_id: int = Query(0, description="Provider ID"),
-    seller_user_id: int = Query(0, description="Seller user ID"),
-    buyer_user_id: int = Query(0, description="Buyer user ID"),
-    cart_service: CartService = Depends(get_cart_service)
-):
-    """
-    Creates a new cart with ordered items and services.
-    """
-    logger.info(f"Creating cart via legacy endpoint - provider:{provider_id}, seller:{seller_user_id}")
-    
-    if not api_ordered_items and not api_provided_services:
-        raise CartCreationFailedException(
-            error="Cart must have at least one item or service",
-            provider_id=provider_id,
-            seller_id=seller_user_id
-        )
-    
-    try:
-        financial_docs, cart = cart_service.create_cart(
-            api_ordered_items,
-            api_provided_services,
-            api_cart,
-            delivery,
-            client,
-            provider_id,
-            seller_user_id,
-            buyer_user_id
-        )
-        
-        logger.info(f"Cart created successfully via legacy endpoint with ID: {cart.cart_id}")
-        
-        return cart
-        
-    except (CartCreationFailedException, CartNotFoundException):
-        raise
-    except Exception as e:
-        logger.error(f"Failed to create cart via legacy endpoint: {e}")
-        raise CartCreationFailedException(
-            error=str(e),
-            provider_id=provider_id,
-            seller_id=seller_user_id
-        )
 
 
 # ==================== Financial Endpoints ====================

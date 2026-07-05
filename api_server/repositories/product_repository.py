@@ -26,6 +26,45 @@ class ProductRepository:
             )
         return records[0] if records else None
     
+    def get_products_by_ids(self, product_ids: List[int], eager_load: bool = False) -> List[Product]:
+        """
+        Get products by list of IDs with optional eager loading.
+        
+        Args:
+            product_ids: List of product IDs to fetch
+            eager_load: Whether to eager load related relationships
+            
+        Returns:
+            List of Product objects
+        """
+        if not product_ids:
+            return []
+        
+        # Build the condition for IN clause
+        condition = {Product.id_product: product_ids}  # SQLAlchemy handles list as IN clause
+        
+        if eager_load:
+            records = storage_broker.get(
+                Product,
+                condition,
+                [],
+                [
+                    Product.product_reaction,
+                    Product.product_category, 
+                    Product.product_provider,
+                    Product.product_image
+                ]
+            )
+        else:
+            records = storage_broker.get(
+                Product,
+                condition,
+                [],
+                []
+            )
+        
+        return records
+    
     def get_all_products(
         self, 
         user_id: int = 0, 

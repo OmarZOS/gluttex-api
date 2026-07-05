@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for Service endpoints (creation, update, deletion).
+Test script for Service endpoints with proper product references.
 Run with: python test_service_endpoints.py
 """
 
@@ -12,7 +12,8 @@ import uuid
 import random
 from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timedelta
+from pathlib import Path
 
 
 # ============================================================================
@@ -29,11 +30,34 @@ class TestResult:
 
 
 @dataclass
+class TestUser:
+    """Test user with authentication data"""
+    id: int = 0
+    username: str = ""
+    email: str = ""
+    password: str = ""
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
+    token_expires_at: Optional[datetime] = None
+    
+    def is_token_valid(self) -> bool:
+        if not self.access_token or not self.token_expires_at:
+            return False
+        return datetime.now() < self.token_expires_at
+
+
+@dataclass
 class TestContext:
     """Test context containing all fetched data"""
+    users: List[TestUser] = field(default_factory=list)
     categories: List[Dict[str, Any]] = field(default_factory=list)
     providers: List[Dict[str, Any]] = field(default_factory=list)
+    products: List[Dict[str, Any]] = field(default_factory=list)
     created_services: List[Dict[str, Any]] = field(default_factory=list)
+    created_products: List[int] = field(default_factory=list)
+    created_organisations: List[int] = field(default_factory=list)
+    created_suppliers: List[int] = field(default_factory=list)
+    auth_token: Optional[str] = None
     
     @property
     def category_ids(self) -> List[int]:
@@ -58,6 +82,17 @@ class TestContext:
         return ids
     
     @property
+    def product_ids(self) -> List[int]:
+        ids = []
+        for p in self.products:
+            pid = p.get('id_product')
+            if pid is None:
+                pid = p.get('id')
+            if pid and isinstance(pid, int):
+                ids.append(pid)
+        return ids
+    
+    @property
     def service_ids(self) -> List[int]:
         ids = []
         for s in self.created_services:
@@ -70,24 +105,100 @@ class TestContext:
     
     def get_random_category_id(self) -> int:
         if not self.category_ids:
-            # Return a default category ID
             return 1
         return random.choice(self.category_ids)
     
     def get_random_provider_id(self) -> int:
         if not self.provider_ids:
-            # Return a default provider ID
             return 1
         return random.choice(self.provider_ids)
+    
+    def get_random_product_id(self) -> int:
+        if not self.product_ids:
+            return 0
+        return random.choice(self.product_ids)
     
     def get_random_service_id(self) -> int:
         if not self.service_ids:
             return 0
         return random.choice(self.service_ids)
+    
+    def get_auth_headers(self) -> Dict[str, str]:
+        for user in self.users:
+            if user.is_token_valid():
+                return {"Authorization": f"Bearer {user.access_token}"}
+        if self.auth_token:
+            return {"Authorization": f"Bearer {self.auth_token}"}
+        return {}
+    
+    def get_first_valid_token(self) -> Optional[str]:
+        for user in self.users:
+            if user.is_token_valid():
+                return user.access_token
+        return self.auth_token
+    
+    def load_from_file(self, filename: str = "test_context.json") -> bool:
+        if not Path(filename).exists():
+            return False
+        
+        with open(filename, 'r') as f:
+            data = json.load(f)
+        
+        user_data = data.get('users', [])
+        for u in user_data:
+            user = TestUser(
+                id=u.get('id', 0),
+                username=u.get('username', ''),
+                email=u.get('email', ''),
+                password=u.get('password', ''),
+                access_token=u.get('access_token'),
+                refresh_token=u.get('refresh_token')
+            )
+            expires_at = u.get('token_expires_at')
+            if expires_at:
+                try:
+                    user.token_expires_at = datetime.fromisoformat(expires_at)
+                except:
+                    pass
+            self.users.append(user)
+        
+        self.created_products = data.get('created_products', [])
+        self.created_organisations = data.get('created_organisations', [])
+        self.created_suppliers = data.get('created_suppliers', [])
+        
+        token = self.get_first_valid_token()
+        if token:
+            self.auth_token = token
+        
+        return True
+    
+    def save_to_file(self, filename: str = "test_context.json") -> None:
+        data = {
+            'users': [
+                {
+                    'id': u.id,
+                    'username': u.username,
+                    'email': u.email,
+                    'password': u.password,
+                    'access_token': u.access_token,
+                    'refresh_token': u.refresh_token,
+                    'token_expires_at': u.token_expires_at.isoformat() if u.token_expires_at else None
+                }
+                for u in self.users
+            ],
+            'created_products': self.created_products,
+            'created_organisations': self.created_organisations,
+            'created_suppliers': self.created_suppliers,
+            'created_services': self.created_services,
+            'timestamp': datetime.now().isoformat()
+        }
+        with open(filename, 'w') as f:
+            json.dump(data, f, indent=2)
+        print(f"💾 Context saved to {filename}")
 
 
 # ============================================================================
-# DATA GENERATORS
+# DATA GENERATORS - FIXED WITH VALID PRODUCT REFERENCES
 # ============================================================================
 
 def generate_service_data(
@@ -138,7 +249,6 @@ def generate_service_data(
     durations = [15, 30, 45, 60, 90, 120, 180, 240, 300, 360]
     
     return {
-        "provided_service_id": 0,
         "provided_service_product_provider_id": provider_id,
         "provided_service_category_id": category_id,
         "provided_service_name": random.choice(service_names),
@@ -147,13 +257,12 @@ def generate_service_data(
         "provided_service_final_price": round(random.uniform(60.00, 600.00), 2),
         "provided_service_actual_duration": random.choice(durations),
         "provided_service_is_active": True,
-        "provided_service_quantifier": random.choice(quantifiers),
-        "provided_service_notes": f"Created by test {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        "provided_service_quantifier": random.choice(quantifiers)
     }
 
 
-def generate_resource_requirement(service_id: int = 0) -> Dict[str, Any]:
-    """Generate random resource requirement"""
+def generate_resource_requirement(service_id: int = 0, product_id: int = 0) -> Dict[str, Any]:
+    """Generate random resource requirement with valid product reference."""
     
     resource_names = [
         "Cleaning supplies",
@@ -174,52 +283,55 @@ def generate_resource_requirement(service_id: int = 0) -> Dict[str, Any]:
     ]
     
     resource_types = ["consumable", "tool", "material", "equipment"]
-    units = ["pcs", "kg", "L", "m", "m²", "hours", "sets", "box", "package"]
+    
+    product_ref = product_id if product_id > 0 else 1
     
     return {
-        "resource_requirement_id": 0,
         "resource_requirement_service_id": service_id,
         "resource_requirement_name": random.choice(resource_names),
         "resource_requirement_type": random.choice(resource_types),
-        "resource_requirement_quantity": round(random.uniform(1, 20), 2),
+        "resource_requirement_quantity": random.randint(1, 20),
         "resource_requirement_cost_per_unit": round(random.uniform(10.00, 200.00), 2),
         "resource_requirement_is_consumable": random.choice([True, False]),
         "resource_requirement_notes": f"Test requirement {uuid.uuid4().hex[:6]}",
-        "resource_requirement_product_ref": 0
+        "resource_requirement_product_ref": product_ref
     }
 
 
+
 def generate_staff_requirement(service_id: int = 0) -> Dict[str, Any]:
-    """Generate random staff requirement"""
+    """Generate random staff requirement with valid role IDs."""
     
-    staff_roles = [
-        "Technician",
-        "Electrician",
-        "Plumber",
-        "Painter",
-        "Carpenter",
-        "Landscaper",
-        "HVAC Specialist",
-        "General Laborer",
-        "Supervisor",
-        "Project Manager",
-        "Designer",
-        "Engineer",
-        "Architect",
-        "Consultant",
-        "Inspector"
-    ]
+    # Staff role IDs (must exist in staff_role table)
+    # Adjust these IDs based on your actual staff_role table data
+    staff_role_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    
+    # Mapping of role IDs to names (for display only)
+    role_names = {
+        1: "Technician",
+        2: "Electrician",
+        3: "Plumber",
+        4: "Painter",
+        5: "Carpenter",
+        6: "Landscaper",
+        7: "HVAC Specialist",
+        8: "General Laborer",
+        9: "Supervisor",
+        10: "Project Manager"
+    }
+    
+    role_id = random.choice(staff_role_ids)
     
     return {
-        "service_staff_requirement_id": 0,
         "service_staff_requirement_service_id": service_id,
-        "service_staff_requirement_role": random.choice(staff_roles),
+        "service_staff_requirement_role": role_id,  # Now sending integer ID
         "service_staff_requirement_notes": f"Test staff req {uuid.uuid4().hex[:6]}",
         "service_staff_requirement_min_count": random.randint(1, 3),
         "service_staff_requirement_max_count": random.randint(3, 6),
         "service_staff_requirement_hourly_rate": round(random.uniform(20.00, 100.00), 2),
         "service_staff_requirement_allocated_hours": random.randint(2, 8)
     }
+
 
 
 # ============================================================================
@@ -234,6 +346,7 @@ class ServiceTester:
         self.client: Optional[httpx.AsyncClient] = None
         self.context = TestContext()
         self.results: List[TestResult] = []
+        self.context_file = "test_context.json"
     
     async def __aenter__(self):
         self.client = httpx.AsyncClient(timeout=30.0, verify=False)
@@ -247,7 +360,12 @@ class ServiceTester:
     
     async def _get(self, path: str, params: Optional[Dict] = None) -> Tuple[int, Any]:
         try:
-            response = await self.client.get(f"{self.base_url}{path}", params=params)
+            headers = self.context.get_auth_headers()
+            response = await self.client.get(
+                f"{self.base_url}{path}", 
+                params=params,
+                headers=headers
+            )
             data = response.json() if response.text else None
             return response.status_code, data
         except Exception as e:
@@ -255,7 +373,12 @@ class ServiceTester:
     
     async def _post(self, path: str, json_data: Dict) -> Tuple[int, Any]:
         try:
-            response = await self.client.post(f"{self.base_url}{path}", json=json_data)
+            headers = self.context.get_auth_headers()
+            response = await self.client.post(
+                f"{self.base_url}{path}", 
+                json=json_data,
+                headers=headers
+            )
             data = response.json() if response.text else None
             return response.status_code, data
         except Exception as e:
@@ -263,7 +386,12 @@ class ServiceTester:
     
     async def _put(self, path: str, json_data: Dict) -> Tuple[int, Any]:
         try:
-            response = await self.client.put(f"{self.base_url}{path}", json=json_data)
+            headers = self.context.get_auth_headers()
+            response = await self.client.put(
+                f"{self.base_url}{path}", 
+                json=json_data,
+                headers=headers
+            )
             data = response.json() if response.text else None
             return response.status_code, data
         except Exception as e:
@@ -271,7 +399,12 @@ class ServiceTester:
     
     async def _delete(self, path: str, params: Optional[Dict] = None) -> Tuple[int, Any]:
         try:
-            response = await self.client.delete(f"{self.base_url}{path}", params=params)
+            headers = self.context.get_auth_headers()
+            response = await self.client.delete(
+                f"{self.base_url}{path}", 
+                params=params,
+                headers=headers
+            )
             data = response.json() if response.text else None
             return response.status_code, data
         except Exception as e:
@@ -279,7 +412,13 @@ class ServiceTester:
     
     async def _patch(self, path: str, json_data: Optional[Dict] = None, params: Optional[Dict] = None) -> Tuple[int, Any]:
         try:
-            response = await self.client.patch(f"{self.base_url}{path}", json=json_data, params=params)
+            headers = self.context.get_auth_headers()
+            response = await self.client.patch(
+                f"{self.base_url}{path}", 
+                json=json_data, 
+                params=params,
+                headers=headers
+            )
             data = response.json() if response.text else None
             return response.status_code, data
         except Exception as e:
@@ -287,8 +426,23 @@ class ServiceTester:
     
     # ==================== Data Fetching ====================
     
+    async def load_context(self) -> bool:
+        loaded = self.context.load_from_file(self.context_file)
+        if loaded:
+            print(f"\n📂 Loaded context from {self.context_file}")
+            print(f"   👤 Users: {len(self.context.users)}")
+            print(f"   🏢 Organisations: {len(self.context.created_organisations)}")
+            print(f"   🏥 Suppliers: {len(self.context.created_suppliers)}")
+            print(f"   📦 Products: {len(self.context.created_products)}")
+            
+            token = self.context.get_first_valid_token()
+            if token:
+                print(f"   🔐 Valid authentication token found")
+            else:
+                print(f"   ⚠️ No valid authentication token found")
+        return loaded
+    
     async def fetch_categories(self) -> bool:
-        """Fetch product categories"""
         print("\n📋 Fetching categories...")
         status, data = await self._get("/api/v1/products/category/all")
         
@@ -312,7 +466,6 @@ class ServiceTester:
         return True
     
     async def fetch_providers(self) -> bool:
-        """Fetch providers"""
         print("\n📋 Fetching providers...")
         status, data = await self._get("/api/v1/suppliers", {"offset": 0, "limit": 100})
         
@@ -335,14 +488,47 @@ class ServiceTester:
         
         return True
     
+    async def fetch_products(self, provider_id: int) -> bool:
+        print(f"\n📋 Fetching products for provider {provider_id}...")
+        
+        user_id = self.context.users[0].id if self.context.users else 0
+        
+        status, data = await self._get(
+            f"/api/v1/products/{user_id}/{provider_id}/0/0/50",
+            {}
+        )
+        
+        if status != 200:
+            print(f"   ❌ Failed to fetch products: {status}")
+            return False
+        
+        if isinstance(data, list):
+            self.context.products = data
+        elif isinstance(data, dict):
+            self.context.products = data.get("data", data.get("items", []))
+        else:
+            self.context.products = []
+        
+        print(f"   ✅ Found {len(self.context.products)} products")
+        for prod in self.context.products[:5]:
+            pid = prod.get('id_product', prod.get('id', 'N/A'))
+            name = prod.get('product_name', 'Unknown')
+            print(f"      - ID: {pid}, Name: {name}")
+        
+        return True
+    
     async def fetch_all_data(self) -> bool:
-        """Fetch all required data"""
         print("\n" + "="*50)
         print("📊 FETCHING EXISTING DATA")
         print("="*50)
         
         cat_ok = await self.fetch_categories()
         prov_ok = await self.fetch_providers()
+        
+        # Fetch products for the first provider
+        if self.context.provider_ids:
+            provider_id = self.context.provider_ids[0]
+            await self.fetch_products(provider_id)
         
         if not cat_ok:
             print("\n⚠️  Could not fetch categories. Using fallback category IDs: 1-10")
@@ -352,6 +538,15 @@ class ServiceTester:
                     "product_category_name": f"Category_{i}"
                 })
             cat_ok = True
+        
+        # Make sure we have products for resource requirements
+        if not self.context.product_ids:
+            print("\n⚠️  No products found! Using fallback product ID: 1")
+            self.context.products.append({
+                "id_product": 1,
+                "product_name": "Fallback Product",
+                "product_quantity": 100
+            })
         
         return cat_ok and prov_ok
     
@@ -383,8 +578,6 @@ class ServiceTester:
             return False
         
         service = generate_service_data(provider_id, category_id)
-        requirements = []
-        staff_requirements = []
         
         print(f"   Provider ID: {provider_id}")
         print(f"   Category ID: {category_id}")
@@ -394,8 +587,8 @@ class ServiceTester:
             "/api/v1/business/services",
             {
                 "service": service,
-                "requirements": requirements,
-                "staff_requirements": staff_requirements
+                "requirements": [],
+                "staff_requirements": []
             }
         )
         
@@ -416,6 +609,7 @@ class ServiceTester:
         
         provider_id = self.context.get_random_provider_id()
         category_id = self.context.get_random_category_id()
+        product_id = self.context.get_random_product_id()
         
         if not provider_id:
             self._add_result("Create Service with Requirements", False, "No providers available")
@@ -425,14 +619,20 @@ class ServiceTester:
             self._add_result("Create Service with Requirements", False, "No categories available")
             return False
         
-        service = generate_service_data(provider_id, category_id)
-        service["provided_service_name"] = f"Full Service {uuid.uuid4().hex[:6]}"
+        # If no product found, use a default product ID (must exist in DB)
+        if not product_id:
+            product_id = 1  # Fallback to product 1
+            print(f"   ⚠️ No product found, using product_id: {product_id}")
         
-        # Create requirements
+        service = generate_service_data(provider_id, category_id)
+        service_name = f"Full Service {uuid.uuid4().hex[:6]}"
+        service["provided_service_name"] = service_name
+        
+        # Create requirements with proper product references (non-zero)
         requirements = [
-            generate_resource_requirement(0),
-            generate_resource_requirement(0),
-            generate_resource_requirement(0)
+            generate_resource_requirement(0, product_id),
+            generate_resource_requirement(0, product_id),
+            generate_resource_requirement(0, product_id)
         ]
         
         staff_requirements = [
@@ -441,25 +641,35 @@ class ServiceTester:
         ]
         
         print(f"   Service: {service['provided_service_name']}")
+        print(f"   Product ID for resources: {product_id}")
         print(f"   Resource Requirements: {len(requirements)}")
         print(f"   Staff Requirements: {len(staff_requirements)}")
         
+        # Log the request data for debugging
+        request_data = {
+            "service": service,
+            "requirements": requirements,
+            "staff_requirements": staff_requirements
+        }
+        print(f"   📤 Requirements: {json.dumps(requirements, indent=2)[:300]}...")
+        
         status, data = await self._post(
             "/api/v1/business/services",
-            {
-                "service": service,
-                "requirements": requirements,
-                "staff_requirements": staff_requirements
-            }
+            request_data
         )
         
         passed = status == 201
         if passed and data:
             self.context.created_services.append(data)
+            service_id = data.get('provided_service_id')
+            if service_id:
+                print(f"   ✅ Service ID: {service_id}")
         
         details = f"Status: {status}"
         if data and isinstance(data, dict):
             details += f" - {data.get('message', data.get('detail', ''))}"
+            if status != 201:
+                details += f"\n   Response: {json.dumps(data, indent=2)[:300]}"
         
         self._add_result("Create Service with Requirements", passed, details, data if passed else None)
         return passed
@@ -470,17 +680,22 @@ class ServiceTester:
         
         provider_id = self.context.get_random_provider_id()
         category_id = self.context.get_random_category_id()
+        product_id = self.context.get_random_product_id()
         
         if not provider_id:
             self._add_result("Create Service Max Requirements", False, "No providers available")
             return False
         
+        if not product_id:
+            product_id = 1
+            print(f"   ⚠️ No product found, using product_id: {product_id}")
+        
         service = generate_service_data(provider_id, category_id)
         service["provided_service_name"] = f"Max Service {uuid.uuid4().hex[:6]}"
         
-        # Create many requirements
+        # Create many requirements with product references
         requirements = [
-            generate_resource_requirement(0) for _ in range(5)
+            generate_resource_requirement(0, product_id) for _ in range(5)
         ]
         
         staff_requirements = [
@@ -521,7 +736,7 @@ class ServiceTester:
             self._add_result("Invalid Provider", False, "No categories available")
             return False
         
-        service = generate_service_data(99999, category_id)  # Invalid provider ID
+        service = generate_service_data(99999, category_id)
         
         status, data = await self._post(
             "/api/v1/business/services",
@@ -546,7 +761,7 @@ class ServiceTester:
             self._add_result("Invalid Category", False, "No providers available")
             return False
         
-        service = generate_service_data(provider_id, 99999)  # Invalid category ID
+        service = generate_service_data(provider_id, 99999)
         
         status, data = await self._post(
             "/api/v1/business/services",
@@ -569,7 +784,6 @@ class ServiceTester:
             self._add_result("Create Service Duplicate", False, "No services to duplicate")
             return False
         
-        # Get an existing service
         service_id = self.context.get_random_service_id()
         status, existing = await self._get(f"/api/v1/business/services/{service_id}")
         
@@ -577,7 +791,6 @@ class ServiceTester:
             self._add_result("Create Service Duplicate", False, f"Failed to fetch service: {status}")
             return False
         
-        # Remove ID and try to create duplicate
         service = {k: v for k, v in existing.items() if k != 'provided_service_id'}
         
         status, data = await self._post(
@@ -589,7 +802,6 @@ class ServiceTester:
             }
         )
         
-        # Should conflict or fail
         passed = status in [409, 400, 422]
         self._add_result("Create Service Duplicate", passed, f"Correctly blocked (Status: {status})")
         return passed
@@ -736,13 +948,11 @@ class ServiceTester:
         service_id = self.context.get_random_service_id()
         print(f"   Service ID: {service_id}")
         
-        # Get current service
         status, existing = await self._get(f"/api/v1/business/services/{service_id}")
         if status != 200:
             self._add_result("Update Service", False, f"Failed to fetch service: {status}")
             return False
         
-        # Update with new data
         updated_service = existing.copy()
         updated_service["provided_service_name"] = f"Updated Service {uuid.uuid4().hex[:6]}"
         updated_service["provided_service_base_price"] = round(random.uniform(75.00, 300.00), 2)
@@ -767,7 +977,6 @@ class ServiceTester:
         print("\n❌ Test: Update Non-existent Service")
         
         service = generate_service_data(1, 1)
-        service["provided_service_id"] = 999999
         
         status, data = await self._put(
             "/api/v1/business/services/999999",
@@ -789,7 +998,6 @@ class ServiceTester:
         service_id = self.context.get_random_service_id()
         print(f"   Service ID: {service_id}")
         
-        # Get current status
         status, existing = await self._get(f"/api/v1/business/services/{service_id}")
         if status != 200:
             self._add_result("Toggle Service Status", False, f"Failed to fetch service: {status}")
@@ -847,13 +1055,11 @@ class ServiceTester:
         service_id = self.context.get_random_service_id()
         print(f"   Service ID: {service_id}")
         
-        # First try without force delete
         status, data = await self._delete(
             f"/api/v1/business/services/{service_id}",
             params={"force_delete": False}
         )
         
-        # If service has requirements, it should fail with 400
         if status == 400:
             print("   Service has requirements, trying force delete...")
             status, data = await self._delete(
@@ -864,7 +1070,6 @@ class ServiceTester:
         passed = status in [204, 200]
         
         if passed:
-            # Remove from context
             self.context.created_services = [
                 s for s in self.context.created_services
                 if s.get('provided_service_id', s.get('id')) != service_id
@@ -895,7 +1100,6 @@ class ServiceTester:
         """Test deleting a service with requirements without force (should fail)"""
         print("\n❌ Test: Delete Service with Requirements (No Force)")
         
-        # Find a service with requirements
         service_id = 0
         for sid in self.context.service_ids:
             status, reqs = await self._get(f"/api/v1/business/services/{sid}/requirements")
@@ -930,12 +1134,14 @@ class ServiceTester:
         print(f"🕐 Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("="*70)
         
-        # Fetch data
+        await self.load_context()
+        
         if not await self.fetch_all_data():
             print("\n⚠️  Failed to fetch required data. Some tests may fail.")
         
         if not self.context.provider_ids:
             print("\n⚠️  No providers found! Please seed providers first.")
+            print("   Run test_runner.py first to create providers.")
         
         if not self.context.category_ids:
             print("\n⚠️  No categories found! Please seed categories first.")
@@ -944,6 +1150,14 @@ class ServiceTester:
                 {"id_product_category": i, "product_category_name": f"Category_{i}"}
                 for i in range(1, 11)
             ]
+        
+        if not self.context.product_ids:
+            print("\n⚠️  No products found! Using fallback product ID: 1")
+            self.context.products = [{"id_product": 1, "product_name": "Fallback Product"}]
+        
+        if not self.context.get_auth_headers():
+            print("\n⚠️  No authentication headers available. Tests may fail with 401.")
+            print("   Run test_runner.py first to get authentication tokens.")
         
         print("\n" + "="*70)
         print("📝 RUNNING TESTS")
@@ -980,6 +1194,8 @@ class ServiceTester:
             await self.test_delete_service_without_force()
             await self.test_delete_service_invalid_id()
         
+        self.context.save_to_file(self.context_file)
+        
         self._print_summary()
     
     def _print_summary(self) -> None:
@@ -1003,15 +1219,18 @@ class ServiceTester:
         print(f"📦 Services Created: {len(self.context.created_services)}")
         print(f"📋 Categories: {len(self.context.categories)}")
         print(f"🏥 Providers: {len(self.context.providers)}")
+        print(f"📦 Products: {len(self.context.products)}")
         
         if failed == 0:
             print("\n🎉 ALL TESTS PASSED!")
         else:
             print(f"\n⚠️  {failed} test(s) failed.")
             if not self.context.provider_ids:
-                print("💡 No providers found! Create providers first with test_provider_insert.py")
+                print("💡 No providers found! Create providers first with test_runner.py")
             if not self.context.category_ids:
                 print("💡 No categories found! Seed categories with: python -m storage.seed")
+            if not self.context.product_ids:
+                print("💡 No products found! Create products first with test_runner.py")
         
         print("="*70)
 
@@ -1041,19 +1260,16 @@ async def main() -> None:
         help="Use specific category ID for all tests"
     )
     parser.add_argument(
-        "--service-id",
-        type=int,
-        help="Test a specific service ID"
-    )
-    parser.add_argument(
-        "--quick",
-        action="store_true",
-        help="Run only quick tests (skip slow ones)"
+        "--context-file",
+        default="test_context.json",
+        help="Context file to load (default: test_context.json)"
     )
     
     args = parser.parse_args()
     
     async with ServiceTester(args.url) as tester:
+        tester.context_file = args.context_file
+        
         if args.provider_id:
             tester.context.providers = [{"id_product_provider": args.provider_id, "provider_name": "Custom"}]
         if args.category_id:
@@ -1070,4 +1286,6 @@ if __name__ == "__main__":
         sys.exit(0)
     except Exception as e:
         print(f"\n💥 Error running tests: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)

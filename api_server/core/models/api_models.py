@@ -620,12 +620,21 @@ class ServiceStaffRequirement_API(BaseModel):
     """Staff requirements for a service"""
     service_staff_requirement_id: Optional[int] = Field(default=0, description="Requirement ID")
     service_staff_requirement_service_id: Optional[int] = Field(default=0, description="Service ID")
-    service_staff_requirement_role: Optional[str] = Field(default="", max_length=100, description="Staff role")
+    service_staff_requirement_role: Optional[int] = Field(default=0, description="Staff role ID (foreign key to staff_role)")
     service_staff_requirement_notes: Optional[str] = Field(default="", max_length=500, description="Notes")
     service_staff_requirement_min_count: Optional[float] = Field(default=0.0, ge=0, description="Minimum staff count")
     service_staff_requirement_max_count: Optional[float] = Field(default=0.0, ge=0, description="Maximum staff count")
     service_staff_requirement_hourly_rate: Optional[float] = Field(default=0.0, ge=0, description="Hourly rate")
     service_staff_requirement_allocated_hours: Optional[float] = Field(default=0.0, ge=0, description="Allocated hours")
+    
+    @field_validator('service_staff_requirement_role')
+    @classmethod
+    def validate_role(cls, v: Optional[int]) -> Optional[int]:
+        """Validate role ID is provided and positive"""
+        if v is None or v <= 0:
+            raise ValueError('Staff role ID must be a positive integer')
+        return v
+
 
 # ============================================================================
 # DELIVERY MODELS
@@ -894,25 +903,47 @@ class DeliveryResponse_API(Delivery_API):
 # CART & PAYMENT MODELS
 # ============================================================================
 
+class CartStatus(str, Enum):
+    """Cart status enum matching database exactly"""
+    OPEN = 'open'
+    PENDING = 'pending'
+    COMPLETED = 'completed'
+    CANCELED = 'canceled'
+    PARTIAL = 'partial'
+    CHECKOUT = 'checkout'
+    ABANDONED = 'abandoned'
+    
+    @classmethod
+    def get_valid_statuses(cls) -> List[str]:
+        """Get list of all valid status values"""
+        return [status.value for status in cls]
+
 class Cart_API(BaseModel):
-    """Shopping cart model"""
-    cart_id: Optional[int] = Field(default=0, ge=0, description="Cart ID")
-    cart_product_provider_id: Optional[int] = Field(default=None, description="Provider ID")
-    cart_selling_user: Optional[int] = Field(default=None, description="Seller user ID")
-    cart_person_ref: Optional[int] = Field(default=None, description="Person reference")
-    cart_client_user: Optional[int] = Field(default=None, description="Client user ID")
+    """Cart API model matching database structure"""
+    cart_status: Optional[CartStatus] = Field(default=CartStatus.OPEN)
+    cart_total_amount: Optional[float] = Field(None, ge=0)
+    cart_notes: Optional[str] = Field(None, max_length=65535)  # TEXT field
+    cart_due_date: Optional[date] = None
+    cart_invoice: Optional[int] = Field(None, ge=1)
     
-    cart_due_date: Optional[datetime] = Field(default=None, description="Due date")
-    cart_status: Optional[CartStatus] = Field(default=CartStatus.PENDING, description="Cart status")
-    cart_total_amount: Optional[float] = Field(default=0.0, ge=0, description="Total amount")
-    cart_notes: Optional[str] = Field(default="", max_length=500, description="Cart notes")
+    @field_validator('cart_status')
+    @classmethod
+    def validate_cart_status(cls, v):
+        """Validate cart status is valid"""
+        if v is not None:
+            valid_statuses = CartStatus.get_valid_statuses()
+            if v not in valid_statuses:
+                raise ValueError(f"cart_status must be one of: {', '.join(valid_statuses)}")
+        return v
     
-    cart_invoice: Optional[bool] = Field(default=False, description="Has invoice")
-    cart_receipt: Optional[bool] = Field(default=False, description="Has receipt")
+    @field_validator('cart_total_amount')
+    @classmethod
+    def validate_amount(cls, v):
+        """Validate total amount is not negative"""
+        if v is not None and v < 0:
+            raise ValueError("cart_total_amount cannot be negative")
+        return v
     
-    cart_deposit: Optional[bool] = Field(default=False, description="Has deposit")
-    cart_payment: Optional[bool] = Field(default=False, description="Has payment")
-    cart_paid_money: Optional[float] = Field(default=0.0, ge=0, description="Amount paid")
 
 class Payment_API(BaseModel):
     """Payment information"""
