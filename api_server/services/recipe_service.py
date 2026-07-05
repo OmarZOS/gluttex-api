@@ -13,6 +13,7 @@ from core.exceptions.specific.recipe_exceptions import (
     RecipeNotFoundException,
     RecipeAlreadyExistsException,
     RecipeInsertFailedException,
+    RecipePermissionException,
     RecipeUpdateFailedException,
     RecipeDeleteFailedException,
     RecipeCategoryNotFoundException,
@@ -285,7 +286,8 @@ class RecipeService:
         self,
         recipe_id: int,
         recipe_data: Recipe_API,
-        image_data: RecipeImage_API
+        image_data: RecipeImage_API,
+        user_id:int = None
     ) -> Recipe:
         """
         Update an existing recipe.
@@ -315,6 +317,11 @@ class RecipeService:
         # Get existing recipe
         recipe = self.get_recipe_by_id(recipe_id, full=True)
         
+
+        if user_id:
+            if recipe.recipe_owner_id != user_id:
+                logger.warning(f"User {user_id} is not the owner of recipe {recipe_id}")
+                raise RecipePermissionException(f"User {user_id} is not authorized to update this recipe.")
         # Track changes for logging
         changes = []
         if recipe.recipe_name != recipe_data.recipe_name:
@@ -362,13 +369,14 @@ class RecipeService:
     
     # ==================== Recipe Deletion Methods ====================
     
-    def delete_recipe(self, recipe_id: int, force_delete: bool = False) -> Dict[str, Any]:
+    def delete_recipe(self, recipe_id: int, force_delete: bool = False, user_id: int = None) -> Dict[str, Any]:
         """
         Delete a recipe and all associated data.
         
         Args:
             recipe_id: Recipe ID to delete
             force_delete: Force delete even if recipe has dependencies
+            user_id: ID of the user attempting to delete the recipe
             
         Returns:
             Deletion confirmation
@@ -379,8 +387,13 @@ class RecipeService:
         """
         logger.info(f"Deleting recipe with ID: {recipe_id} (force={force_delete})")
         
-        recipe = self.get_recipe_by_id(recipe_id)
+        recipe = self.get_recipe_by_id(recipe_id,full=True)
         
+        if user_id:
+            if recipe.recipe_owner_id != user_id:
+                logger.warning(f"User {user_id} is not the owner of recipe {recipe_id}")
+                raise RecipePermissionException(f"User {user_id} is not authorized to delete this recipe.")
+
         # Check if recipe has dependencies (e.g., in orders, carts)
         if not force_delete:
             has_dependencies = self._check_recipe_dependencies(recipe_id)
@@ -455,7 +468,7 @@ class RecipeService:
     
     # ==================== Ingredient Operations ====================
     
-    async def create_ingredient(self, ingredient_data: Ingredient_API) -> Ingredient:
+    async def create_ingredient(self, ingredient_data: Ingredient_API,user_id:int) -> Ingredient:
         """
         Create a new ingredient.
         
@@ -480,7 +493,8 @@ class RecipeService:
         ingredient = Ingredient(
             ingredient_name=ingredient_data.ingredient_name,
             ingredient_icon_url=ingredient_data.ingredient_icon_url,
-            ingredient_quantifier=ingredient_data.ingredient_quantifier
+            ingredient_quantifier=ingredient_data.ingredient_quantifier,
+            ingredient_user_id = user_id
         )
         
         try:
@@ -529,13 +543,14 @@ class RecipeService:
         logger.debug(f"Fetching all ingredients (offset={offset}, limit={limit})")
         return self.recipe_repo.get_all_ingredients(offset, limit)
     
-    def delete_ingredient(self, ingredient_id: int, force_delete: bool = False) -> Dict[str, Any]:
+    def delete_ingredient(self, ingredient_id: int, force_delete: bool = False, user_id: int = None) -> Dict[str, Any]:
         """
         Delete an ingredient.
         
         Args:
             ingredient_id: Ingredient ID to delete
             force_delete: Force delete even if ingredient is used in recipes
+            user_id: ID of the user attempting to delete the ingredient
             
         Returns:
             Deletion confirmation
@@ -548,6 +563,11 @@ class RecipeService:
         
         ingredient = self.get_ingredient_by_id(ingredient_id)
         
+        if user_id:
+            if ingredient.ingredient_user_id != user_id:
+                logger.warning(f"User {user_id} is not the owner of ingredient {ingredient_id}")
+                raise RecipePermissionException(f"User {user_id} is not authorized to delete this ingredient.")
+
         # Check if ingredient is used in any recipes
         if not force_delete:
             recipe_usages = self.recipe_repo.get_recipes_by_ingredient(ingredient_id)
@@ -584,7 +604,7 @@ class RecipeService:
             )
         
 
-    def update_ingredient(self, ingredient_id: int, ingredient: Ingredient_API) -> Ingredient:
+    def update_ingredient(self, ingredient_id: int, ingredient: Ingredient_API, user_id: int) -> Ingredient:
         """
         Update an existing ingredient.
         
@@ -608,6 +628,11 @@ class RecipeService:
             logger.warning(f"Ingredient not found with ID: {ingredient_id}")
             raise IngredientNotFoundException(ingredient_id=ingredient_id)
         
+        if existing_ingredient.ingredient_user_id != user_id:
+            logger.warning(f"User {user_id} is not the owner of ingredient {ingredient_id}")
+            raise RecipePermissionException(f"User {user_id} is not authorized to update this ingredient.")
+
+
         # Check if name is being changed and if it already exists
         if ingredient.ingredient_name != existing_ingredient.ingredient_name:
             existing_by_name = self.recipe_repo.get_ingredient_by_name(ingredient.ingredient_name)

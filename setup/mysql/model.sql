@@ -618,11 +618,18 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`ingredient` (
   `ingredient_naming_contribution` INT NULL,
   `ingredient_icon_url` VARCHAR(255) NULL,
   `ingredient_name` VARCHAR(255) NULL,
+  `ingredient_user_id` INT NULL,
   PRIMARY KEY (`id_ingredient`),
   INDEX `fk_ingredient_1_idx` (`ingredient_naming_contribution` ASC) VISIBLE,
+  INDEX `fk_ingredient_2_idx` (`ingredient_user_id` ASC) VISIBLE,
   CONSTRAINT `fk_ingredient_1`
     FOREIGN KEY (`ingredient_naming_contribution`)
     REFERENCES `gluttex`.`naming_contribution` (`id_naming_contribution`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_ingredient_2`
+    FOREIGN KEY (`ingredient_user_id`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB

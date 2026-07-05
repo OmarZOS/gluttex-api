@@ -110,9 +110,7 @@ For the business logic:
     [*] --> unpaid : creates a cart, might create invoice or a receipt 
 
     unpaid -> paid : creates a payment or a full deposit
-    unpaid: can be invoice
-    unpaid: can be receipt
-    unpaid: can be cart
+
 
 
 

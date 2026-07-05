@@ -1,6 +1,7 @@
 # routers/recipe_router.py (updated)
 from fastapi import APIRouter, Depends, Query
 from typing import List, Optional
+from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.models.api_models import Recipe_API, RecipeImage_API, Ingredient_API
 from services.recipe_service import RecipeService
 
@@ -47,9 +48,11 @@ def get_recipe(
 async def create_recipe(
     recipe: Recipe_API,
     image: RecipeImage_API,
+    user_id: int = Depends(get_current_user_id),
     recipe_service: RecipeService = Depends(get_recipe_service)
 ):
     """Create a new recipe"""
+    recipe.recipe_owner_id = user_id
     return await recipe_service.create_recipe(recipe, image)
 
 @recipe_router.put("/recipes/{recipe_id}")
@@ -57,18 +60,21 @@ def update_recipe(
     recipe_id: int,
     recipe: Recipe_API,
     image: RecipeImage_API,
+    user_id: int = Depends(get_current_user_id),
     recipe_service: RecipeService = Depends(get_recipe_service)
 ):
     """Update an existing recipe"""
-    return recipe_service.update_recipe(recipe_id, recipe, image)
+    
+    return recipe_service.update_recipe(recipe_id, recipe, image,user_id)
 
 @recipe_router.delete("/recipes/{recipe_id}")
 def delete_recipe(
     recipe_id: int,
+    user_id: int = Depends(get_current_user_id),
     recipe_service: RecipeService = Depends(get_recipe_service)
 ):
     """Delete a recipe"""
-    return recipe_service.delete_recipe(recipe_id)
+    return recipe_service.delete_recipe(recipe_id, user_id)
 
 # ==================== Ingredient Endpoints ====================
 
@@ -92,24 +98,27 @@ def get_ingredient(
 @recipe_router.post("/recipes/ingredients")
 async def create_ingredient(
     ingredient: Ingredient_API,
+    user_id: int = Depends(get_current_user_id),
     recipe_service: RecipeService = Depends(get_recipe_service)
 ):
     """Create a new ingredient"""
-    return await recipe_service.create_ingredient(ingredient)
+    return await recipe_service.create_ingredient(ingredient,user_id)
 
 @recipe_router.put("/recipes/ingredients/{ingredient_id}")
 def update_ingredient(
     ingredient_id: int,
     ingredient: Ingredient_API,
+    user_id: int = Depends(get_current_user_id),
     recipe_service: RecipeService = Depends(get_recipe_service)
 ):
     """Update an existing ingredient"""
-    return recipe_service.update_ingredient(ingredient_id, ingredient)
+    return recipe_service.update_ingredient(ingredient_id, ingredient,user_id)
 
 @recipe_router.delete("/recipes/ingredients/{ingredient_id}")
 def delete_ingredient(
     ingredient_id: int,
+    user_id: int = Depends(get_current_user_id),
     recipe_service: RecipeService = Depends(get_recipe_service)
 ):
     """Delete an ingredient"""
-    return recipe_service.delete_ingredient(ingredient_id)
+    return recipe_service.delete_ingredient(ingredient_id, user_id)

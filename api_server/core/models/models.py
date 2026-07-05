@@ -144,7 +144,9 @@ class Ingredient(Base):
     __tablename__ = 'ingredient'
     __table_args__ = (
         ForeignKeyConstraint(['ingredient_naming_contribution'], ['naming_contribution.id_naming_contribution'], name='fk_ingredient_1'),
-        Index('fk_ingredient_1_idx', 'ingredient_naming_contribution')
+        ForeignKeyConstraint(['ingredient_user_id'], ['app_user.id_app_user'], name='fk_ingredient_2'),
+        Index('fk_ingredient_1_idx', 'ingredient_naming_contribution'),
+        Index('fk_ingredient_2_idx', 'ingredient_user_id')
     )
 
     id_ingredient = Column(Integer, primary_key=True)
@@ -152,9 +154,13 @@ class Ingredient(Base):
     ingredient_naming_contribution = Column(Integer)
     ingredient_icon_url = Column(String(255))
     ingredient_name = Column(String(255))
+    ingredient_user_id = Column(Integer)
 
     naming_contribution = relationship('NamingContribution', back_populates='ingredient')
+    ingredient_user = relationship('AppUser', back_populates='ingredient')
     recipe_contains_ingredient = relationship('RecipeContainsIngredient', back_populates='contained_ingredient')
+
+
 
 
 class Payment(Base):
@@ -521,6 +527,7 @@ class AppUser(Base):
     provider_reaction = relationship('ProviderReaction', back_populates='app_user')
     product_reaction = relationship('ProductReaction', back_populates='app_user')
     service_contribution = relationship('ServiceContribution', back_populates='app_user')
+    ingredient = relationship('Ingredient', back_populates='ingredient_user')
 
 
 class Patient(Base):
