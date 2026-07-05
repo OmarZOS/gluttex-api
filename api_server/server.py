@@ -69,7 +69,7 @@ async def lifespan(app: FastAPI):
     logger.info(f"API Version: {settings.API_VERSION}")
     
     # Seed database in DEV mode
-    seed_database_if_needed()
+    await seed_database_if_needed()
 
     yield
     
