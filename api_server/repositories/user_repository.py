@@ -2,7 +2,7 @@
 from typing import List, Optional, Dict, Any
 from sqlalchemy.orm import joinedload, selectinload
 from core.models.persistent_models import Location
-from core.models.models import AppUser,  Person
+from core.models.models import Address, AppUser,  Person, PersonDetails
 import storage.storage_broker as storage_broker
 
 class UserRepository:
@@ -21,20 +21,23 @@ class UserRepository:
                 
                 {
                     AppUser.app_user_person: [
-                        Person.person_details,
                         Person.person_blood_type,
                         
                         {Person.person_location: [
                             Location.location_address_id,
-                            Location.location_address,
                             Location.location_name,
-                            Location.position_wkt
-                        ]}
+                            Location.position_wkt,
+                            {Location.location_address:[Address.address_city,Address.address_country,Address.address_postal_code,Address.address_street,Address.address_street]},
+                        ]},
+                                            {
+                        Person.person_details: [
+                        ]
+                    },
                     ]
                 }
             ]
         else:
-            eager_load_depth = [ {AppUser.app_user_person: [Person.person_details]}]
+            eager_load_depth = [ {AppUser.app_user_person: []}]
         
         users = storage_broker.get(
             table=AppUser,

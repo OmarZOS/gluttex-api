@@ -89,7 +89,7 @@ def get_all_users(
 )
 def get_user_by_id(
     user_id: int,
-    full: bool = Query(False, description="Include full user details (person, preferences)"),
+    full: bool = Query(True, description="Include full user details (person, preferences)"),
     user_service: UserService = Depends(get_user_service)
 ):
     """

@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, List
 import logging
 
+from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.models.api_models import ManagementRule_API
 from core.models.models import ManagementRule
 from core.response_models import ErrorResponseModel, get_crud_error_responses
@@ -34,7 +35,7 @@ def get_management_rule_service() -> ManagementRuleService:
 # ==================== Management Rule Listing Endpoints ====================
 
 @management_rule_router.get(
-    "/",
+    "/rules",
     # response_model=List[ManagementRule_API],
     summary="Get all rules",
     description="Get all management rules with pagination and filters",
@@ -190,7 +191,7 @@ def get_rule(
 # ==================== Management Rule CRUD Endpoints ====================
 
 @management_rule_router.post(
-    "/",
+    "/rule",
     status_code=status.HTTP_201_CREATED,
     # response_model=ManagementRule_API,
     summary="Create rule",
@@ -205,6 +206,7 @@ def get_rule(
 )
 def create_rule(
     rule: ManagementRule_API,
+    user_id: int = Depends(get_current_user_id),
     rule_service: ManagementRuleService = Depends(get_management_rule_service)
 ):
     """
@@ -215,7 +217,7 @@ def create_rule(
 
 
 @management_rule_router.put(
-    "/{rule_id}",
+    "/rule/{rule_id}",
     # response_model=ManagementRule_API,
     summary="Update rule",
     description="Update an existing management rule",
@@ -230,6 +232,7 @@ def create_rule(
 def update_rule(
     rule_id: int,
     rule: ManagementRule_API,
+    user_id: int = Depends(get_current_user_id),
     rule_service: ManagementRuleService = Depends(get_management_rule_service)
 ):
     """
@@ -241,7 +244,7 @@ def update_rule(
 
 
 @management_rule_router.patch(
-    "/{rule_id}/answer",
+    "/rule/{rule_id}/answer",
     # response_model=ManagementRule_API,
     summary="Answer invitation",
     description="Respond to an invitation (accept or reject)",
@@ -255,6 +258,7 @@ def update_rule(
 def answer_invitation(
     rule_id: int,
     accept: bool = Query(..., description="Accept (true) or reject (false) invitation"),
+    user_id: int = Depends(get_current_user_id),
     rule_service: ManagementRuleService = Depends(get_management_rule_service)
 ):
     """
@@ -266,7 +270,7 @@ def answer_invitation(
 
 
 @management_rule_router.delete(
-    "/{rule_id}",
+    "/rule/{rule_id}",
     status_code=status.HTTP_204_NO_CONTENT,
     summary="Delete rule",
     description="Delete a management rule",
@@ -280,6 +284,7 @@ def answer_invitation(
 def delete_rule(
     rule_id: int,
     force_delete: bool = Query(False, description="Force delete even if rule is active"),
+    user_id: int = Depends(get_current_user_id),
     rule_service: ManagementRuleService = Depends(get_management_rule_service)
 ):
     """
