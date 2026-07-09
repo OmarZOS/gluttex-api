@@ -9,7 +9,6 @@ from repositories.supplier_repository import SupplierRepository
 
 logger = logging.getLogger(__name__)
 
-
 class SupplierSearch:
     """Search operations for suppliers"""
     

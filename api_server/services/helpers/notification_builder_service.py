@@ -87,7 +87,7 @@ class NotificationBuilderService:
     ) -> Notification_API:
         """Build an invitation notification"""
         return Notification_API(
-            notification_code="ROLE_INVITATION",
+            notification_code="role_invitation",
             notification_params=json.dumps({
                 "rule_id": rule_id,
                 "role": role,
@@ -134,14 +134,15 @@ class NotificationBuilderService:
             notification_user_ref=user_ref
         )
     
-    def create_and_send_invitation(
+    def create_invitation_notification(
         self,
         rule_id: int = 0,
         role: int = 0,
         provider_id: int = 0,
         organization_id: int = 0,
         destination_user: int = 0,
-        invited_by: int = 0
+        invited_by: int = 0,
+        notify_user: int = 0
     ) -> Notification:
         """Create and send an invitation notification"""
         # Build the notification API object
@@ -156,12 +157,13 @@ class NotificationBuilderService:
         
         # Use the notification service's send_invitation_notification method
         invitation_data = json.loads(notification_api.notification_params)
+        
         notification = self.notification_service.send_invitation_notification(
-            user_ref=destination_user,
+            user_ref=notify_user,
             invitation_data=invitation_data
         )
         
-        logger.info(f"Created invitation notification for rule {rule_id}")
+        logger.info(f"Created invitation notification to user {notify_user} for rule {rule_id}")
         
         return notification
     

@@ -2,6 +2,7 @@
 Notification handling for management rules.
 """
 
+import json
 import logging
 from datetime import datetime
 from typing import Optional
@@ -23,7 +24,7 @@ class RuleNotification:
         self.notification_builder = NotificationBuilderService()
         self.supplier_repo = SupplierRepository()
     
-    def create_invitation_notification(self, rule) -> None:
+    def create_invitation_notification(self, rule,destinations) -> None:
         """
         Create invitation notification for a rule.
         
@@ -31,16 +32,18 @@ class RuleNotification:
             rule: Created rule
         """
         try:
-            notification = self.notification_builder.create_and_send_invitation(
-                rule_id=rule.id_management_rule,
-                role=rule.management_rule_code,
-                provider_id=rule.rule_ref_provider,
-                organization_id=rule.rule_ref_org,
-                destination_user=rule.rule_ref_user,
-                invited_by=rule.rule_ref_provider
-            )
-            
-            logger.info(f"Created invitation notification for rule {rule.id_management_rule}")
+            for id in destinations:
+                notification = self.notification_builder.create_invitation_notification(
+                    rule_id=rule.id_management_rule,
+                    role=rule.management_rule_code,
+                    provider_id=rule.rule_ref_provider,
+                    organization_id=rule.rule_ref_org,
+                    destination_user=rule.rule_ref_user,
+                    invited_by=rule.rule_ref_provider,
+                    notify_user= id
+                )
+                
+                logger.info(f"Created invitation notification to user: {id} for rule {rule.id_management_rule}")
             
             # Try to send real-time notification via publisher
             try:
@@ -54,11 +57,12 @@ class RuleNotification:
                 }, rule.rule_ref_user)
             except Exception as e:
                 logger.error(f"Failed to send real-time notification: {e}")
+            return notification
                 
         except Exception as e:
             logger.error(f"Failed to create invitation notification: {e}")
     
-    def create_rule_update_notification(self, rule) -> None:
+    def create_rule_update_notification(self, rule,destinations) -> None:
         """
         Create notification for rule update.
         
@@ -76,33 +80,21 @@ class RuleNotification:
                 "invited_by": rule.rule_ref_user,
                 "notification_date": str(datetime.now())
             }
+            for id in destinations:
+                notification_api = Notification_API(
+                    notification_code="role_updated",
+                    notification_params=json.dumps(notification_data),
+                    notification_user_ref=id,
+                )
+                
+                self.notification_service.create_notification(notification_api)
+                logger.info(f"Created rule update notification to user {id} for rule {rule.id_management_rule}")
             
-            notification_api = Notification_API(
-                notification_code="NEW_RULE_ADDED",
-                notification_params=notification_data,
-                notification_user_ref=rule.rule_ref_user,
-            )
-            
-            self.notification_service.create_notification(notification_api)
-            logger.info(f"Created rule update notification for rule {rule.id_management_rule}")
-            
-            # Notify provider owner
-            try:
-                supplier = self.supplier_repo.get_supplier_basic(rule.rule_ref_provider)
-                if supplier and supplier.product_provider_owner:
-                    owner_notification = Notification_API(
-                        notification_code="NEW_RULE_ADDED",
-                        notification_params=notification_data,
-                        notification_user_ref=supplier.product_provider_owner,
-                    )
-                    self.notification_service.create_notification(owner_notification)
-            except Exception as e:
-                logger.error(f"Failed to send rule notifications: {e}")
                 
         except Exception as e:
             logger.error(f"Failed to create rule update notification: {e}")
     
-    def create_invitation_response_notification(self, rule, accepted: bool) -> None:
+    def create_invitation_response_notification(self, rule, accepted: bool,destinations) -> None:
         """
         Create notification for invitation response.
         
@@ -111,7 +103,7 @@ class RuleNotification:
             accepted: Whether invitation was accepted
         """
         try:
-            notification_code = "INVITATION_ACCEPTED" if accepted else "INVITATION_REJECTED"
+            notification_code = "role_invitation_accepted" if accepted else "role_invitation_rejected"
             message = "accepted" if accepted else "rejected"
             
             notification_data = {
@@ -123,34 +115,18 @@ class RuleNotification:
                 "status": rule.management_rule_status,
                 "response_date": str(datetime.now())
             }
+
+            for id in destinations:
             
-            notification_api = Notification_API(
-                notification_code=notification_code,
-                notification_params=notification_data,
-                notification_user_ref=rule.rule_ref_user,
-            )
+                notification_api = Notification_API(
+                    notification_code=notification_code,
+                    notification_params=json.dumps(notification_data),
+                    notification_user_ref=id,
+                )
+                
+                self.notification_service.create_notification(notification_api)
+                logger.info(f"Created invitation {message} notification for rule {rule.id_management_rule}")
             
-            self.notification_service.create_notification(notification_api)
-            logger.info(f"Created invitation {message} notification for rule {rule.id_management_rule}")
-            
-            # Notify provider owner
-            try:
-                supplier = self.supplier_repo.get_supplier_basic(rule.rule_ref_provider)
-                if supplier and supplier.product_provider_owner:
-                    owner_notification = Notification_API(
-                        notification_code=notification_code,
-                        notification_params=notification_data,
-                        notification_user_ref=supplier.product_provider_owner,
-                    )
-                    self.notification_service.create_notification(owner_notification)
-                    
-                    # Try to publish real-time notification
-                    try:
-                        notify_rule_to_role_received(notification_api, supplier.product_provider_owner)
-                    except Exception as e:
-                        logger.error(f"Failed to send acceptance notification: {e}")
-            except Exception as e:
-                logger.error(f"Failed to notify provider owner: {e}")
                         
         except Exception as e:
             logger.error(f"Failed to create invitation response notification: {e}")

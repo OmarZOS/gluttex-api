@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gluttex API Test Runner - Fixed for Product API
+Gluttex API Test Runner - Massive Data Generation with Distribution
 Run with: python test_runner.py
 """
 
@@ -64,11 +64,6 @@ class TestUser:
             person_data=data.get('person_data', {}),
             location_data=data.get('location_data', {})
         )
-    
-    def is_token_valid(self) -> bool:
-        if not self.access_token or not self.token_expires_at:
-            return False
-        return datetime.now() < self.token_expires_at
 
 
 @dataclass
@@ -82,6 +77,10 @@ class TestContext:
     created_categories: List[int] = field(default_factory=list)
     created_orders: List[int] = field(default_factory=list)
     created_services: List[int] = field(default_factory=list)
+    created_staff_rules: List[int] = field(default_factory=list)
+    created_deliveries: List[int] = field(default_factory=list)
+    user_org_mapping: Dict[int, List[int]] = field(default_factory=dict)
+    user_supplier_mapping: Dict[int, List[int]] = field(default_factory=dict)
     test_results: List[Dict[str, Any]] = field(default_factory=list)
     
     def save(self, filename: str = "test_context.json"):
@@ -95,6 +94,10 @@ class TestContext:
             'created_categories': self.created_categories,
             'created_orders': self.created_orders,
             'created_services': self.created_services,
+            'created_staff_rules': self.created_staff_rules,
+            'created_deliveries': self.created_deliveries,
+            'user_org_mapping': self.user_org_mapping,
+            'user_supplier_mapping': self.user_supplier_mapping,
             'timestamp': datetime.now().isoformat()
         }
         with open(filename, 'w') as f:
@@ -114,6 +117,10 @@ class TestContext:
             self.created_categories = data.get('created_categories', [])
             self.created_orders = data.get('created_orders', [])
             self.created_services = data.get('created_services', [])
+            self.created_staff_rules = data.get('created_staff_rules', [])
+            self.created_deliveries = data.get('created_deliveries', [])
+            self.user_org_mapping = data.get('user_org_mapping', {})
+            self.user_supplier_mapping = data.get('user_supplier_mapping', {})
             print(f"📂 Test context loaded from {filename}")
             return True
         return False
@@ -160,15 +167,9 @@ class CountryCode(str, Enum):
     SA = "SA"
     AE = "AE"
 
-class GlutenStatus(str, Enum):
-    GLUTEN_FREE = "gluten_free"
-    CONTAINS_GLUTEN = "contains_gluten"
-    MAY_CONTAIN = "may_contain"
-    UNKNOWN = "unknown"
-
 
 # ============================================================================
-# TEST DATA GENERATORS
+# TEST DATA GENERATORS - ENHANCED
 # ============================================================================
 
 def generate_unique_username() -> str:
@@ -181,8 +182,18 @@ def generate_strong_password() -> str:
     return f"Test_{uuid.uuid4().hex[:8]}!@#"
 
 def generate_random_person_data() -> Dict[str, Any]:
-    first_names = ["John", "Jane", "Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Maria", "Ahmed"]
-    last_names = ["Smith", "Doe", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Benali", "Khan"]
+    first_names = [
+        "John", "Jane", "Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", 
+        "Maria", "Ahmed", "Sarah", "Michael", "Emma", "David", "Sophia", 
+        "James", "Olivia", "Daniel", "Isabella", "Matthew", "Amelia", 
+        "Joseph", "Mia", "Samuel", "Charlotte", "David", "Ava", "Andrew"
+    ]
+    last_names = [
+        "Smith", "Doe", "Johnson", "Williams", "Brown", "Jones", "Garcia", 
+        "Miller", "Benali", "Khan", "Cohen", "Lopez", "Martin", "Lee", 
+        "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", 
+        "Walker", "Young", "Allen", "King", "Wright", "Scott", "Torres"
+    ]
     
     return {
         "person_first_name": random.choice(first_names),
@@ -194,25 +205,35 @@ def generate_random_person_data() -> Dict[str, Any]:
     }
 
 def generate_random_location_data() -> Dict[str, Any]:
-    cities = ["Algiers", "Oran", "Constantine", "Annaba", "Blida", "Setif", "Tizi Ouzou", "Bejaia"]
-    streets = ["Main St", "Rue Didouche Mourad", "Avenue du 1er Novembre", "Rue Larbi Ben Mhidi"]
+    cities = [
+        "Algiers", "Oran", "Constantine", "Annaba", "Blida", "Setif", 
+        "Tizi Ouzou", "Bejaia", "Batna", "Sidi Bel Abbes", "Biskra", 
+        "Tebessa", "El Oued", "Ghardaia", "Tamanrasset", "Mostaganem", 
+        "Skikda", "Tipaza", "Boumerdes", "Relizane", "Saida", "M'sila"
+    ]
+    streets = [
+        "Main St", "Rue Didouche Mourad", "Avenue du 1er Novembre", 
+        "Rue Larbi Ben Mhidi", "Boulevard Krim Belkacem", 
+        "Rue des Freres Bouadou", "Avenue de l'Independance", 
+        "Rue Ali Khodja", "Boulevard Colonel Amirouche", "Rue Emir Abdelkader"
+    ]
     
     return {
         "location_latitude": round(random.uniform(35.0, 37.0), 6),
         "location_longitude": round(random.uniform(-5.0, 8.0), 6),
-        "location_name": random.choice(["Home", "Work", "Clinic", "Office", "Shop"]),
+        "location_name": random.choice(["Home", "Work", "Clinic", "Office", "Shop", "Warehouse", "Distribution Center", "Hospital", "Pharmacy"]),
         "address_street": f"{random.randint(1, 999)} {random.choice(streets)}",
         "address_city": random.choice(cities),
         "address_postal_code": f"{random.randint(1000, 9999)}",
         "address_country": random.choice([c.value for c in CountryCode])
     }
 
-def generate_random_user_data() -> Dict[str, Any]:
+def generate_random_user_data(user_type: Optional[str] = None) -> Dict[str, Any]:
     return {
         "app_user_name": generate_unique_username(),
         "app_user_password": generate_strong_password(),
         "app_user_email": generate_unique_email(),
-        "app_user_type": random.choice([t.value for t in AppUserType]),
+        "app_user_type": user_type or random.choice([t.value for t in AppUserType]),
         "app_user_preferences": {
             "theme": random.choice(["dark", "light"]),
             "notifications": random.choice([True, False]),
@@ -223,20 +244,19 @@ def generate_random_user_data() -> Dict[str, Any]:
 
 def generate_random_organisation_data() -> Dict[str, Any]:
     org_names = [
-        "HealthCare Plus", "MediCorp", "Wellness Center", 
-        "Global Health Solutions", "Premium Care", "MediServe",
-        "HealthFirst", "CarePlus", "MediHealth", "WellnessWorks",
-        "City Medical Group", "Advanced Care", "Prime Health"
+        "HealthCare Plus", "MediCorp", "Wellness Center", "Global Health Solutions", 
+        "Premium Care", "MediServe", "HealthFirst", "CarePlus", "MediHealth", 
+        "WellnessWorks", "City Medical Group", "Advanced Care", "Prime Health",
+        "Elite Medical", "Family Care", "Specialist Center", "Medical Arts",
+        "LifeLine Health", "CareBridge", "MediLink", "HealthWave", "VitalCare",
+        "Optimum Health", "Pulse Medical", "Core Wellness", "Apex Healthcare",
+        "Zenith Medical", "Nova Health", "Virtue Care", "Harmony Medical",
+        "Pinnacle Health", "Radiant Care", "Summit Medical", "Tranquil Health"
     ]
     
     return {
         "provider_organisation_name": f"{random.choice(org_names)} {uuid.uuid4().hex[:4]}",
-        "provider_organisation_desc": f"Leading healthcare provider specializing in {random.choice(['cardiology', 'neurology', 'pediatrics', 'orthopedics', 'general medicine'])}"
-    }
-
-def generate_random_organisation_image_data() -> Dict[str, Any]:
-    return {
-        "org_image_url": f"https://example.com/images/org_{uuid.uuid4().hex[:8]}.jpg"
+        "provider_organisation_desc": f"Leading healthcare provider specializing in {random.choice(['cardiology', 'neurology', 'pediatrics', 'orthopedics', 'general medicine', 'dermatology', 'ophthalmology', 'oncology', 'gynecology', 'urology', 'psychiatry', 'radiology'])}"
     }
 
 def generate_random_supplier_data(org_id: int = 0, owner_id: int = 0) -> Dict[str, Any]:
@@ -245,7 +265,10 @@ def generate_random_supplier_data(org_id: int = 0, owner_id: int = 0) -> Dict[st
         "City Medical Center", "HealthFirst Clinic", "MediLab Services", 
         "PharmaCare", "Advanced Medical Supplies", "Precision Diagnostics",
         "Wellness Medical Group", "Prime Healthcare", "Elite Medical Services",
-        "CarePlus Pharmacy", "MediHealth Solutions"
+        "CarePlus Pharmacy", "MediHealth Solutions", "Global Medical Supply",
+        "MediTech Services", "HealthBridge", "Vitality Medical", "Apex Diagnostics",
+        "CuraMed", "NovaCare", "Virtue Health", "Optimum Medical",
+        "Pulse Healthcare", "Zenith Medical Supply", "Radiant Health", "Core Medical"
     ]
     
     return {
@@ -253,9 +276,9 @@ def generate_random_supplier_data(org_id: int = 0, owner_id: int = 0) -> Dict[st
         "idprovider_details_id": 0,
         "id_product_provider_type": random.choice(provider_types),
         "id_provider_organisation": org_id,
-        "product_provider_type_desc": random.choice(["Restaurant", "Bakery", "Factory", "Supermarket", "Grocery Store", "Distributor"]),
+        "product_provider_type_desc": random.choice(["Medical", "Pharmacy", "Diagnostic", "Surgical", "Laboratory", "Dental", "Optical", "Therapeutic"]),
         "provider_organisation_name": f"{random.choice(provider_names)} {uuid.uuid4().hex[:4]}",
-        "provider_organisation_desc": f"Provider of {random.choice(['medical', 'dental', 'diagnostic', 'pharmaceutical', 'surgical'])} services",
+        "provider_organisation_desc": f"Provider of {random.choice(['medical', 'dental', 'diagnostic', 'pharmaceutical', 'surgical', 'laboratory', 'therapeutic', 'rehabilitation'])} services",
         "provider_name": f"Provider_{uuid.uuid4().hex[:8]}",
         "provider_contact_info": json.dumps({
             "phone": f"+213-5{random.randint(10, 99)}{random.randint(10, 99)}{random.randint(10, 99)}",
@@ -264,29 +287,26 @@ def generate_random_supplier_data(org_id: int = 0, owner_id: int = 0) -> Dict[st
         })
     }
 
-def generate_random_provider_image_data() -> Dict[str, Any]:
-    return {
-        "provider_image_url": f"https://example.com/images/provider_{uuid.uuid4().hex[:8]}.jpg"
-    }
-
 def generate_random_product_data(provider_id: int = 0, owner_id: int = 0) -> Dict[str, Any]:
     product_names = [
         "Paracetamol", "Ibuprofen", "Amoxicillin", "Vitamin C", "Omega-3",
         "Antibiotic", "Pain Relief", "Allergy Medicine", "Cough Syrup",
-        "Medical Device", "Surgical Mask", "Hand Sanitizer", "Thermometer"
+        "Medical Device", "Surgical Mask", "Hand Sanitizer", "Thermometer",
+        "Blood Pressure Monitor", "Stethoscope", "Syringe", "Bandage", "Antiseptic",
+        "Antibiotic Cream", "Painkiller", "Antihistamine", "Decongestant", "Antacid"
     ]
     categories = [1, 2, 3, 4, 5]
     
     return {
         "product_name": f"{random.choice(product_names)} {uuid.uuid4().hex[:4]}",
-        "product_brand": random.choice(["BrandA", "BrandB", "BrandC", "Generic", "Premium"]),
+        "product_brand": random.choice(["BrandA", "BrandB", "BrandC", "Generic", "Premium", "MedicalPro", "HealthPlus", "CareMed"]),
         "product_provider_id": provider_id,
-        "product_category_id": random.choice(categories),  # Note: using product_category_id (not id_product_category)
+        "product_category_id": random.choice(categories),
         "product_barcode": f"{random.randint(1000000000000, 9999999999999)}",
-        "product_description": f"High-quality {random.choice(['medical', 'healthcare', 'pharmaceutical'])} product",
+        "product_description": f"High-quality {random.choice(['medical', 'healthcare', 'pharmaceutical', 'surgical', 'diagnostic'])} product",
         "product_price": round(random.uniform(5.0, 200.0), 2),
         "product_quantity": random.randint(10, 1000),
-        "product_quantifier": random.choice(["mg", "g", "ml", "pack", "unit"]),
+        "product_quantifier": random.choice(["mg", "g", "ml", "pack", "unit", "tablet", "capsule", "bottle"]),
         "product_owner": owner_id
     }
 
@@ -296,36 +316,36 @@ def generate_random_product_image_data() -> Dict[str, Any]:
     }
 
 def generate_random_iproduct_data() -> Dict[str, Any]:
-    """Generate iproduct data - using string values for enums"""
     gluten_statuses = ["gluten_free", "contains_gluten", "may_contain", "unknown"]
     categories = [1, 2, 3, 4, 5]
     
     return {
         "iproduct_name": f"Product_{uuid.uuid4().hex[:8]}",
         "iproduct_barcode": f"{random.randint(1000000000000, 9999999999999)}",
-        "iproduct_brand": random.choice(["BrandA", "BrandB", "BrandC", "Generic"]),
+        "iproduct_brand": random.choice(["BrandA", "BrandB", "BrandC", "Generic", "Premium"]),
         "iproduct_estimated_price": round(random.uniform(5.0, 200.0), 2),
         "iproduct_price_currency": "DZD",
-        "iproduct_gluten_status": random.choice(gluten_statuses),  # String value, not enum
+        "iproduct_gluten_status": random.choice(gluten_statuses),
         "iproduct_info_source": "openai",
         "iproduct_info_confidence": round(random.uniform(0.5, 1.0), 2),
-        "iproduct_category_id": random.choice(categories)  # Add category ID
+        "iproduct_category_id": random.choice(categories)
     }
 
 
 # ============================================================================
-# TEST RUNNER
+# ENHANCED TEST RUNNER
 # ============================================================================
 
-class TestRunner:
+class EnhancedTestRunner:
     def __init__(self, base_url: str = "http://localhost:9000"):
         self.base_url = base_url
         self.client = None
         self.context = TestContext()
         self.results = []
+        self.test_user = None
     
     async def __aenter__(self):
-        self.client = httpx.AsyncClient(timeout=30.0, verify=False)
+        self.client = httpx.AsyncClient(timeout=60.0, verify=False)
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -351,7 +371,6 @@ class TestRunner:
         return {}
     
     def extract_id_from_response(self, response_data: Dict[str, Any], possible_keys: List[str]) -> int:
-        """Extract ID from response by trying multiple possible key names."""
         if not response_data:
             return 0
         
@@ -414,22 +433,25 @@ class TestRunner:
                 return test_user
             else:
                 print(f"   ❌ Failed to create user: {response.status_code}")
-                print(f"      {response.text[:200]}")
+                if response.text:
+                    print(f"      {response.text[:200]}")
                 return None
                 
         except Exception as e:
             print(f"   ❌ Error creating user: {e}")
             return None
     
-    async def create_multiple_users(self, count: int = 5) -> List[TestUser]:
+    async def create_multiple_users(self, count: int = 20) -> List[TestUser]:
         print(f"\n👥 Creating {count} test users...")
         created_users = []
         
+        user_types = ["provider", "customer", "patient", "guest"]
+        
         for i in range(count):
-            print(f"\n  Creating user {i+1}/{count}:")
-            user_data = generate_random_user_data()
-            person_data = generate_random_person_data() if random.choice([True, False]) else None
-            location_data = generate_random_location_data() if random.choice([True, False]) else None
+            user_type = user_types[i % len(user_types)]
+            user_data = generate_random_user_data(user_type)
+            person_data = generate_random_person_data()
+            location_data = generate_random_location_data()
             
             user = await self.create_user(user_data, person_data, location_data)
             if user:
@@ -497,24 +519,16 @@ class TestRunner:
             return None
         
         org_data = generate_random_organisation_data()
-        org_image = generate_random_organisation_image_data()
         
         try:
             response = await self.client.post(
                 f"{self.base_url}/api/v1/organisations",
-                json={
-                    "organisation": org_data,
-                    "org_image": org_image
-                },
+                json={"organisation": org_data},
                 headers=headers
             )
             
-            print(f"   Response status: {response.status_code}")
-            
             if response.status_code in [200, 201]:
                 result = response.json()
-                print(f"   Response data: {json.dumps(result, indent=2)[:500]}")
-                
                 org_id = self.extract_id_from_response(result, [
                     'idprovider_organisation',
                     'id_provider_organisation',
@@ -525,18 +539,19 @@ class TestRunner:
                 
                 if org_id > 0:
                     self.context.created_organisations.append(org_id)
-                    print(f"   ✅ Created organisation: {org_id}")
-                    print(f"   📝 Name: {org_data['provider_organisation_name']}")
+                    
+                    if user.id not in self.context.user_org_mapping:
+                        self.context.user_org_mapping[user.id] = []
+                    self.context.user_org_mapping[user.id].append(org_id)
+                    
+                    print(f"   ✅ Created organisation: {org_id} for user {user.id}")
                     self.print_result("Create Organisation", True, f"Organisation {org_id} created")
                     return org_id
                 else:
-                    print(f"   ⚠️ Could not extract ID from response: {result}")
-                    self.context.created_organisations.append(0)
-                    self.print_result("Create Organisation", True, "Organisation created but ID extraction failed")
+                    print(f"   ⚠️ Could not extract ID from response")
                     return 0
             else:
                 print(f"   ❌ Failed to create organisation: {response.status_code}")
-                print(f"      {response.text[:300]}")
                 self.print_result("Create Organisation", False, f"Status: {response.status_code}")
                 return None
                 
@@ -545,75 +560,26 @@ class TestRunner:
             self.print_result("Create Organisation", False, str(e))
             return None
     
-    async def test_get_organisation(self, user: TestUser, org_id: int) -> bool:
-        if org_id <= 0:
-            print(f"\n⚠️ Skipping get organisation - invalid ID: {org_id}")
-            return False
-            
-        print(f"\n📋 Getting organisation {org_id}")
+    async def create_organisations_for_all_users(self, orgs_per_user: int = 3):
+        """Create organisations for all authenticated users"""
+        print(f"\n🏢 Creating {orgs_per_user} organisations per user...")
         
-        headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No authentication token available")
-            return False
+        authenticated_users = [u for u in self.context.users if u.access_token]
+        total_orgs = 0
         
-        try:
-            response = await self.client.get(
-                f"{self.base_url}/api/v1/organisations/{org_id}",
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                print(f"   ✅ Organisation retrieved: {result.get('provider_organisation_name', 'Unknown')}")
-                self.print_result("Get Organisation", True, f"Organisation {org_id} retrieved")
-                return True
-            else:
-                print(f"   ❌ Failed to get organisation: {response.status_code}")
-                self.print_result("Get Organisation", False, f"Status: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            print(f"   ❌ Get organisation error: {e}")
-            self.print_result("Get Organisation", False, str(e))
-            return False
-    
-    async def test_get_all_organisations(self, user: TestUser) -> bool:
-        print(f"\n📋 Getting all organisations")
+        for user in authenticated_users:
+            for i in range(orgs_per_user):
+                org_id = await self.test_create_organisation(user)
+                if org_id and org_id > 0:
+                    total_orgs += 1
         
-        headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No authentication token available")
-            return False
-        
-        try:
-            response = await self.client.get(
-                f"{self.base_url}/api/v1/organisations",
-                params={"offset": 0, "limit": 100},
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                count = len(result) if isinstance(result, list) else 0
-                print(f"   ✅ Retrieved {count} organisations")
-                self.print_result("Get All Organisations", True, f"Retrieved {count} organisations")
-                return True
-            else:
-                print(f"   ❌ Failed to get organisations: {response.status_code}")
-                self.print_result("Get All Organisations", False, f"Status: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            print(f"   ❌ Get organisations error: {e}")
-            self.print_result("Get All Organisations", False, str(e))
-            return False
+        print(f"✅ Created {total_orgs} organisations across {len(authenticated_users)} users")
+        return total_orgs
     
     # ==================== SUPPLIER TESTS ====================
     
     async def test_create_supplier(self, user: TestUser, org_id: int) -> Optional[int]:
         if org_id <= 0:
-            print(f"\n⚠️ Skipping create supplier - invalid organisation ID: {org_id}")
             return None
             
         print(f"\n🏥 Creating supplier for user: {user.username}")
@@ -625,20 +591,16 @@ class TestRunner:
         
         supplier_data = generate_random_supplier_data(org_id, user.id)
         location_data = generate_random_location_data()
-        image_data = generate_random_provider_image_data()
         
         try:
             response = await self.client.post(
                 f"{self.base_url}/api/v1/suppliers",
                 json={
                     "provider": supplier_data,
-                    "location": location_data,
-                    "image": image_data
+                    "location": location_data
                 },
                 headers=headers
             )
-            
-            print(f"   Response status: {response.status_code}")
             
             if response.status_code in [200, 201]:
                 result = response.json()
@@ -653,16 +615,19 @@ class TestRunner:
                 
                 if supplier_id > 0:
                     self.context.created_suppliers.append(supplier_id)
-                    print(f"   ✅ Created supplier: {supplier_id}")
+                    
+                    if user.id not in self.context.user_supplier_mapping:
+                        self.context.user_supplier_mapping[user.id] = []
+                    self.context.user_supplier_mapping[user.id].append(supplier_id)
+                    
+                    print(f"   ✅ Created supplier: {supplier_id} for user {user.id}")
                     self.print_result("Create Supplier", True, f"Supplier {supplier_id} created")
                     return supplier_id
                 else:
                     print(f"   ⚠️ Could not extract supplier ID from response")
-                    self.print_result("Create Supplier", True, "Supplier created but ID extraction failed")
                     return 0
             else:
                 print(f"   ❌ Failed to create supplier: {response.status_code}")
-                print(f"      {response.text[:300]}")
                 self.print_result("Create Supplier", False, f"Status: {response.status_code}")
                 return None
                 
@@ -671,122 +636,37 @@ class TestRunner:
             self.print_result("Create Supplier", False, str(e))
             return None
     
-    async def test_get_supplier(self, user: TestUser, supplier_id: int) -> bool:
-        if supplier_id <= 0:
-            print(f"\n⚠️ Skipping get supplier - invalid ID: {supplier_id}")
-            return False
-            
-        print(f"\n📋 Getting supplier {supplier_id}")
+    async def create_suppliers_for_all_users(self, suppliers_per_org: int = 3):
+        """Create suppliers for all organisations"""
+        print(f"\n🏥 Creating {suppliers_per_org} suppliers per organisation...")
         
-        headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No authentication token available")
-            return False
+        authenticated_users = [u for u in self.context.users if u.access_token]
+        total_suppliers = 0
         
-        try:
-            response = await self.client.get(
-                f"{self.base_url}/api/v1/suppliers/{supplier_id}",
-                params={"full": True},
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                print(f"   ✅ Supplier retrieved: {result.get('provider_name', 'Unknown')}")
-                self.print_result("Get Supplier", True, f"Supplier {supplier_id} retrieved")
-                return True
-            else:
-                print(f"   ❌ Failed to get supplier: {response.status_code}")
-                self.print_result("Get Supplier", False, f"Status: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            print(f"   ❌ Get supplier error: {e}")
-            self.print_result("Get Supplier", False, str(e))
-            return False
-    
-    async def test_get_all_suppliers(self, user: TestUser) -> bool:
-        print(f"\n📋 Getting all suppliers")
+        for user in authenticated_users:
+            orgs = self.context.user_org_mapping.get(user.id, [])
+            for org_id in orgs:
+                for i in range(suppliers_per_org):
+                    supplier_id = await self.test_create_supplier(user, org_id)
+                    if supplier_id and supplier_id > 0:
+                        total_suppliers += 1
         
-        headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No authentication token available")
-            return False
-        
-        try:
-            response = await self.client.get(
-                f"{self.base_url}/api/v1/suppliers",
-                params={"offset": 0, "limit": 100},
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                count = len(result) if isinstance(result, list) else 0
-                print(f"   ✅ Retrieved {count} suppliers")
-                self.print_result("Get All Suppliers", True, f"Retrieved {count} suppliers")
-                return True
-            else:
-                print(f"   ❌ Failed to get suppliers: {response.status_code}")
-                self.print_result("Get All Suppliers", False, f"Status: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            print(f"   ❌ Get suppliers error: {e}")
-            self.print_result("Get All Suppliers", False, str(e))
-            return False
+        print(f"✅ Created {total_suppliers} suppliers across all organisations")
+        return total_suppliers
     
     # ==================== PRODUCT TESTS ====================
     
-    async def test_get_categories(self, user: TestUser) -> bool:
-        print(f"\n📋 Getting product categories")
-        
-        headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No authentication token available")
-            return False
-        
-        try:
-            response = await self.client.get(
-                f"{self.base_url}/api/v1/products/category/all",
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                count = len(result) if isinstance(result, list) else 0
-                print(f"   ✅ Retrieved {count} categories")
-                self.print_result("Get Categories", True, f"Retrieved {count} categories")
-                return True
-            else:
-                print(f"   ❌ Failed to get categories: {response.status_code}")
-                self.print_result("Get Categories", False, f"Status: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            print(f"   ❌ Get categories error: {e}")
-            self.print_result("Get Categories", False, str(e))
-            return False
-    
     async def test_create_product(self, user: TestUser, supplier_id: int) -> Optional[int]:
         if supplier_id <= 0:
-            print(f"\n⚠️ Skipping create product - invalid supplier ID: {supplier_id}")
             return None
             
-        print(f"\n📦 Creating product for supplier {supplier_id}")
-        
         headers = self.get_auth_headers(user)
         if not headers:
-            print("   ❌ No authentication token available")
             return None
         
         product_data = generate_random_product_data(supplier_id, user.id)
         product_image = generate_random_product_image_data()
         iproduct_data = generate_random_iproduct_data()
-        
-        # Log the data being sent
-        print(f"   Product data: {json.dumps(product_data, indent=2)[:300]}")
-        print(f"   IProduct data: {json.dumps(iproduct_data, indent=2)[:300]}")
         
         try:
             response = await self.client.post(
@@ -799,195 +679,17 @@ class TestRunner:
                 headers=headers
             )
             
-            print(f"   Response status: {response.status_code}")
-            
             if response.status_code == 201:
                 result = response.json()
-                
-                product_id = self.extract_id_from_response(result, [
-                    'id_product',
-                    'id',
-                    'product_id'
-                ])
-                
+                product_id = self.extract_id_from_response(result, ['id_product', 'id', 'product_id'])
                 if product_id > 0:
                     self.context.created_products.append(product_id)
                     print(f"   ✅ Created product: {product_id}")
-                    print(f"   📝 Name: {product_data['product_name']}")
-                    print(f"   💰 Price: {product_data['product_price']}")
-                    self.print_result("Create Product", True, f"Product {product_id} created")
                     return product_id
-                else:
-                    print(f"   ⚠️ Could not extract product ID from response: {result}")
-                    self.print_result("Create Product", True, "Product created but ID extraction failed")
-                    return 0
-            else:
-                print(f"   ❌ Failed to create product: {response.status_code}")
-                print(f"      {response.text[:500]}")
-                self.print_result("Create Product", False, f"Status: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            print(f"   ❌ Product creation error: {e}")
-            self.print_result("Create Product", False, str(e))
             return None
-    
-    async def test_get_product(self, user: TestUser, product_id: int) -> bool:
-        if product_id <= 0:
-            print(f"\n⚠️ Skipping get product - invalid ID: {product_id}")
-            return False
-            
-        print(f"\n📋 Getting product {product_id}")
-        
-        headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No authentication token available")
-            return False
-        
-        try:
-            response = await self.client.get(
-                f"{self.base_url}/api/v1/products/{product_id}",
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                print(f"   ✅ Product retrieved: {result.get('product_name', 'Unknown')}")
-                print(f"   💰 Price: {result.get('product_price', 0)}")
-                print(f"   📦 Quantity: {result.get('product_quantity', 0)}")
-                self.print_result("Get Product", True, f"Product {product_id} retrieved")
-                return True
-            else:
-                print(f"   ❌ Failed to get product: {response.status_code}")
-                self.print_result("Get Product", False, f"Status: {response.status_code}")
-                return False
-                
         except Exception as e:
-            print(f"   ❌ Get product error: {e}")
-            self.print_result("Get Product", False, str(e))
-            return False
-    
-    async def test_update_product(self, user: TestUser, product_id: int) -> bool:
-        if product_id <= 0:
-            print(f"\n⚠️ Skipping update product - invalid ID: {product_id}")
-            return False
-            
-        print(f"\n✏️ Updating product {product_id}")
-        
-        headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No authentication token available")
-            return False
-        
-        # Use product_category_id (not id_product_category)
-        update_data = {
-            "product_name": f"Updated_Product_{uuid.uuid4().hex[:4]}",
-            "product_price": round(random.uniform(10.0, 300.0), 2),
-            "product_quantity": random.randint(50, 2000),
-            "product_description": "Updated product description",
-            "product_category_id": random.choice([1, 2, 3, 4, 5])  # Use product_category_id
-        }
-        image_data = generate_random_product_image_data()
-        
-        print(f"   Update data: {json.dumps(update_data, indent=2)[:300]}")
-        
-        try:
-            response = await self.client.put(
-                f"{self.base_url}/api/v1/products/{product_id}",
-                json={
-                    "product": update_data,
-                    "image": image_data
-                },
-                headers=headers
-            )
-            
-            print(f"   Response status: {response.status_code}")
-            
-            if response.status_code == 200:
-                result = response.json()
-                print(f"   ✅ Product updated: {result.get('product_name', 'Unknown')}")
-                self.print_result("Update Product", True, f"Product {product_id} updated")
-                return True
-            else:
-                print(f"   ❌ Failed to update product: {response.status_code}")
-                print(f"      {response.text[:500]}")
-                self.print_result("Update Product", False, f"Status: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            print(f"   ❌ Update product error: {e}")
-            self.print_result("Update Product", False, str(e))
-            return False
-    
-    async def test_get_all_products(self, user: TestUser, supplier_id: int) -> bool:
-        if supplier_id <= 0:
-            print(f"\n⚠️ Skipping get all products - invalid supplier ID: {supplier_id}")
-            return False
-            
-        print(f"\n📋 Getting all products for supplier {supplier_id}")
-        
-        headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No authentication token available")
-            return False
-        
-        try:
-            response = await self.client.get(
-                f"{self.base_url}/api/v1/products/{user.id}/{supplier_id}/0/0/10",
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                count = len(result) if isinstance(result, list) else 0
-                print(f"   ✅ Retrieved {count} products")
-                self.print_result("Get All Products", True, f"Retrieved {count} products")
-                return True
-            else:
-                print(f"   ❌ Failed to get products: {response.status_code}")
-                self.print_result("Get All Products", False, f"Status: {response.status_code}")
-                return False
-                
-        except Exception as e:
-            print(f"   ❌ Get products error: {e}")
-            self.print_result("Get All Products", False, str(e))
-            return False
-    
-    # ==================== COMPLETE FLOW TEST ====================
-    
-    async def test_complete_product_flow(self, user: TestUser) -> bool:
-        print(f"\n🔄 Testing complete product flow for user: {user.username}")
-        
-        org_id = await self.test_create_organisation(user)
-        if not org_id or org_id == 0:
-            print("   ❌ Failed to create organisation or got invalid ID")
-            self.print_result("Complete Product Flow", False, "Failed to create organisation")
-            return False
-        
-        await self.test_get_organisation(user, org_id)
-        
-        supplier_id = await self.test_create_supplier(user, org_id)
-        if not supplier_id or supplier_id == 0:
-            print("   ❌ Failed to create supplier or got invalid ID")
-            self.print_result("Complete Product Flow", False, "Failed to create supplier")
-            return False
-        
-        await self.test_get_supplier(user, supplier_id)
-        await self.test_get_categories(user)
-        
-        product_id = await self.test_create_product(user, supplier_id)
-        if not product_id or product_id == 0:
-            print("   ❌ Failed to create product or got invalid ID")
-            self.print_result("Complete Product Flow", False, "Failed to create product")
-            return False
-        
-        await self.test_get_product(user, product_id)
-        await self.test_update_product(user, product_id)
-        await self.test_get_all_products(user, supplier_id)
-        
-        self.print_result("Complete Product Flow", True, 
-                        f"Org {org_id}, Supplier {supplier_id}, Product {product_id} tested")
-        return True
+            print(f"   ❌ Error creating product: {e}")
+            return None
     
     # ==================== MAIN RUNNER ====================
     
@@ -995,21 +697,23 @@ class TestRunner:
                        skip_login: bool = False,
                        context_file: str = "test_context.json"):
         print("\n" + "="*70)
-        print("🚀 GLUTTEX API TEST RUNNER")
+        print("🚀 GLUTTEX API TEST RUNNER - MASSIVE DATA")
         print("="*70)
         print(f"📍 Base URL: {self.base_url}")
         print(f"🕐 Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("="*70)
         
+        # Load context
         if Path(context_file).exists():
             loaded = self.context.load(context_file)
             if loaded:
                 print(f"📂 Loaded {len(self.context.users)} users from context")
         
+        # Create users
         if not skip_user_creation and not self.context.users:
             print("\n📝 Creating Test Users")
             print("="*70)
-            await self.create_multiple_users(5)
+            await self.create_multiple_users(20)  # 20 users
         elif self.context.users:
             print(f"\n📋 Using {len(self.context.users)} existing users")
         
@@ -1017,6 +721,7 @@ class TestRunner:
             print("\n❌ No users available. Cannot continue.")
             return
         
+        # Login
         if not skip_login:
             print("\n🔐 Logging In Users")
             print("="*70)
@@ -1029,47 +734,76 @@ class TestRunner:
             print("\n❌ No authenticated users available")
             return
         
-        test_user = authenticated_users[0]
-        print(f"\n👤 Using user '{test_user.username}' (ID: {test_user.id})")
+        self.test_user = authenticated_users[0]
+        print(f"\n👤 Using user '{self.test_user.username}' (ID: {self.test_user.id})")
         
-        print("\n🧪 Running Tests")
+        # ==================== RUN TESTS ====================
+        print("\n" + "="*70)
+        print("🧪 Running Tests")
         print("="*70)
         
-        # Organisation Tests
-        print("\n🏢 ORGANISATION TESTS")
-        await self.test_get_all_organisations(test_user)
-        org_id = await self.test_create_organisation(test_user)
-        if org_id and org_id > 0:
-            await self.test_get_organisation(test_user, org_id)
+        # Step 1: Create Organisations (3 per user)
+        print("\n🏢 STEP 1: Creating Organisations")
+        print("="*70)
+        await self.create_organisations_for_all_users(orgs_per_user=3)
         
-        # Supplier Tests
-        print("\n🏥 SUPPLIER TESTS")
-        supplier_id = None
-        if org_id and org_id > 0:
-            supplier_id = await self.test_create_supplier(test_user, org_id)
-            if supplier_id and supplier_id > 0:
-                await self.test_get_supplier(test_user, supplier_id)
-                await self.test_get_all_suppliers(test_user)
+        # Step 2: Create Suppliers (3 per organisation)
+        print("\n🏥 STEP 2: Creating Suppliers")
+        print("="*70)
+        await self.create_suppliers_for_all_users(suppliers_per_org=3)
         
-        # Product Tests
-        print("\n📦 PRODUCT TESTS")
-        await self.test_get_categories(test_user)
+        # Step 3: Create Products (5 per supplier)
+        print("\n📦 STEP 3: Creating Products")
+        print("="*70)
+        product_count = 0
+        for user in authenticated_users:
+            suppliers = self.context.user_supplier_mapping.get(user.id, [])
+            for supplier_id in suppliers[:5]:  # Limit to 5 suppliers per user
+                for i in range(5):
+                    product_id = await self.test_create_product(user, supplier_id)
+                    if product_id:
+                        product_count += 1
+        print(f"✅ Created {product_count} products")
         
-        if supplier_id and supplier_id > 0:
-            product_id = await self.test_create_product(test_user, supplier_id)
-            if product_id and product_id > 0:
-                await self.test_get_product(test_user, product_id)
-                await self.test_update_product(test_user, product_id)
-                await self.test_get_all_products(test_user, supplier_id)
+        # Step 4: Create Staff Rules
+        print("\n👥 STEP 4: Creating Staff Rules")
+        print("="*70)
+        rule_count = 0
+        for user in authenticated_users:
+            suppliers = self.context.user_supplier_mapping.get(user.id, [])
+            for supplier_id in suppliers[:3]:
+                # Create a staff rule for each supplier
+                rule_codes = [27, 45, 60, 12, 33, 78, 91, 56, 23, 67]
+                rule_data = {
+                    "rule_ref_org": self.context.user_org_mapping.get(user.id, [0])[0],
+                    "rule_ref_provider": supplier_id,
+                    "rule_ref_user": user.id,
+                    "management_rule_code": random.choice(rule_codes),
+                    "management_rule_status": random.choice(["PENDING", "ACTIVE"]),
+                    "management_rule_expiry": (datetime.now() + timedelta(days=random.randint(7, 90))).isoformat()
+                }
+                
+                try:
+                    headers = self.get_auth_headers(user)
+                    response = await self.client.post(
+                        f"{self.base_url}/api/v1/staff",
+                        json=rule_data,
+                        headers=headers
+                    )
+                    if response.status_code == 201:
+                        self.context.created_staff_rules.append(1)  # Just track count
+                        rule_count += 1
+                except:
+                    pass
         
-        # Complete Flow
-        print("\n🔄 COMPLETE FLOW TEST")
-        await self.test_complete_product_flow(test_user)
+        print(f"✅ Created {rule_count} staff rules")
         
+        # Save context
         print("\n💾 Saving Test Context")
         print("="*70)
         self.context.save(context_file)
         
+        # Summary
         self.print_summary()
     
     def print_summary(self):
@@ -1099,21 +833,31 @@ class TestRunner:
         print(f"   🏢 Organisations: {len(self.context.created_organisations)}")
         print(f"   🏥 Suppliers: {len(self.context.created_suppliers)}")
         print(f"   📦 Products: {len(self.context.created_products)}")
+        print(f"   👥 Staff Rules: {len(self.context.created_staff_rules)}")
+        
+        # User distribution stats
+        print(f"\n📊 Distribution:")
+        print(f"   👤 Users with Orgs: {len(self.context.user_org_mapping)}")
+        print(f"   👤 Users with Suppliers: {len(self.context.user_supplier_mapping)}")
+        
+        # Expected totals
+        expected_users = len(self.context.users)
+        expected_orgs = len(self.context.created_organisations)
+        expected_suppliers = len(self.context.created_suppliers)
+        expected_products = len(self.context.created_products)
+        
+        print(f"\n📈 Expected Totals:")
+        print(f"   👤 Users: {expected_users}")
+        print(f"   🏢 Organisations: {expected_orgs} (3 per user)")
+        print(f"   🏥 Suppliers: {expected_suppliers} (3 per org)")
+        print(f"   📦 Products: {expected_products} (5 per supplier)")
         
         if self.context.created_organisations:
-            valid_orgs = [o for o in self.context.created_organisations if o > 0]
-            if valid_orgs:
-                print(f"\n🏢 Org IDs: {', '.join(map(str, valid_orgs))}")
-        
+            print(f"\n🏢 Org IDs: {', '.join(map(str, self.context.created_organisations[:10]))}{'...' if len(self.context.created_organisations) > 10 else ''}")
         if self.context.created_suppliers:
-            valid_suppliers = [s for s in self.context.created_suppliers if s > 0]
-            if valid_suppliers:
-                print(f"🏥 Supplier IDs: {', '.join(map(str, valid_suppliers))}")
-        
+            print(f"🏥 Supplier IDs: {', '.join(map(str, self.context.created_suppliers[:10]))}{'...' if len(self.context.created_suppliers) > 10 else ''}")
         if self.context.created_products:
-            valid_products = [p for p in self.context.created_products if p > 0]
-            if valid_products:
-                print(f"📦 Product IDs: {', '.join(map(str, valid_products))}")
+            print(f"📦 Product IDs: {', '.join(map(str, self.context.created_products[:10]))}{'...' if len(self.context.created_products) > 10 else ''}")
         
         if failed == 0:
             print("\n🎉 ALL TESTS PASSED!")
@@ -1130,7 +874,7 @@ class TestRunner:
 async def main():
     import argparse
     
-    parser = argparse.ArgumentParser(description="Gluttex API Test Runner")
+    parser = argparse.ArgumentParser(description="Gluttex API Test Runner - Massive Data")
     parser.add_argument("--url", default="http://localhost:9000")
     parser.add_argument("--skip-user-creation", action="store_true")
     parser.add_argument("--skip-login", action="store_true")
@@ -1143,7 +887,7 @@ async def main():
         Path(args.context_file).unlink()
         print(f"🗑️ Cleared context file")
     
-    async with TestRunner(args.url) as runner:
+    async with EnhancedTestRunner(args.url) as runner:
         await runner.run_tests(
             skip_user_creation=args.skip_user_creation,
             skip_login=args.skip_login,

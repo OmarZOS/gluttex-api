@@ -85,6 +85,7 @@ class RuleValidator:
             if not org:
                 logger.warning(f"Organisation not found: {rule_data.rule_ref_org}")
                 raise OrganisationNotFoundExceptionForStaff(org_id=rule_data.rule_ref_org)
+        return user,provider,org
     
     def check_duplicate_rule(self, rule_data: ManagementRule_API) -> None:
         """

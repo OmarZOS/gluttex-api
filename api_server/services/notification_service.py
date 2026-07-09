@@ -16,7 +16,6 @@ from core.exceptions.specific.notification_exceptions import (
 )
 from core.models.models import Notification
 from repositories.notification_repository import NotificationRepository
-from communication.publisher import notify_invitation_to_role_received
 
 logger = logging.getLogger("FastAPIApp")
 
@@ -308,18 +307,13 @@ class NotificationService:
         
         # Create notification
         notification_data = Notification_API(
-            notification_code="INVITATION_RECEIVED",
+            notification_code="role_invitation",
             notification_params=json.dumps(invitation_data),
             notification_user_ref=user_ref,
         )
         
         notification = self.create_notification(notification_data)
         
-        # Publish to message queue if needed
-        try:
-            notify_invitation_to_role_received(notification_data, user_ref)
-        except Exception as e:
-            logger.warning(f"Failed to publish invitation notification: {e}")
         
         return notification
     

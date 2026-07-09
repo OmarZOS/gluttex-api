@@ -5,6 +5,7 @@ CRUD operations for management rules.
 import logging
 from typing import Dict, Any
 
+from repositories.supplier_repository import OrganisationRepository, SupplierRepository
 from core.models.api_models import ManagementRule_API
 from core.models.models import ManagementRule
 from core.exceptions.specific.staff_exceptions import (
@@ -26,6 +27,8 @@ class RuleCrud:
     
     def __init__(self):
         self.rule_repo = ManagementRuleRepository()
+        self.supplier_repo = SupplierRepository()
+        self.org_repo = OrganisationRepository()
         self.validator = RuleValidator()
         self.notification = RuleNotification()
         self.helpers = RuleHelpers()
@@ -69,7 +72,7 @@ class RuleCrud:
         
         # Validate
         self.validator.validate_rule_data(rule_data)
-        self.validator.validate_entities_exist(rule_data)
+        user,provider,org = self.validator.validate_entities_exist(rule_data)
         self.validator.check_duplicate_rule(rule_data)
         
         # Build and create rule
@@ -79,8 +82,14 @@ class RuleCrud:
             final_rule = self.rule_repo.create(new_rule)
             logger.info(f"Rule created successfully with ID: {final_rule.id_management_rule}")
             
-            # Create notification
-            self.notification.create_invitation_notification(final_rule)
+
+            destination_users = set()
+
+            destination_users.add(user.id_app_user)
+            destination_users.add(provider.product_provider_owner)
+            destination_users.add(org.app_user_id)
+            
+            self.notification.create_invitation_notification(final_rule, destination_users)
             
             return final_rule
             
@@ -111,7 +120,14 @@ class RuleCrud:
         
         # Validate
         self.validator.validate_rule_data(rule_data)
+        user,provider,org = self.validator.validate_entities_exist(rule_data)
         
+        destination_users = set()
+        destination_users.add(user.id_app_user)
+        destination_users.add(provider.product_provider_owner)
+        destination_users.add(org.app_user_id)
+
+
         # Get existing rule
         existing_rule = self.get_by_id(rule_data.id_management_rule)
         
@@ -132,7 +148,7 @@ class RuleCrud:
             logger.info(f"Rule {rule_data.id_management_rule} updated successfully. Changes: {changes if changes else 'none'}")
             
             # Create notification
-            self.notification.create_rule_update_notification(final_rule)
+            self.notification.create_rule_update_notification(final_rule,destination_users)
             
             return final_rule
             
@@ -162,15 +178,6 @@ class RuleCrud:
         logger.info(f"Deleting rule with ID: {rule_id} (force={force_delete})")
         
         rule = self.get_by_id(rule_id)
-        
-        # Check if rule is active
-        if rule.management_rule_status == "ACTIVE" and not force_delete:
-            logger.warning(f"Cannot delete active rule {rule_id}. Use force_delete=true.")
-            raise RuleDeleteFailedException(
-                rule_id=rule_id,
-                is_active=True,
-                error="Cannot delete active staff assignment"
-            )
         
         success = self.rule_repo.delete(rule)
         
@@ -215,6 +222,9 @@ class RuleCrud:
         self.validator.check_invitation_expired(existing_rule)
         self.validator.check_invitation_already_processed(existing_rule)
         
+        provider = self.supplier_repo.get_supplier_by_id(existing_rule.rule_ref_provider)
+        org = self.org_repo.get_org_by_id(existing_rule.rule_ref_org)
+
         # Update status
         new_status = 'ACTIVE' if accept else 'REJECTED'
         existing_rule.management_rule_status = new_status
@@ -223,8 +233,12 @@ class RuleCrud:
             final_rule = self.rule_repo.update(existing_rule)
             logger.info(f"Invitation {rule_id} {action}ed successfully")
             
+
+            destinations = set()
+            destinations.add(provider.product_provider_owner)
+            destinations.add(org.app_user_id)
             # Create notification
-            self.notification.create_invitation_response_notification(final_rule, accept)
+            self.notification.create_invitation_response_notification(final_rule, accept,destinations)
             
             return final_rule
             
