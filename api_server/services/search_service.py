@@ -139,7 +139,7 @@ class SearchService:
             search_fields=[
                 'person_details.person_first_name',
                 'person_details.person_last_name',
-                'person_details.person_nationality'
+                # 'person_details.person_nationality'
             ],
             join_tables= [],
             eager_load_depth=[Person.person_details,Person.person_blood_type],
