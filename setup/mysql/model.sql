@@ -1873,6 +1873,59 @@ ENGINE = InnoDB;
 USE `gluttex` ;
 USE `gluttex` ;
 
+
+
+-- -----------------------------------------------------
+-- Table `gluttex`.`role_invitation`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `gluttex`.`role_invitation` ;
+
+CREATE TABLE IF NOT EXISTS `gluttex`.`role_invitation` (
+  `id_role_invitation` INT NOT NULL AUTO_INCREMENT,
+  `notification_id` INT NULL,
+  `provider_id` INT NOT NULL,
+  `app_user_id` INT NOT NULL,
+  `organisation_id` INT NULL,
+  `rule_id` INT NULL,
+  `invitation_status` ENUM('PENDING', 'REJECTED', 'EXPIRED', 'ACCEPTED') NULL DEFAULT 'PENDING',
+  `invitation_expiry` DATETIME NULL DEFAULT NULL,
+  PRIMARY KEY (`id_role_invitation`),
+  INDEX `fk_role_invitation_notification1_idx` (`notification_id` ASC) VISIBLE,
+  INDEX `fk_role_invitation_product_provider1_idx` (`provider_id` ASC) VISIBLE,
+  INDEX `fk_role_invitation_app_user1_idx` (`app_user_id` ASC) VISIBLE,
+  INDEX `fk_role_invitation_provider_organisation1_idx` (`organisation_id` ASC) VISIBLE,
+  INDEX `fk_role_invitation_management_rule1_idx` (`rule_id` ASC) VISIBLE,
+  CONSTRAINT `fk_role_invitation_notification1`
+    FOREIGN KEY (`notification_id`)
+    REFERENCES `gluttex`.`notification` (`id_notification`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_role_invitation_product_provider1`
+    FOREIGN KEY (`provider_id`)
+    REFERENCES `gluttex`.`product_provider` (`id_product_provider`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_role_invitation_app_user1`
+    FOREIGN KEY (`app_user_id`)
+    REFERENCES `gluttex`.`app_user` (`id_app_user`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_role_invitation_provider_organisation1`
+    FOREIGN KEY (`organisation_id`)
+    REFERENCES `gluttex`.`provider_organisation` (`idprovider_organisation`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_role_invitation_management_rule1`
+    FOREIGN KEY (`rule_id`)
+    REFERENCES `gluttex`.`management_rule` (`id_management_rule`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB;
+
+USE `gluttex` ;
+USE `gluttex` ;
+
+
 -- -----------------------------------------------------
 -- Placeholder table for view `gluttex`.`financial_documents_status`
 -- -----------------------------------------------------

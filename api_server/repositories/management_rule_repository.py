@@ -1,7 +1,7 @@
 # repositories/management_rule_repository.py
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from core.models.models import ManagementRule, AppUser, ProductProvider, Person
+from core.models.models import ManagementRule, AppUser, ProductProvider, Person, RoleInvitation
 import storage.storage_broker as storage_broker
 from datetime import datetime, timedelta
 
@@ -16,7 +16,15 @@ class ManagementRuleRepository:
             ManagementRule,
             {ManagementRule.id_management_rule: rule_id},
             None,
-            []
+            [
+                ManagementRule.id_management_rule,
+                ManagementRule.rule_ref_org,
+                ManagementRule.rule_ref_provider,
+                ManagementRule.rule_ref_user,
+                ManagementRule.management_rule_code,
+                ManagementRule.management_rule_status,
+                ManagementRule.management_rule_expiry,
+                ManagementRule.role_invitation]
         )
         return data[0] if data else None
     
@@ -143,10 +151,20 @@ class ManagementRuleRepository:
         from features.insertion import insert_or_complete_or_raise
         return insert_or_complete_or_raise(rule)
     
+    def create_invitation(self, inv: RoleInvitation) -> RoleInvitation:
+        """Create a new management rule"""
+        from features.insertion import insert_or_complete_or_raise
+        return insert_or_complete_or_raise(inv)
+    
     def update(self, rule: ManagementRule) -> ManagementRule:
         """Update an existing management rule"""
         from features.insertion import update_record_in_api
         return update_record_in_api(rule)
+    
+    def update_invitation(self, inv: RoleInvitation) -> RoleInvitation:
+        """Update an existing management inv"""
+        from features.insertion import update_record_in_api
+        return update_record_in_api(inv)
     
     def delete(self, rule: ManagementRule) -> bool:
         """Delete a management rule"""
@@ -267,5 +285,5 @@ class StaffRepository:
                 ManagementRule.management_rule_status: 'PENDING'
             },
             None,
-            [ManagementRule.product_provider, ManagementRule.provider_organisation]
+            [ManagementRule.product_provider, ManagementRule.provider_organisation,ManagementRule.role_invitation]
         )

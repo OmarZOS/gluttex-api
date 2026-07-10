@@ -32,6 +32,7 @@ class RuleNotification:
             rule: Created rule
         """
         try:
+            
             for id in destinations:
                 notification = self.notification_builder.create_invitation_notification(
                     rule_id=rule.id_management_rule,
@@ -42,6 +43,8 @@ class RuleNotification:
                     invited_by=rule.rule_ref_provider,
                     notify_user= id
                 )
+                if rule.rule_ref_user == id:
+                    result = notification
                 
                 logger.info(f"Created invitation notification to user: {id} for rule {rule.id_management_rule}")
             
@@ -57,7 +60,7 @@ class RuleNotification:
                 }, rule.rule_ref_user)
             except Exception as e:
                 logger.error(f"Failed to send real-time notification: {e}")
-            return notification
+            return result
                 
         except Exception as e:
             logger.error(f"Failed to create invitation notification: {e}")

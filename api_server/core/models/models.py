@@ -509,6 +509,7 @@ class AppUser(Base):
     plan = relationship('Plan', back_populates='app_user')
     app_user_wallet = relationship('Wallet', back_populates='app_user')
     comment = relationship('Comment', back_populates='app_user')
+    ingredient = relationship('Ingredient', back_populates='ingredient_user')
     notification = relationship('Notification', back_populates='app_user')
     placed_order = relationship('PlacedOrder', back_populates='ordering_user')
     provider_organisation = relationship('ProviderOrganisation', back_populates='app_user')
@@ -526,8 +527,8 @@ class AppUser(Base):
     product = relationship('Product', back_populates='app_user')
     provider_reaction = relationship('ProviderReaction', back_populates='app_user')
     product_reaction = relationship('ProductReaction', back_populates='app_user')
+    role_invitation = relationship('RoleInvitation', back_populates='app_user')
     service_contribution = relationship('ServiceContribution', back_populates='app_user')
-    ingredient = relationship('Ingredient', back_populates='ingredient_user')
 
 
 class Patient(Base):
@@ -604,6 +605,7 @@ class Notification(Base):
     notification_read_at = Column(DateTime)
 
     app_user = relationship('AppUser', back_populates='notification')
+    role_invitation = relationship('RoleInvitation', back_populates='notification')
 
 
 class PlacedOrder(Base):
@@ -661,6 +663,7 @@ class ProviderOrganisation(Base):
     product_provider = relationship('ProductProvider', back_populates='product_provider_org')
     conversation = relationship('Conversation', back_populates='conversation_org')
     management_rule = relationship('ManagementRule', back_populates='provider_organisation')
+    role_invitation = relationship('RoleInvitation', back_populates='organisation')
     service_contribution = relationship('ServiceContribution', back_populates='provider_organisation')
 
 
@@ -848,6 +851,7 @@ class ProductProvider(Base):
     provider_image = relationship('ProviderImage', back_populates='provider_ref')
     provider_reaction = relationship('ProviderReaction', back_populates='product_provider')
     service_package = relationship('ServicePackage', back_populates='service_package_product_provider')
+    role_invitation = relationship('RoleInvitation', back_populates='provider')
     service_contribution = relationship('ServiceContribution', back_populates='product_provider')
 
 
@@ -1061,6 +1065,7 @@ class ManagementRule(Base):
     provider_organisation = relationship('ProviderOrganisation', back_populates='management_rule')
     product_provider = relationship('ProductProvider', back_populates='management_rule')
     app_user = relationship('AppUser', back_populates='management_rule')
+    role_invitation = relationship('RoleInvitation', back_populates='rule')
 
 
 class PrescribedItem(Base):
@@ -1325,6 +1330,36 @@ class ProductReaction(Base):
 
     app_user = relationship('AppUser', back_populates='product_reaction')
     product = relationship('Product', back_populates='product_reaction')
+
+class RoleInvitation(Base):
+    __tablename__ = 'role_invitation'
+    __table_args__ = (
+        ForeignKeyConstraint(['app_user_id'], ['app_user.id_app_user'], name='fk_role_invitation_app_user1'),
+        ForeignKeyConstraint(['notification_id'], ['notification.id_notification'], name='fk_role_invitation_notification1'),
+        ForeignKeyConstraint(['organisation_id'], ['provider_organisation.idprovider_organisation'], name='fk_role_invitation_provider_organisation1'),
+        ForeignKeyConstraint(['provider_id'], ['product_provider.id_product_provider'], name='fk_role_invitation_product_provider1'),
+        ForeignKeyConstraint(['rule_id'], ['management_rule.id_management_rule'], name='fk_role_invitation_management_rule1'),
+        Index('fk_role_invitation_app_user1_idx', 'app_user_id'),
+        Index('fk_role_invitation_management_rule1_idx', 'rule_id'),
+        Index('fk_role_invitation_notification1_idx', 'notification_id'),
+        Index('fk_role_invitation_product_provider1_idx', 'provider_id'),
+        Index('fk_role_invitation_provider_organisation1_idx', 'organisation_id')
+    )
+
+    id_role_invitation = Column(Integer, primary_key=True)
+    provider_id = Column(Integer, nullable=False)
+    app_user_id = Column(Integer, nullable=False)
+    notification_id = Column(Integer)
+    organisation_id = Column(Integer)
+    rule_id = Column(Integer)
+    invitation_status = Column(Enum('PENDING', 'REJECTED', 'EXPIRED', 'ACCEPTED'), server_default=text("'PENDING'"))
+    invitation_expiry = Column(DateTime)
+
+    app_user = relationship('AppUser', back_populates='role_invitation')
+    notification = relationship('Notification', back_populates='role_invitation')
+    organisation = relationship('ProviderOrganisation', back_populates='role_invitation')
+    provider = relationship('ProductProvider', back_populates='role_invitation')
+    rule = relationship('ManagementRule', back_populates='role_invitation')
 
 
 class ServiceContribution(Base):

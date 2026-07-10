@@ -13,10 +13,7 @@ from constants import ReactionType
 
 logger = logging.getLogger("FastAPIApp")
 
-reaction_router = APIRouter(
-    prefix="/api/v1/reactions",
-    tags=["Reactions"]
-)
+reaction_router = APIRouter()
 
 def get_reaction_service() -> ReactionService:
     return ReactionService()
@@ -28,10 +25,10 @@ def get_reaction_service() -> ReactionService:
     summary="Add or update reaction",
     description="Insert a reaction or update an existing one",
     responses={
-        201: {
-            "description": "Reaction processed successfully",
-            "model": SuccessResponseModel
-        },
+        # 201: {
+        #     "description": "Reaction processed successfully",
+        #     "model": SuccessResponseModel
+        # },
         400: {
             "description": "Bad Request - Invalid reaction data",
             "model": ErrorResponseModel
@@ -57,17 +54,7 @@ def handle_reaction(
     try:
         result = reaction_service.handle_reaction(reaction)
         
-        return SuccessResponseModel(
-            success=True,
-            message=f"Reaction {result['status']} successfully",
-            data=result['reaction'],
-            details={
-                "user_id": reaction.user_id,
-                "target_id": reaction.target_id,
-                "reaction_type": reaction.reaction_type.value if hasattr(reaction.reaction_type, 'value') else reaction.reaction_type,
-                "status": result['status']
-            }
-        )
+        return result
     except APIException:
         raise
     except Exception as e:
@@ -84,10 +71,10 @@ def handle_reaction(
     summary="Get user reaction on target",
     description="Get a user's reaction on a specific target",
     responses={
-        200: {
-            "description": "Reaction retrieved successfully",
-            "model": SuccessResponseModel
-        },
+        # 200: {
+        #     "description": "Reaction retrieved successfully",
+        #     "model": SuccessResponseModel
+        # },
         400: {
             "description": "Bad Request - Invalid reaction type",
             "model": ErrorResponseModel
@@ -131,16 +118,7 @@ def get_user_reaction(
             details=f"Reaction not found for user {user_id} on target {target_id}"
         )
     
-    return SuccessResponseModel(
-        success=True,
-        data=reaction,
-        message="Reaction retrieved successfully",
-        details={
-            "user_id": user_id,
-            "target_id": target_id,
-            "reaction_type": target_type
-        }
-    )
+    return reaction
 
 
 @reaction_router.delete(
@@ -209,10 +187,10 @@ def delete_user_reaction(
     summary="Get all user reactions",
     description="Get all reactions by a user",
     responses={
-        200: {
-            "description": "Reactions retrieved successfully",
-            "model": SuccessResponseModel
-        },
+        # 200: {
+        #     "description": "Reactions retrieved successfully",
+        #     "model": SuccessResponseModel
+        # },
         404: {
             "description": "User not found",
             "model": ErrorResponseModel
@@ -243,15 +221,7 @@ def get_user_reactions(
     
     result = reaction_service.get_reactions_by_user(user_id, reaction_type_enum)
     
-    return SuccessResponseModel(
-        success=True,
-        data=result,
-        message=f"Found {result['total_reactions']} reactions for user {user_id}",
-        details={
-            "user_id": user_id,
-            "filter_by_type": reaction_type
-        }
-    )
+    return result
 
 
 @reaction_router.get(
@@ -259,10 +229,10 @@ def get_user_reactions(
     summary="Get reaction summary",
     description="Get summary of reactions for a target",
     responses={
-        200: {
-            "description": "Reaction summary retrieved successfully",
-            "model": SuccessResponseModel[ReactionStatistics]
-        },
+        # 200: {
+        #     "description": "Reaction summary retrieved successfully",
+        #     "model": SuccessResponseModel[ReactionStatistics]
+        # },
         400: {
             "description": "Bad Request - Invalid target type",
             "model": ErrorResponseModel
@@ -295,15 +265,7 @@ def get_reaction_summary(
     
     summary = reaction_service.get_reaction_summary(reaction_type, target_id)
     
-    return SuccessResponseModel(
-        success=True,
-        data=summary,
-        message=f"Retrieved reaction summary for {target_type} {target_id}",
-        details={
-            "target_type": target_type,
-            "target_id": target_id
-        }
-    )
+    return summary
 
 
 @reaction_router.post(

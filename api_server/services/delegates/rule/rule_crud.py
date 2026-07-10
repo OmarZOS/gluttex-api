@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from repositories.supplier_repository import OrganisationRepository, SupplierRepository
 from core.models.api_models import ManagementRule_API
-from core.models.models import ManagementRule
+from core.models.models import ManagementRule, RoleInvitation
 from core.exceptions.specific.staff_exceptions import (
     RuleNotFoundException,
     RuleInsertFailedException,
@@ -89,8 +89,18 @@ class RuleCrud:
             destination_users.add(provider.product_provider_owner)
             destination_users.add(org.app_user_id)
             
-            self.notification.create_invitation_notification(final_rule, destination_users)
+            notification = self.notification.create_invitation_notification(final_rule, destination_users)
             
+            self.rule_repo.create_invitation(
+                RoleInvitation(
+                    provider_id = provider.id_product_provider,
+                    app_user_id = user.id_app_user,
+                    notification_id = notification.id_notification,
+                    organisation_id = final_rule.rule_ref_org,
+                    rule_id = final_rule.id_management_rule,
+                )
+            )
+
             return final_rule
             
         except Exception as e:
@@ -227,11 +237,19 @@ class RuleCrud:
 
         # Update status
         new_status = 'ACTIVE' if accept else 'REJECTED'
+        new_inv_status = 'ACCEPTED' if accept else 'REJECTED'
+
         existing_rule.management_rule_status = new_status
+        existing_rule.role_invitation[0].invitation_status = new_inv_status
         
         try:
+            logger.info("*********************************************")
+            logger.info("Updating invitation and rule")
+            # self.rule_repo.update_invitation(existing_rule.role_invitation)
             final_rule = self.rule_repo.update(existing_rule)
             logger.info(f"Invitation {rule_id} {action}ed successfully")
+            logger.info(f"Invitation {existing_rule.role_invitation[0].id_role_invitation} {existing_rule.role_invitation[0].invitation_status} successfully")
+            
             
 
             destinations = set()

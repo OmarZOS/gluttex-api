@@ -43,6 +43,7 @@ from routers.business_routers.service_router import service_router
 from routers.business_routers.financial_router import financial_router
 from routers.business_routers.business_operation_router import business_operation_router
 from routers.business_routers.address_router import address_router
+from routers.app_routers.reaction_router import reaction_router
 
 
 # Configure logging
@@ -188,6 +189,7 @@ def setup_routers(app: FastAPI) -> None:
     app.include_router(health_router, prefix=api_version, tags=["Health"])
     app.include_router(recipe_router, prefix=api_version, tags=["Recipes"])
     app.include_router(address_router, prefix=f"{api_version}/addresses", tags=["Addresses"])
+    app.include_router(reaction_router, prefix=f"{api_version}/reactions", tags=["Reactions"])
     
     
     # Notification routes

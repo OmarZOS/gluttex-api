@@ -473,12 +473,12 @@ class StaffRuleTester:
         if org_id is None and self.created_organisations:
             org_id = self.created_organisations[0]
         elif org_id is None:
-            org_id = 1
+            org_id = 10
         
         if provider_id is None and self.created_suppliers:
             provider_id = self.created_suppliers[0]
         elif provider_id is None:
-            provider_id = 1
+            provider_id = 10
         
         self.print_status(f"Using Org ID: {org_id}, Provider ID: {provider_id}", "🏢")
         
@@ -508,7 +508,7 @@ class StaffRuleTester:
         await asyncio.sleep(Config.DELAY_BETWEEN_REQUESTS)
         
         # Complete flow test
-        await self.test_complete_rule_flow(self.user_id, org_id, provider_id)
+        await self.test_complete_rule_flow(self.user_id, org_id, 10)
         
         # Summary
         self.print_summary()
