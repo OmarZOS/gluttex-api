@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query, status
 from typing import Optional, List
 import logging
 
+from services.helpers.auth.auth_dependencies import get_current_user_id
 from core.models.api_models import ManagementRule_API
 from core.response_models import ErrorResponseModel, get_crud_error_responses
 from core.exceptions.specific.staff_exceptions import (
@@ -260,6 +261,7 @@ def update_staff_details(
 def answer_staff_invitation(
     staff_id: int,
     accept: bool = Query(..., description="Accept (true) or reject (false) invitation"),
+    user_id: int = Depends(get_current_user_id),
     rule_service: ManagementRuleService = Depends(get_management_rule_service)
 ):
     """
@@ -267,7 +269,7 @@ def answer_staff_invitation(
     """
     action = "accept" if accept else "reject"
     logger.info(f"Processing invitation {action} for staff assignment {staff_id}")
-    return rule_service.answer_invitation(staff_id, accept)
+    return rule_service.answer_invitation(staff_id, accept,user_id)
 
 
 @staff_router.delete(

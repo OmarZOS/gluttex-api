@@ -40,9 +40,9 @@ class ManagementRuleService:
         """Delete a management rule."""
         return self.crud.delete(rule_id, force_delete)
     
-    def answer_invitation(self, rule_id: int, accept: bool) -> ManagementRule:
+    def answer_invitation(self, rule_id: int, accept: bool,user_id:int) -> ManagementRule:
         """Respond to an invitation (accept or reject)."""
-        return self.crud.answer_invitation(rule_id, accept)
+        return self.crud.answer_invitation(rule_id, accept,user_id)
     
     # ==================== Query Operations ====================
     

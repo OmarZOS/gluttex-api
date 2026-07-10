@@ -12,7 +12,8 @@ from core.exceptions.specific.staff_exceptions import (
     RuleNotFoundException,
     RuleInsertFailedException,
     RuleUpdateFailedException,
-    RuleDeleteFailedException
+    RuleDeleteFailedException,
+    StaffPermissionDeniedException
 )
 from repositories.management_rule_repository import ManagementRuleRepository
 from .rule_validator import RuleValidator
@@ -205,7 +206,7 @@ class RuleCrud:
             "rule_id": rule_id
         }
     
-    def answer_invitation(self, rule_id: int, accept: bool) -> ManagementRule:
+    def answer_invitation(self, rule_id: int, accept: bool,user_id:int) -> ManagementRule:
         """
         Respond to an invitation (accept or reject).
         
@@ -227,7 +228,15 @@ class RuleCrud:
         
         # Get existing rule
         existing_rule = self.get_by_id(rule_id)
-        
+
+        if user_id != existing_rule.rule_ref_user:
+            raise StaffPermissionDeniedException(
+                user_id=user_id,
+                action='answer',
+                required_role='target'
+            )
+
+
         # Validate
         self.validator.check_invitation_expired(existing_rule)
         self.validator.check_invitation_already_processed(existing_rule)

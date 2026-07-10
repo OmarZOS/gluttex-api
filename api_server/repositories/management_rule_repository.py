@@ -108,7 +108,9 @@ class ManagementRuleRepository:
             ManagementRule,
             conditions,
             None,
-            [ManagementRule.product_provider, ManagementRule.provider_organisation]
+            [ManagementRule.role_invitation,
+            ManagementRule.product_provider,
+            ManagementRule.provider_organisation]
         )
     
     def get_by_provider(self, provider_id: int, status: Optional[str] = None) -> List[ManagementRule]:
@@ -190,18 +192,6 @@ class ManagementRuleRepository:
         return [rule for rule in all_rules 
                 if rule.management_rule_expiry and rule.management_rule_expiry <= expiry_threshold]
 
-    def get_by_user(self, user_id: int, status: Optional[str] = None) -> List[ManagementRule]:
-        """Get rules by user with optional status filter"""
-        conditions = {ManagementRule.rule_ref_user: user_id}
-        if status:
-            conditions[ManagementRule.management_rule_status] = status
-        
-        return storage_broker.get(
-            ManagementRule,
-            conditions,
-            None,
-            [ManagementRule.product_provider, ManagementRule.provider_organisation]
-        )
     
     def get_by_user_and_provider(self, user_id: int,provider_id:int, status: Optional[str] = None) -> List[ManagementRule]:
         """Get rules by user with optional status filter"""
