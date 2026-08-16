@@ -5,6 +5,7 @@ CRUD operations for management rules.
 import logging
 from typing import Dict, Any
 
+from core.exceptions.handler import ForbiddenException
 from repositories.supplier_repository import OrganisationRepository, SupplierRepository
 from core.models.api_models import ManagementRule_API
 from core.models.models import ManagementRule, RoleInvitation
@@ -230,11 +231,7 @@ class RuleCrud:
         existing_rule = self.get_by_id(rule_id)
 
         if user_id != existing_rule.rule_ref_user:
-            raise StaffPermissionDeniedException(
-                user_id=user_id,
-                action='answer',
-                required_role='target'
-            )
+            raise ForbiddenException()
 
 
         # Validate

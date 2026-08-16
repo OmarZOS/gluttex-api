@@ -61,11 +61,11 @@ class ManagementRuleRepository:
             ManagementRule.management_rule_expiry,
             ManagementRule.provider_organisation,
             {
-                ManagementRule.product_provider: [ProductProvider.product_provider_details]
+                ManagementRule.product_provider: [{ProductProvider.product_provider_details:[]}]
             },
             {
                 ManagementRule.app_user: [{
-                    AppUser.app_user_person: [Person.person_details]
+                    AppUser.app_user_person: [{Person.person_details:[]}]
                 }]
             },
         ]
@@ -109,6 +109,11 @@ class ManagementRuleRepository:
             conditions,
             None,
             [ManagementRule.role_invitation,
+                      {ManagementRule.product_provider: [{
+                    ProductProvider.product_provider_details: []
+                }]},
+             
+             
             ManagementRule.product_provider,
             ManagementRule.provider_organisation]
         )
@@ -123,7 +128,9 @@ class ManagementRuleRepository:
             ManagementRule,
             conditions,
             None,
-            [ManagementRule.app_user, ManagementRule.provider_organisation]
+            [ManagementRule.app_user, ManagementRule.provider_organisation,
+             {ManagementRule.product_provider: [ProductProvider.product_provider_details]},
+             ]
         )
     
     def get_by_organisation(self, org_id: int, status: Optional[str] = None) -> List[ManagementRule]:

@@ -10,7 +10,7 @@ import json
 import sys
 import uuid
 import random
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Set
 from datetime import datetime, timedelta, date
 from enum import Enum
 from dataclasses import dataclass, field
@@ -343,6 +343,7 @@ class EnhancedTestRunner:
         self.context = TestContext()
         self.results = []
         self.test_user = None
+        self._used_assignments: Set[int] = set()  # Track owner-supplier assignments
     
     async def __aenter__(self):
         self.client = httpx.AsyncClient(timeout=60.0, verify=False)
@@ -691,6 +692,108 @@ class EnhancedTestRunner:
             print(f"   ❌ Error creating product: {e}")
             return None
     
+    # ==================== STAFF RULES - FIXED ====================
+    
+    async def test_create_staff_rule(self, user: TestUser, supplier_id: int, org_id: int, 
+                                     target_user_id: int) -> Optional[int]:
+        """
+        Create a staff rule for a target user on a supplier.
+        Ensures the owner is not added as staff for their own supplier.
+        """
+        if supplier_id <= 0 or org_id <= 0:
+            return None
+        
+        # Skip if target user is the owner of the supplier
+        # Check if the user is the owner of this supplier
+        supplier_owner_id = None
+        for uid, suppliers in self.context.user_supplier_mapping.items():
+            if supplier_id in suppliers:
+                supplier_owner_id = uid
+                break
+        
+        if supplier_owner_id == target_user_id:
+            print(f"   ⚠️ Skipping: User {target_user_id} is the owner of supplier {supplier_id}")
+            return None
+        
+        # Check if we already assigned this supplier to this user
+        assignment_key = f"{target_user_id}_{supplier_id}"
+        if assignment_key in self._used_assignments:
+            print(f"   ⚠️ Skipping: User {target_user_id} already assigned to supplier {supplier_id}")
+            return None
+        
+        headers = self.get_auth_headers(user)
+        if not headers:
+            return None
+        
+        rule_codes = [27, 45, 60, 12, 33, 78, 91, 56, 23, 67]
+        
+        rule_data = {
+            "rule_ref_org": org_id,
+            "rule_ref_provider": supplier_id,
+            "rule_ref_user": target_user_id,
+            "management_rule_code": random.choice(rule_codes),
+            "management_rule_status": random.choice(["PENDING", "ACTIVE"]),
+            "management_rule_expiry": (datetime.now() + timedelta(days=random.randint(7, 90))).isoformat()
+        }
+        
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/staff",
+                json=rule_data,
+                headers=headers
+            )
+            if response.status_code == 201:
+                self.context.created_staff_rules.append(1)
+                self._used_assignments.add(assignment_key)
+                print(f"   ✅ Created staff rule: User {target_user_id} -> Supplier {supplier_id}")
+                return 1
+            else:
+                print(f"   ❌ Failed to create staff rule: {response.status_code}")
+                return None
+        except Exception as e:
+            print(f"   ❌ Error creating staff rule: {e}")
+            return None
+    
+    async def create_staff_rules_for_all_users(self, rules_per_supplier: int = 2):
+        """
+        Create staff rules for users on suppliers.
+        Ensures owners are NOT added as staff for their own suppliers.
+        """
+        print(f"\n👥 Creating staff rules (max {rules_per_supplier} per supplier)...")
+        print("   ⚠️ Owners will not be added as staff for their own suppliers")
+        
+        authenticated_users = [u for u in self.context.users if u.access_token]
+        total_rules = 0
+        
+        # Get all suppliers and their owners
+        supplier_owners = {}
+        for uid, suppliers in self.context.user_supplier_mapping.items():
+            for sid in suppliers:
+                supplier_owners[sid] = uid
+        
+        # For each supplier, assign staff roles to OTHER users
+        for user in authenticated_users:
+            suppliers = self.context.user_supplier_mapping.get(user.id, [])
+            for supplier_id in suppliers:
+                # Get other users (not the owner)
+                other_users = [u for u in authenticated_users if u.id != supplier_owners.get(supplier_id, user.id)]
+                
+                # Shuffle and take a subset
+                random.shuffle(other_users)
+                target_users = other_users[:rules_per_supplier]
+                
+                for target_user in target_users:
+                    org_id = self.context.user_org_mapping.get(user.id, [0])[0]
+                    if org_id > 0:
+                        result = await self.test_create_staff_rule(
+                            user, supplier_id, org_id, target_user.id
+                        )
+                        if result:
+                            total_rules += 1
+        
+        print(f"✅ Created {total_rules} staff rules (owners excluded)")
+        return total_rules
+    
     # ==================== MAIN RUNNER ====================
     
     async def run_tests(self, skip_user_creation: bool = False, 
@@ -752,51 +855,23 @@ class EnhancedTestRunner:
         print("="*70)
         await self.create_suppliers_for_all_users(suppliers_per_org=3)
         
-        # Step 3: Create Products (5 per supplier)
+        # Step 3: Create Products (3 per supplier)
         print("\n📦 STEP 3: Creating Products")
         print("="*70)
         product_count = 0
-        for user in authenticated_users:
+        for user in authenticated_users[:3]:  # Limit to first 3 users to avoid overload
             suppliers = self.context.user_supplier_mapping.get(user.id, [])
-            for supplier_id in suppliers[:5]:  # Limit to 5 suppliers per user
-                for i in range(5):
+            for supplier_id in suppliers[:3]:  # Limit to 3 suppliers per user
+                for i in range(3):
                     product_id = await self.test_create_product(user, supplier_id)
                     if product_id:
                         product_count += 1
         print(f"✅ Created {product_count} products")
         
-        # Step 4: Create Staff Rules
-        print("\n👥 STEP 4: Creating Staff Rules")
+        # Step 4: Create Staff Rules (WITHOUT owners)
+        print("\n👥 STEP 4: Creating Staff Rules (Owners Excluded)")
         print("="*70)
-        rule_count = 0
-        for user in authenticated_users:
-            suppliers = self.context.user_supplier_mapping.get(user.id, [])
-            for supplier_id in suppliers[:3]:
-                # Create a staff rule for each supplier
-                rule_codes = [27, 45, 60, 12, 33, 78, 91, 56, 23, 67]
-                rule_data = {
-                    "rule_ref_org": self.context.user_org_mapping.get(user.id, [0])[0],
-                    "rule_ref_provider": supplier_id,
-                    "rule_ref_user": user.id,
-                    "management_rule_code": random.choice(rule_codes),
-                    "management_rule_status": random.choice(["PENDING", "ACTIVE"]),
-                    "management_rule_expiry": (datetime.now() + timedelta(days=random.randint(7, 90))).isoformat()
-                }
-                
-                try:
-                    headers = self.get_auth_headers(user)
-                    response = await self.client.post(
-                        f"{self.base_url}/api/v1/staff",
-                        json=rule_data,
-                        headers=headers
-                    )
-                    if response.status_code == 201:
-                        self.context.created_staff_rules.append(1)  # Just track count
-                        rule_count += 1
-                except:
-                    pass
-        
-        print(f"✅ Created {rule_count} staff rules")
+        await self.create_staff_rules_for_all_users(rules_per_supplier=2)
         
         # Save context
         print("\n💾 Saving Test Context")
@@ -839,25 +914,7 @@ class EnhancedTestRunner:
         print(f"\n📊 Distribution:")
         print(f"   👤 Users with Orgs: {len(self.context.user_org_mapping)}")
         print(f"   👤 Users with Suppliers: {len(self.context.user_supplier_mapping)}")
-        
-        # Expected totals
-        expected_users = len(self.context.users)
-        expected_orgs = len(self.context.created_organisations)
-        expected_suppliers = len(self.context.created_suppliers)
-        expected_products = len(self.context.created_products)
-        
-        print(f"\n📈 Expected Totals:")
-        print(f"   👤 Users: {expected_users}")
-        print(f"   🏢 Organisations: {expected_orgs} (3 per user)")
-        print(f"   🏥 Suppliers: {expected_suppliers} (3 per org)")
-        print(f"   📦 Products: {expected_products} (5 per supplier)")
-        
-        if self.context.created_organisations:
-            print(f"\n🏢 Org IDs: {', '.join(map(str, self.context.created_organisations[:10]))}{'...' if len(self.context.created_organisations) > 10 else ''}")
-        if self.context.created_suppliers:
-            print(f"🏥 Supplier IDs: {', '.join(map(str, self.context.created_suppliers[:10]))}{'...' if len(self.context.created_suppliers) > 10 else ''}")
-        if self.context.created_products:
-            print(f"📦 Product IDs: {', '.join(map(str, self.context.created_products[:10]))}{'...' if len(self.context.created_products) > 10 else ''}")
+        print(f"   👤 Staff Assignments: {len(self._used_assignments)}")
         
         if failed == 0:
             print("\n🎉 ALL TESTS PASSED!")

@@ -129,6 +129,7 @@ def search_suppliers_by_location(
         **get_crud_error_responses(include_404=True)
     }
 )
+
 def get_supplier(
     provider_id: str,
     full: bool = Query(True, description="Include all related data (products, images, etc.)"),
