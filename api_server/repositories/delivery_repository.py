@@ -1,6 +1,6 @@
 # repositories/delivery_repository.py
 from typing import Optional, List, Dict, Any
-from core.models.models import Delivery
+from core.models.models import Delivery, Invoice
 import storage.storage_broker as storage_broker
 
 class DeliveryRepository:
@@ -14,10 +14,15 @@ class DeliveryRepository:
                 {Delivery.id_delivery: delivery_id},
                 [],
                 [
+
+                {Delivery.invoice:[{Invoice.placed_order:[]},{Invoice.cart:[]}]},
+                Delivery.delivery_address,
+                Delivery.delivery_provider,
+                Delivery.delivery_broker
                     # Delivery.cart,
                     # Delivery.placed_order,
-                    Delivery.delivery_provider,
-                    Delivery.delivery_broker
+                    # Delivery.delivery_provider,
+                    # Delivery.delivery_broker
                 ],
                 offset=0,
                 limit=1

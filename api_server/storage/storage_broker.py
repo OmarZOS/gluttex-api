@@ -57,8 +57,8 @@ class DatabaseManager:
             engine = create_engine(
                 uri,
                 poolclass=QueuePool,
-                pool_size=10,
-                max_overflow=20,
+                pool_size=20,
+                max_overflow=40,
                 pool_pre_ping=True,  # Verify connections before using
                 pool_recycle=3600,    # Recycle connections every hour
                 echo=False

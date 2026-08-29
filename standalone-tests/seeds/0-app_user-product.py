@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Gluttex API Test Runner - Massive Data Generation with Distribution
+Gluttex API Test Runner - Optimized Data Generation
 Run with: python test_runner.py
 """
 
@@ -11,10 +11,100 @@ import sys
 import uuid
 import random
 from typing import Dict, Any, Optional, List, Set
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta
 from enum import Enum
 from dataclasses import dataclass, field
 from pathlib import Path
+
+
+# ============================================================================
+# REALISTIC DATA - PRE-GENERATED FOR SPEED
+# ============================================================================
+
+REAL_FIRST_NAMES = [
+    "Mohamed", "Ahmed", "Ali", "Fatima", "Youssef", "Amina", "Karim", "Sara",
+    "Nadia", "Rachid", "Leila", "Hassan", "Khadija", "Omar", "Soukaina",
+    "Hamza", "Salma", "Mehdi", "Yasmina", "Anas", "Imane", "Reda", "Nour",
+    "Zakaria", "Houda", "Ayoub", "Maryam", "Amine", "Sana", "Adil"
+]
+
+REAL_LAST_NAMES = [
+    "Benali", "Khan", "Cohen", "Lopez", "Martin", "Lee", "Perez", "Thompson",
+    "White", "Harris", "Sanchez", "Clark", "Walker", "Young", "Allen", "King",
+    "Wright", "Scott", "Torres", "Peterson", "Murphy", "Cook", "Morgan", "Bell",
+    "Ward", "Watson", "Brooks", "Kelly", "Sanders", "Price"
+]
+
+REAL_ORG_NAMES = [
+    "HealthCare Plus", "MediCorp", "Wellness Center", "Global Health",
+    "Premium Care", "MediServe", "HealthFirst", "CarePlus", "MediHealth",
+    "WellnessWorks", "City Medical", "Advanced Care", "Prime Health",
+    "Elite Medical", "Family Care", "Specialist Center", "Medical Arts",
+    "LifeLine Health", "CareBridge", "MediLink", "HealthWave", "VitalCare"
+]
+
+REAL_SUPPLIER_NAMES = [
+    "City Medical Center", "HealthFirst Clinic", "MediLab Services",
+    "PharmaCare", "Advanced Medical Supplies", "Precision Diagnostics",
+    "Wellness Medical Group", "Prime Healthcare", "Elite Medical Services",
+    "CarePlus Pharmacy", "MediHealth Solutions", "Global Medical Supply"
+]
+
+REAL_PRODUCT_NAMES = [
+    "Paracetamol", "Ibuprofen", "Amoxicillin", "Vitamin C", "Omega-3",
+    "Antibiotic", "Pain Relief", "Allergy Medicine", "Cough Syrup",
+    "Blood Pressure Monitor", "Stethoscope", "Syringe", "Bandage",
+    "Antiseptic", "Thermometer", "Surgical Mask", "Hand Sanitizer"
+]
+
+REAL_STREETS = [
+    "Rue Didouche Mourad", "Avenue du 1er Novembre", "Rue Larbi Ben Mhidi",
+    "Boulevard Krim Belkacem", "Rue des Freres Bouadou", "Avenue de l'Independance",
+    "Rue Ali Khodja", "Boulevard Colonel Amirouche", "Rue Emir Abdelkader"
+]
+
+REAL_CITIES = [
+    "Algiers", "Oran", "Constantine", "Annaba", "Blida", "Setif",
+    "Tizi Ouzou", "Bejaia", "Batna", "Sidi Bel Abbes", "Biskra", "Tebessa"
+]
+
+SPECIALITIES = [
+    "cardiology", "neurology", "pediatrics", "orthopedics", "general medicine",
+    "dermatology", "ophthalmology", "oncology", "gynecology", "urology",
+    "psychiatry", "radiology", "dentistry", "emergency medicine", "surgery"
+]
+
+PROVIDER_TYPES = ["Medical", "Pharmacy", "Diagnostic", "Surgical", "Laboratory", "Dental"]
+
+
+# ============================================================================
+# ENUMS
+# ============================================================================
+
+class Gender(str, Enum):
+    MALE = "male"
+    FEMALE = "female"
+
+class AppUserType(str, Enum):
+    PROVIDER = "provider"
+    CUSTOMER = "customer"
+    PATIENT = "patient"
+    GUEST = "guest"
+
+class CountryCode(str, Enum):
+    DZ = "DZ"
+    MA = "MA"
+    TN = "MA"
+    EG = "EG"
+    SA = "SA"
+    AE = "AE"
+    US = "US"
+    FR = "FR"
+    DE = "DE"
+    IT = "IT"
+    ES = "ES"
+    CA = "CA"
+    GB = "GB"
 
 
 # ============================================================================
@@ -23,11 +113,10 @@ from pathlib import Path
 
 @dataclass
 class TestUser:
-    """Represents a test user with authentication data"""
-    id: int
-    username: str
-    email: str
-    password: str
+    id: int = 0
+    username: str = ""
+    email: str = ""
+    password: str = ""
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
     token_expires_at: Optional[datetime] = None
@@ -69,16 +158,10 @@ class TestUser:
 @dataclass
 class TestContext:
     users: List[TestUser] = field(default_factory=list)
-    created_invoices: List[int] = field(default_factory=list)
-    created_payments: List[int] = field(default_factory=list)
-    created_suppliers: List[int] = field(default_factory=list)
     created_organisations: List[int] = field(default_factory=list)
+    created_suppliers: List[int] = field(default_factory=list)
     created_products: List[int] = field(default_factory=list)
-    created_categories: List[int] = field(default_factory=list)
-    created_orders: List[int] = field(default_factory=list)
-    created_services: List[int] = field(default_factory=list)
     created_staff_rules: List[int] = field(default_factory=list)
-    created_deliveries: List[int] = field(default_factory=list)
     user_org_mapping: Dict[int, List[int]] = field(default_factory=dict)
     user_supplier_mapping: Dict[int, List[int]] = field(default_factory=dict)
     test_results: List[Dict[str, Any]] = field(default_factory=list)
@@ -86,16 +169,10 @@ class TestContext:
     def save(self, filename: str = "test_context.json"):
         data = {
             'users': [u.to_dict() for u in self.users],
-            'created_invoices': self.created_invoices,
-            'created_payments': self.created_payments,
-            'created_suppliers': self.created_suppliers,
             'created_organisations': self.created_organisations,
+            'created_suppliers': self.created_suppliers,
             'created_products': self.created_products,
-            'created_categories': self.created_categories,
-            'created_orders': self.created_orders,
-            'created_services': self.created_services,
             'created_staff_rules': self.created_staff_rules,
-            'created_deliveries': self.created_deliveries,
             'user_org_mapping': self.user_org_mapping,
             'user_supplier_mapping': self.user_supplier_mapping,
             'timestamp': datetime.now().isoformat()
@@ -109,16 +186,10 @@ class TestContext:
             with open(filename, 'r') as f:
                 data = json.load(f)
             self.users = [TestUser.from_dict(u) for u in data.get('users', [])]
-            self.created_invoices = data.get('created_invoices', [])
-            self.created_payments = data.get('created_payments', [])
-            self.created_suppliers = data.get('created_suppliers', [])
             self.created_organisations = data.get('created_organisations', [])
+            self.created_suppliers = data.get('created_suppliers', [])
             self.created_products = data.get('created_products', [])
-            self.created_categories = data.get('created_categories', [])
-            self.created_orders = data.get('created_orders', [])
-            self.created_services = data.get('created_services', [])
             self.created_staff_rules = data.get('created_staff_rules', [])
-            self.created_deliveries = data.get('created_deliveries', [])
             self.user_org_mapping = data.get('user_org_mapping', {})
             self.user_supplier_mapping = data.get('user_supplier_mapping', {})
             print(f"📂 Test context loaded from {filename}")
@@ -127,281 +198,145 @@ class TestContext:
 
 
 # ============================================================================
-# ENUMS
+# FAST GENERATORS
 # ============================================================================
 
-class Gender(str, Enum):
-    MALE = "male"
-    FEMALE = "female"
+def get_random_item(lst: List) -> Any:
+    return random.choice(lst)
 
-class BloodType(str, Enum):
-    A_POSITIVE = "A+"
-    A_NEGATIVE = "A-"
-    B_POSITIVE = "B+"
-    B_NEGATIVE = "B-"
-    AB_POSITIVE = "AB+"
-    AB_NEGATIVE = "AB-"
-    O_POSITIVE = "O+"
-    O_NEGATIVE = "O-"
-    UNKNOWN = "Unknown"
-
-class AppUserType(str, Enum):
-    PROVIDER = "provider"
-    CUSTOMER = "customer"
-    PATIENT = "patient"
-    GUEST = "guest"
-
-class CountryCode(str, Enum):
-    DZ = "DZ"
-    US = "US"
-    GB = "GB"
-    FR = "FR"
-    DE = "DE"
-    IT = "IT"
-    ES = "ES"
-    CA = "CA"
-    AU = "AU"
-    MA = "MA"
-    TN = "TN"
-    EG = "EG"
-    SA = "SA"
-    AE = "AE"
-
-
-# ============================================================================
-# TEST DATA GENERATORS - ENHANCED
-# ============================================================================
-
-def generate_unique_username() -> str:
-    return f"testuser_{uuid.uuid4().hex[:8]}"
-
-def generate_unique_email() -> str:
-    return f"test_{uuid.uuid4().hex[:8]}@example.com"
-
-def generate_strong_password() -> str:
-    return f"Test_{uuid.uuid4().hex[:8]}!@#"
-
-def generate_random_person_data() -> Dict[str, Any]:
-    first_names = [
-        "John", "Jane", "Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", 
-        "Maria", "Ahmed", "Sarah", "Michael", "Emma", "David", "Sophia", 
-        "James", "Olivia", "Daniel", "Isabella", "Matthew", "Amelia", 
-        "Joseph", "Mia", "Samuel", "Charlotte", "David", "Ava", "Andrew"
-    ]
-    last_names = [
-        "Smith", "Doe", "Johnson", "Williams", "Brown", "Jones", "Garcia", 
-        "Miller", "Benali", "Khan", "Cohen", "Lopez", "Martin", "Lee", 
-        "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", 
-        "Walker", "Young", "Allen", "King", "Wright", "Scott", "Torres"
-    ]
+def generate_user_data(user_type: str = None) -> Dict[str, Any]:
+    first = get_random_item(REAL_FIRST_NAMES)
+    last = get_random_item(REAL_LAST_NAMES)
     
     return {
-        "person_first_name": random.choice(first_names),
-        "person_last_name": random.choice(last_names),
-        "person_birth_date": f"{random.randint(1950, 2005)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}",
-        "person_gender": random.choice([Gender.MALE.value, Gender.FEMALE.value]),
-        "person_country_code": random.choice([c.value for c in CountryCode]),
-        "blood_type": random.choice([b.value for b in BloodType])
+        "app_user_name": f"{first.lower()}.{last.lower()}".replace(" ", ""),
+        "app_user_password": "Test123!@#",
+        "app_user_email": f"{first.lower()}.{last.lower()}@example.com".replace(" ", ""),
+        "app_user_type": user_type or get_random_item([t.value for t in AppUserType]),
+        "app_user_preferences": {
+            "theme": get_random_item(["dark", "light"]),
+            "notifications": random.choice([True, False]),
+            "language": get_random_item(["en", "fr", "ar"])
+        }
     }
 
-def generate_random_location_data() -> Dict[str, Any]:
-    cities = [
-        "Algiers", "Oran", "Constantine", "Annaba", "Blida", "Setif", 
-        "Tizi Ouzou", "Bejaia", "Batna", "Sidi Bel Abbes", "Biskra", 
-        "Tebessa", "El Oued", "Ghardaia", "Tamanrasset", "Mostaganem", 
-        "Skikda", "Tipaza", "Boumerdes", "Relizane", "Saida", "M'sila"
-    ]
-    streets = [
-        "Main St", "Rue Didouche Mourad", "Avenue du 1er Novembre", 
-        "Rue Larbi Ben Mhidi", "Boulevard Krim Belkacem", 
-        "Rue des Freres Bouadou", "Avenue de l'Independance", 
-        "Rue Ali Khodja", "Boulevard Colonel Amirouche", "Rue Emir Abdelkader"
-    ]
-    
+def generate_person_data() -> Dict[str, Any]:
+    return {
+        "person_first_name": get_random_item(REAL_FIRST_NAMES),
+        "person_last_name": get_random_item(REAL_LAST_NAMES),
+        "person_birth_date": f"{random.randint(1950, 2005)}-{random.randint(1, 12):02d}-{random.randint(1, 28):02d}",
+        "person_gender": get_random_item([Gender.MALE.value, Gender.FEMALE.value]),
+        "person_country_code": get_random_item([c.value for c in CountryCode])
+    }
+
+def generate_location_data() -> Dict[str, Any]:
     return {
         "location_latitude": round(random.uniform(35.0, 37.0), 6),
         "location_longitude": round(random.uniform(-5.0, 8.0), 6),
-        "location_name": random.choice(["Home", "Work", "Clinic", "Office", "Shop", "Warehouse", "Distribution Center", "Hospital", "Pharmacy"]),
-        "address_street": f"{random.randint(1, 999)} {random.choice(streets)}",
-        "address_city": random.choice(cities),
+        "location_name": get_random_item(["Home", "Work", "Clinic", "Office", "Shop", "Warehouse"]),
+        "address_street": f"{random.randint(1, 999)} {get_random_item(REAL_STREETS)}",
+        "address_city": get_random_item(REAL_CITIES),
         "address_postal_code": f"{random.randint(1000, 9999)}",
-        "address_country": random.choice([c.value for c in CountryCode])
+        "address_country": get_random_item([c.value for c in CountryCode])
     }
 
-def generate_random_user_data(user_type: Optional[str] = None) -> Dict[str, Any]:
+def generate_organisation_data() -> Dict[str, Any]:
+    name = get_random_item(REAL_ORG_NAMES)
     return {
-        "app_user_name": generate_unique_username(),
-        "app_user_password": generate_strong_password(),
-        "app_user_email": generate_unique_email(),
-        "app_user_type": user_type or random.choice([t.value for t in AppUserType]),
-        "app_user_preferences": {
-            "theme": random.choice(["dark", "light"]),
-            "notifications": random.choice([True, False]),
-            "language": random.choice(["en", "fr", "ar"])
-        },
-        "app_user_image_url": f"https://example.com/avatars/{uuid.uuid4().hex[:8]}.jpg"
+        "provider_organisation_name": f"{name} {uuid.uuid4().hex[:4]}",
+        "provider_organisation_desc": f"Leading healthcare provider specializing in {get_random_item(SPECIALITIES)}"
     }
 
-def generate_random_organisation_data() -> Dict[str, Any]:
-    org_names = [
-        "HealthCare Plus", "MediCorp", "Wellness Center", "Global Health Solutions", 
-        "Premium Care", "MediServe", "HealthFirst", "CarePlus", "MediHealth", 
-        "WellnessWorks", "City Medical Group", "Advanced Care", "Prime Health",
-        "Elite Medical", "Family Care", "Specialist Center", "Medical Arts",
-        "LifeLine Health", "CareBridge", "MediLink", "HealthWave", "VitalCare",
-        "Optimum Health", "Pulse Medical", "Core Wellness", "Apex Healthcare",
-        "Zenith Medical", "Nova Health", "Virtue Care", "Harmony Medical",
-        "Pinnacle Health", "Radiant Care", "Summit Medical", "Tranquil Health"
-    ]
-    
-    return {
-        "provider_organisation_name": f"{random.choice(org_names)} {uuid.uuid4().hex[:4]}",
-        "provider_organisation_desc": f"Leading healthcare provider specializing in {random.choice(['cardiology', 'neurology', 'pediatrics', 'orthopedics', 'general medicine', 'dermatology', 'ophthalmology', 'oncology', 'gynecology', 'urology', 'psychiatry', 'radiology'])}"
-    }
-
-def generate_random_supplier_data(org_id: int = 0, owner_id: int = 0) -> Dict[str, Any]:
-    provider_types = [1, 2, 3, 4, 5, 6]
-    provider_names = [
-        "City Medical Center", "HealthFirst Clinic", "MediLab Services", 
-        "PharmaCare", "Advanced Medical Supplies", "Precision Diagnostics",
-        "Wellness Medical Group", "Prime Healthcare", "Elite Medical Services",
-        "CarePlus Pharmacy", "MediHealth Solutions", "Global Medical Supply",
-        "MediTech Services", "HealthBridge", "Vitality Medical", "Apex Diagnostics",
-        "CuraMed", "NovaCare", "Virtue Health", "Optimum Medical",
-        "Pulse Healthcare", "Zenith Medical Supply", "Radiant Health", "Core Medical"
-    ]
-    
+def generate_supplier_data(org_id: int, owner_id: int) -> Dict[str, Any]:
+    name = get_random_item(REAL_SUPPLIER_NAMES)
     return {
         "id_provider_owner": owner_id,
-        "idprovider_details_id": 0,
-        "id_product_provider_type": random.choice(provider_types),
         "id_provider_organisation": org_id,
-        "product_provider_type_desc": random.choice(["Medical", "Pharmacy", "Diagnostic", "Surgical", "Laboratory", "Dental", "Optical", "Therapeutic"]),
-        "provider_organisation_name": f"{random.choice(provider_names)} {uuid.uuid4().hex[:4]}",
-        "provider_organisation_desc": f"Provider of {random.choice(['medical', 'dental', 'diagnostic', 'pharmaceutical', 'surgical', 'laboratory', 'therapeutic', 'rehabilitation'])} services",
+        "id_product_provider_type": random.randint(1, 6),
+        "product_provider_type_desc": get_random_item(PROVIDER_TYPES),
+        "provider_organisation_name": f"{name} {uuid.uuid4().hex[:4]}",
         "provider_name": f"Provider_{uuid.uuid4().hex[:8]}",
         "provider_contact_info": json.dumps({
-            "phone": f"+213-5{random.randint(10, 99)}{random.randint(10, 99)}{random.randint(10, 99)}",
-            "email": generate_unique_email(),
-            "website": f"https://{uuid.uuid4().hex[:8]}.com"
+            "phone": f"+213-5{random.randint(10, 99):02d}{random.randint(10, 99):02d}{random.randint(10, 99):02d}",
+            "email": f"contact_{uuid.uuid4().hex[:4]}@example.com"
         })
     }
 
-def generate_random_product_data(provider_id: int = 0, owner_id: int = 0) -> Dict[str, Any]:
-    product_names = [
-        "Paracetamol", "Ibuprofen", "Amoxicillin", "Vitamin C", "Omega-3",
-        "Antibiotic", "Pain Relief", "Allergy Medicine", "Cough Syrup",
-        "Medical Device", "Surgical Mask", "Hand Sanitizer", "Thermometer",
-        "Blood Pressure Monitor", "Stethoscope", "Syringe", "Bandage", "Antiseptic",
-        "Antibiotic Cream", "Painkiller", "Antihistamine", "Decongestant", "Antacid"
-    ]
-    categories = [1, 2, 3, 4, 5]
-    
+def generate_product_data(provider_id: int, owner_id: int) -> Dict[str, Any]:
     return {
-        "product_name": f"{random.choice(product_names)} {uuid.uuid4().hex[:4]}",
-        "product_brand": random.choice(["BrandA", "BrandB", "BrandC", "Generic", "Premium", "MedicalPro", "HealthPlus", "CareMed"]),
+        "product_name": f"{get_random_item(REAL_PRODUCT_NAMES)} {uuid.uuid4().hex[:4]}",
+        "product_brand": get_random_item(["BrandA", "BrandB", "BrandC", "Generic", "Premium"]),
         "product_provider_id": provider_id,
-        "product_category_id": random.choice(categories),
+        "product_category_id": random.randint(1, 5),
         "product_barcode": f"{random.randint(1000000000000, 9999999999999)}",
-        "product_description": f"High-quality {random.choice(['medical', 'healthcare', 'pharmaceutical', 'surgical', 'diagnostic'])} product",
+        "product_description": f"High-quality {get_random_item(PROVIDER_TYPES).lower()} product",
         "product_price": round(random.uniform(5.0, 200.0), 2),
-        "product_quantity": random.randint(10, 1000),
-        "product_quantifier": random.choice(["mg", "g", "ml", "pack", "unit", "tablet", "capsule", "bottle"]),
+        "product_quantity": random.randint(10, 500),
+        "product_quantifier": get_random_item(["mg", "g", "ml", "pack", "unit"]),
         "product_owner": owner_id
     }
 
-def generate_random_product_image_data() -> Dict[str, Any]:
-    return {
-        "product_image_url": f"https://example.com/images/product_{uuid.uuid4().hex[:8]}.jpg"
-    }
-
-def generate_random_iproduct_data() -> Dict[str, Any]:
-    gluten_statuses = ["gluten_free", "contains_gluten", "may_contain", "unknown"]
-    categories = [1, 2, 3, 4, 5]
-    
-    return {
-        "iproduct_name": f"Product_{uuid.uuid4().hex[:8]}",
-        "iproduct_barcode": f"{random.randint(1000000000000, 9999999999999)}",
-        "iproduct_brand": random.choice(["BrandA", "BrandB", "BrandC", "Generic", "Premium"]),
-        "iproduct_estimated_price": round(random.uniform(5.0, 200.0), 2),
-        "iproduct_price_currency": "DZD",
-        "iproduct_gluten_status": random.choice(gluten_statuses),
-        "iproduct_info_source": "openai",
-        "iproduct_info_confidence": round(random.uniform(0.5, 1.0), 2),
-        "iproduct_category_id": random.choice(categories)
-    }
-
 
 # ============================================================================
-# ENHANCED TEST RUNNER
+# OPTIMIZED TEST RUNNER
 # ============================================================================
 
-class EnhancedTestRunner:
+class OptimizedTestRunner:
     def __init__(self, base_url: str = "http://localhost:9000"):
         self.base_url = base_url
         self.client = None
         self.context = TestContext()
-        self.results = []
         self.test_user = None
-        self._used_assignments: Set[int] = set()  # Track owner-supplier assignments
+        self._used_assignments: Set[str] = set()
+        
+        # Pre-generate all data for speed
+        self._pre_generated_users = []
+        self._pre_generated_orgs = []
+        self._pre_generated_suppliers = []
+        self._pre_generated_products = []
     
     async def __aenter__(self):
-        self.client = httpx.AsyncClient(timeout=60.0, verify=False)
+        self.client = httpx.AsyncClient(timeout=30.0, verify=False)
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self.client:
             await self.client.aclose()
     
-    def print_result(self, test_name: str, passed: bool, details: str = "", response_data: Any = None):
-        status = "✅ PASSED" if passed else "❌ FAILED"
-        print(f"{status} - {test_name}")
-        if details:
-            print(f"     {details}")
-        if response_data:
-            try:
-                response_str = json.dumps(response_data, indent=2, default=str)[:500]
-                print(f"     Response: {response_str}")
-            except:
-                print(f"     Response: {response_data}")
-        self.results.append({"name": test_name, "passed": passed, "details": details})
-    
     def get_auth_headers(self, user: TestUser) -> Dict[str, str]:
         if user.access_token:
             return {"Authorization": f"Bearer {user.access_token}"}
         return {}
     
-    def extract_id_from_response(self, response_data: Dict[str, Any], possible_keys: List[str]) -> int:
+    def extract_id(self, response_data: Dict[str, Any], keys: List[str]) -> int:
         if not response_data:
             return 0
         
-        for key in possible_keys:
+        for key in keys:
             if key in response_data:
-                value = response_data[key]
-                if value is not None:
-                    try:
-                        return int(value)
-                    except (ValueError, TypeError):
-                        pass
+                try:
+                    return int(response_data[key])
+                except (ValueError, TypeError):
+                    pass
         
         if 'data' in response_data and isinstance(response_data['data'], dict):
-            return self.extract_id_from_response(response_data['data'], possible_keys)
-        
-        if 'result' in response_data and isinstance(response_data['result'], dict):
-            return self.extract_id_from_response(response_data['result'], possible_keys)
-        
-        if 'items' in response_data and isinstance(response_data['items'], list) and response_data['items']:
-            return self.extract_id_from_response(response_data['items'][0], possible_keys)
+            return self.extract_id(response_data['data'], keys)
         
         return 0
     
-    # ==================== USER MANAGEMENT ====================
+    def print_result(self, name: str, passed: bool, details: str = ""):
+        status = "✅" if passed else "❌"
+        print(f"  {status} {name}")
+        if details:
+            print(f"     {details}")
+        self.context.test_results.append({"name": name, "passed": passed, "details": details})
     
-    async def create_user(self, user_data: Dict[str, Any] = None, 
-                         person_data: Dict[str, Any] = None,
-                         location_data: Dict[str, Any] = None) -> Optional[TestUser]:
+    # ==================== FAST BATCH OPERATIONS ====================
+    
+    async def create_user(self, user_data: Dict = None, person_data: Dict = None, 
+                         location_data: Dict = None) -> Optional[TestUser]:
         if user_data is None:
-            user_data = generate_random_user_data()
+            user_data = generate_user_data()
         
         payload = {"user": user_data}
         if person_data:
@@ -417,53 +352,46 @@ class EnhancedTestRunner:
             
             if response.status_code == 201:
                 result = response.json()
-                user_id = self.extract_id_from_response(result, ['id_app_user', 'id', 'user_id', 'app_user_id'])
+                user_id = self.extract_id(result, ['id_app_user', 'id', 'user_id'])
                 
-                test_user = TestUser(
-                    id=user_id,
-                    username=user_data.get('app_user_name', ''),
-                    email=user_data.get('app_user_email', ''),
-                    password=user_data.get('app_user_password', ''),
-                    user_data=user_data,
-                    person_data=person_data or {},
-                    location_data=location_data or {}
-                )
-                
-                self.context.users.append(test_user)
-                print(f"   ✅ Created user: {test_user.username} (ID: {test_user.id})")
-                return test_user
-            else:
-                print(f"   ❌ Failed to create user: {response.status_code}")
-                if response.text:
-                    print(f"      {response.text[:200]}")
-                return None
-                
-        except Exception as e:
-            print(f"   ❌ Error creating user: {e}")
+                if user_id > 0:
+                    return TestUser(
+                        id=user_id,
+                        username=user_data.get('app_user_name', ''),
+                        email=user_data.get('app_user_email', ''),
+                        password=user_data.get('app_user_password', 'Test123!@#'),
+                        user_data=user_data,
+                        person_data=person_data or {},
+                        location_data=location_data or {}
+                    )
+            return None
+        except Exception:
             return None
     
-    async def create_multiple_users(self, count: int = 20) -> List[TestUser]:
-        print(f"\n👥 Creating {count} test users...")
-        created_users = []
+    async def create_users_batch(self, count: int = 10) -> List[TestUser]:
+        print(f"\n👥 Creating {count} users...")
         
-        user_types = ["provider", "customer", "patient", "guest"]
-        
+        # Generate all data first
+        users_data = []
         for i in range(count):
-            user_type = user_types[i % len(user_types)]
-            user_data = generate_random_user_data(user_type)
-            person_data = generate_random_person_data()
-            location_data = generate_random_location_data()
-            
-            user = await self.create_user(user_data, person_data, location_data)
-            if user:
-                created_users.append(user)
+            user_type = ["provider", "customer", "patient", "guest"][i % 4]
+            user_data = generate_user_data(user_type)
+            person_data = generate_person_data()
+            location_data = generate_location_data()
+            users_data.append((user_data, person_data, location_data))
         
-        print(f"\n✅ Created {len(created_users)} users")
-        return created_users
+        # Create users in parallel
+        tasks = [self.create_user(*data) for data in users_data]
+        results = await asyncio.gather(*tasks)
+        
+        created = [u for u in results if u]
+        for u in created:
+            self.context.users.append(u)
+        
+        print(f"✅ Created {len(created)}/{count} users")
+        return created
     
     async def login_user(self, user: TestUser) -> bool:
-        print(f"\n🔐 Logging in user: {user.username}")
-        
         try:
             response = await self.client.post(
                 f"{self.base_url}/api/v1/authentication/token",
@@ -475,453 +403,276 @@ class EnhancedTestRunner:
             
             if response.status_code == 200:
                 result = response.json()
-                access_token = result.get('access_token')
-                refresh_token = result.get('refresh_token')
-                expires_in = result.get('expires_in', 3600)
-                
-                if access_token:
-                    user.access_token = access_token
-                    user.refresh_token = refresh_token
-                    user.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
-                    print(f"   ✅ Login successful")
+                token = result.get('access_token')
+                if token:
+                    user.access_token = token
+                    user.refresh_token = result.get('refresh_token')
+                    user.token_expires_at = datetime.now() + timedelta(hours=1)
                     return True
-                else:
-                    print(f"   ❌ No access token in response")
-                    return False
-            else:
-                print(f"   ❌ Login failed: {response.status_code}")
-                if response.text:
-                    print(f"      {response.text[:200]}")
-                return False
-                
-        except Exception as e:
-            print(f"   ❌ Login error: {e}")
+            return False
+        except Exception:
             return False
     
-    async def login_all_users(self) -> int:
-        print("\n🔐 Logging in all users...")
-        success_count = 0
-        
-        for user in self.context.users:
-            if await self.login_user(user):
-                success_count += 1
-        
-        print(f"\n✅ Logged in {success_count}/{len(self.context.users)} users")
+    async def login_users_batch(self) -> int:
+        print("\n🔐 Logging in users...")
+        tasks = [self.login_user(u) for u in self.context.users]
+        results = await asyncio.gather(*tasks)
+        success_count = sum(1 for r in results if r)
+        print(f"✅ Logged in {success_count}/{len(self.context.users)} users")
         return success_count
     
-    # ==================== ORGANISATION TESTS ====================
+    # ==================== BATCH CREATION ====================
     
-    async def test_create_organisation(self, user: TestUser) -> Optional[int]:
-        print(f"\n🏢 Creating organisation for user: {user.username}")
+    async def create_organisations_batch(self, user: TestUser, count: int = 3) -> List[int]:
+        print(f"\n🏢 Creating {count} organisations for user {user.id}...")
         
         headers = self.get_auth_headers(user)
         if not headers:
-            print("   ❌ No authentication token available")
-            return None
+            return []
         
-        org_data = generate_random_organisation_data()
+        org_ids = []
+        tasks = []
         
-        try:
-            response = await self.client.post(
+        for _ in range(count):
+            org_data = generate_organisation_data()
+            tasks.append(self.client.post(
                 f"{self.base_url}/api/v1/organisations",
                 json={"organisation": org_data},
                 headers=headers
-            )
-            
-            if response.status_code in [200, 201]:
-                result = response.json()
-                org_id = self.extract_id_from_response(result, [
-                    'idprovider_organisation',
-                    'id_provider_organisation',
-                    'id',
-                    'organisation_id',
-                    'org_id'
+            ))
+        
+        responses = await asyncio.gather(*tasks)
+        
+        for resp in responses:
+            if resp.status_code in [200, 201]:
+                org_id = self.extract_id(resp.json(), [
+                    'idprovider_organisation', 'id_provider_organisation', 'id', 'organisation_id'
                 ])
-                
                 if org_id > 0:
+                    org_ids.append(org_id)
                     self.context.created_organisations.append(org_id)
-                    
-                    if user.id not in self.context.user_org_mapping:
-                        self.context.user_org_mapping[user.id] = []
-                    self.context.user_org_mapping[user.id].append(org_id)
-                    
-                    print(f"   ✅ Created organisation: {org_id} for user {user.id}")
-                    self.print_result("Create Organisation", True, f"Organisation {org_id} created")
-                    return org_id
-                else:
-                    print(f"   ⚠️ Could not extract ID from response")
-                    return 0
-            else:
-                print(f"   ❌ Failed to create organisation: {response.status_code}")
-                self.print_result("Create Organisation", False, f"Status: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            print(f"   ❌ Organisation creation error: {e}")
-            self.print_result("Create Organisation", False, str(e))
-            return None
-    
-    async def create_organisations_for_all_users(self, orgs_per_user: int = 3):
-        """Create organisations for all authenticated users"""
-        print(f"\n🏢 Creating {orgs_per_user} organisations per user...")
         
-        authenticated_users = [u for u in self.context.users if u.access_token]
-        total_orgs = 0
+        if org_ids:
+            self.context.user_org_mapping[user.id] = org_ids
         
-        for user in authenticated_users:
-            for i in range(orgs_per_user):
-                org_id = await self.test_create_organisation(user)
-                if org_id and org_id > 0:
-                    total_orgs += 1
-        
-        print(f"✅ Created {total_orgs} organisations across {len(authenticated_users)} users")
-        return total_orgs
+        print(f"✅ Created {len(org_ids)} organisations")
+        return org_ids
     
-    # ==================== SUPPLIER TESTS ====================
-    
-    async def test_create_supplier(self, user: TestUser, org_id: int) -> Optional[int]:
-        if org_id <= 0:
-            return None
-            
-        print(f"\n🏥 Creating supplier for user: {user.username}")
+    async def create_suppliers_batch(self, user: TestUser, org_ids: List[int], 
+                                    count_per_org: int = 2) -> List[int]:
+        print(f"\n🏥 Creating suppliers for user {user.id}...")
         
         headers = self.get_auth_headers(user)
-        if not headers:
-            print("   ❌ No authentication token available")
-            return None
+        if not headers or not org_ids:
+            return []
         
-        supplier_data = generate_random_supplier_data(org_id, user.id)
-        location_data = generate_random_location_data()
+        supplier_ids = []
+        tasks = []
         
-        try:
-            response = await self.client.post(
-                f"{self.base_url}/api/v1/suppliers",
-                json={
-                    "provider": supplier_data,
-                    "location": location_data
-                },
-                headers=headers
-            )
-            
-            if response.status_code in [200, 201]:
-                result = response.json()
-                
-                supplier_id = self.extract_id_from_response(result, [
-                    'id_product_provider',
-                    'idprovider',
-                    'id',
-                    'supplier_id',
-                    'provider_id'
+        for org_id in org_ids:
+            for _ in range(count_per_org):
+                sup_data = generate_supplier_data(org_id, user.id)
+                loc_data = generate_location_data()
+                tasks.append(self.client.post(
+                    f"{self.base_url}/api/v1/suppliers",
+                    json={"provider": sup_data, "location": loc_data},
+                    headers=headers
+                ))
+        
+        responses = await asyncio.gather(*tasks)
+        
+        for resp in responses:
+            if resp.status_code in [200, 201]:
+                sup_id = self.extract_id(resp.json(), [
+                    'id_product_provider', 'idprovider', 'id', 'supplier_id'
                 ])
-                
-                if supplier_id > 0:
-                    self.context.created_suppliers.append(supplier_id)
-                    
-                    if user.id not in self.context.user_supplier_mapping:
-                        self.context.user_supplier_mapping[user.id] = []
-                    self.context.user_supplier_mapping[user.id].append(supplier_id)
-                    
-                    print(f"   ✅ Created supplier: {supplier_id} for user {user.id}")
-                    self.print_result("Create Supplier", True, f"Supplier {supplier_id} created")
-                    return supplier_id
-                else:
-                    print(f"   ⚠️ Could not extract supplier ID from response")
-                    return 0
-            else:
-                print(f"   ❌ Failed to create supplier: {response.status_code}")
-                self.print_result("Create Supplier", False, f"Status: {response.status_code}")
-                return None
-                
-        except Exception as e:
-            print(f"   ❌ Supplier creation error: {e}")
-            self.print_result("Create Supplier", False, str(e))
-            return None
+                if sup_id > 0:
+                    supplier_ids.append(sup_id)
+                    self.context.created_suppliers.append(sup_id)
+        
+        if supplier_ids:
+            self.context.user_supplier_mapping[user.id] = supplier_ids
+        
+        print(f"✅ Created {len(supplier_ids)} suppliers")
+        return supplier_ids
     
-    async def create_suppliers_for_all_users(self, suppliers_per_org: int = 3):
-        """Create suppliers for all organisations"""
-        print(f"\n🏥 Creating {suppliers_per_org} suppliers per organisation...")
-        
-        authenticated_users = [u for u in self.context.users if u.access_token]
-        total_suppliers = 0
-        
-        for user in authenticated_users:
-            orgs = self.context.user_org_mapping.get(user.id, [])
-            for org_id in orgs:
-                for i in range(suppliers_per_org):
-                    supplier_id = await self.test_create_supplier(user, org_id)
-                    if supplier_id and supplier_id > 0:
-                        total_suppliers += 1
-        
-        print(f"✅ Created {total_suppliers} suppliers across all organisations")
-        return total_suppliers
-    
-    # ==================== PRODUCT TESTS ====================
-    
-    async def test_create_product(self, user: TestUser, supplier_id: int) -> Optional[int]:
-        if supplier_id <= 0:
-            return None
-            
-        headers = self.get_auth_headers(user)
-        if not headers:
-            return None
-        
-        product_data = generate_random_product_data(supplier_id, user.id)
-        product_image = generate_random_product_image_data()
-        iproduct_data = generate_random_iproduct_data()
-        
-        try:
-            response = await self.client.post(
-                f"{self.base_url}/api/v1/products",
-                json={
-                    "product": product_data,
-                    "image": product_image,
-                    "iproduct": iproduct_data
-                },
-                headers=headers
-            )
-            
-            if response.status_code == 201:
-                result = response.json()
-                product_id = self.extract_id_from_response(result, ['id_product', 'id', 'product_id'])
-                if product_id > 0:
-                    self.context.created_products.append(product_id)
-                    print(f"   ✅ Created product: {product_id}")
-                    return product_id
-            return None
-        except Exception as e:
-            print(f"   ❌ Error creating product: {e}")
-            return None
-    
-    # ==================== STAFF RULES - FIXED ====================
-    
-    async def test_create_staff_rule(self, user: TestUser, supplier_id: int, org_id: int, 
-                                     target_user_id: int) -> Optional[int]:
-        """
-        Create a staff rule for a target user on a supplier.
-        Ensures the owner is not added as staff for their own supplier.
-        """
-        if supplier_id <= 0 or org_id <= 0:
-            return None
-        
-        # Skip if target user is the owner of the supplier
-        # Check if the user is the owner of this supplier
-        supplier_owner_id = None
-        for uid, suppliers in self.context.user_supplier_mapping.items():
-            if supplier_id in suppliers:
-                supplier_owner_id = uid
-                break
-        
-        if supplier_owner_id == target_user_id:
-            print(f"   ⚠️ Skipping: User {target_user_id} is the owner of supplier {supplier_id}")
-            return None
-        
-        # Check if we already assigned this supplier to this user
-        assignment_key = f"{target_user_id}_{supplier_id}"
-        if assignment_key in self._used_assignments:
-            print(f"   ⚠️ Skipping: User {target_user_id} already assigned to supplier {supplier_id}")
-            return None
+    async def create_products_batch(self, user: TestUser, supplier_ids: List[int],
+                                   count_per_supplier: int = 2) -> int:
+        print(f"\n📦 Creating products for user {user.id}...")
         
         headers = self.get_auth_headers(user)
-        if not headers:
-            return None
+        if not headers or not supplier_ids:
+            return 0
+        
+        tasks = []
+        for sup_id in supplier_ids:
+            for _ in range(count_per_supplier):
+                prod_data = generate_product_data(sup_id, user.id)
+                tasks.append(self.client.post(
+                    f"{self.base_url}/api/v1/products",
+                    json={"product": prod_data},
+                    headers=headers
+                ))
+        
+        responses = await asyncio.gather(*tasks)
+        count = 0
+        
+        for resp in responses:
+            if resp.status_code == 201:
+                prod_id = self.extract_id(resp.json(), ['id_product', 'id', 'product_id'])
+                if prod_id > 0:
+                    self.context.created_products.append(prod_id)
+                    count += 1
+        
+        print(f"✅ Created {count} products")
+        return count
+    
+    async def create_staff_rules_batch(self, owner_user: TestUser, supplier_ids: List[int],
+                                      target_users: List[TestUser]) -> int:
+        print(f"\n👥 Creating staff rules...")
+        
+        headers = self.get_auth_headers(owner_user)
+        if not headers or not supplier_ids or not target_users:
+            return 0
+        
+        # Get org for this user
+        org_ids = self.context.user_org_mapping.get(owner_user.id, [])
+        if not org_ids:
+            return 0
         
         rule_codes = [27, 45, 60, 12, 33, 78, 91, 56, 23, 67]
-        
-        rule_data = {
-            "rule_ref_org": org_id,
-            "rule_ref_provider": supplier_id,
-            "rule_ref_user": target_user_id,
-            "management_rule_code": random.choice(rule_codes),
-            "management_rule_status": random.choice(["PENDING", "ACTIVE"]),
-            "management_rule_expiry": (datetime.now() + timedelta(days=random.randint(7, 90))).isoformat()
-        }
-        
-        try:
-            response = await self.client.post(
-                f"{self.base_url}/api/v1/staff",
-                json=rule_data,
-                headers=headers
-            )
-            if response.status_code == 201:
-                self.context.created_staff_rules.append(1)
-                self._used_assignments.add(assignment_key)
-                print(f"   ✅ Created staff rule: User {target_user_id} -> Supplier {supplier_id}")
-                return 1
-            else:
-                print(f"   ❌ Failed to create staff rule: {response.status_code}")
-                return None
-        except Exception as e:
-            print(f"   ❌ Error creating staff rule: {e}")
-            return None
-    
-    async def create_staff_rules_for_all_users(self, rules_per_supplier: int = 2):
-        """
-        Create staff rules for users on suppliers.
-        Ensures owners are NOT added as staff for their own suppliers.
-        """
-        print(f"\n👥 Creating staff rules (max {rules_per_supplier} per supplier)...")
-        print("   ⚠️ Owners will not be added as staff for their own suppliers")
-        
-        authenticated_users = [u for u in self.context.users if u.access_token]
         total_rules = 0
         
-        # Get all suppliers and their owners
-        supplier_owners = {}
-        for uid, suppliers in self.context.user_supplier_mapping.items():
-            for sid in suppliers:
-                supplier_owners[sid] = uid
-        
-        # For each supplier, assign staff roles to OTHER users
-        for user in authenticated_users:
-            suppliers = self.context.user_supplier_mapping.get(user.id, [])
-            for supplier_id in suppliers:
-                # Get other users (not the owner)
-                other_users = [u for u in authenticated_users if u.id != supplier_owners.get(supplier_id, user.id)]
+        for supplier_id in supplier_ids:
+            # Skip if supplier owner is the target
+            for target in target_users:
+                # Check if target is the owner
+                is_owner = False
+                for uid, suppliers in self.context.user_supplier_mapping.items():
+                    if supplier_id in suppliers:
+                        if uid == target.id:
+                            is_owner = True
+                        break
                 
-                # Shuffle and take a subset
-                random.shuffle(other_users)
-                target_users = other_users[:rules_per_supplier]
+                if is_owner:
+                    continue
                 
-                for target_user in target_users:
-                    org_id = self.context.user_org_mapping.get(user.id, [0])[0]
-                    if org_id > 0:
-                        result = await self.test_create_staff_rule(
-                            user, supplier_id, org_id, target_user.id
-                        )
-                        if result:
-                            total_rules += 1
+                # Check if already assigned
+                key = f"{target.id}_{supplier_id}"
+                if key in self._used_assignments:
+                    continue
+                
+                rule_data = {
+                    "rule_ref_org": org_ids[0],
+                    "rule_ref_provider": supplier_id,
+                    "rule_ref_user": target.id,
+                    "management_rule_code": get_random_item(rule_codes),
+                    "management_rule_status": get_random_item(["PENDING", "ACTIVE"]),
+                    "management_rule_expiry": (datetime.now() + timedelta(days=random.randint(7, 90))).isoformat()
+                }
+                
+                try:
+                    resp = await self.client.post(
+                        f"{self.base_url}/api/v1/staff",
+                        json=rule_data,
+                        headers=headers
+                    )
+                    if resp.status_code == 201:
+                        self.context.created_staff_rules.append(1)
+                        self._used_assignments.add(key)
+                        total_rules += 1
+                except Exception:
+                    pass
         
-        print(f"✅ Created {total_rules} staff rules (owners excluded)")
+        print(f"✅ Created {total_rules} staff rules")
         return total_rules
     
     # ==================== MAIN RUNNER ====================
     
-    async def run_tests(self, skip_user_creation: bool = False, 
+    async def run_tests(self, skip_user_creation: bool = False,
                        skip_login: bool = False,
                        context_file: str = "test_context.json"):
-        print("\n" + "="*70)
-        print("🚀 GLUTTEX API TEST RUNNER - MASSIVE DATA")
-        print("="*70)
+        print("\n" + "="*60)
+        print("🚀 GLUTTEX API TEST RUNNER - OPTIMIZED")
+        print("="*60)
         print(f"📍 Base URL: {self.base_url}")
-        print(f"🕐 Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("="*70)
+        print(f"🕐 Started: {datetime.now().strftime('%H:%M:%S')}")
+        print("="*60)
         
         # Load context
         if Path(context_file).exists():
-            loaded = self.context.load(context_file)
-            if loaded:
-                print(f"📂 Loaded {len(self.context.users)} users from context")
+            self.context.load(context_file)
         
         # Create users
         if not skip_user_creation and not self.context.users:
-            print("\n📝 Creating Test Users")
-            print("="*70)
-            await self.create_multiple_users(20)  # 20 users
-        elif self.context.users:
+            users = await self.create_users_batch(10)
+        else:
             print(f"\n📋 Using {len(self.context.users)} existing users")
         
         if not self.context.users:
-            print("\n❌ No users available. Cannot continue.")
+            print("\n❌ No users available")
             return
         
         # Login
         if not skip_login:
-            print("\n🔐 Logging In Users")
-            print("="*70)
-            await self.login_all_users()
-        else:
-            print("\n⏭️ Skipping login step")
+            await self.login_users_batch()
         
-        authenticated_users = [u for u in self.context.users if u.access_token]
-        if not authenticated_users:
-            print("\n❌ No authenticated users available")
+        authenticated = [u for u in self.context.users if u.access_token]
+        if not authenticated:
+            print("\n❌ No authenticated users")
             return
         
-        self.test_user = authenticated_users[0]
-        print(f"\n👤 Using user '{self.test_user.username}' (ID: {self.test_user.id})")
+        self.test_user = authenticated[0]
+        print(f"\n👤 Using primary user: {self.test_user.username} (ID: {self.test_user.id})")
         
-        # ==================== RUN TESTS ====================
-        print("\n" + "="*70)
+        # Provider users for staff rules
+        provider_users = [u for u in authenticated if u.user_data.get('app_user_type') == 'provider']
+        if not provider_users:
+            provider_users = authenticated[:3]
+        
+        print("\n" + "="*60)
         print("🧪 Running Tests")
-        print("="*70)
+        print("="*60)
         
-        # Step 1: Create Organisations (3 per user)
-        print("\n🏢 STEP 1: Creating Organisations")
-        print("="*70)
-        await self.create_organisations_for_all_users(orgs_per_user=3)
+        # 1. Create organisations
+        orgs = await self.create_organisations_batch(self.test_user, count=3)
         
-        # Step 2: Create Suppliers (3 per organisation)
-        print("\n🏥 STEP 2: Creating Suppliers")
-        print("="*70)
-        await self.create_suppliers_for_all_users(suppliers_per_org=3)
+        # 2. Create suppliers
+        suppliers = await self.create_suppliers_batch(self.test_user, orgs, count_per_org=2)
         
-        # Step 3: Create Products (3 per supplier)
-        print("\n📦 STEP 3: Creating Products")
-        print("="*70)
-        product_count = 0
-        for user in authenticated_users[:3]:  # Limit to first 3 users to avoid overload
-            suppliers = self.context.user_supplier_mapping.get(user.id, [])
-            for supplier_id in suppliers[:3]:  # Limit to 3 suppliers per user
-                for i in range(3):
-                    product_id = await self.test_create_product(user, supplier_id)
-                    if product_id:
-                        product_count += 1
-        print(f"✅ Created {product_count} products")
+        # 3. Create products
+        products_count = await self.create_products_batch(self.test_user, suppliers, count_per_supplier=2)
         
-        # Step 4: Create Staff Rules (WITHOUT owners)
-        print("\n👥 STEP 4: Creating Staff Rules (Owners Excluded)")
-        print("="*70)
-        await self.create_staff_rules_for_all_users(rules_per_supplier=2)
+        # 4. Create staff rules
+        if len(provider_users) > 1:
+            staff_count = await self.create_staff_rules_batch(
+                self.test_user, suppliers, provider_users[:2]
+            )
         
         # Save context
-        print("\n💾 Saving Test Context")
-        print("="*70)
         self.context.save(context_file)
         
         # Summary
         self.print_summary()
     
     def print_summary(self):
-        print("\n" + "="*70)
+        print("\n" + "="*60)
         print("📊 TEST SUMMARY")
-        print("="*70)
+        print("="*60)
         
-        total = len(self.results)
-        passed = sum(1 for r in self.results if r["passed"])
-        failed = total - passed
+        total = len(self.context.test_results)
+        passed = sum(1 for r in self.context.test_results if r["passed"])
         
-        print("\n📈 Test Results:")
-        for result in self.results:
-            status = "✅" if result["passed"] else "❌"
-            print(f"  {status} {result['name']}")
-            if result["details"]:
-                print(f"     {result['details']}")
+        print(f"\n📈 Tests: {total} total, {passed} passed")
+        print(f"👤 Users: {len(self.context.users)}")
+        print(f"🔐 Authenticated: {len([u for u in self.context.users if u.access_token])}")
+        print(f"🏢 Organisations: {len(self.context.created_organisations)}")
+        print(f"🏥 Suppliers: {len(self.context.created_suppliers)}")
+        print(f"📦 Products: {len(self.context.created_products)}")
+        print(f"👥 Staff Rules: {len(self.context.created_staff_rules)}")
+        print(f"📊 Staff Assignments: {len(self._used_assignments)}")
         
-        print("\n" + "="*70)
-        print(f"📈 Total: {total} tests")
-        print(f"✅ Passed: {passed}")
-        print(f"❌ Failed: {failed}")
-        
-        print(f"\n📊 Resources:")
-        print(f"   👤 Total Users: {len(self.context.users)}")
-        print(f"   🔐 Authenticated: {len([u for u in self.context.users if u.access_token])}")
-        print(f"   🏢 Organisations: {len(self.context.created_organisations)}")
-        print(f"   🏥 Suppliers: {len(self.context.created_suppliers)}")
-        print(f"   📦 Products: {len(self.context.created_products)}")
-        print(f"   👥 Staff Rules: {len(self.context.created_staff_rules)}")
-        
-        # User distribution stats
-        print(f"\n📊 Distribution:")
-        print(f"   👤 Users with Orgs: {len(self.context.user_org_mapping)}")
-        print(f"   👤 Users with Suppliers: {len(self.context.user_supplier_mapping)}")
-        print(f"   👤 Staff Assignments: {len(self._used_assignments)}")
-        
-        if failed == 0:
-            print("\n🎉 ALL TESTS PASSED!")
-        else:
-            print(f"\n⚠️  {failed} test(s) failed.")
-        
-        print("="*70)
+        print("\n" + "="*60)
 
 
 # ============================================================================
@@ -931,7 +682,7 @@ class EnhancedTestRunner:
 async def main():
     import argparse
     
-    parser = argparse.ArgumentParser(description="Gluttex API Test Runner - Massive Data")
+    parser = argparse.ArgumentParser(description="Gluttex API Test Runner - Optimized")
     parser.add_argument("--url", default="http://localhost:9000")
     parser.add_argument("--skip-user-creation", action="store_true")
     parser.add_argument("--skip-login", action="store_true")
@@ -944,7 +695,7 @@ async def main():
         Path(args.context_file).unlink()
         print(f"🗑️ Cleared context file")
     
-    async with EnhancedTestRunner(args.url) as runner:
+    async with OptimizedTestRunner(args.url) as runner:
         await runner.run_tests(
             skip_user_creation=args.skip_user_creation,
             skip_login=args.skip_login,
