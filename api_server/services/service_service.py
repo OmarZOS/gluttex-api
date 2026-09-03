@@ -4,6 +4,7 @@ import logging
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
+from repositories.service_repository import ServiceRepository
 from core.models.api_models import ProvidedService_API, ServiceResourceRequirement_API, ServiceStaffRequirement_API
 from core.exceptions.specific.service_exceptions import (
     ServiceException,
@@ -19,8 +20,7 @@ from core.exceptions.specific.service_exceptions import (
     ServiceStaffRequirementNotFoundException
 )
 from core.messages import *
-from core.models.models import ProvidedService, ServiceResourceRequirement, ServiceStaffRequirement
-from repositories.cart_repository import ServiceRepository
+from core.models.models import ProvidedService, ProvidedServiceCategory, ServiceResourceRequirement, ServiceStaffRequirement
 from repositories.supplier_repository import SupplierRepository
 from storage.storage_broker import session_scope
 
@@ -186,7 +186,11 @@ class ServiceService:
         """Get staff requirements for a service."""
         self.get_service_by_id(service_id)
         return self.service_repo.get_service_staff_requirements(service_id)
-    
+
+    def get_categories(self, offset: int = 0, limit: int = 100) -> List[ProvidedServiceCategory]:
+        """Get all service categories."""
+        return self.service_repo.get_categories(offset, limit)
+
     # ==================== Service Creation Methods ====================
     
     def create_service(

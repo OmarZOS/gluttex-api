@@ -83,6 +83,35 @@ def get_services(
 # ==================== Single Service Operations ====================
 
 @service_router.get(
+    "/services/categories",
+    # response_model=ProvidedService_API,
+    summary="Get service categories",
+    description="Retrieve all service categories"
+)
+def get_service_categories(
+    offset: int = Query(0, ge=0, description="Pagination offset"),
+    limit: int = Query(100, ge=1, le=1000, description="Number of records to return"),
+    service_service: ServiceService = Depends(get_service_service)
+):
+    """
+    Get service categories.
+    """
+    logger.info(f"Fetching service categories - offset:{offset}, limit:{limit}")
+    
+    try:
+        categories = service_service.get_categories(offset, limit)
+        logger.info(f"Found {len(categories)} service categories")
+        return categories
+        
+    except Exception as e:
+        logger.error(f"Failed to fetch service categories: {e}")
+        raise ServiceException(
+            message="Failed to retrieve service categories",
+            details={"error": str(e)}
+        )
+
+
+@service_router.get(
     "/services/{service_id}",
     # response_model=ProvidedService_API,
     summary="Get service by ID",
@@ -112,6 +141,7 @@ def get_service(
             service_id=service_id,
             details={"error": str(e)}
         )
+
 
 
 @service_router.post(

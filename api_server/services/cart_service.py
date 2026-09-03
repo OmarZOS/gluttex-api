@@ -12,9 +12,10 @@ from datetime import datetime, timedelta
 import asyncio
 from decimal import Decimal
 
+from repositories.service_repository import ServiceRepository
 from repositories.order_repository import OrderRepository
 from repositories.financial_repository import FinancialRepository
-from repositories.cart_repository import CartRepository, ServiceRepository
+from repositories.cart_repository import CartRepository
 from repositories.product_repository import ProductRepository
 from repositories.user_repository import UserRepository
 from repositories.supplier_repository import SupplierRepository
