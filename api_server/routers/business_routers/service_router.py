@@ -325,6 +325,37 @@ def delete_service(
 # ==================== Additional Service Endpoints ====================
 
 @service_router.get(
+    "/services/category/{category_id}/roles",
+    # response_model=List[ProvidedService_API],
+    summary="Get roles by service category",
+    description="Retrieve all roles in a specific service category"
+)
+def get_roles_by_service_category(
+    category_id: int,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    service_service: ServiceService = Depends(get_service_service)
+):
+    """
+    Get all roles in a specific service category.
+    """
+    logger.info(f"Fetching roles for category {category_id}")
+    
+    try:
+        roles = service_service.get_roles_by_service_category(category_id, offset, limit)
+        return roles
+        
+    except ServiceCategoryNotFoundException as e:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to fetch roles for category {category_id}: {e}")
+        raise ServiceCategoryNotFoundException(
+            category_id=category_id,
+            details={"error": str(e)}
+        )
+
+
+@service_router.get(
     "/services/category/{category_id}",
     # response_model=List[ProvidedService_API],
     summary="Get services by category",

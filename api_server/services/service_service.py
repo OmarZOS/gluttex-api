@@ -20,7 +20,7 @@ from core.exceptions.specific.service_exceptions import (
     ServiceStaffRequirementNotFoundException
 )
 from core.messages import *
-from core.models.models import ProvidedService, ProvidedServiceCategory, ServiceResourceRequirement, ServiceStaffRequirement
+from core.models.models import ProvidedService, ProvidedServiceCategory, ServiceResourceRequirement, ServiceStaffRequirement, StaffRole
 from repositories.supplier_repository import SupplierRepository
 from storage.storage_broker import session_scope
 
@@ -190,6 +190,10 @@ class ServiceService:
     def get_categories(self, offset: int = 0, limit: int = 100) -> List[ProvidedServiceCategory]:
         """Get all service categories."""
         return self.service_repo.get_categories(offset, limit)
+
+    def get_roles_by_service_category(self, category_id: int, offset: int = 0, limit: int = 100) -> List[StaffRole]:
+        """Get roles by service category."""
+        return self.service_repo.get_roles_by_service_category(category_id, offset, limit)
 
     # ==================== Service Creation Methods ====================
     
