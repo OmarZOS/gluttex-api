@@ -270,24 +270,37 @@ class ServiceService:
         
         # Validate service exists
         service = self.get_service_by_id(service_id)
+        changed_fields = service_data.model_fields_set
         
         # Validate category if changed
-        if service_data.provided_service_category_id and service_data.provided_service_category_id != service.provided_service_category_id:
+        if (
+            "provided_service_category_id" in changed_fields
+            and service_data.provided_service_category_id != service.provided_service_category_id
+            and service_data.provided_service_category_id
+        ):
             self._validate_category_exists(service_data.provided_service_category_id)
         
         # Validate provider if changed
-        if service_data.provided_service_product_provider_id and service_data.provided_service_product_provider_id != service.provided_service_product_provider_id:
+        if (
+            "provided_service_product_provider_id" in changed_fields
+            and service_data.provided_service_product_provider_id != service.provided_service_product_provider_id
+        ):
             self._validate_provider_exists(service_data.provided_service_product_provider_id)
         
-        # Update fields
-        service.provided_service_name = service_data.provided_service_name
-        service.provided_service_description = service_data.provided_service_description
-        service.provided_service_category_id = service_data.provided_service_category_id
-        service.provided_service_base_price = service_data.provided_service_base_price
-        service.provided_service_final_price = service_data.provided_service_final_price
-        service.provided_service_actual_duration = service_data.provided_service_actual_duration
-        service.provided_service_is_active = service_data.provided_service_is_active
-        service.provided_service_pricing_config = service_data.provided_service_pricing_config
+        # Only apply fields supplied by the caller; model defaults must not erase stored data.
+        updatable_fields = {
+            "provided_service_product_provider_id",
+            "provided_service_name",
+            "provided_service_description",
+            "provided_service_category_id",
+            "provided_service_base_price",
+            "provided_service_final_price",
+            "provided_service_actual_duration",
+            "provided_service_is_active",
+            "provided_service_pricing_config",
+        }
+        for field_name in changed_fields & updatable_fields:
+            setattr(service, field_name, getattr(service_data, field_name))
         
         try:
             updated_service = self.service_repo.update_service(service)
