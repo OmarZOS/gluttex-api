@@ -143,6 +143,39 @@ def get_supplier(
 
 
 @supplier_router.post(
+    "/suppliers/ids",
+    status_code=status.HTTP_201_CREATED,
+    # response_model=ProductProvider_API,
+    summary="Get suppliers by IDs",
+    description="Retrieve multiple suppliers by their IDs",
+    responses={
+        201: {
+            "description": "Supplier created successfully"
+        },
+        400: {
+            "description": "Bad Request - Invalid data",
+            "model": ErrorResponseModel
+        },
+        409: {
+            "description": "Conflict - Supplier already exists",
+            "model": ErrorResponseModel
+        },
+        **get_crud_error_responses(include_404=False, include_409=True)
+    }
+)
+def get_supplier_by_ids(
+    provider_ids: List[str] = Query(..., description="List of supplier IDs to retrieve"),
+    full: bool = Query(True, description="Include all related data (products, images, etc.)"),
+    supplier_service: SupplierService = Depends(get_supplier_service)
+):
+    """
+    Get suppliers by a list of IDs.
+    """
+    logger.info(f"Fetching suppliers with IDs: {provider_ids} (full={full})")
+    return supplier_service.get_suppliers_by_ids(provider_ids, full)
+
+
+@supplier_router.post(
     "/suppliers",
     status_code=status.HTTP_201_CREATED,
     # response_model=ProductProvider_API,

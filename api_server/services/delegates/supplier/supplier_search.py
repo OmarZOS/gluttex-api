@@ -15,7 +15,7 @@ class SupplierSearch:
     def __init__(self):
         self.supplier_repo = SupplierRepository()
     
-    def search_by_location(
+    def search_by_filter(
         self,
         longitude: float,
         latitude: float,
@@ -37,6 +37,6 @@ class SupplierSearch:
             List of suppliers with distance information
         """
         logger.info(f"Searching suppliers near ({longitude}, {latitude}) within {distance_km}km")
-        return self.supplier_repo.search_by_location(
+        return self.supplier_repo.search_by_filter(
             (longitude, latitude), distance_km, offset, limit
         )

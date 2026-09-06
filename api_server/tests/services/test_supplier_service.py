@@ -366,12 +366,12 @@
 #     def test_search_suppliers_by_location(self, supplier_service):
 #         """Test searching suppliers by location"""
 #         expected_results = [{"id": 1, "name": "Test"}, {"id": 2, "name": "Test2"}]
-#         supplier_service.supplier_repo.search_by_location.return_value = expected_results
+#         supplier_service.supplier_repo.search_by_filter.return_value = expected_results
         
 #         result = supplier_service.search_suppliers_by_location(3.0419, 36.7525, 10.0, 0, 20)
         
 #         assert result == expected_results
-#         supplier_service.supplier_repo.search_by_location.assert_called_once_with(
+#         supplier_service.supplier_repo.search_by_filter.assert_called_once_with(
 #             (3.0419, 36.7525), 10.0, 0, 20
 #         )
     

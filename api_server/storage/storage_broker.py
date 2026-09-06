@@ -338,7 +338,7 @@ def search_records(
         _handle_storage_exception(e, "search_records", table=str(table))
 
 
-def search_by_location(
+def search_by_filter(
     table: Any,
     join_tables: Optional[List] = None,
     conditions: Optional[Dict] = None,
@@ -368,7 +368,7 @@ def search_by_location(
         )
         return result
     except Exception as e:
-        _handle_storage_exception(e, "search_by_location", table=str(table))
+        _handle_storage_exception(e, "search_by_filter", table=str(table))
 
 
 def health_check() -> Dict[str, Any]:

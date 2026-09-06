@@ -41,6 +41,67 @@ class SupplierRepository:
                 []
             )
         return records[0] if records else None
+
+    def get_suppliers_by_ids(self, provider_ids: List[str], eager_load: bool = True) -> List[ProductProvider]:
+        """Get suppliers by IDs with optional eager loading"""
+        
+        # Clean and validate input
+        if not provider_ids:
+            return []
+        
+        # Remove duplicates and None values
+        provider_ids = list(set([pid for pid in provider_ids if pid is not None]))
+        
+        if not provider_ids:
+            return []
+        
+        # Convert to integers
+        int_ids = []
+        for pid in provider_ids:
+            try:
+                int_ids.append(int(pid))
+            except (ValueError, TypeError):
+                continue
+        
+        if not int_ids:
+            return []
+        
+        int_ids = list(set(int_ids))
+        
+        # Build conditions as a list for get_records_by_filter
+        conditions = [
+            ProductProvider.id_product_provider.in_(int_ids)
+        ]
+        
+        # Build eager loading
+        if eager_load:
+            eager_load_depth = [
+                {ProductProvider.product_provider_location: [
+                    Location.position_wkt, 
+                    Location.location_name, 
+                    Location.id_location, 
+                    Location.location_address
+                ]},
+                ProductProvider.product_provider_type,
+                ProductProvider.product_provider_details,
+                ProductProvider.product_provider_org,
+                ProductProvider.provider_image,
+                ProductProvider.provider_reaction,
+                ProductProvider.management_rule
+            ]
+        else:
+            eager_load_depth = None
+        
+        # ✅ Use get_records_by_filter
+        records = storage_broker.search_by_filter(
+            table=ProductProvider,
+            conditions=conditions,           # List of conditions
+            eager_load_depth=eager_load_depth,
+            offset=0,
+            limit=len(int_ids)
+        )
+        
+        return records if records else []
     
     def get_supplier_basic(self, provider_id: str) -> Optional[ProductProvider]:
         """Get supplier with only basic info (no eager loading)"""
@@ -168,7 +229,7 @@ class SupplierRepository:
         from features.insertion import delete_record_from_api
         return delete_record_from_api(image)
     
-    def search_by_location(
+    def search_by_filter(
         self,
         location: tuple[float, float],
         distance: float,
@@ -176,7 +237,7 @@ class SupplierRepository:
         limit: int = 10
     ) -> List[Dict[str, Any]]:
         """Search suppliers by location using PostGIS"""
-        from storage.storage_broker import search_by_location
+        from storage.storage_broker import search_by_filter
         
         ST_location = WKTElement(
             f"POINT({location[0]} {location[1]})",
@@ -203,7 +264,7 @@ class SupplierRepository:
             Address.address_country,
         ]
         
-        return search_by_location(
+        return search_by_filter(
             ProductProvider,
             join_tables=[
                 ProductProvider.product_provider_location,
@@ -220,7 +281,7 @@ class SupplierRepository:
             limit=limit
         )
     
-    def search_by_location(
+    def search_by_filter(
         self,
         location: Tuple[float, float],
         distance_km: float,
@@ -239,7 +300,7 @@ class SupplierRepository:
         Returns:
             List of suppliers with distance information
         """
-        from storage.storage_broker import search_by_location
+        from storage.storage_broker import search_by_filter
         
         longitude, latitude = location
         ST_location = WKTElement(
@@ -267,7 +328,7 @@ class SupplierRepository:
             Address.address_country,
         ]
         
-        return search_by_location(
+        return search_by_filter(
             ProductProvider,
             join_tables=[
                 ProductProvider.product_provider_location,

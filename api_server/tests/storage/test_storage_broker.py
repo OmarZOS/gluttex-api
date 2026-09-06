@@ -18,7 +18,7 @@
 #     update_record,
 #     delete_record_by_id,
 #     search_records,
-#     search_by_location,
+#     search_by_filter,
 #     validate_table_name,
 #     validate_pagination
 # )
@@ -454,16 +454,16 @@
 # # ==================== Search By Location Tests ====================
 
 # class TestSearchByLocation:
-#     """Test search_by_location function"""
+#     """Test search_by_filter function"""
     
 #     @patch('storage.storage_broker.get_engine_with_retry')
 #     @patch('storage.storage_broker.medicom_store.get_records_by_filter')
-#     def test_search_by_location_success(self, mock_get_by_filter, mock_get_engine, mock_records, mock_engine):
+#     def test_search_by_filter_success(self, mock_get_by_filter, mock_get_engine, mock_records, mock_engine):
 #         """Test successful location-based search"""
 #         mock_get_engine.return_value = mock_engine
 #         mock_get_by_filter.return_value = mock_records
         
-#         result = search_by_location(
+#         result = search_by_filter(
 #             TestModel,
 #             ordering_attr="distance",
 #             offset=0,
@@ -475,22 +475,22 @@
     
 #     @patch('storage.storage_broker.get_engine_with_retry')
 #     @patch('storage.storage_broker.medicom_store.get_records_by_filter')
-#     def test_search_by_location_limit_capping(self, mock_get_by_filter, mock_get_engine, mock_engine):
+#     def test_search_by_filter_limit_capping(self, mock_get_by_filter, mock_get_engine, mock_engine):
 #         """Test location search with limit exceeding maximum"""
 #         mock_get_engine.return_value = mock_engine
 #         mock_get_by_filter.return_value = []
         
-#         result = search_by_location(TestModel, limit=200)
+#         result = search_by_filter(TestModel, limit=200)
         
 #         assert result == []
     
 #     @patch('storage.storage_broker.get_engine_with_retry')
-#     def test_search_by_location_engine_failure(self, mock_get_engine):
+#     def test_search_by_filter_engine_failure(self, mock_get_engine):
 #         """Test location search when engine fails"""
 #         mock_get_engine.return_value = None
         
 #         with pytest.raises(APIException) as exc_info:
-#             search_by_location(TestModel)
+#             search_by_filter(TestModel)
         
 #         assert exc_info.value.status_code == 400
 

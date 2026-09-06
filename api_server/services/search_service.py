@@ -214,7 +214,7 @@ class SearchService:
         Returns:
             List of matching suppliers with distance information
         """
-        return self.supplier_repo.search_by_location(
+        return self.supplier_repo.search_by_filter(
             (longitude, latitude),
             distance_km,
             offset,

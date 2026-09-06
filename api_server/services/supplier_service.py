@@ -31,7 +31,11 @@ class SupplierService:
     def get_supplier_by_id(self, provider_id: str, full: bool = True) -> ProductProvider:
         """Get supplier by ID."""
         return self.supplier_crud.get_by_id(provider_id, full)
-    
+
+    def get_suppliers_by_ids(self, provider_ids: List[str], full: bool = True) -> List[ProductProvider]:
+        """Get suppliers by IDs."""
+        return self.supplier_crud.get_suppliers_by_ids(provider_ids, full)
+
     def get_all_suppliers(
         self,
         owner_id: int = 0,
@@ -94,7 +98,7 @@ class SupplierService:
         """
         search = SupplierSearch()
         logger.info(f"Searching suppliers near ({longitude}, {latitude}) within {distance_km}km")
-        return search.search_by_location(longitude, latitude, distance_km, offset, limit)
+        return search.search_by_filter(longitude, latitude, distance_km, offset, limit)
 
 
 class OrganisationService:

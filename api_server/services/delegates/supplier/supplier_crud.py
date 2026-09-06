@@ -45,6 +45,23 @@ class SupplierCrud:
             SupplierNotFoundException: If supplier not found
         """
         return self.validator.validate_supplier_exists(provider_id, full)
+
+    def get_suppliers_by_ids(self, provider_ids: List[str], full: bool = True) -> List[ProductProvider]:
+        """
+        Get suppliers by a list of IDs.
+        
+        Args:
+            provider_ids: List of supplier IDs to retrieve
+            full: Whether to load all related data eagerly
+            
+        Returns:
+            List of ProductProvider objects
+            
+        Raises:
+            SupplierNotFoundException: If any supplier not found
+        """
+        return self.supplier_repo.get_suppliers_by_ids(provider_ids, full)
+
     
     def get_all(
         self,
