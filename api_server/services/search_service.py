@@ -97,21 +97,18 @@ class SearchService:
             return []
         
         return search_records(
-            AppUser,
+            table=AppUser,
             search_query=token,
             search_fields=[
-                # 'app_user_person.person_details.person_first_name',
-                # 'app_user_person.person_details.person_last_name',
-                # 'app_user_person.person_details.person_nationality',
+                'app_user_person.person_details.person_first_name',
+                'app_user_person.person_details.person_last_name', 
                 'app_user_name'
             ],
-            eager_load_depth=[{
-                AppUser.app_user_person: {
-                    Person.person_details
-                }
-            }],
+            join_tables=[AppUser.app_user_person,AppUser.app_user_person],
+            eager_load_depth=[{AppUser.app_user_person: [{Person.person_details:[]}]}],
             offset=offset,
             limit=limit
+
         )
     
     def search_people(
