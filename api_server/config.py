@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     REDIS_URL: Optional[str] = None
 
     USE_VERSIONING: bool = True
+    CURRENT_VERSION: str = "v1"
     TRUSTED_HOSTS: List[str] = ["*"]  # Override in production
     CONTACT_EMAIL: Optional[str] = None
     WORKERS: int = 1

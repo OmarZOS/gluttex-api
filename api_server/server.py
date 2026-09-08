@@ -43,6 +43,8 @@ from routers.business_routers.service_router import service_router
 from routers.business_routers.financial_router import financial_router
 from routers.business_routers.business_operation_router import business_operation_router
 from routers.business_routers.address_router import address_router
+from routers.business_routers.invoice_router import invoice_router
+
 from routers.app_routers.reaction_router import reaction_router
 
 
@@ -163,14 +165,14 @@ def setup_routers(app: FastAPI) -> None:
     """
     
     # Version 1 API group
-    api_version = "/api/v1" if settings.USE_VERSIONING else "/api"
+    api_version = f"/api/{settings.CURRENT_VERSION}" if settings.USE_VERSIONING else "/api"
     
     # Authentication and user routes
     app.include_router(auth_router, prefix=api_version, tags=["Authentication"])
     app.include_router(app_user_router, prefix=api_version, tags=["Users"])
     
     # Business core routes
-    app.include_router(business_router, prefix=api_version, tags=["Business"])
+    app.include_router(invoice_router, prefix=api_version, tags=["Invoices"])
     app.include_router(product_router, prefix=api_version, tags=["Products"])
     app.include_router(supplier_router, prefix=api_version, tags=["Suppliers"])
     app.include_router(person_router, prefix=api_version, tags=["People"])

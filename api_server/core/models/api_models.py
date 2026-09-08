@@ -1290,3 +1290,102 @@ class OrderedItem_API(BaseModel):
             # You could add additional validation here if needed
             pass
         return self
+
+
+class InvoiceStatus(str, Enum):
+    """Invoice status enum matching database"""
+    UNPAID = "unpaid"
+    PAID = "paid"
+    CANCELED = "canceled"
+    PARTIALLY_PAID = "partially_paid"
+    OVERDUE = "overdue"
+    REFUNDED = "refunded"
+    
+    @classmethod
+    def get_valid_statuses(cls) -> List[str]:
+        """Get list of all valid status values"""
+        return [status.value for status in cls]
+
+class InvoiceType(str, Enum):
+    """Invoice type enum matching database"""
+    RECEIPT = "receipt"
+    INVOICE = "invoice"
+    PROFORMA = "proforma"
+    
+    @classmethod
+    def get_valid_types(cls) -> List[str]:
+        """Get list of all valid type values"""
+        return [type_.value for type_ in cls]
+
+class Invoice_API(BaseModel):
+    """Invoice API model"""
+    invoice_id: Optional[int] = Field(default=0, ge=0, description="Invoice ID")
+    invoice_number: Optional[str] = Field(default="", max_length=100, description="Invoice number")
+    invoice_total_amount: Optional[float] = Field(default=0.0, ge=0, description="Total amount")
+    invoice_status: InvoiceStatus = Field(default=InvoiceStatus.UNPAID, description="Invoice status")
+    invoice_type: InvoiceType = Field(default=InvoiceType.INVOICE, description="Invoice type")
+    invoice_issue_date: Optional[date] = Field(default_factory=date.today, description="Issue date")
+    invoice_due_date: Optional[date] = Field(default=None, description="Due date")
+    invoice_notes: Optional[str] = Field(default="", max_length=65535, description="Notes")
+    invoice_tax_applied: Optional[bool] = Field(default=False, description="Tax applied")
+    
+    # Relationships
+    invoice_cart_id: Optional[int] = Field(default=None, description="Cart ID")
+    invoice_order_id: Optional[int] = Field(default=None, description="Order ID")
+    
+    @field_validator('invoice_total_amount')
+    @classmethod
+    def validate_amount(cls, v: float) -> float:
+        """Validate total amount is not negative"""
+        if v < 0:
+            raise ValueError('Invoice total amount cannot be negative')
+        return v
+    
+    @model_validator(mode='after')
+    def validate_dates(self) -> 'Invoice_API':
+        """Validate due date is after issue date"""
+        if self.invoice_due_date and self.invoice_issue_date:
+            if self.invoice_due_date < self.invoice_issue_date:
+                raise ValueError('Due date must be after issue date')
+        return self
+
+class InvoiceUpdate_API(BaseModel):
+    """Invoice update model - all fields optional"""
+    invoice_number: Optional[str] = Field(default=None, max_length=100, description="Invoice number")
+    invoice_total_amount: Optional[float] = Field(default=None, ge=0, description="Total amount")
+    invoice_status: Optional[InvoiceStatus] = Field(default=None, description="Invoice status")
+    invoice_type: Optional[InvoiceType] = Field(default=None, description="Invoice type")
+    invoice_issue_date: Optional[date] = Field(default=None, description="Issue date")
+    invoice_due_date: Optional[date] = Field(default=None, description="Due date")
+    invoice_notes: Optional[str] = Field(default=None, max_length=65535, description="Notes")
+    invoice_tax_applied: Optional[bool] = Field(default=None, description="Tax applied")
+    invoice_cart_id: Optional[int] = Field(default=None, description="Cart ID")
+    invoice_order_id: Optional[int] = Field(default=None, description="Order ID")
+
+class InvoiceResponse_API(Invoice_API):
+    """Invoice response with related data"""
+    # Related data
+    cart: Optional[Cart_API] = Field(default=None, description="Cart details")
+    order: Optional[PlacedOrder_API] = Field(default=None, description="Order details")
+    payments: Optional[List[Payment_API]] = Field(default=None, description="Payments")
+    deliveries: Optional[List[Delivery_API]] = Field(default=None, description="Deliveries")
+    additional_fees: Optional[List[AdditionalFee_API]] = Field(default=None, description="Additional fees")
+    
+    # Computed fields
+    total_paid: Optional[float] = Field(default=0.0, description="Total amount paid")
+    remaining_balance: Optional[float] = Field(default=0.0, description="Remaining balance")
+    is_overdue: Optional[bool] = Field(default=False, description="Is invoice overdue")
+    
+    class Config:
+        from_attributes = True
+
+class InvoiceFilterParams(BaseModel):
+    """Invoice filter parameters"""
+    invoice_status: Optional[InvoiceStatus] = Field(default=None, description="Filter by status")
+    invoice_type: Optional[InvoiceType] = Field(default=None, description="Filter by type")
+    date_from: Optional[date] = Field(default=None, description="Filter from date")
+    date_to: Optional[date] = Field(default=None, description="Filter to date")
+    cart_id: Optional[int] = Field(default=None, description="Filter by cart ID")
+    order_id: Optional[int] = Field(default=None, description="Filter by order ID")
+    offset: int = Field(default=0, ge=0, description="Pagination offset")
+    limit: int = Field(default=100, ge=1, le=1000, description="Limit")
