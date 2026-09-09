@@ -272,14 +272,17 @@ async def create_cart(
         )
         
         logger.info(f"Cart created successfully with ID: {created_cart.cart_id}")
-        
+
+        logger.info(f"✅ Successfully created {created_cart} with total amount: {created_cart.cart_total_amount} and invoice: {created_cart.cart_invoice}")
+
         return {
             "success": True,
             "message": "Cart created successfully",
             "data": {
                 "cart_id": created_cart.cart_id,
+                "cart_invoice": created_cart.cart_invoice,
                 "status": created_cart.cart_status,
-                "total_amount": float(created_cart.cart_total_amount) if created_cart.cart_total_amount else 0,
+                "total_amount": created_cart.cart_total_amount,
                 "created_at": created_cart.cart_created_at.isoformat() if created_cart.cart_created_at else None,
                 "financial_documents": {
                     "has_invoice": 'invoice' in financial_docs if financial_docs else False,

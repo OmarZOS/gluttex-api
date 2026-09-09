@@ -6,17 +6,20 @@ Invoice service for managing invoices, payments, and financial tracking.
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date, timedelta
 import logging
-from decimal import Decimal
+import random
+import string
 
 from repositories.invoice_repository import InvoiceRepository
-from core.models.api_models import Invoice_API, InvoiceStatus, InvoiceType, InvoiceUpdate_API, InvoiceFilterParams
+from core.models.api_models import (
+    Invoice_API, InvoiceStatus, InvoiceType, 
+    InvoiceUpdate_API, InvoiceFilterParams
+)
 from core.models.models import Invoice, Payment, Cart, PlacedOrder, Delivery, AdditionalFee
 from core.exceptions.specific.finance_exceptions import (
     InvoiceNotFoundException,
     InvoiceCreationFailedException,
     InvoiceUpdateFailedException,
 )
-from repositories.financial_repository import FinancialRepository
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +29,6 @@ class InvoiceService:
     
     def __init__(self):
         self.invoice_repo = InvoiceRepository()
-        self.financial_repo = FinancialRepository()
     
     # ==================== CREATE ====================
     
@@ -65,7 +67,7 @@ class InvoiceService:
                 invoice_updated_at=datetime.now()
             )
             
-            # Save invoice
+            # Save invoice using repository
             created_invoice = self.invoice_repo.create(invoice)
             
             # Link to cart or order if provided
@@ -158,31 +160,18 @@ class InvoiceService:
         
         invoices = self.invoice_repo.get_with_filters(
             status=filters.invoice_status.value if filters.invoice_status else None,
-            type_=filters.invoice_type.value if filters.invoice_type else None,
+            type_=filters.invoice_type if filters.invoice_type else None,
             date_from=filters.date_from,
             date_to=filters.date_to,
             cart_id=filters.cart_id,
+            provider_id=filters.provider_id,
             order_id=filters.order_id,
             offset=filters.offset,
             limit=filters.limit
         )
         
-        total = self.invoice_repo.count_with_filters(
-            status=filters.invoice_status.value if filters.invoice_status else None,
-            type_=filters.invoice_type.value if filters.invoice_type else None,
-            date_from=filters.date_from,
-            date_to=filters.date_to,
-            cart_id=filters.cart_id,
-            order_id=filters.order_id
-        )
         
-        return {
-            "invoices": invoices,
-            "total": total,
-            "offset": filters.offset,
-            "limit": filters.limit,
-            "has_more": (filters.offset + filters.limit) < total
-        }
+        return invoices
     
     def get_invoice_summary(self, invoice_id: int) -> Dict[str, Any]:
         """
@@ -206,7 +195,7 @@ class InvoiceService:
         fees = self.invoice_repo.get_fees(invoice_id)
         
         # Calculate totals
-        total_paid = sum(p.payment_amount or 0 for p in payments if p.payment_status == 'completed')
+        total_paid = sum(float(p.payment_amount or 0) for p in payments if p.payment_status == 'completed')
         
         # Determine if overdue
         is_overdue = False
@@ -225,65 +214,6 @@ class InvoiceService:
     
     # ==================== UPDATE ====================
     
-    def update_invoice(self, invoice_id: int, update_data: InvoiceUpdate_API) -> Invoice:
-        """
-        Update an invoice.
-        
-        Args:
-            invoice_id: Invoice ID
-            update_data: Update data
-            
-        Returns:
-            Updated Invoice
-            
-        Raises:
-            InvoiceNotFoundException: If invoice not found
-            InvoiceUpdateFailedException: If update fails
-            InvalidInvoiceStatusTransitionException: If status transition is invalid
-        """
-        logger.info(f"Updating invoice: {invoice_id}")
-        
-        # Get existing invoice
-        existing = self.invoice_repo.get(invoice_id)
-        if not existing:
-            raise InvoiceNotFoundException(invoice_id=invoice_id)
-        
-        # Validate status transition
-        if update_data.invoice_status:
-            self._validate_status_transition(
-                existing.invoice_status,
-                update_data.invoice_status.value
-            )
-        
-        try:
-            # Build update dict
-            update_dict = update_data.model_dump(exclude_unset=True)
-            
-            # Convert enums to strings
-            if 'invoice_status' in update_dict and update_dict['invoice_status']:
-                update_dict['invoice_status'] = update_dict['invoice_status'].value
-            if 'invoice_type' in update_dict and update_dict['invoice_type']:
-                update_dict['invoice_type'] = update_dict['invoice_type'].value
-            
-            # Convert bool to int
-            if 'invoice_tax_applied' in update_dict and update_dict['invoice_tax_applied'] is not None:
-                update_dict['invoice_tax_applied'] = 1 if update_dict['invoice_tax_applied'] else 0
-            
-            # Update invoice
-            updated = self.invoice_repo.update(invoice_id, update_dict)
-            
-            # Handle relationships
-            if 'invoice_cart_id' in update_dict and update_dict['invoice_cart_id']:
-                self.invoice_repo.link_to_cart(invoice_id, update_dict['invoice_cart_id'])
-            if 'invoice_order_id' in update_dict and update_dict['invoice_order_id']:
-                self.invoice_repo.link_to_order(invoice_id, update_dict['invoice_order_id'])
-            
-            logger.info(f"Invoice {invoice_id} updated successfully")
-            return updated
-            
-        except Exception as e:
-            logger.error(f"Failed to update invoice {invoice_id}: {e}")
-            raise InvoiceUpdateFailedException(invoice_id=invoice_id, details=str(e))
     
     def update_invoice_status(
         self,
@@ -303,16 +233,13 @@ class InvoiceService:
         update_data = InvoiceUpdate_API(invoice_status=new_status)
         return self.update_invoice(invoice_id, update_data)
     
-    # ==================== TODO : DELETE ====================
+    # ==================== DELETE ====================
     
     
     # ==================== HELPER METHODS ====================
     
     def _generate_invoice_number(self) -> str:
         """Generate a unique invoice number."""
-        import random
-        import string
-        
         prefix = "INV"
         timestamp = datetime.now().strftime("%Y%m%d")
         random_part = ''.join(random.choices(string.digits, k=6))
@@ -326,39 +253,12 @@ class InvoiceService:
         # Sum ordered items
         if hasattr(cart, 'ordered_items'):
             for item in cart.ordered_items:
-                total += (item.unit_price or 0) * (item.ordered_quantity or 0)
+                total += (float(item.unit_price or 0) * float(item.ordered_quantity or 0))
         
         # Sum ordered services
         if hasattr(cart, 'ordered_services'):
             for service in cart.ordered_services:
-                total += service.ordered_service_total_price or 0
+                total += float(service.ordered_service_total_price or 0)
         
         return total
     
-    def _validate_status_transition(self, current_status: str, new_status: str) -> None:
-        """
-        Validate invoice status transition.
-        
-        Raises:
-            InvalidInvoiceStatusTransitionException: If transition is invalid
-        """
-        valid_transitions = {
-            'unpaid': ['partially_paid', 'paid', 'canceled', 'overdue'],
-            'partially_paid': ['paid', 'canceled', 'overdue'],
-            'paid': ['refunded'],
-            'overdue': ['paid', 'canceled'],
-            'canceled': [],
-            'refunded': []
-        }
-        
-        # If statuses are the same, it's valid
-        if current_status == new_status:
-            return
-        
-        allowed = valid_transitions.get(current_status, [])
-        if new_status not in allowed:
-            raise InvalidInvoiceStatusTransitionException(
-                from_status=current_status,
-                to_status=new_status,
-                allowed_transitions=allowed
-            )

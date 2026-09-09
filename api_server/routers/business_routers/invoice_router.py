@@ -37,7 +37,7 @@ def get_invoice_service() -> InvoiceService:
 # ==================== CREATE ====================
 
 @invoice_router.post(
-    "/",
+    "",
     status_code=status.HTTP_201_CREATED,
     response_model=Invoice_API,
     summary="Create invoice",
@@ -91,8 +91,8 @@ def create_invoice_from_cart(
 # ==================== READ ====================
 
 @invoice_router.get(
-    "/",
-    response_model=Dict[str, Any],
+    "",
+    # response_model=Dict[str, Any],
     summary="Get invoices",
     description="Get invoices with filters and pagination",
     responses={
@@ -107,6 +107,7 @@ def get_invoices(
     date_to: Optional[date] = Query(None, description="Filter to date"),
     cart_id: Optional[int] = Query(None, description="Filter by cart ID"),
     order_id: Optional[int] = Query(None, description="Filter by order ID"),
+    provider_id: Optional[int] = Query(None, description="Filter by provider ID"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
     limit: int = Query(100, ge=1, le=1000, description="Records per page"),
     invoice_service: InvoiceService = Depends(get_invoice_service)
@@ -120,6 +121,7 @@ def get_invoices(
     - **date_to**: Filter invoices to this date
     - **cart_id**: Filter by cart ID
     - **order_id**: Filter by order ID
+    - **provider_id**: Filter by provider ID
     - **offset**: Pagination offset
     - **limit**: Records per page
     """
@@ -130,6 +132,7 @@ def get_invoices(
         date_to=date_to,
         cart_id=cart_id,
         order_id=order_id,
+        provider_id=provider_id,
         offset=offset,
         limit=limit
     )

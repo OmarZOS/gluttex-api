@@ -1386,6 +1386,7 @@ class InvoiceFilterParams(BaseModel):
     date_from: Optional[date] = Field(default=None, description="Filter from date")
     date_to: Optional[date] = Field(default=None, description="Filter to date")
     cart_id: Optional[int] = Field(default=None, description="Filter by cart ID")
+    provider_id: Optional[int] = Field(default=None, description="Filter by provider ID")
     order_id: Optional[int] = Field(default=None, description="Filter by order ID")
     offset: int = Field(default=0, ge=0, description="Pagination offset")
     limit: int = Field(default=100, ge=1, le=1000, description="Limit")

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-Test script for Cart endpoints (creation, retrieval, update, deletion).
-Run with: python test_cart_endpoints.py
+Bulk Data Creator for Gluttex - Creates Carts and Processes Payments
+Run with: python bulk_data_creator.py
 
-This test script loads context from test_context.json (created by test_runner.py)
-to get authentication tokens and existing data.
+This script:
+1. Fetches existing products, services, and providers
+2. Creates carts with products and services
+3. Processes payments for carts using their invoices
 """
 
 import asyncio
@@ -17,458 +19,16 @@ from typing import Dict, Any, Optional, List, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from pydantic import BaseModel, Field, field_validator, model_validator
-from enum import Enum
+import time
+import argparse
 
 
 # ============================================================================
-# PYDANTIC MODELS FOR TEST DATA
+# DATA CLASSES
 # ============================================================================
-
-class CartStatus(str, Enum):
-    """Cart status enum matching database exactly"""
-    OPEN = 'open'
-    PENDING = 'pending'
-    COMPLETED = 'completed'
-    CANCELED = 'canceled'
-    PARTIAL = 'partial'
-    CHECKOUT = 'checkout'
-    ABANDONED = 'abandoned'
-    
-    @classmethod
-    def get_valid_statuses(cls) -> List[str]:
-        return [status.value for status in cls]
-    
-    @classmethod
-    def get_random(cls) -> str:
-        return random.choice(cls.get_valid_statuses())
-
-
-class DeliveryShippingMethod(str, Enum):
-    """Delivery shipping methods"""
-    STANDARD = "standard"
-    EXPRESS = "express"
-    OVERNIGHT = "overnight"
-    PICKUP = "pickup"
-    COURIER = "courier"
-    SAME_DAY = "same_day"
-    INTERNATIONAL = "international"
-    
-    @classmethod
-    def get_random(cls) -> str:
-        return random.choice([m.value for m in cls])
-
-
-class DeliveryStatus(str, Enum):
-    """Delivery status values"""
-    PENDING = "pending"
-    PROCESSING = "processing"
-    CONFIRMED = "confirmed"
-    SHIPPED = "shipped"
-    IN_TRANSIT = "in_transit"
-    OUT_FOR_DELIVERY = "out_for_delivery"
-    DELIVERED = "delivered"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-    RETURNED = "returned"
-    REFUNDED = "refunded"
-    
-    @classmethod
-    def get_random(cls) -> str:
-        return random.choice([s.value for s in cls])
-
-
-# ============================================================================
-# TEST DATA MODELS WITH VALIDATION
-# ============================================================================
-
-class OrderedItemTest(BaseModel):
-    """Ordered item test data model with validation"""
-    ordered_product_id: int = Field(..., gt=0, description="Product ID")
-    ordered_quantity: int = Field(default=1, gt=0, le=100, description="Quantity ordered")
-    applied_vat: float = Field(default=0.0, ge=0, le=100, description="VAT percentage")
-    product_discount: float = Field(default=0.0, ge=0, le=100, description="Discount percentage")
-    
-    @field_validator('ordered_quantity')
-    @classmethod
-    def validate_quantity(cls, v: int) -> int:
-        """Validate quantity is positive and within limits"""
-        if v <= 0:
-            raise ValueError('Quantity must be greater than 0')
-        if v > 100:
-            raise ValueError('Quantity cannot exceed 100')
-        return v
-    
-    @field_validator('applied_vat', 'product_discount')
-    @classmethod
-    def validate_percentage(cls, v: float) -> float:
-        """Validate percentage values are between 0 and 100"""
-        if v < 0 or v > 100:
-            raise ValueError('Percentage must be between 0 and 100')
-        return v
-
-
-class OrderedServiceTest(BaseModel):
-    """Ordered service test data model with validation"""
-    ordered_service_service_id: int = Field(..., gt=0, description="Service ID")
-    ordered_service_quantity: int = Field(default=1, gt=0, le=50, description="Quantity")
-    ordered_service_unit_price: float = Field(default=0.0, ge=0, description="Unit price")
-    ordered_service_total_price: float = Field(default=0.0, ge=0, description="Total price")
-    ordered_service_notes: Optional[str] = Field(default=None, max_length=500, description="Notes")
-    ordered_service_scheduled_at: Optional[str] = Field(default=None, description="Scheduled datetime ISO format")
-    
-    @field_validator('ordered_service_quantity')
-    @classmethod
-    def validate_quantity(cls, v: int) -> int:
-        if v <= 0:
-            raise ValueError('Quantity must be greater than 0')
-        if v > 50:
-            raise ValueError('Quantity cannot exceed 50')
-        return v
-    
-    @field_validator('ordered_service_unit_price', 'ordered_service_total_price')
-    @classmethod
-    def validate_prices(cls, v: float) -> float:
-        if v < 0:
-            raise ValueError('Price cannot be negative')
-        return v
-    
-    @model_validator(mode='after')
-    def validate_total_price(self) -> 'OrderedServiceTest':
-        """Validate that total price equals unit price * quantity"""
-        expected_total = self.ordered_service_unit_price * self.ordered_service_quantity
-        if self.ordered_service_total_price > 0 and abs(self.ordered_service_total_price - expected_total) > 0.01:
-            raise ValueError(
-                f'Total price ({self.ordered_service_total_price}) does not match '
-                f'unit price * quantity ({expected_total})'
-            )
-        return self
-
-
-class CartTestData(BaseModel):
-    """Cart test data model with validation"""
-    cart_status: str = Field(default='open', description="Cart status")
-    cart_total_amount: float = Field(default=0.0, ge=0, description="Total amount")
-    cart_notes: Optional[str] = Field(default=None, max_length=65535, description="Notes")
-    cart_due_date: Optional[str] = Field(default=None, description="Due date ISO format")
-    
-    @field_validator('cart_status')
-    @classmethod
-    def validate_status(cls, v: str) -> str:
-        valid_statuses = CartStatus.get_valid_statuses()
-        if v not in valid_statuses:
-            raise ValueError(f'cart_status must be one of: {", ".join(valid_statuses)}')
-        return v
-    
-    @field_validator('cart_total_amount')
-    @classmethod
-    def validate_amount(cls, v: float) -> float:
-        if v < 0:
-            raise ValueError('cart_total_amount cannot be negative')
-        return v
-    
-    @field_validator('cart_due_date')
-    @classmethod
-    def validate_due_date(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            try:
-                datetime.fromisoformat(v)
-            except ValueError:
-                raise ValueError('cart_due_date must be a valid ISO date')
-        return v
-
-
-class DeliveryTestData(BaseModel):
-    """Delivery test data model with validation"""
-    delivery_address: str = Field(..., max_length=500, description="Delivery address")
-    delivery_city: str = Field(..., max_length=100, description="City")
-    delivery_postal_code: str = Field(..., max_length=20, description="Postal code")
-    delivery_country: str = Field(..., max_length=100, description="Country")
-    delivery_shipping_method: str = Field(default="standard", description="Shipping method")
-    delivery_fee: float = Field(default=0.0, ge=0, description="Delivery fee")
-    delivery_special_instructions: Optional[str] = Field(default=None, max_length=500, description="Special instructions")
-    delivery_status: str = Field(default="pending", description="Delivery status")
-    
-    @field_validator('delivery_shipping_method')
-    @classmethod
-    def validate_shipping_method(cls, v: str) -> str:
-        valid_methods = [m.value for m in DeliveryShippingMethod]
-        if v not in valid_methods:
-            raise ValueError(f'Invalid shipping method. Must be one of: {", ".join(valid_methods)}')
-        return v
-    
-    @field_validator('delivery_status')
-    @classmethod
-    def validate_status(cls, v: str) -> str:
-        valid_statuses = [s.value for s in DeliveryStatus]
-        if v not in valid_statuses:
-            raise ValueError(f'Invalid delivery status. Must be one of: {", ".join(valid_statuses)}')
-        return v
-    
-    @field_validator('delivery_fee')
-    @classmethod
-    def validate_fee(cls, v: float) -> float:
-        if v < 0:
-            raise ValueError('Delivery fee cannot be negative')
-        return v
-
-
-class PersonTestData(BaseModel):
-    """Person test data model with validation"""
-    id_person: int = Field(default=0, ge=0, description="Person ID")
-    person_first_name: str = Field(..., min_length=1, max_length=100, description="First name")
-    person_last_name: str = Field(..., min_length=1, max_length=100, description="Last name")
-    person_phone: Optional[str] = Field(default=None, max_length=20, description="Phone number")
-    
-    @field_validator('person_phone')
-    @classmethod
-    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None:
-            # Basic phone validation - can be customized
-            import re
-            if not re.match(r'^\+?[\d\s\-()]+$', v):
-                raise ValueError('Invalid phone number format')
-        return v
-
-
-class CreateCartRequest(BaseModel):
-    """Complete cart creation request with validation"""
-    provider_id: int = Field(..., gt=0, description="Provider ID")
-    seller_user_id: int = Field(..., gt=0, description="Seller user ID")
-    buyer_user_id: int = Field(..., gt=0, description="Buyer user ID")
-    cart: CartTestData = Field(..., description="Cart data")
-    ordered_items: List[OrderedItemTest] = Field(default_factory=list, description="Ordered items")
-    ordered_services: List[OrderedServiceTest] = Field(default_factory=list, description="Ordered services")
-    delivery: Optional[DeliveryTestData] = Field(default=None, description="Delivery data")
-    client: Optional[PersonTestData] = Field(default=None, description="Client person data")
-    
-    @model_validator(mode='after')
-    def validate_items_or_services(self) -> 'CreateCartRequest':
-        """Validate that at least one item or service is provided"""
-        if not self.ordered_items and not self.ordered_services:
-            raise ValueError('At least one ordered item or service must be provided')
-        return self
-    
-    @model_validator(mode='after')
-    def validate_buyer_seller_match(self) -> 'CreateCartRequest':
-        """Validate seller and buyer are different or same as needed"""
-        # This is optional - you might want to allow buyer == seller
-        # For now, just a warning
-        if self.buyer_user_id == self.seller_user_id:
-            # This is allowed, just note it
-            pass
-        return self
-
-
-# ============================================================================
-# DATA GENERATORS (Updated to use Pydantic models)
-# ============================================================================
-
-def generate_cart_data(
-    provider_id: int = 0,
-    seller_user_id: int = 0,
-    buyer_user_id: int = 0
-) -> Dict[str, Any]:
-    """Generate random cart data with validation"""
-    
-    notes = [
-        "Regular order",
-        "Urgent delivery needed",
-        "Special instructions for delivery",
-        "Handle with care",
-        "Fragile items included",
-        "Please call before delivery"
-    ]
-    
-    data = {
-        "cart_status": CartStatus.get_random(),
-        "cart_total_amount": round(random.uniform(10, 500), 2),
-        "cart_notes": random.choice(notes),
-        "cart_due_date": (datetime.now() + timedelta(days=random.randint(1, 30))).date().isoformat()
-    }
-    
-    # Validate with Pydantic
-    try:
-        CartTestData(**data)
-    except Exception as e:
-        # Fallback to open status if validation fails
-        data["cart_status"] = "open"
-    
-    return data
-
-
-def generate_ordered_item(
-    product_id: int = 0,
-    quantity: int = 1
-) -> Dict[str, Any]:
-    """Generate ordered item data with validation"""
-    
-    data = {
-        "ordered_product_id": product_id,
-        "ordered_quantity": quantity,
-        "applied_vat": random.choice([0.19, 0.10, 0.07, 0.0]),
-        "product_discount": 0.0
-    }
-    
-    # Validate with Pydantic
-    try:
-        OrderedItemTest(**data)
-    except Exception as e:
-        print(f"⚠️ Ordered item validation warning: {e}")
-        # Use safe defaults
-        data["ordered_quantity"] = max(1, min(quantity, 100))
-        data["applied_vat"] = 0.0
-        data["product_discount"] = 0.0
-    
-    return data
-
-
-def generate_ordered_service(
-    service_id: int = 0,
-    quantity: int = 1
-) -> Dict[str, Any]:
-    """Generate ordered service data with validation"""
-    
-    unit_price = round(random.uniform(10, 200), 2)
-    total_price = round(unit_price * quantity, 2)
-    
-    data = {
-        "ordered_service_service_id": service_id,
-        "ordered_service_quantity": quantity,
-        "ordered_service_unit_price": unit_price,
-        "ordered_service_total_price": total_price,
-        "ordered_service_notes": f"Service order - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        "ordered_service_scheduled_at": (datetime.now() + timedelta(days=random.randint(1, 14))).isoformat()
-    }
-    
-    # Validate with Pydantic
-    try:
-        OrderedServiceTest(**data)
-    except Exception as e:
-        print(f"⚠️ Ordered service validation warning: {e}")
-        # Use safe defaults
-        data["ordered_service_quantity"] = max(1, min(quantity, 50))
-        data["ordered_service_unit_price"] = round(random.uniform(10, 100), 2)
-        data["ordered_service_total_price"] = data["ordered_service_unit_price"] * data["ordered_service_quantity"]
-        data["ordered_service_scheduled_at"] = None
-    
-    return data
-
-
-def generate_delivery_data() -> Dict[str, Any]:
-    """Generate delivery data with validation"""
-    
-    cities = ["Algiers", "Oran", "Constantine", "Annaba", "Blida"]
-    
-    data = {
-        "delivery_address": f"{random.randint(1, 999)} Main St",
-        "delivery_city": random.choice(cities),
-        "delivery_postal_code": f"{random.randint(10000, 99999)}",
-        "delivery_country": "Algeria",
-        "delivery_shipping_method": DeliveryShippingMethod.get_random(),
-        "delivery_fee": round(random.uniform(5.0, 50.0), 2),
-        "delivery_special_instructions": f"Test delivery {uuid.uuid4().hex[:6]}",
-        "delivery_status": DeliveryStatus.get_random()
-    }
-    
-    # Validate with Pydantic
-    try:
-        DeliveryTestData(**data)
-    except Exception as e:
-        print(f"⚠️ Delivery validation warning: {e}")
-        # Use safe defaults
-        data["delivery_shipping_method"] = "standard"
-        data["delivery_status"] = "pending"
-        data["delivery_fee"] = 10.0
-    
-    return data
-
-
-def generate_person_data() -> Dict[str, Any]:
-    """Generate person data with validation"""
-    
-    first_names = ["John", "Jane", "Alice", "Bob", "Charlie", "Diana", "Eve", "Frank"]
-    last_names = ["Smith", "Doe", "Johnson", "Williams", "Brown", "Jones", "Garcia"]
-    
-    data = {
-        "id_person": 0,
-        "person_first_name": random.choice(first_names),
-        "person_last_name": random.choice(last_names),
-        "person_phone": f"+213-5{random.randint(10, 99)}{random.randint(10, 99)}{random.randint(10, 99)}"
-    }
-    
-    # Validate with Pydantic
-    try:
-        PersonTestData(**data)
-    except Exception as e:
-        print(f"⚠️ Person data validation warning: {e}")
-        data["person_phone"] = None
-    
-    return data
-
-
-def generate_create_cart_request(
-    provider_id: int,
-    seller_user_id: int,
-    product_id: int = 0,
-    service_id: int = 0,
-    include_delivery: bool = False,
-    include_client: bool = False
-) -> Dict[str, Any]:
-    """Generate a complete cart creation request with validation"""
-    
-    request_data = {
-        "provider_id": provider_id,
-        "seller_user_id": seller_user_id,
-        "buyer_user_id": seller_user_id,
-        "cart": generate_cart_data(provider_id, seller_user_id),
-        "ordered_items": [],
-        "ordered_services": [],
-        "delivery": None,
-        "client": None
-    }
-    
-    if product_id > 0:
-        request_data["ordered_items"].append(generate_ordered_item(product_id, random.randint(1, 3)))
-    
-    if service_id > 0:
-        request_data["ordered_services"].append(generate_ordered_service(service_id, random.randint(1, 2)))
-    
-    if include_delivery:
-        request_data["delivery"] = generate_delivery_data()
-    
-    if include_client:
-        request_data["client"] = generate_person_data()
-    
-    # Validate with Pydantic
-    try:
-        CreateCartRequest(**request_data)
-    except Exception as e:
-        print(f"⚠️ Create cart request validation warning: {e}")
-        # Ensure at least one item
-        if not request_data["ordered_items"] and not request_data["ordered_services"]:
-            request_data["ordered_items"].append(generate_ordered_item(1, 1))
-    
-    return request_data
-
-
-# ============================================================================
-# TEST CONTEXT AND RUNNER (Rest remains similar but with improved validation)
-# ============================================================================
-
-@dataclass
-class TestResult:
-    """Test result container"""
-    name: str
-    passed: bool
-    details: str = ""
-    response: Any = None
-    validation_errors: List[str] = field(default_factory=list)
-
 
 @dataclass
 class TestUser:
-    """Test user with authentication data"""
     id: int = 0
     username: str = ""
     email: str = ""
@@ -476,44 +36,27 @@ class TestUser:
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
     token_expires_at: Optional[datetime] = None
-    
-    def is_token_valid(self) -> bool:
-        if not self.access_token or not self.token_expires_at:
-            return False
-        return datetime.now() < self.token_expires_at
+    wallet_id: Optional[int] = None
+    person_id: Optional[int] = None
 
 
 @dataclass
-class TestContext:
-    """Test context containing all fetched data"""
+class BulkContext:
     users: List[TestUser] = field(default_factory=list)
-    categories: List[Dict[str, Any]] = field(default_factory=list)
-    providers: List[Dict[str, Any]] = field(default_factory=list)
     products: List[Dict[str, Any]] = field(default_factory=list)
     services: List[Dict[str, Any]] = field(default_factory=list)
-    created_carts: List[Dict[str, Any]] = field(default_factory=list)
-    created_products: List[int] = field(default_factory=list)
-    created_suppliers: List[int] = field(default_factory=list)
+    providers: List[Dict[str, Any]] = field(default_factory=list)
+    created_carts: List[int] = field(default_factory=list)
+    created_invoices: List[int] = field(default_factory=list)
+    created_payments: List[int] = field(default_factory=list)
     auth_token: Optional[str] = None
-    
-    @property
-    def provider_ids(self) -> List[int]:
-        ids = []
-        for p in self.providers:
-            pid = p.get('id_product_provider')
-            if pid is None:
-                pid = p.get('id')
-            if pid and isinstance(pid, int) and pid > 0:
-                ids.append(pid)
-        return ids
+    token_expires_at: Optional[datetime] = None
     
     @property
     def product_ids(self) -> List[int]:
         ids = []
         for p in self.products:
-            pid = p.get('id_product')
-            if pid is None:
-                pid = p.get('id')
+            pid = p.get('id_product') or p.get('id')
             if pid and isinstance(pid, int) and pid > 0:
                 ids.append(pid)
         return ids
@@ -522,619 +65,651 @@ class TestContext:
     def service_ids(self) -> List[int]:
         ids = []
         for s in self.services:
-            sid = s.get('provided_service_id')
-            if sid is None:
-                sid = s.get('id')
+            sid = s.get('provided_service_id') or s.get('id')
             if sid and isinstance(sid, int) and sid > 0:
                 ids.append(sid)
         return ids
     
     @property
-    def cart_ids(self) -> List[int]:
+    def provider_ids(self) -> List[int]:
         ids = []
-        for c in self.created_carts:
-            cid = c.get('cart_id')
-            if cid is None:
-                cid = c.get('id')
-            if cid and isinstance(cid, int) and cid > 0:
-                ids.append(cid)
+        for p in self.providers:
+            pid = p.get('id_product_provider') or p.get('id')
+            if pid and isinstance(pid, int) and pid > 0:
+                ids.append(pid)
         return ids
     
-    def get_random_provider_id(self) -> int:
-        if not self.provider_ids:
-            return 1
-        return random.choice(self.provider_ids)
-    
-    def get_random_product_id(self) -> int:
-        if not self.product_ids:
-            return 0
-        return random.choice(self.product_ids)
-    
-    def get_random_service_id(self) -> int:
-        if not self.service_ids:
-            return 0
-        return random.choice(self.service_ids)
-    
-    def get_random_cart_id(self) -> int:
-        if not self.cart_ids:
-            return 0
-        return random.choice(self.cart_ids)
-    
-    def get_provider_with_products(self) -> Tuple[int, List[int]]:
-        """Get a provider that has products"""
-        for provider in self.providers:
-            pid = provider.get('id_product_provider', provider.get('id', 0))
-            if pid > 0:
-                products_for_provider = [
-                    p for p in self.products 
-                    if p.get('product_provider_id') == pid or p.get('product_provider_id') == int(pid)
-                ]
-                if products_for_provider:
-                    product_ids = [
-                        p.get('id_product', p.get('id', 0)) 
-                        for p in products_for_provider 
-                        if p.get('id_product', p.get('id', 0)) > 0
-                    ]
-                    if product_ids:
-                        return pid, product_ids
-        return 0, []
-    
-    def get_auth_headers(self) -> Dict[str, str]:
-        """Get authentication headers from the first user with a valid token"""
-        for user in self.users:
-            if user.is_token_valid():
-                return {"Authorization": f"Bearer {user.access_token}"}
-        
-        if self.auth_token:
-            return {"Authorization": f"Bearer {self.auth_token}"}
-        
-        return {}
-    
-    def get_first_valid_token(self) -> Optional[str]:
-        """Get the first valid access token"""
-        for user in self.users:
-            if user.is_token_valid():
-                return user.access_token
-        return self.auth_token
-    
-    def load_from_file(self, filename: str = "test_context.json") -> bool:
-        """Load context from the main test runner's context file"""
-        if not Path(filename).exists():
+    def is_token_valid(self) -> bool:
+        if not self.auth_token:
             return False
-        
-        with open(filename, 'r') as f:
-            data = json.load(f)
-        
-        # Load users
-        user_data = data.get('users', [])
-        for u in user_data:
-            user = TestUser(
-                id=u.get('id', 0),
-                username=u.get('username', ''),
-                email=u.get('email', ''),
-                password=u.get('password', ''),
-                access_token=u.get('access_token'),
-                refresh_token=u.get('refresh_token')
-            )
-            expires_at = u.get('token_expires_at')
-            if expires_at:
-                try:
-                    user.token_expires_at = datetime.fromisoformat(expires_at)
-                except:
-                    pass
-            self.users.append(user)
-        
-        # Load other data
-        self.created_products = data.get('created_products', [])
-        self.created_suppliers = data.get('created_suppliers', [])
-        
-        # Set auth token from first user with token
-        token = self.get_first_valid_token()
-        if token:
-            self.auth_token = token
-        
-        return True
+        if not self.token_expires_at:
+            return True
+        return datetime.now() < self.token_expires_at
 
 
 # ============================================================================
-# TEST RUNNER (Simplified - Only showing the key methods)
+# TEST CONTEXT LOADER
 # ============================================================================
 
-class CartTester:
-    """Test runner for cart endpoints"""
+def load_context(context_file: str = "test_context.json") -> BulkContext:
+    context = BulkContext()
     
+    if not Path(context_file).exists():
+        print(f"⚠️ Context file {context_file} not found")
+        return context
+    
+    with open(context_file, 'r') as f:
+        data = json.load(f)
+    
+    user_data = data.get('users', [])
+    for u in user_data:
+        user = TestUser(
+            id=u.get('id', 0),
+            username=u.get('username', ''),
+            email=u.get('email', ''),
+            password=u.get('password', ''),
+            access_token=u.get('access_token'),
+            refresh_token=u.get('refresh_token')
+        )
+        expires_at = u.get('token_expires_at')
+        if expires_at:
+            try:
+                user.token_expires_at = datetime.fromisoformat(expires_at)
+            except:
+                pass
+        context.users.append(user)
+    
+    for user in context.users:
+        if user.access_token:
+            context.auth_token = user.access_token
+            context.token_expires_at = user.token_expires_at
+            break
+    
+    print(f"📂 Loaded context from {context_file}")
+    print(f"   👤 Users: {len(context.users)}")
+    
+    if context.auth_token:
+        if context.is_token_valid():
+            print(f"   🔐 Token valid until: {context.token_expires_at}")
+        else:
+            print(f"   ⚠️ Token expired at: {context.token_expires_at}")
+    
+    return context
+
+
+# ============================================================================
+# DATA GENERATORS
+# ============================================================================
+
+def generate_cart_data(provider_id: int, seller_id: int, product_ids: List[int], service_ids: List[int]) -> Dict[str, Any]:
+    cart_data = {
+        "provider_id": provider_id,
+        "seller_user_id": seller_id,
+        "buyer_user_id": seller_id,
+        "cart": {
+            "cart_status": "open",
+            "cart_total_amount": 0,
+            "cart_notes": f"Bulk cart - {datetime.now().isoformat()}",
+            "cart_due_date": (datetime.now() + timedelta(days=30)).date().isoformat()
+        },
+        "ordered_items": [],
+        "ordered_services": [],
+        "delivery": None,
+        "client": None
+    }
+    
+    if product_ids:
+        num_products = random.randint(1, min(3, len(product_ids)))
+        selected_products = random.sample(product_ids, num_products)
+        
+        for product_id in selected_products:
+            cart_data["ordered_items"].append({
+                "ordered_product_id": product_id,
+                "ordered_quantity": random.randint(1, 3),
+                "unit_price": round(random.uniform(5, 100), 2),
+                "applied_vat": round(random.uniform(0, 19), 2),
+                "product_discount": round(random.uniform(0, 10), 2)
+            })
+    
+    if service_ids:
+        num_services = random.randint(0, min(2, len(service_ids)))
+        selected_services = random.sample(service_ids, num_services) if num_services > 0 else []
+        
+        for service_id in selected_services:
+            unit_price = round(random.uniform(50, 300), 2)
+            quantity = random.randint(1, 2)
+            cart_data["ordered_services"].append({
+                "ordered_service_service_id": service_id,
+                "ordered_service_quantity": quantity,
+                "ordered_service_unit_price": unit_price,
+                "ordered_service_total_price": unit_price * quantity,
+                "ordered_service_notes": f"Bulk service - {uuid.uuid4().hex[:6]}",
+                "ordered_service_scheduled_at": (datetime.now() + timedelta(days=random.randint(1, 14))).isoformat()
+            })
+    
+    if random.random() > 0.5:
+        cities = ["Algiers", "Oran", "Constantine", "Annaba", "Blida"]
+        streets = ["Main St", "Rue Didouche Mourad", "Avenue du 1er Novembre"]
+        cart_data["delivery"] = {
+            "delivery_address": f"{random.randint(1, 999)} {random.choice(streets)}",
+            "delivery_city": random.choice(cities),
+            "delivery_postal_code": f"{random.randint(10000, 99999)}",
+            "delivery_country": "Algeria",
+            "delivery_shipping_method": random.choice(["standard", "express", "same_day"]),
+            "delivery_fee": round(random.uniform(5, 50), 2),
+            "delivery_special_instructions": f"Bulk delivery {uuid.uuid4().hex[:4]}",
+            "delivery_status": "pending"
+        }
+    
+    return cart_data
+
+
+def generate_payment_data(invoice_id: int, amount: float) -> Dict[str, Any]:
+    methods = ["cash", "card", "bank_transfer", "mobile_money", "wallet"]
+    return {
+        "payment_invoice_id": invoice_id,
+        "payment_amount": amount,
+        "payment_method": random.choice(methods),
+        "payment_status": "completed",
+        "payment_reference": f"PAY-{uuid.uuid4().hex[:8].upper()}",
+        "payment_notes": f"Bulk payment for invoice {invoice_id}",
+        "payment_type": "payment"
+    }
+
+
+# ============================================================================
+# BULK DATA CREATOR
+# ============================================================================
+
+class BulkDataCreator:
     def __init__(self, base_url: str = "http://localhost:9000"):
         self.base_url = base_url
-        self.client: Optional[httpx.AsyncClient] = None
-        self.context = TestContext()
-        self.results: List[TestResult] = []
-        self.context_file = "test_context.json"
-        self.test_provider_id = 0
+        self.client = None
+        self.context = BulkContext()
+        self.stats = {
+            "carts_created": 0,
+            "invoices_created": 0,
+            "payments_created": 0,
+            "errors": 0
+        }
+        self._token_refreshed = False
     
     async def __aenter__(self):
-        self.client = httpx.AsyncClient(timeout=30.0, verify=False)
+        limits = httpx.Limits(max_keepalive_connections=50, max_connections=100)
+        timeout = httpx.Timeout(30.0, connect=5.0)
+        self.client = httpx.AsyncClient(timeout=timeout, verify=False, limits=limits)
         return self
     
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self.client:
             await self.client.aclose()
     
-    # ==================== HTTP Helpers ====================
+    def get_auth_headers(self) -> Dict[str, str]:
+        if self.context.auth_token:
+            return {"Authorization": f"Bearer {self.context.auth_token}"}
+        return {}
     
-    async def _get(self, path: str, params: Optional[Dict] = None) -> Tuple[int, Any]:
-        try:
-            headers = self.context.get_auth_headers()
-            response = await self.client.get(
-                f"{self.base_url}{path}", 
-                params=params,
-                headers=headers
-            )
-            data = response.json() if response.text else None
-            return response.status_code, data
-        except Exception as e:
-            return 500, {"error": str(e)}
+    def print_status(self, message: str, emoji: str = "ℹ️"):
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"[{timestamp}] {emoji} {message}")
     
-    async def _post(self, path: str, json_data: Dict) -> Tuple[int, Any]:
+    # ==================== Authentication ====================
+    
+    async def ensure_valid_token(self) -> bool:
+        if self.context.is_token_valid():
+            return True
+        
+        if self.context.users:
+            for user in self.context.users:
+                if user.username and user.password:
+                    self.print_status(f"🔐 Token expired, logging in as {user.username}...", "🔐")
+                    if await self.login_user(user.username, user.password):
+                        self._token_refreshed = True
+                        return True
+        
+        self.print_status("❌ No valid authentication token available", "❌")
+        return False
+    
+    async def login_user(self, username: str, password: str) -> bool:
         try:
-            headers = self.context.get_auth_headers()
             response = await self.client.post(
-                f"{self.base_url}{path}", 
-                json=json_data,
-                headers=headers
+                f"{self.base_url}/api/v1/authentication/token",
+                json={
+                    "app_user_name": username,
+                    "app_user_password": password
+                }
             )
-            data = response.json() if response.text else None
-            return response.status_code, data
-        except Exception as e:
-            return 500, {"error": str(e)}
-    
-    async def _patch(self, path: str, params: Optional[Dict] = None) -> Tuple[int, Any]:
-        try:
-            headers = self.context.get_auth_headers()
-            response = await self.client.patch(
-                f"{self.base_url}{path}", 
-                params=params,
-                headers=headers
-            )
-            data = response.json() if response.text else None
-            return response.status_code, data
-        except Exception as e:
-            return 500, {"error": str(e)}
-    
-    async def _delete(self, path: str, params: Optional[Dict] = None) -> Tuple[int, Any]:
-        try:
-            headers = self.context.get_auth_headers()
-            response = await self.client.delete(
-                f"{self.base_url}{path}", 
-                params=params,
-                headers=headers
-            )
-            data = response.json() if response.text else None
-            return response.status_code, data
-        except Exception as e:
-            return 500, {"error": str(e)}
-    
-    # ==================== Context Loading ====================
-    
-    async def load_context(self) -> bool:
-        """Load context from file"""
-        loaded = self.context.load_from_file(self.context_file)
-        if loaded:
-            print(f"\n📂 Loaded context from {self.context_file}")
-            print(f"   👤 Users: {len(self.context.users)}")
-            print(f"   🏥 Suppliers: {len(self.context.created_suppliers)}")
-            print(f"   📦 Products: {len(self.context.created_products)}")
             
-            token = self.context.get_first_valid_token()
-            if token:
-                print(f"   🔐 Valid authentication token found")
+            if response.status_code == 200:
+                result = response.json()
+                access_token = result.get('access_token')
+                if access_token:
+                    self.context.auth_token = access_token
+                    expires_in = result.get('expires_in', 3600)
+                    self.context.token_expires_at = datetime.now() + timedelta(seconds=expires_in)
+                    
+                    for user in self.context.users:
+                        if user.username == username:
+                            user.access_token = access_token
+                            user.token_expires_at = self.context.token_expires_at
+                            break
+                    
+                    self.print_status(f"✅ Login successful, token valid until {self.context.token_expires_at.strftime('%H:%M:%S')}", "✅")
+                    return True
             else:
-                print(f"   ⚠️ No valid authentication token found")
-        return loaded
+                self.print_status(f"❌ Login failed: {response.status_code}", "❌")
+                return False
+        except Exception as e:
+            self.print_status(f"❌ Login error: {e}", "❌")
+            return False
+    
+    # ==================== Fetch Existing Data ====================
     
     async def fetch_providers(self) -> bool:
-        """Fetch providers/suppliers"""
-        print("\n📋 Fetching providers...")
-        status, data = await self._get("/api/v1/suppliers", {"offset": 0, "limit": 100})
+        self.print_status("📋 Fetching providers...", "📋")
         
-        if status != 200:
-            print(f"   ❌ Failed to fetch providers: {status}")
+        if not await self.ensure_valid_token():
             return False
         
-        if isinstance(data, list):
-            self.context.providers = data
-        elif isinstance(data, dict):
-            self.context.providers = data.get("data", data.get("items", []))
-        else:
-            self.context.providers = []
+        headers = self.get_auth_headers()
         
-        print(f"   ✅ Found {len(self.context.providers)} providers")
-        for prov in self.context.providers[:3]:
-            pid = prov.get('id_product_provider', prov.get('id', 'N/A'))
-            name = prov.get('provider_name', prov.get('name', 'Unknown'))
-            print(f"      - ID: {pid}, Name: {name}")
-        
-        return True
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/api/v1/suppliers",
+                params={"offset": 0, "limit": 100},
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.context.providers = data
+                elif isinstance(data, dict):
+                    self.context.providers = data.get("data", data.get("items", []))
+                else:
+                    self.context.providers = []
+                
+                self.print_status(f"✅ Found {len(self.context.providers)} providers", "✅")
+                for prov in self.context.providers[:3]:
+                    pid = prov.get('id_product_provider', prov.get('id', 'N/A'))
+                    name = prov.get('provider_name', prov.get('name', 'Unknown'))
+                    print(f"      - ID: {pid}, Name: {name}")
+                return True
+            else:
+                self.print_status(f"❌ Failed to fetch providers: {response.status_code}", "❌")
+                return False
+        except Exception as e:
+            self.print_status(f"❌ Error fetching providers: {e}", "❌")
+            return False
     
     async def fetch_products(self, provider_id: int) -> bool:
-        """Fetch products for a provider"""
-        print(f"\n📋 Fetching products for provider {provider_id}...")
+        self.print_status(f"📦 Fetching products for provider {provider_id}...", "📦")
         
+        if not await self.ensure_valid_token():
+            return False
+        
+        headers = self.get_auth_headers()
         user_id = self.context.users[0].id if self.context.users else 0
         
-        status, data = await self._get(
-            f"/api/v1/products/{user_id}/{provider_id}/0/0/50",
-            {}
-        )
-        
-        if status != 200:
-            print(f"   ❌ Failed to fetch products: {status}")
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/api/v1/products/{user_id}/{provider_id}/0/0/50",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.context.products = data
+                elif isinstance(data, dict):
+                    self.context.products = data.get("data", data.get("items", []))
+                else:
+                    self.context.products = []
+                
+                self.print_status(f"✅ Found {len(self.context.products)} products", "✅")
+                for prod in self.context.products[:3]:
+                    pid = prod.get('id_product', prod.get('id', 'N/A'))
+                    name = prod.get('product_name', 'Unknown')
+                    qty = prod.get('product_quantity', 0)
+                    print(f"      - ID: {pid}, Name: {name}, Qty: {qty}")
+                return True
+            else:
+                self.print_status(f"❌ Failed to fetch products: {response.status_code}", "❌")
+                return False
+        except Exception as e:
+            self.print_status(f"❌ Error fetching products: {e}", "❌")
             return False
-        
-        if isinstance(data, list):
-            self.context.products = data
-        elif isinstance(data, dict):
-            self.context.products = data.get("data", data.get("items", []))
-        else:
-            self.context.products = []
-        
-        print(f"   ✅ Found {len(self.context.products)} products")
-        for prod in self.context.products[:3]:
-            pid = prod.get('id_product', prod.get('id', 'N/A'))
-            name = prod.get('product_name', 'Unknown')
-            qty = prod.get('product_quantity', 0)
-            print(f"      - ID: {pid}, Name: {name}, Qty: {qty}")
-        
-        return True
     
     async def fetch_services(self, provider_id: int) -> bool:
-        """Fetch services for a provider"""
-        print(f"\n📋 Fetching services for provider {provider_id}...")
+        self.print_status(f"📋 Fetching services for provider {provider_id}...", "📋")
         
-        status, data = await self._get(
-            f"/api/v1/business/services/provider/{provider_id}",
-            {"offset": 0, "limit": 50, "active_only": True}
-        )
-        
-        if status != 200:
-            print(f"   ❌ Failed to fetch services: {status}")
+        if not await self.ensure_valid_token():
             return False
         
-        if isinstance(data, list):
-            self.context.services = data
-        elif isinstance(data, dict):
-            self.context.services = data.get("data", data.get("items", []))
-        else:
-            self.context.services = []
+        headers = self.get_auth_headers()
         
-        print(f"   ✅ Found {len(self.context.services)} services")
-        for service in self.context.services[:3]:
-            sid = service.get('provided_service_id', service.get('id', 'N/A'))
-            name = service.get('provided_service_name', 'Unknown')
-            is_active = service.get('provided_service_is_active', False)
-            print(f"      - ID: {sid}, Name: {name}, Active: {is_active}")
-        
-        return True
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/api/v1/business/services/provider/{provider_id}",
+                params={"offset": 0, "limit": 50, "active_only": True},
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if isinstance(data, list):
+                    self.context.services = data
+                elif isinstance(data, dict):
+                    self.context.services = data.get("data", data.get("items", []))
+                else:
+                    self.context.services = []
+                
+                self.print_status(f"✅ Found {len(self.context.services)} services", "✅")
+                for service in self.context.services[:3]:
+                    sid = service.get('provided_service_id', service.get('id', 'N/A'))
+                    name = service.get('provided_service_name', 'Unknown')
+                    is_active = service.get('provided_service_is_active', False)
+                    print(f"      - ID: {sid}, Name: {name}, Active: {is_active}")
+                return True
+            else:
+                self.print_status(f"❌ Failed to fetch services: {response.status_code}", "❌")
+                return False
+        except Exception as e:
+            self.print_status(f"❌ Error fetching services: {e}", "❌")
+            return False
     
     async def fetch_all_data(self) -> bool:
-        """Fetch all required data"""
         print("\n" + "="*50)
         print("📊 FETCHING EXISTING DATA")
         print("="*50)
         
-        prov_ok = await self.fetch_providers()
+        if not await self.ensure_valid_token():
+            self.print_status("❌ Cannot authenticate", "❌")
+            return False
         
-        if not prov_ok or not self.context.provider_ids:
-            print("\n⚠️  No providers found! Please seed providers first.")
-            print("   Using fallback provider ID: 1")
-            self.context.providers = [{"id_product_provider": 1, "provider_name": "Fallback Provider"}]
+        if not await self.fetch_providers():
+            self.print_status("⚠️ Failed to fetch providers", "⚠️")
+            return False
         
-        self.test_provider_id = self.context.get_random_provider_id()
+        if not self.context.provider_ids:
+            self.print_status("⚠️ No providers found", "⚠️")
+            return False
         
-        provider_with_products, _ = self.context.get_provider_with_products()
-        if provider_with_products > 0:
-            self.test_provider_id = provider_with_products
+        provider_id = self.context.provider_ids[0]
+        self.print_status(f"Using provider ID: {provider_id}", "🏢")
         
-        if self.test_provider_id:
-            await self.fetch_products(self.test_provider_id)
-            await self.fetch_services(self.test_provider_id)
+        await self.fetch_products(provider_id)
+        await self.fetch_services(provider_id)
         
-        if not self.context.product_ids:
-            print(f"\n⚠️  No products found for provider {self.test_provider_id}. Trying all providers...")
-            for provider in self.context.providers:
-                pid = provider.get('id_product_provider', provider.get('id', 0))
-                if pid > 0:
-                    await self.fetch_products(pid)
-                    if self.context.product_ids:
-                        self.test_provider_id = pid
-                        break
+        if not self.context.product_ids and not self.context.service_ids:
+            self.print_status("⚠️ No products or services found", "⚠️")
+            return False
         
         return True
     
-    # ==================== Test Methods ====================
+    # ==================== Cart Creation ====================
     
-    def _add_result(self, name: str, passed: bool, details: str = "", response: Any = None):
-        result = TestResult(name=name, passed=passed, details=details, response=response)
-        self.results.append(result)
-        status = "✅ PASSED" if passed else "❌ FAILED"
-        print(f"{status} - {name}")
-        if details:
-            print(f"     {details}")
+    async def create_cart(self, provider_id: int, seller_id: int,
+                          product_ids: List[int], service_ids: List[int]) -> Optional[Dict[str, Any]]:
+        if not await self.ensure_valid_token():
+            return None
+        
+        headers = self.get_auth_headers()
+        
+        cart_data = generate_cart_data(provider_id, seller_id, product_ids, service_ids)
+        
+        if not cart_data["ordered_items"] and not cart_data["ordered_services"]:
+            return None
+        
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/business/carts",
+                json=cart_data,
+                headers=headers
+            )
+            
+            if response.status_code == 201:
+                result = response.json()
+                
+                if 'data' in result:
+                    cart_data_result = result['data']
+                else:
+                    cart_data_result = result
+                
+                cart_id = cart_data_result.get('cart_id', 0)
+                invoice_id = cart_data_result.get('cart_invoice', 0)
+                total_amount = cart_data_result.get('total_amount', 0)
+                
+                if cart_id:
+                    self.stats["carts_created"] += 1
+                    self.context.created_carts.append(cart_id)
+                    
+                    if invoice_id and invoice_id > 0:
+                        self.stats["invoices_created"] += 1
+                        self.context.created_invoices.append(invoice_id)
+                        self.print_status(f"✅ Cart {cart_id} created with invoice {invoice_id}", "🛒")
+                    else:
+                        self.print_status(f"⚠️ Cart {cart_id} created but no invoice ID returned", "⚠️")
+                    
+                    return {
+                        "cart_id": cart_id,
+                        "invoice_id": invoice_id,
+                        "total_amount": total_amount
+                    }
+            return None
+        except Exception as e:
+            self.print_status(f"❌ Error creating cart: {e}", "❌")
+            return None
     
-    def _extract_cart_id(self, data: Dict) -> int:
-        """Extract cart ID from response data"""
-        if not data:
-            return 0
+    async def create_carts_bulk(self, provider_id: int, seller_id: int,
+                                product_ids: List[int], service_ids: List[int],
+                                count: int = 10) -> List[Dict[str, Any]]:
+        if not product_ids and not service_ids:
+            self.print_status("⚠️ No products or services available for carts", "⚠️")
+            return []
         
-        if 'data' in data and isinstance(data['data'], dict):
-            return data['data'].get('cart_id', 0)
+        self.print_status(f"🛒 Creating {count} carts...", "🛒")
         
-        for key in ['cart_id', 'id', 'id_cart']:
-            if key in data:
-                return data[key]
+        tasks = []
+        for _ in range(count):
+            task = self.create_cart(provider_id, seller_id, product_ids, service_ids)
+            tasks.append(task)
         
-        return 0
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        cart_details = []
+        for result in results:
+            if isinstance(result, dict) and result.get('cart_id'):
+                cart_details.append(result)
+            elif isinstance(result, Exception):
+                self.stats["errors"] += 1
+        
+        self.print_status(f"✅ Created {len(cart_details)} carts", "✅")
+        return cart_details
     
-    def _extract_response_data(self, data: Dict) -> Dict:
-        """Extract data from response wrapper"""
-        if not data:
-            return {}
-        
-        if 'data' in data and isinstance(data['data'], dict):
-            return data['data']
-        
-        return data
+    # ==================== Payment Processing ====================
     
-    # ==================== Test Cases ====================
+    async def get_cart_with_invoice(self, cart_id: int) -> Optional[Dict[str, Any]]:
+        """Fetch cart details to get the invoice ID"""
+        headers = self.get_auth_headers()
+        
+        try:
+            response = await self.client.get(
+                f"{self.base_url}/api/v1/business/carts/{cart_id}?eager_load=true",
+                headers=headers
+            )
+            
+            if response.status_code == 200:
+                cart_data = response.json()
+                if 'data' in cart_data:
+                    cart_data = cart_data['data']
+                
+                invoice_id = cart_data.get('cart_invoice', 0)
+                total_amount = cart_data.get('total_amount', 0)
+                status = cart_data.get('cart_status', 'open')
+                
+                return {
+                    "cart_id": cart_id,
+                    "invoice_id": invoice_id,
+                    "total_amount": total_amount,
+                    "status": status
+                }
+            return None
+        except Exception as e:
+            self.print_status(f"❌ Error fetching cart {cart_id}: {e}", "❌")
+            return None
     
-    async def test_create_cart_with_product(self) -> bool:
-        """Test creating a cart with a product"""
-        print("\n📦 Test: Create Cart with Product")
+    async def process_cart_payment(self, cart_detail: Dict[str, Any]) -> bool:
+        if not await self.ensure_valid_token():
+            return False
         
-        # Find a provider with products
-        provider_id, product_ids = self.context.get_provider_with_products()
+        headers = self.get_auth_headers()
+        cart_id = cart_detail.get('cart_id')
+        invoice_id = cart_detail.get('invoice_id')
+        total_amount = cart_detail.get('total_amount', 0)
         
-        if not provider_id or not product_ids:
-            provider_id = self.test_provider_id
-            product_ids = self.context.product_ids
-            if not product_ids:
-                self._add_result("Create Cart with Product", False, "No product ID available")
+        # If no invoice_id or total_amount is 0, fetch cart details
+        if not invoice_id or invoice_id == 0 or total_amount == 0:
+            self.print_status(f"🔍 Fetching cart {cart_id} details...", "🔍")
+            cart_info = await self.get_cart_with_invoice(cart_id)
+            
+            if not cart_info:
+                self.print_status(f"❌ Failed to fetch cart {cart_id}", "❌")
+                return False
+            
+            invoice_id = cart_info.get('invoice_id', 0)
+            total_amount = cart_info.get('total_amount', 0)
+            
+            if invoice_id and invoice_id > 0:
+                self.print_status(f"✅ Found invoice {invoice_id} for cart {cart_id} (total: {total_amount})", "📄")
+                if invoice_id not in self.context.created_invoices:
+                    self.context.created_invoices.append(invoice_id)
+            else:
+                self.print_status(f"⚠️ Cart {cart_id} has no invoice", "⚠️")
                 return False
         
-        product_id = random.choice(product_ids) if product_ids else 0
-        if not product_id:
-            self._add_result("Create Cart with Product", False, "No product ID available")
+        if not invoice_id or invoice_id == 0:
+            self.print_status(f"⚠️ Cart {cart_id} has no invoice", "⚠️")
             return False
         
-        seller_id = self.context.users[0].id if self.context.users else 0
-        if not seller_id:
-            self._add_result("Create Cart with Product", False, "No seller ID available")
+        if total_amount <= 0:
+            self.print_status(f"⚠️ Cart {cart_id} has zero total amount ({total_amount})", "⚠️")
             return False
         
-        # Generate validated request data
-        request_data = generate_create_cart_request(
-            provider_id=provider_id,
-            seller_user_id=seller_id,
-            product_id=product_id,
-            service_id=0,
-            include_delivery=False,
-            include_client=False
-        )
-        
-        # Validate request with Pydantic
         try:
-            validated_request = CreateCartRequest(**request_data)
-            request_data = validated_request.model_dump()
-        except Exception as e:
-            self._add_result("Create Cart with Product", False, f"Request validation failed: {e}")
-            return False
-        
-        print(f"   Provider: {provider_id}, Seller: {seller_id}")
-        print(f"   Product: {product_id}, Qty: {request_data['ordered_items'][0]['ordered_quantity']}")
-        
-        status, data = await self._post("/api/v1/business/carts", request_data)
-        
-        passed = status == 201
-        if passed and data:
-            cart_data_response = self._extract_response_data(data)
-            cart_id = cart_data_response.get('cart_id', 0)
-            if cart_id:
-                self.context.created_carts.append(cart_data_response)
-                details = f"Cart {cart_id} created"
+            # Create payment - CORRECT ENDPOINT AND DATA
+            payment_methods = ["cash", "card", "bank_transfer", "mobile_money", "wallet"]
+            payment_data = {
+                "payment_invoice_id": invoice_id,
+                "payment_amount": total_amount,
+                "payment_method": random.choice(payment_methods),
+                # "payment_status": "PAID",  # Set to completed directly
+                "payment_reference": f"PAY-{uuid.uuid4().hex[:8].upper()}",
+                "payment_notes": f"Bulk payment for invoice {invoice_id} from cart {cart_id}",
+            }
+            
+            self.print_status(f"💳 Creating payment for invoice {invoice_id} (amount: {total_amount})", "💳")
+            self.print_status(f"📝 Payment data: {json.dumps(payment_data, indent=2)}", "📝")
+            
+            # CORRECT ENDPOINT: /api/v1/business/payments (not /api/v1/finance/payments)
+            payment_response = await self.client.post(
+                f"{self.base_url}/api/v1/business/payments",
+                json=payment_data,
+                headers=headers
+            )
+            
+            if payment_response.status_code == 201:
+                payment_result = payment_response.json()
+                payment_id = payment_result.get('payment_id', payment_result.get('id', 0))
+                if payment_id:
+                    self.stats["payments_created"] += 1
+                    self.context.created_payments.append(payment_id)
+                    self.print_status(f"✅ Payment {payment_id} created for invoice {invoice_id}", "💳")
+                    return True
+                else:
+                    self.print_status(f"⚠️ Payment created but no ID returned", "⚠️")
+                    return False
             else:
-                details = "Cart created but ID extraction failed"
-        else:
-            details = f"Status: {status}"
-            if data and isinstance(data, dict):
-                details += f" - {data.get('message', data.get('detail', ''))}"
-        
-        self._add_result("Create Cart with Product", passed, details)
-        return passed
+                error_msg = payment_response.text[:300] if payment_response.text else "No response"
+                self.print_status(f"❌ Payment failed ({payment_response.status_code}): {error_msg}", "❌")
+                return False
+        except Exception as e:
+            self.print_status(f"❌ Error processing payment: {e}", "❌")
+            return False
+
     
-    async def test_create_cart_with_service(self) -> bool:
-        """Test creating a cart with a service"""
-        print("\n📦 Test: Create Cart with Service")
+    async def process_payments_bulk(self, cart_details: List[Dict[str, Any]]) -> int:
+        if not cart_details:
+            return 0
         
-        provider_id = self.test_provider_id or self.context.get_random_provider_id()
-        service_id = self.context.get_random_service_id()
+        self.print_status(f"💳 Processing payments for {len(cart_details)} carts...", "💳")
         
-        if not provider_id:
-            self._add_result("Create Cart with Service", False, "No provider ID available")
-            return False
+        tasks = []
+        for cart_detail in cart_details:
+            task = self.process_cart_payment(cart_detail)
+            tasks.append(task)
         
-        if not service_id:
-            self._add_result("Create Cart with Service", False, "No service ID available")
-            return False
+        results = await asyncio.gather(*tasks, return_exceptions=True)
         
-        seller_id = self.context.users[0].id if self.context.users else 0
-        if not seller_id:
-            self._add_result("Create Cart with Service", False, "No seller ID available")
-            return False
-        
-        # Generate validated request data
-        request_data = generate_create_cart_request(
-            provider_id=provider_id,
-            seller_user_id=seller_id,
-            product_id=0,
-            service_id=service_id,
-            include_delivery=False,
-            include_client=False
-        )
-        
-        # Validate request with Pydantic
-        try:
-            validated_request = CreateCartRequest(**request_data)
-            request_data = validated_request.model_dump()
-        except Exception as e:
-            self._add_result("Create Cart with Service", False, f"Request validation failed: {e}")
-            return False
-        
-        print(f"   Provider: {provider_id}, Seller: {seller_id}")
-        print(f"   Service: {service_id}, Qty: {request_data['ordered_services'][0]['ordered_service_quantity']}")
-        
-        status, data = await self._post("/api/v1/business/carts", request_data)
-        
-        passed = status == 201
-        if passed and data:
-            cart_data_response = self._extract_response_data(data)
-            cart_id = cart_data_response.get('cart_id', 0)
-            if cart_id:
-                self.context.created_carts.append(cart_data_response)
-                details = f"Cart {cart_id} created"
-            else:
-                details = "Cart created but ID extraction failed"
-        else:
-            details = f"Status: {status}"
-            if data and isinstance(data, dict):
-                details += f" - {data.get('message', data.get('detail', ''))}"
-        
-        self._add_result("Create Cart with Service", passed, details)
-        return passed
-    
-    async def test_create_cart_with_both(self) -> bool:
-        """Test creating a cart with both product and service"""
-        print("\n📦 Test: Create Cart with Product and Service")
-        
-        provider_id, product_ids = self.context.get_provider_with_products()
-        if not provider_id or not product_ids:
-            provider_id = self.test_provider_id
-            product_ids = self.context.product_ids
-        
-        product_id = random.choice(product_ids) if product_ids else 0
-        service_id = self.context.get_random_service_id()
-        
-        if not provider_id:
-            self._add_result("Create Cart with Both", False, "No provider ID available")
-            return False
-        
-        if not product_id or not service_id:
-            self._add_result("Create Cart with Both", False, "Product or Service ID missing")
-            return False
-        
-        seller_id = self.context.users[0].id if self.context.users else 0
-        if not seller_id:
-            self._add_result("Create Cart with Both", False, "No seller ID available")
-            return False
-        
-        # Generate validated request data
-        request_data = generate_create_cart_request(
-            provider_id=provider_id,
-            seller_user_id=seller_id,
-            product_id=product_id,
-            service_id=service_id,
-            include_delivery=False,
-            include_client=False
-        )
-        
-        # Validate request with Pydantic
-        try:
-            validated_request = CreateCartRequest(**request_data)
-            request_data = validated_request.model_dump()
-        except Exception as e:
-            self._add_result("Create Cart with Both", False, f"Request validation failed: {e}")
-            return False
-        
-        print(f"   Product: {product_id}, Service: {service_id}")
-        
-        status, data = await self._post("/api/v1/business/carts", request_data)
-        
-        passed = status == 201
-        if passed and data:
-            cart_data_response = self._extract_response_data(data)
-            cart_id = cart_data_response.get('cart_id', 0)
-            if cart_id:
-                self.context.created_carts.append(cart_data_response)
-                details = f"Cart {cart_id} created"
-            else:
-                details = "Cart created but ID extraction failed"
-        else:
-            details = f"Status: {status}"
-            if data and isinstance(data, dict):
-                details += f" - {data.get('message', data.get('detail', ''))}"
-        
-        self._add_result("Create Cart with Both", passed, details)
-        return passed
+        successful = sum(1 for r in results if r is True)
+        self.print_status(f"✅ Processed {successful} payments", "✅")
+        return successful
     
     # ==================== Main Runner ====================
     
-    async def run_all_tests(self) -> None:
-        """Run all test suites"""
+    async def run(self, context_file: str = "test_context.json",
+                  carts: int = 10):
         print("\n" + "="*70)
-        print("🚀 CART ENDPOINT TESTS (with Pydantic Validation)")
+        print("🚀 BULK DATA CREATOR - Carts & Payments (Using Existing Data)")
         print("="*70)
         print(f"📍 Base URL: {self.base_url}")
-        print(f"🕐 Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"🛒 Carts to create: {carts}")
         print("="*70)
         
-        # Load context from main test runner
-        await self.load_context()
+        self.context = load_context(context_file)
         
-        # Fetch data
+        if not await self.ensure_valid_token():
+            self.print_status("❌ No authentication token available", "❌")
+            return
+        
         if not await self.fetch_all_data():
-            print("\n⚠️  Failed to fetch required data. Some tests may fail.")
+            self.print_status("❌ Failed to fetch required data", "❌")
+            return
         
-        # Check authentication
-        if not self.context.get_auth_headers():
-            print("\n⚠️  No authentication headers available. Tests may fail with 401.")
-            print("   Run test_runner.py first to get authentication tokens.")
+        start_time = time.time()
+        
+        product_ids = self.context.product_ids
+        service_ids = self.context.service_ids
+        provider_id = self.context.provider_ids[0] if self.context.provider_ids else 1
+        seller_id = self.context.users[0].id if self.context.users else 0
+        
+        self.print_status(f"📦 Products available: {len(product_ids)}", "📦")
+        self.print_status(f"📋 Services available: {len(service_ids)}", "📋")
+        self.print_status(f"🏢 Provider ID: {provider_id}", "🏢")
+        self.print_status(f"👤 Seller ID: {seller_id}", "👤")
+        
+        cart_details = await self.create_carts_bulk(provider_id, seller_id, product_ids, service_ids, carts)
+        
+        if cart_details:
+            await self.process_payments_bulk(cart_details)
+        
+        elapsed = time.time() - start_time
         
         print("\n" + "="*70)
-        print("📝 RUNNING TESTS WITH VALIDATION")
+        print("📊 BULK DATA CREATION SUMMARY")
         print("="*70)
+        print(f"✅ Carts created: {self.stats['carts_created']}")
+        print(f"✅ Invoices created: {self.stats['invoices_created']}")
+        print(f"✅ Payments created: {self.stats['payments_created']}")
+        print(f"❌ Errors: {self.stats['errors']}")
+        print(f"⏱️ Total time: {elapsed:.2f}s")
         
-        # Creation tests
-        await self.test_create_cart_with_product()
-        await self.test_create_cart_with_service()
-        await self.test_create_cart_with_both()
-        
-        self._print_summary()
-    
-    def _print_summary(self) -> None:
-        """Print test summary"""
-        print("\n" + "="*70)
-        print("📊 TEST SUMMARY")
-        print("="*70)
-        
-        total = len(self.results)
-        passed = sum(1 for r in self.results if r.passed)
-        failed = total - passed
-        
-        for result in self.results:
-            status = "✅" if result.passed else "❌"
-            print(f"  {status} {result.name}")
-            if result.details:
-                print(f"     {result.details}")
-        
-        print("="*70)
-        print(f"📈 Total: {total} tests | ✅ Passed: {passed} | ❌ Failed: {failed}")
-        print(f"🛒 Carts Created: {len(self.context.created_carts)}")
-        print(f"📦 Products Found: {len(self.context.products)}")
-        print(f"📋 Services Found: {len(self.context.services)}")
-        print(f"🏥 Providers Found: {len(self.context.providers)}")
-        
-        if passed == total:
-            print("\n🎉 ALL TESTS PASSED!")
-        else:
-            print(f"\n⚠️  {failed} test(s) failed.")
+        if self.context.created_carts:
+            print(f"\n🛒 Cart IDs: {self.context.created_carts[:10]}{'...' if len(self.context.created_carts) > 10 else ''}")
+        if self.context.created_invoices:
+            print(f"📄 Invoice IDs: {self.context.created_invoices[:10]}{'...' if len(self.context.created_invoices) > 10 else ''}")
+        if self.context.created_payments:
+            print(f"💳 Payment IDs: {self.context.created_payments[:10]}{'...' if len(self.context.created_payments) > 10 else ''}")
         
         print("="*70)
 
@@ -1143,47 +718,29 @@ class CartTester:
 # MAIN ENTRY POINT
 # ============================================================================
 
-async def main() -> None:
-    """Main entry point"""
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Test cart endpoints with validation")
-    parser.add_argument(
-        "--url",
-        default="http://localhost:9000",
-        help="Base URL of the API server (default: http://localhost:9000)"
-    )
-    parser.add_argument(
-        "--provider-id",
-        type=int,
-        help="Use specific provider ID for all tests"
-    )
-    parser.add_argument(
-        "--context-file",
-        default="test_context.json",
-        help="Context file to load (default: test_context.json)"
-    )
+async def main():
+    parser = argparse.ArgumentParser(description="Bulk Data Creator for Gluttex")
+    parser.add_argument("--url", default="http://localhost:9000", help="Base URL")
+    parser.add_argument("--context-file", default="test_context.json", help="Context file")
+    parser.add_argument("--carts", type=int, default=10, help="Number of carts to create")
     
     args = parser.parse_args()
     
-    async with CartTester(args.url) as tester:
-        tester.context_file = args.context_file
-        
-        if args.provider_id:
-            tester.test_provider_id = args.provider_id
-            tester.context.providers = [{"id_product_provider": args.provider_id, "provider_name": "Custom"}]
-        
-        await tester.run_all_tests()
+    async with BulkDataCreator(args.url) as creator:
+        await creator.run(
+            context_file=args.context_file,
+            carts=args.carts
+        )
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n\n🛑 Tests interrupted by user")
+        print("\n\n🛑 Interrupted by user")
         sys.exit(0)
     except Exception as e:
-        print(f"\n💥 Error running tests: {e}")
+        print(f"\n💥 Error: {e}")
         import traceback
         traceback.print_exc()
         sys.exit(1)
