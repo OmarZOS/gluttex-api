@@ -2,7 +2,7 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from repositories.financial_repository import FinancialRepository
-from core.models.api_models import Payment_API, Deposit_API, AdditionalFee_API
+from core.models.api_models import InvoiceStatus, Payment_API, Deposit_API, AdditionalFee_API
 from core.exceptions.handler import APIException
 from core.messages import *
 from core.models.models import Payment, AdditionalFee
@@ -25,8 +25,23 @@ class FinancialService:
         
         if payment_data.payment_invoice_id:
             payment.payment_invoice_id = payment_data.payment_invoice_id
-        
-        return self.financial_repo.create_payment(payment)
+
+        invoice = self.financial_repo.get_invoice_by_id(payment_data.payment_invoice_id)
+        if invoice:
+            old_invoice = invoice
+            total_paid = sum(p.payment_amount for p in invoice.payment) + payment_data.payment_amount
+            if total_paid >= invoice.invoice_total_amount:
+                invoice.invoice_status = InvoiceStatus.PAID
+            elif total_paid > 0:
+                invoice.invoice_status = InvoiceStatus.PARTIALLY_PAID
+            self.financial_repo.update_invoice(invoice)
+        try:
+            payment = self.financial_repo.create_payment(payment)
+        except Exception as e:          
+            self.financial_repo.update_invoice(old_invoice)
+            raise e
+
+        return payment
     
     
     def create_fee(self, fee_data: AdditionalFee_API) -> AdditionalFee:

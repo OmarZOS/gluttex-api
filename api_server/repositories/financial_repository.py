@@ -19,7 +19,7 @@ class FinancialRepository:
     
     def get_invoice_by_id(self, invoice_id: int) -> Optional[Invoice]:
         """Get invoice by ID"""
-        records = storage_broker.get(Invoice, {Invoice.invoice_id: invoice_id}, [], [])
+        records = storage_broker.get(Invoice, {Invoice.invoice_id: invoice_id}, [], [Invoice.payment])
         return records[0] if records else None
     
     def get_payment_by_id(self, payment_id: int) -> Optional[Payment]:
