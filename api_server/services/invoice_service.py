@@ -189,28 +189,8 @@ class InvoiceService:
         if not invoice:
             raise InvoiceNotFoundException(invoice_id=invoice_id)
         
-        # Get related data
-        payments = self.invoice_repo.get_payments(invoice_id)
-        deliveries = self.invoice_repo.get_deliveries(invoice_id)
-        fees = self.invoice_repo.get_fees(invoice_id)
         
-        # Calculate totals
-        total_paid = sum(float(p.payment_amount or 0) for p in payments if p.payment_status == 'completed')
-        
-        # Determine if overdue
-        is_overdue = False
-        if invoice.invoice_due_date:
-            is_overdue = invoice.invoice_due_date < date.today() and invoice.invoice_status in ['unpaid', 'partially_paid']
-        
-        return {
-            "invoice": invoice,
-            "payments": payments,
-            "deliveries": deliveries,
-            "additional_fees": fees,
-            "total_paid": float(total_paid),
-            "remaining_balance": float(invoice.invoice_total_amount or 0) - float(total_paid),
-            "is_overdue": is_overdue
-        }
+        return invoice
     
     # ==================== UPDATE ====================
     

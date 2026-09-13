@@ -3,86 +3,218 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 from repositories.financial_repository import FinancialRepository
 from core.models.api_models import InvoiceStatus, Payment_API, Deposit_API, AdditionalFee_API
+from core.exceptions.specific.finance_exceptions import (
+    PaymentNotFoundException,
+    PaymentCreationFailedException,
+)
 from core.exceptions.handler import APIException
 from core.messages import *
 from core.models.models import Payment, AdditionalFee
 
+
+# Payment statuses that count as money actually received.
+# Note: 'partial' contributes only its own amount; the total is computed
+# per-payment in _recompute_invoice_status().
+SETTLED_PAYMENT_STATUSES = {"completed", "partial"}
+
+# Allowed payment status transitions, matching the real DB enum:
+#   pending | processing | completed | partial | failed | cancelled
+PAYMENT_TRANSITIONS: Dict[str, set] = {
+    "pending":    {"processing", "completed", "failed", "cancelled"},
+    "processing": {"completed", "failed", "cancelled"},
+    "completed":  {"cancelled"},   # refund/void path
+    "partial":    {"completed", "cancelled"},
+    "failed":     {"pending"},     # retry
+    "cancelled":  set(),           # terminal
+}
+
+
 class FinancialService:
-    """Service for financial operations"""
-    
+    """Service for financial operations."""
+
     def __init__(self):
         self.financial_repo = FinancialRepository()
-    
+
+    # ------------------------------------------------------------------ #
+    # Helpers
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _norm_status(status: Optional[str]) -> str:
+        """Normalize a status string to lowercase for comparison."""
+        return (status or "").strip().lower()
+
+    def _recompute_invoice_status(self, invoice) -> None:
+        """
+        Recompute an invoice's status from the set of its settled payments.
+
+        Rules:
+          - No settled payments                 → unpaid
+          - Sum of settled < invoice total      → partially_paid
+          - Sum of settled >= invoice total     → paid
+        """
+        settled_total = 0.0
+        for p in (invoice.payment or []):
+            if self._norm_status(getattr(p, "payment_status", None)) in SETTLED_PAYMENT_STATUSES:
+                settled_total += float(getattr(p, "payment_amount", 0) or 0)
+
+        total_due = float(invoice.invoice_total_amount or 0)
+
+        if settled_total <= 0:
+            new_status = InvoiceStatus.UNPAID
+        elif settled_total >= total_due:
+            new_status = InvoiceStatus.PAID
+        else:
+            new_status = InvoiceStatus.PARTIALLY_PAID
+
+        if self._norm_status(invoice.invoice_status) != self._norm_status(new_status):
+            invoice.invoice_status = new_status
+            self.financial_repo.update_invoice(invoice)
+
+    # ------------------------------------------------------------------ #
+    # Payment creation
+    # ------------------------------------------------------------------ #
+
     def create_payment(self, payment_data: Payment_API) -> Payment:
-        """Create a payment"""
+        """
+        Create a payment and (re)compute the linked invoice's status.
+
+        Default status is 'pending' when the client doesn't specify one.
+        """
+        payment_status = self._norm_status(payment_data.payment_status) or "pending"
+
         payment = Payment(
             payment_amount=payment_data.payment_amount,
             payment_method=payment_data.payment_method,
-            payment_status=payment_data.payment_status,
+            payment_status=payment_status,
             payment_reference=payment_data.payment_reference,
-            payment_notes=payment_data.payment_notes
+            payment_notes=payment_data.payment_notes,
         )
-        
         if payment_data.payment_invoice_id:
             payment.payment_invoice_id = payment_data.payment_invoice_id
 
-        invoice = self.financial_repo.get_invoice_by_id(payment_data.payment_invoice_id)
-        if invoice:
-            old_invoice = invoice
-            total_paid = sum(p.payment_amount for p in invoice.payment) + payment_data.payment_amount
-            if total_paid >= invoice.invoice_total_amount:
-                invoice.invoice_status = InvoiceStatus.PAID
-            elif total_paid > 0:
-                invoice.invoice_status = InvoiceStatus.PARTIALLY_PAID
-            self.financial_repo.update_invoice(invoice)
-        try:
-            payment = self.financial_repo.create_payment(payment)
-        except Exception as e:          
-            self.financial_repo.update_invoice(old_invoice)
-            raise e
+        created = self.financial_repo.create_payment(payment)
 
-        return payment
-    
-    
+        if payment_data.payment_invoice_id:
+            invoice = self.financial_repo.get_invoice_by_id(payment_data.payment_invoice_id)
+            if invoice:
+                self._recompute_invoice_status(invoice)
+
+        return created
+
+    # ------------------------------------------------------------------ #
+    # Payment status transitions
+    # ------------------------------------------------------------------ #
+
+    def update_payment_status(
+        self,
+        payment_id: int,
+        new_status: str,
+        note: Optional[str] = None,
+    ) -> Payment:
+        """
+        Transition a payment to a new status, validating against the
+        PAYMENT_TRANSITIONS table. Optionally appends `note` for audit.
+        """
+        payment = self.financial_repo.get_payment_by_id(payment_id)
+        previous = self._norm_status(payment.payment_status)
+
+        if not payment:
+            raise PaymentNotFoundException(payment_id=payment_id)
+
+        current = self._norm_status(payment.payment_status)
+        target = self._norm_status(new_status)
+
+        
+        allowed_targets = PAYMENT_TRANSITIONS.get(current, set())
+        if target not in allowed_targets:
+            raise PaymentCreationFailedException(
+                error=f"Invalid payment status transition: '{current}' → '{target}'",
+                details={
+                    "payment_id": payment_id,
+                    "current_status": current,
+                    "requested_status": target,
+                    "allowed": sorted(allowed_targets),
+                },
+            )
+
+        payment.payment_status = target
+
+        if note:
+            stamped = f"[{datetime.utcnow().isoformat()}] {target}: {note}"
+            existing = payment.payment_notes or ""
+            payment.payment_notes = f"{existing}\n{stamped}".strip()
+
+        updated_payment = self.financial_repo.update_payment(payment)
+
+        if updated_payment.payment_invoice_id:
+            invoice = self.financial_repo.get_invoice_by_id(updated_payment.payment_invoice_id)
+            if invoice:
+                # Distinguish "refund of a settled payment" from "cancel of a pending payment"
+                if target == "cancelled" and previous in ("completed", "partial"):
+                    invoice.invoice_status = InvoiceStatus.REFUNDED
+                    self.financial_repo.update_invoice(invoice)
+                else:
+                    self._recompute_invoice_status(invoice)
+
+
+        return updated_payment
+
+    def get_payment_by_id(self, payment_id: int) -> Optional[Payment]:
+        return self.financial_repo.get_payment_by_id(payment_id)
+
+    # ------------------------------------------------------------------ #
+    # Additional fees
+    # ------------------------------------------------------------------ #
+
     def create_fee(self, fee_data: AdditionalFee_API) -> AdditionalFee:
-        """Create an additional fee"""
         fee = AdditionalFee(
             fee_name=fee_data.fee_name,
             fee_amount=fee_data.fee_amount,
             fee_type=fee_data.fee_type,
-            fee_description=fee_data.fee_description
+            fee_description=fee_data.fee_description,
         )
-        
         return self.financial_repo.create_fee(fee)
-    
+
+    # ------------------------------------------------------------------ #
+    # Generic / legacy
+    # ------------------------------------------------------------------ #
+
     def create_financial_item(
         self,
         payment: Optional[Payment_API] = None,
         deposit: Optional[Deposit_API] = None,
-        fee: Optional[AdditionalFee_API] = None
+        fee: Optional[AdditionalFee_API] = None,
     ) -> Dict[str, Any]:
-        """Create a financial item (generic method)"""
-        result = {}
-        
+        result: Dict[str, Any] = {}
         if payment:
-            result['payment'] = self.create_payment(payment)
+            result["payment"] = self.create_payment(payment)
         if deposit:
-            result['deposit'] = self.create_deposit(deposit)
+            result["deposit"] = self.create_deposit(deposit)
         if fee:
-            result['fee'] = self.create_fee(fee)
-        
+            result["fee"] = self.create_fee(fee)
         return result
-    
-    def get_payments(self, invoice_id: Optional[int] = None, offset: int = 0, limit: int = 100) -> List[Payment]:
-        """Get payments with filters"""
-        # Implementation depends on your repository
-        pass
-    
-    def get_deposits(self, cart_id: Optional[int] = None, offset: int = 0, limit: int = 100) :
-        """Get deposits with filters"""
-        # Implementation depends on your repository
-        pass
-    
+
+    # ------------------------------------------------------------------ #
+    # Reads
+    # ------------------------------------------------------------------ #
+
+    def get_payments(
+        self,
+        invoice_id: Optional[int] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> List[Payment]:
+        return self.financial_repo.get_payments(invoice_id, offset, limit) or []
+
+    def get_deposits(
+        self,
+        cart_id: Optional[int] = None,
+        offset: int = 0,
+        limit: int = 100,
+    ) -> List[Any]:
+        return self.financial_repo.get_deposits(cart_id, offset, limit) or []
+
     def get_financial_items(
         self,
         supplier_id: int = 0,
@@ -94,13 +226,11 @@ class FinancialService:
         deposit_id: int = 0,
         invoice_id: int = 0,
         offset: int = 0,
-        limit: int = 10
+        limit: int = 10,
     ) -> Dict[str, Any]:
-        """Get financial items with filters"""
-        # Implementation depends on your repository
         return {
-            "payments": [],
-            "deposits": [],
+            "payments": self.get_payments(invoice_id or None, offset, limit),
+            "deposits": self.get_deposits(cart_id or None, offset, limit),
             "invoices": [],
-            "receipts": []
+            "receipts": [],
         }

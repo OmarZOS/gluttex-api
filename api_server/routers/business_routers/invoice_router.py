@@ -143,7 +143,7 @@ def get_invoices(
 
 @invoice_router.get(
     "/{invoice_id}",
-    response_model=InvoiceResponse_API,
+    # response_model=InvoiceResponse_API,
     summary="Get invoice by ID",
     description="Get a specific invoice with all related data",
     responses={
@@ -218,31 +218,6 @@ def update_invoice(
     return invoice_service.update_invoice(invoice_id, update_data)
 
 
-@invoice_router.patch(
-    "/{invoice_id}/status",
-    response_model=Invoice_API,
-    summary="Update invoice status",
-    description="Update the status of an invoice",
-    responses={
-        200: {"description": "Invoice status updated successfully"},
-        400: {"model": ErrorResponseModel, "description": "Invalid status transition"},
-        404: {"model": ErrorResponseModel, "description": "Invoice not found"},
-        500: {"model": ErrorResponseModel, "description": "Internal server error"}
-    }
-)
-def update_invoice_status(
-    invoice_id: int = Path(..., gt=0, description="Invoice ID"),
-    new_status: InvoiceStatus = Query(..., description="New invoice status"),
-    invoice_service: InvoiceService = Depends(get_invoice_service)
-):
-    """
-    Update the status of an invoice.
-    
-    - **invoice_id**: ID of the invoice
-    - **new_status**: New status to set
-    """
-    logger.info(f"Updating invoice {invoice_id} status to: {new_status}")
-    return invoice_service.update_invoice_status(invoice_id, new_status)
 
 
 # ==================== DELETE ====================
