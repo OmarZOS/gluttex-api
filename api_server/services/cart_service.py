@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 
+from services.financial_service import FinancialService
 from repositories.service_repository import ServiceRepository
 from repositories.order_repository import OrderRepository
 from repositories.financial_repository import FinancialRepository
@@ -94,6 +95,7 @@ class CartService:
     def __init__(self):
         self.cart_repo = CartRepository()
         self.financial_repo = FinancialRepository()
+        self.financial_service = FinancialService()
         self.product_repo = ProductRepository()
         self.user_repo = UserRepository()
         self.supplier_repo = SupplierRepository()
@@ -415,6 +417,32 @@ class CartService:
             cart_data=cart_data,
         )
 
+        # Step 9: confirm the payment if the client declared an intent
+        logger.info("Step 9: Confirming reservations...")
+
+        ordered_payload = [
+            {
+                "id": item.id_ordered_item,
+                "quantity": item.ordered_quantity,
+            }
+            for item in created_items
+        ]
+
+        consumption_payload = [
+            {
+                "id": consumption.id_product_consumption,
+                "quantity": consumption.product_reserved_quantity,
+            }
+            for service in created_services
+            for consumption in service.product_consumption
+        ]
+
+        await self.inventory_client.bulk_confirm(
+            ordered_payload,
+            consumption_payload,
+        )
+
+
         # Attach invoice so the router can expose it
         financial_docs["invoice"] = invoice
 
@@ -514,7 +542,7 @@ class CartService:
             payment_notes=notes,
             payment_type="payment",
         )
-        return self.financial_repo.create_payment(payment)
+        return self.financial_service.create_payment(payment)
 
     def _apply_invoice_status(self, invoice: Invoice, new_status: str) -> None:
         """Update the invoice row in the DB."""
