@@ -23,10 +23,11 @@ class OrderStatus(str, Enum):
     REFUNDED = "REFUNDED"
 
 class PaymentStatus(str, Enum):
-    PENDING = "PENDING"
-    PAID = "PAID"
-    FAILED = "FAILED"
-    REFUNDED = "REFUNDED"
+    PENDING = "pending"
+    PAID = "paid"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+    COMPLETED = "completed"
 
 class CartStatus(str, Enum):
     PENDING = "PENDING"
@@ -925,7 +926,40 @@ class Cart_API(BaseModel):
     cart_notes: Optional[str] = Field(None, max_length=65535)  # TEXT field
     cart_due_date: Optional[date] = None
     cart_invoice: Optional[int] = Field(None, ge=1)
-    
+
+    # ── Payment intent fields ───────────────────────────────────────────
+    # These four are read by CartService._detect_payment_intent() to decide
+    # whether to create a payment inline during cart creation:
+    #
+    #   cart_deposit = true          → DEPOSIT intent (partial amount now)
+    #   cart_payment = true          → FULL intent    (entire total now)
+    #   cart_due_date set, no flags  → DUE_DATE intent (no payment now)
+    #   none of the above            → NONE          (no payment now)
+    #
+    # cart_paid_money is how much to charge *right now*:
+    #   - for FULL:   typically cart_total_amount
+    #   - for DEPOSIT: the deposit amount
+    cart_payment: Optional[bool] = Field(
+        default=False,
+        description="Client intent: charge the full amount now",
+    )
+    cart_deposit: Optional[bool] = Field(
+        default=False,
+        description="Client intent: charge a deposit now",
+    )
+    cart_paid_money: Optional[float] = Field(
+        default=0.0,
+        ge=0,
+        description="Amount being charged right now (0 if nothing is paid now)",
+    )
+    cart_payment_method: Optional[str] = Field(
+        default=None,
+        max_length=32,
+        description="cash | card | bank_transfer | mobile_money | wallet",
+    )
+
+    # ── Validators ──────────────────────────────────────────────────────
+
     @field_validator('cart_status')
     @classmethod
     def validate_cart_status(cls, v):
@@ -935,7 +969,7 @@ class Cart_API(BaseModel):
             if v not in valid_statuses:
                 raise ValueError(f"cart_status must be one of: {', '.join(valid_statuses)}")
         return v
-    
+
     @field_validator('cart_total_amount')
     @classmethod
     def validate_amount(cls, v):
@@ -943,6 +977,48 @@ class Cart_API(BaseModel):
         if v is not None and v < 0:
             raise ValueError("cart_total_amount cannot be negative")
         return v
+
+    # ── Cross-field validation ──────────────────────────────────────────
+
+    @model_validator(mode="after")
+    def validate_payment_intent(self):
+        """
+        Enforce the intent contract:
+          - cart_payment and cart_deposit are mutually exclusive
+          - if either intent flag is set, cart_paid_money must be > 0
+            and cart_payment_method must be provided
+          - if neither intent flag is set, cart_paid_money should be 0
+        """
+        wants_full = bool(self.cart_payment)
+        wants_deposit = bool(self.cart_deposit)
+
+        if wants_full and wants_deposit:
+            raise ValueError(
+                "cart_payment and cart_deposit are mutually exclusive"
+            )
+
+        if wants_full or wants_deposit:
+            if not self.cart_paid_money or self.cart_paid_money <= 0:
+                raise ValueError(
+                    "cart_paid_money must be > 0 when cart_payment or "
+                    "cart_deposit is set"
+                )
+            if not self.cart_payment_method:
+                raise ValueError(
+                    "cart_payment_method is required when cart_payment or "
+                    "cart_deposit is set"
+                )
+
+        if not wants_full and not wants_deposit:
+            # A due date can coexist with no payment (DUE_DATE intent) but
+            # paid-money must be zero because nothing is being charged now.
+            if self.cart_paid_money and self.cart_paid_money > 0:
+                raise ValueError(
+                    "cart_paid_money must be 0 when neither cart_payment "
+                    "nor cart_deposit is set"
+                )
+
+        return self
     
 
 class Payment_API(BaseModel):

@@ -121,6 +121,7 @@ class InvoiceRepository:
             conditions[Invoice.invoice_status] = status
         if type_:
             conditions[Invoice.invoice_type] = type_
+
         
         # For date filters, we need to use extra_filters
         extra_filters = []

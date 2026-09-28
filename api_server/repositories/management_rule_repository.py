@@ -174,6 +174,11 @@ class ManagementRuleRepository:
         """Update an existing management inv"""
         from features.insertion import update_record_in_api
         return update_record_in_api(inv)
+
+    def delete_invitation(self, inv: RoleInvitation) -> bool:
+        """Delete an invitation"""
+        from features.insertion import delete_record_from_api
+        return delete_record_from_api(inv)  
     
     def delete(self, rule: ManagementRule) -> bool:
         """Delete a management rule"""

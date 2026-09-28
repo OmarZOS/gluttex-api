@@ -41,7 +41,7 @@ class ProductRepository:
             return []
         
         # Build the condition for IN clause
-        condition = {Product.id_product: product_ids}  # SQLAlchemy handles list as IN clause
+        condition = [Product.id_product.in_(product_ids)]  # SQLAlchemy handles list as IN clause
         
         if eager_load:
             records = storage_broker.get(

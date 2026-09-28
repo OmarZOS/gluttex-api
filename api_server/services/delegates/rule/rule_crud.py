@@ -49,6 +49,7 @@ class RuleCrud:
             RuleNotFoundException: If rule not found
         """
         rule = self.rule_repo.get_by_id(rule_id)
+            
         if not rule:
             logger.warning(f"Rule not found with ID: {rule_id}")
             raise RuleNotFoundException(rule_id=rule_id)
@@ -190,6 +191,9 @@ class RuleCrud:
         logger.info(f"Deleting rule with ID: {rule_id} (force={force_delete})")
         
         rule = self.get_by_id(rule_id)
+
+        for inv in rule.role_invitation:
+            self.rule_repo.delete_invitation(inv)
         
         success = self.rule_repo.delete(rule)
         

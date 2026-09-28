@@ -238,16 +238,35 @@ def get_records(
 
         # Apply conditions if specified
         if conditions:
-            for attr, value in conditions.items():
+            # Support both dict-based (legacy) and list-of-expressions (SQLAlchemy-native)
+            if isinstance(conditions, dict):
+                items = conditions.items()
+            elif isinstance(conditions, (list, tuple)):
+                # If it's a list of SQLAlchemy expressions, apply directly.
+                for cond in conditions:
+                    if cond is None:
+                        continue
+                    query = query.filter(cond)
+                items = ()
+            else:
+                # Single SQLAlchemy expression
+                query = query.filter(conditions)
+                items = ()
+
+            for attr, value in items:
                 if hasattr(attr, 'key'):
-                    query = query.filter(attr == value)
+                    column = attr
                 else:
                     parts = str(attr).split('.')
                     if len(parts) == 2:
-                        model_attr = getattr(model_class, parts[1])
-                        query = query.filter(model_attr == value)
+                        column = getattr(model_class, parts[1])
                     else:
-                        query = query.filter(getattr(model_class, attr) == value)
+                        column = getattr(model_class, attr)
+
+                if isinstance(value, (list, tuple, set)):
+                    query = query.filter(column.in_(list(value)))
+                else:
+                    query = query.filter(column == value)
 
         # Build eager loading options
         eager_options = []
