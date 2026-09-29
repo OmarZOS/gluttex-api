@@ -1,8 +1,15 @@
 """
-Cart router for handling shopping cart operations.
+Cart router.
+
+Routing rules:
+  - Endpoints that cross a process boundary (inventory silo, finance
+    service) depend on CartWorkflow.
+  - Endpoints that only touch local entities depend on CartService.
+  - Router never instantiates either directly — both come from dependency
+    providers, so tests can override them.
 """
 
-from fastapi import APIRouter, Depends, Query, status, Body
+from fastapi import APIRouter, Depends, Query, status, Body, HTTPException
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, Field, model_validator
@@ -29,6 +36,7 @@ from core.response_models import (
     get_crud_error_responses,
 )
 from services.cart_service import CartService
+from workflows.cart_workflow import CartWorkflow
 
 logger = logging.getLogger(__name__)
 
@@ -39,8 +47,13 @@ cart_router = APIRouter()
 
 
 def get_cart_service() -> CartService:
-    """Dependency to get CartService instance."""
+    """Dependency: local reads/writes only."""
     return CartService()
+
+
+def get_cart_workflow() -> CartWorkflow:
+    """Dependency: orchestration (inventory + finance)."""
+    return CartWorkflow()
 
 
 # ==================== Request/Response Models ====================
@@ -120,12 +133,7 @@ class CartSummaryResponse(BaseModel):
 def _build_financial_documents_payload(
     financial_docs: Optional[Dict[str, Any]],
 ) -> Dict[str, bool]:
-    """
-    Turn the financial documents dict from the service into a stable
-    boolean map the client can rely on.
-
-    The service may omit keys entirely when nothing was created.
-    """
+    """Boolean map the client can rely on regardless of what was created."""
     if not financial_docs:
         return {
             "has_invoice": False,
@@ -188,7 +196,7 @@ def _serialize_ordered_service(service) -> Dict[str, Any]:
     }
 
 
-# ==================== Cart Listing ====================
+# ==================== Cart Listing (service only) ====================
 
 
 @cart_router.get(
@@ -239,7 +247,7 @@ def get_carts(
     }
 
 
-# ==================== Single Cart Operations ====================
+# ==================== Single Cart Reads (service only) ====================
 
 
 @cart_router.get(
@@ -285,6 +293,9 @@ def get_cart(
         raise CartNotFoundException(cart_id=cart_id, details={"error": str(e)})
 
 
+# ==================== Cart Creation (workflow) ====================
+
+
 @cart_router.post(
     "/carts",
     status_code=status.HTTP_201_CREATED,
@@ -294,7 +305,9 @@ def get_cart(
         "capture driven by the `cart` payload fields:\n"
         "- `cart_payment` / `cart_deposit` → intent\n"
         "- `cart_paid_money` → amount charged now\n"
-        "- `cart_payment_method` → 'cash' auto-completes; others stay pending"
+        "- `cart_payment_method` → 'cash' auto-completes; others stay pending\n\n"
+        "Orchestrates inventory availability check, local persistence, "
+        "inventory reservation, and inventory confirmation."
     ),
     responses={
         201: {"description": "Cart created successfully"},
@@ -308,7 +321,7 @@ def get_cart(
 async def create_cart(
     request: CartCreateRequest = Body(...),
     user_id: int = Depends(get_current_user_id),
-    cart_service: CartService = Depends(get_cart_service),
+    workflow: CartWorkflow = Depends(get_cart_workflow),
 ):
     """
     Create a new cart.
@@ -330,7 +343,7 @@ async def create_cart(
     )
 
     try:
-        financial_docs, created_cart = await cart_service.create_cart(
+        financial_docs, created_cart = await workflow.create_cart(
             ordered_items=request.ordered_items,
             ordered_services=request.ordered_services,
             cart_data=request.cart,
@@ -383,10 +396,145 @@ async def create_cart(
         )
 
 
+# ==================== Payment / Inventory (workflow) ====================
+
+
+@cart_router.post(
+    "/carts/{cart_id}/pay",
+    summary="Process payment for a cart",
+    description=(
+        "Creates and confirms a payment for the cart's invoice, marks the "
+        "invoice paid (or partially paid), and advances the local state "
+        "via InvoicePolicy. Idempotent on already-paid invoices."
+    ),
+    responses={
+        200: {"description": "Payment processed"},
+        404: {"model": ErrorResponseModel},
+        **get_crud_error_responses(include_404=False),
+    },
+)
+async def process_cart_payment(
+    cart_id: int,
+    payment_method: str = Query("card", description="Payment method"),
+    captured_amount: Optional[float] = Query(
+        None, description="Amount captured (omit to assert full payment)"
+    ),
+    user_id: int = Depends(get_current_user_id),
+    workflow: CartWorkflow = Depends(get_cart_workflow),
+):
+    """Phase 2 of the cart workflow."""
+    logger.info(f"Processing payment for cart {cart_id}")
+
+    try:
+        return await workflow.process_payment(
+            cart_id=cart_id,
+            payment_method=payment_method,
+            captured_amount=captured_amount,
+        )
+    except CartNotFoundException:
+        raise
+    except ValueError as e:
+        # Policy denial surfaces here
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"Failed to process payment for cart {cart_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Payment processing failed: {e}",
+        )
+
+
+@cart_router.post(
+    "/carts/{cart_id}/confirm-inventory",
+    summary="Confirm inventory for a cart",
+    description=(
+        "Converts reserved inventory into a real deduction. Call after "
+        "payment succeeds. Idempotent."
+    ),
+    responses={
+        200: {"description": "Inventory confirmed"},
+        404: {"model": ErrorResponseModel},
+        **get_crud_error_responses(include_404=False),
+    },
+)
+async def confirm_cart_inventory(
+    cart_id: int,
+    user_id: int = Depends(get_current_user_id),
+    workflow: CartWorkflow = Depends(get_cart_workflow),
+):
+    """Phase 3 of the cart workflow."""
+    logger.info(f"Confirming inventory for cart {cart_id}")
+
+    try:
+        return await workflow.confirm_inventory_for_cart(cart_id)
+    except CartNotFoundException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to confirm inventory for cart {cart_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Inventory confirmation failed: {e}",
+        )
+
+
+@cart_router.post(
+    "/carts/{cart_id}/finalize",
+    summary="Finalize a cart (payment + inventory)",
+    description=(
+        "Convenience endpoint that runs payment and inventory confirmation "
+        "back-to-back. Use when the caller wants the synchronous behavior."
+    ),
+    responses={
+        200: {"description": "Cart finalized"},
+        404: {"model": ErrorResponseModel},
+        **get_crud_error_responses(include_404=False),
+    },
+)
+async def finalize_cart(
+    cart_id: int,
+    payment_method: str = Query("card", description="Payment method"),
+    captured_amount: Optional[float] = Query(
+        None, description="Amount captured (omit to assert full payment)"
+    ),
+    user_id: int = Depends(get_current_user_id),
+    workflow: CartWorkflow = Depends(get_cart_workflow),
+):
+    logger.info(f"Finalizing cart {cart_id}")
+
+    try:
+        return await workflow.finalize_cart(
+            cart_id=cart_id,
+            payment_method=payment_method,
+            captured_amount=captured_amount,
+        )
+    except CartNotFoundException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except Exception as e:
+        logger.error(f"Failed to finalize cart {cart_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Finalization failed: {e}",
+        )
+
+
+# ==================== Cart Status (workflow, policy-gated) ====================
+
+
 @cart_router.patch(
     "/carts/{cart_id}/status",
     summary="Update cart status",
-    description="Update the status of a cart.",
+    description=(
+        "Update the status of a cart. The transition is validated by "
+        "CartPolicy — illegal transitions return 400."
+    ),
     responses={
         200: {"description": "Cart status updated successfully"},
         400: {"model": ErrorResponseModel},
@@ -394,7 +542,7 @@ async def create_cart(
         **get_crud_error_responses(include_404=False),
     },
 )
-def update_cart_status(
+async def update_cart_status(
     cart_id: int,
     status: str = Query(
         ...,
@@ -404,9 +552,13 @@ def update_cart_status(
         ),
     ),
     user_id: int = Depends(get_current_user_id),
+    workflow: CartWorkflow = Depends(get_cart_workflow),
     cart_service: CartService = Depends(get_cart_service),
 ):
-    """Update cart status."""
+    """
+    Update cart status via the policy-gated transitions exposed by the
+    workflow. Only the transitions the policy allows are accepted.
+    """
     logger.info(f"Updating status for cart {cart_id} to '{status}'")
 
     valid_statuses = [
@@ -419,7 +571,8 @@ def update_cart_status(
         "abandoned",
     ]
 
-    if status.lower() not in valid_statuses:
+    normalized = status.lower()
+    if normalized not in valid_statuses:
         raise CartInvalidStatusException(
             cart_id=cart_id,
             requested_status=status,
@@ -428,25 +581,45 @@ def update_cart_status(
 
     try:
         existing_cart = cart_service.get_cart_by_id(cart_id)
-        if not existing_cart:
-            raise CartNotFoundException(cart_id=cart_id)
+        previous_status = existing_cart.cart_status
 
-        updated_cart = cart_service.update_cart_status(cart_id, status.lower())
+        # Dispatch to the correct workflow transition method. Each one
+        # applies the policy gate and persists the new status.
+        dispatch = {
+            "pending":    lambda: workflow.mark_cart_pending(cart_id),
+            "checkout":   lambda: workflow.mark_cart_checkout(cart_id),
+            "completed":  lambda: workflow.mark_cart_completed(cart_id),
+            "partial":    lambda: workflow.mark_cart_partial(cart_id),
+            "abandoned":  lambda: workflow.mark_cart_abandoned(cart_id),
+            "open":       lambda: workflow.reopen_cart(cart_id),
+            "canceled":   lambda: workflow.cancel_cart(cart_id),
+        }
 
-        logger.info(f"Cart {cart_id} status updated to '{status}'")
+        result = await dispatch[normalized]()
+
+        logger.info(f"Cart {cart_id} status updated to '{normalized}'")
         return {
             "success": True,
-            "message": f"Cart status updated to '{status}'",
+            "message": f"Cart status updated to '{normalized}'",
             "data": {
                 "cart_id": cart_id,
-                "new_status": status.lower(),
-                "previous_status": existing_cart.cart_status,
+                "new_status": result.get("new_status", normalized),
+                "previous_status": result.get("previous_status", previous_status),
+                "side_effects": result.get("side_effects", []),
                 "updated_at": datetime.now().isoformat(),
             },
         }
 
-    except (CartNotFoundException, CartInvalidStatusException, CartUpdateFailedException):
+    except CartNotFoundException:
         raise
+    except CartInvalidStatusException:
+        raise
+    except ValueError as e:
+        # Policy denial
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     except Exception as e:
         logger.error(f"Failed to update status for cart {cart_id}: {e}")
         raise CartUpdateFailedException(
@@ -456,11 +629,17 @@ def update_cart_status(
         )
 
 
+# ==================== Cart Delete (workflow) ====================
+
+
 @cart_router.delete(
     "/carts/{cart_id}",
     status_code=status.HTTP_200_OK,
     summary="Delete a cart",
-    description="Deletes a cart and all its associated items and services.",
+    description=(
+        "Deletes a cart, releasing reserved inventory remotely first, "
+        "then removing local rows."
+    ),
     responses={
         200: {"description": "Cart deleted successfully"},
         404: {"model": ErrorResponseModel},
@@ -473,6 +652,7 @@ async def delete_cart(
         False, description="Force delete even if cart has items or services"
     ),
     user_id: int = Depends(get_current_user_id),
+    workflow: CartWorkflow = Depends(get_cart_workflow),
     cart_service: CartService = Depends(get_cart_service),
 ):
     """Delete a cart."""
@@ -501,7 +681,7 @@ async def delete_cart(
                 ),
             )
 
-        success = await cart_service.delete_cart(cart_id)
+        success = await workflow.delete_cart(cart_id)
         if not success:
             raise CartDeleteFailedException(
                 cart_id=cart_id, error="Service returned False"
@@ -521,7 +701,7 @@ async def delete_cart(
         raise CartDeleteFailedException(cart_id=cart_id, error=str(e))
 
 
-# ==================== Cart Item Operations ====================
+# ==================== Cart Item / Service Reads (service only) ====================
 
 
 @cart_router.get(
@@ -596,7 +776,7 @@ def get_cart_services(
         )
 
 
-# ==================== Cart Summary ====================
+# ==================== Cart Summary (service only) ====================
 
 
 @cart_router.get(

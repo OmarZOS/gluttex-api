@@ -1,7 +1,21 @@
 #!/usr/bin/env python3
 """
-Order Router Test Runner - Optimized for Speed with Bulk Operations
-Uses existing test_context.json data for fast order creation.
+Order Router Test Runner — updated for the three-phase workflow.
+
+Lifecycle endpoints now in play:
+
+  POST /api/v1/business/orders                     create   → PENDING
+  POST /api/v1/business/orders/{order_id}/pay      pay      → PROCESSING
+  POST /api/v1/business/orders/{order_id}/confirm-inventory
+  POST /api/v1/business/orders/{order_id}/finalize pay + confirm (convenience)
+
+The runner drives each order through one of four flows, chosen per order:
+
+  A. create only                — leaves the order in PENDING
+  B. create + pay               — advances to PROCESSING, invoice paid
+  C. create + pay + confirm     — full pipeline
+  D. create + finalize          — same as C, single call
+
 Run with: python test_order_runner.py
 """
 
@@ -9,9 +23,8 @@ import asyncio
 import httpx
 import json
 import sys
-import uuid
 import random
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -172,35 +185,48 @@ def extract_validation_error(body_text: str) -> str:
 
 
 # ============================================================================
-# ENUMS — MIXED CASING, per api_models.py definitions
+# ENUMS — casings match the API
 # ============================================================================
 #
-# api_models.py declares two different enums with DIFFERENT casing rules:
+# The create endpoint no longer accepts arbitrary placed_order_state values
+# from the caller: every new order starts in PENDING. Send it explicitly
+# anyway so the payload shape matches the schema, but do not attempt to
+# bypass the workflow by asking for SHIPPED.
 #
-#   class OrderStatus(str, Enum):        # UPPERCASE values
-#       PENDING = "PENDING"
-#       PROCESSING = "PROCESSING"
-#       ...
-#
-#   class PaymentStatus(str, Enum):      # lowercase values
-#       PENDING = "pending"
-#       PAID = "paid"
-#       ...
-#
-# The runner must match each enum's actual casing.
+# PaymentStatus is lowercase; the order payload no longer carries it.
 
-# OrderStatus: UPPERCASE
-ORDER_STATES = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"]
-
-# PaymentStatus: lowercase
-PAYMENT_STATUSES = ["pending", "paid", "failed", "refunded", "completed"]
-
-# Payment methods accepted by the router query param
+ORDER_STATE_ON_CREATE = "PENDING"          # OrderStatus uppercase
 PAYMENT_METHODS = ["cash", "card", "bank_transfer"]
 
 
 # ============================================================================
-# OPTIMIZED TEST RUNNER
+# FLOW VARIANTS
+# ============================================================================
+
+FLOW_CREATE_ONLY = "create_only"
+FLOW_CREATE_AND_PAY = "create_and_pay"
+FLOW_CREATE_PAY_CONFIRM = "create_pay_confirm"
+FLOW_CREATE_AND_FINALIZE = "create_and_finalize"
+
+ALL_FLOWS = [
+    FLOW_CREATE_ONLY,
+    FLOW_CREATE_AND_PAY,
+    FLOW_CREATE_PAY_CONFIRM,
+    FLOW_CREATE_AND_FINALIZE,
+]
+
+# Per-order weights: create-only is the cheapest, finalize is the heaviest.
+# Adjust if you want a different mix under load.
+FLOW_WEIGHTS = {
+    FLOW_CREATE_ONLY: 0.25,
+    FLOW_CREATE_AND_PAY: 0.35,
+    FLOW_CREATE_PAY_CONFIRM: 0.20,
+    FLOW_CREATE_AND_FINALIZE: 0.20,
+}
+
+
+# ============================================================================
+# RUNNER
 # ============================================================================
 
 class OptimizedOrderTestRunner:
@@ -320,7 +346,206 @@ class OptimizedOrderTestRunner:
         print(f"   🔐 Re-authenticating {user.username} ({reason})")
         return await self._login_user(user)
 
-    # ==================== ORDER CREATION ====================
+    # ==================== ORDER LIFECYCLE STEPS ====================
+
+    async def _create_one_order(
+        self,
+        user: TestUser,
+        headers: Dict[str, str],
+        product_ids: List[int],
+        payment_method: str,
+        include_delivery: bool,
+    ) -> Tuple[Optional[int], Optional[int], Optional[str]]:
+        """
+        POST /business/orders.
+        Returns (order_id, invoice_id, error_string).
+        """
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+        num_products = random.randint(1, min(3, len(product_ids)))
+        selected_products = random.sample(product_ids, num_products)
+
+        ordered_items = []
+        for product_id in selected_products:
+            product = self._get_cached_product(product_id)
+            if not product:
+                continue
+            quantity = random.randint(1, 3)
+            ordered_items.append({
+                "id_ordered_item": 0,
+                "ordered_product_id": product_id,
+                "order_ref": 0,
+                "ordered_quantity": quantity,
+                "unit_price": product.get('product_price', 50.0),
+                "applied_vat": round(random.uniform(0, 19), 2),
+                "product_discount": round(random.uniform(0, 10), 2),
+            })
+
+        if not ordered_items:
+            return None, None, "no items assembled"
+
+        # The workflow forces PENDING on creation. Send it explicitly so
+        # the payload matches the schema, but do not attempt to inject a
+        # later state — the policy will reject it.
+        order_data = {
+            "id_placed_order": 0,
+            "ordered_timestamp": now,
+            "placed_order_last_mod": now,
+            "placed_order_state": ORDER_STATE_ON_CREATE,
+            "payment_method": payment_method,
+            "order_discount": round(random.uniform(0, 10), 2),
+            "ordering_user_id": user.id,
+            "payment_ref": "",
+        }
+
+        request_data: Dict[str, Any] = {
+            "ordered_items": ordered_items,
+            "submitted_order": order_data,
+        }
+
+        if include_delivery and random.random() > 0.3:
+            request_data["delivery_info"] = self._generate_delivery_info()
+
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/business/orders",
+                params={"payment_method": payment_method},
+                json=request_data,
+                headers=headers,
+            )
+        except Exception as e:
+            return None, None, f"network: {e}"
+
+        if response.status_code != 201:
+            return (
+                None,
+                None,
+                f"status={response.status_code} → "
+                f"{extract_validation_error(response.text)}",
+            )
+
+        try:
+            payload = response.json()
+        except Exception as e:
+            return None, None, f"bad json: {e}"
+
+        data = unwrap(payload)
+        order_id = self._extract_order_id(data)
+        if not order_id or order_id <= 0:
+            return None, None, "no order_id in response"
+
+        invoice_id = self._extract_invoice_id(data)
+
+        self.context.created_orders.append(order_id)
+        if invoice_id:
+            self.context.created_invoices.append(invoice_id)
+
+        return order_id, invoice_id, None
+
+    async def _pay_order(
+        self,
+        order_id: int,
+        payment_method: str,
+        headers: Dict[str, str],
+    ) -> Optional[str]:
+        """
+        POST /business/orders/{order_id}/pay.
+        Returns None on success, an error string otherwise.
+        """
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/business/orders/{order_id}/pay",
+                params={"payment_method": payment_method},
+                headers=headers,
+            )
+        except Exception as e:
+            return f"network: {e}"
+
+        if response.status_code != 200:
+            return (
+                f"status={response.status_code} → "
+                f"{extract_validation_error(response.text)}"
+            )
+
+        try:
+            data = unwrap(response.json())
+        except Exception:
+            data = {}
+
+        payment_id = data.get("payment_id")
+        if payment_id:
+            self.context.created_payments.append(int(payment_id))
+        return None
+
+    async def _confirm_inventory(
+        self,
+        order_id: int,
+        headers: Dict[str, str],
+    ) -> Optional[str]:
+        """
+        POST /business/orders/{order_id}/confirm-inventory.
+        Returns None on success, an error string otherwise.
+        """
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/business/orders/{order_id}/confirm-inventory",
+                headers=headers,
+            )
+        except Exception as e:
+            return f"network: {e}"
+
+        if response.status_code != 200:
+            return (
+                f"status={response.status_code} → "
+                f"{extract_validation_error(response.text)}"
+            )
+        return None
+
+    async def _finalize_order(
+        self,
+        order_id: int,
+        payment_method: str,
+        headers: Dict[str, str],
+    ) -> Optional[str]:
+        """
+        POST /business/orders/{order_id}/finalize (pay + confirm in one call).
+        Returns None on success, an error string otherwise.
+        """
+        try:
+            response = await self.client.post(
+                f"{self.base_url}/api/v1/business/orders/{order_id}/finalize",
+                params={"payment_method": payment_method},
+                headers=headers,
+            )
+        except Exception as e:
+            return f"network: {e}"
+
+        if response.status_code != 200:
+            return (
+                f"status={response.status_code} → "
+                f"{extract_validation_error(response.text)}"
+            )
+
+        try:
+            data = unwrap(response.json())
+        except Exception:
+            data = {}
+
+        payment_id = data.get("payment_id")
+        if payment_id:
+            self.context.created_payments.append(int(payment_id))
+        return None
+
+    # ==================== BULK CREATION ====================
+
+    def _pick_flow(self) -> str:
+        r = random.random()
+        cumulative = 0.0
+        for flow, weight in FLOW_WEIGHTS.items():
+            cumulative += weight
+            if r <= cumulative:
+                return flow
+        return FLOW_CREATE_ONLY
 
     async def create_orders_bulk(
         self,
@@ -328,123 +553,144 @@ class OptimizedOrderTestRunner:
         product_ids: List[int],
         num_orders: int = 20,
         include_delivery: bool = True,
-    ) -> List[int]:
+    ) -> Dict[str, List[int]]:
+        """
+        Create `num_orders` orders for `user`, driving each through a
+        randomly chosen lifecycle flow.
+
+        Returns a dict with counts per flow:
+            {
+              'created':          [order_id, ...],
+              'paid':             [order_id, ...],
+              'confirmed':        [order_id, ...],
+              'finalized':        [order_id, ...],
+              'failed':           [(order_id?, reason), ...],
+            }
+        """
         headers = self.get_auth_headers(user)
         if not headers:
             print(f"   ❌ No auth token for user {user.id}")
-            return []
+            return {'created': [], 'paid': [], 'confirmed': [], 'finalized': [], 'failed': []}
 
-        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        order_tasks = []
-
-        for i in range(num_orders):
-            num_products = random.randint(1, min(3, len(product_ids)))
-            selected_products = random.sample(product_ids, num_products)
-
-            ordered_items = []
-            for product_id in selected_products:
-                product = self._get_cached_product(product_id)
-                if product:
-                    quantity = random.randint(1, 3)
-                    ordered_items.append({
-                        "id_ordered_item": 0,
-                        "ordered_product_id": product_id,
-                        "order_ref": 0,
-                        "ordered_quantity": quantity,
-                        "unit_price": product.get('product_price', 50.0),
-                        "applied_vat": round(random.uniform(0, 19), 2),
-                        "product_discount": round(random.uniform(0, 10), 2),
-                    })
-
-            if not ordered_items:
-                continue
-
-            payment_method = random.choice(PAYMENT_METHODS)
-
-            # Enum casings match api_models.py exactly:
-            #   placed_order_state → OrderStatus     → UPPERCASE
-            #   payment_status     → PaymentStatus   → lowercase
-            order_data = {
-                "id_placed_order": 0,
-                "ordered_timestamp": now,
-                "placed_order_last_mod": now,
-                "placed_order_state": random.choice(ORDER_STATES),
-                "payment_status": random.choice(PAYMENT_STATUSES),
-                "payment_method": payment_method,
-                "order_discount": round(random.uniform(0, 10), 2),
-                "ordering_user_id": user.id,
-                "payment_ref": "",
-            }
-
-            request_data = {
-                "ordered_items": ordered_items,
-                "submitted_order": order_data,
-            }
-
-            if include_delivery and random.random() > 0.3:
-                request_data["delivery_info"] = self._generate_delivery_info()
-
-            order_tasks.append({
-                "request_data": request_data,
-                "payment_method": payment_method,
-                "order_index": i,
-            })
-
-        print(f"   🚀 Creating {len(order_tasks)} orders concurrently...")
+        print(f"   🚀 Creating {num_orders} orders concurrently...")
         start_time = time.time()
 
-        tasks = [
-            self.client.post(
-                f"{self.base_url}/api/v1/business/orders",
-                params={"payment_method": t["payment_method"]},
-                json=t["request_data"],
-                headers=headers,
-            )
-            for t in order_tasks
-        ]
+        async def run_one(index: int) -> Dict[str, Any]:
+            flow = self._pick_flow()
+            payment_method = random.choice(PAYMENT_METHODS)
 
-        responses = await asyncio.gather(*tasks, return_exceptions=True)
+            order_id, invoice_id, err = await self._create_one_order(
+                user=user,
+                headers=headers,
+                product_ids=product_ids,
+                payment_method=payment_method,
+                include_delivery=include_delivery,
+            )
+            if err or not order_id:
+                return {'index': index, 'flow': flow, 'error': err or 'no order_id'}
+
+            result = {
+                'index': index,
+                'flow': flow,
+                'order_id': order_id,
+                'invoice_id': invoice_id,
+                'paid': False,
+                'confirmed': False,
+                'finalized': False,
+                'error': None,
+            }
+
+            if flow == FLOW_CREATE_ONLY:
+                return result
+
+            if flow == FLOW_CREATE_AND_PAY:
+                err = await self._pay_order(order_id, payment_method, headers)
+                if err:
+                    result['error'] = f"pay failed: {err}"
+                    return result
+                result['paid'] = True
+                return result
+
+            if flow == FLOW_CREATE_PAY_CONFIRM:
+                err = await self._pay_order(order_id, payment_method, headers)
+                if err:
+                    result['error'] = f"pay failed: {err}"
+                    return result
+                result['paid'] = True
+
+                err = await self._confirm_inventory(order_id, headers)
+                if err:
+                    result['error'] = f"confirm failed: {err}"
+                    return result
+                result['confirmed'] = True
+                return result
+
+            if flow == FLOW_CREATE_AND_FINALIZE:
+                err = await self._finalize_order(order_id, payment_method, headers)
+                if err:
+                    result['error'] = f"finalize failed: {err}"
+                    return result
+                result['finalized'] = True
+                result['paid'] = True
+                result['confirmed'] = True
+                return result
+
+            return result
+
+        tasks = [run_one(i) for i in range(num_orders)]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
         elapsed = time.time() - start_time
         print(f"   ⏱️ Completed in {elapsed:.2f}s ({len(tasks)} orders)")
 
-        order_ids: List[int] = []
+        summary = {
+            'created': [],
+            'paid': [],
+            'confirmed': [],
+            'finalized': [],
+            'failed': [],
+        }
         failures: List[str] = []
 
-        for i, response in enumerate(responses):
-            if isinstance(response, Exception):
-                failures.append(f"order {i}: raised {response}")
+        for r in results:
+            if isinstance(r, Exception):
+                summary['failed'].append((None, f"raised: {r}"))
+                failures.append(f"raised: {r}")
                 continue
 
-            if response.status_code == 201:
-                try:
-                    payload = response.json()
-                    data = unwrap(payload)
-                    order_id = self._extract_order_id(data)
-                    if order_id and order_id > 0:
-                        order_ids.append(order_id)
-                        self.context.created_orders.append(order_id)
-                    else:
-                        failures.append(f"order {i}: no id in response")
-                except Exception as e:
-                    failures.append(f"order {i}: parsing failed: {e}")
-            else:
-                if len(failures) < 3:
-                    failures.append(
-                        f"order {i}: status={response.status_code} "
-                        f"→ {extract_validation_error(response.text)}"
-                    )
-                else:
-                    failures.append(f"order {i}: status={response.status_code}")
+            order_id = r.get('order_id')
+            if r.get('error') and not order_id:
+                summary['failed'].append((None, r['error']))
+                failures.append(f"order {r['index']}: {r['error']}")
+                continue
 
-        print(f"   ✅ Created {len(order_ids)} orders successfully")
+            if order_id:
+                summary['created'].append(order_id)
+            if r.get('paid'):
+                summary['paid'].append(order_id)
+            if r.get('confirmed'):
+                summary['confirmed'].append(order_id)
+            if r.get('finalized'):
+                summary['finalized'].append(order_id)
+            if r.get('error'):
+                summary['failed'].append((order_id, r['error']))
+                failures.append(f"order {order_id} (flow={r['flow']}): {r['error']}")
+
+        print(
+            f"   ✅ created={len(summary['created'])} "
+            f"paid={len(summary['paid'])} "
+            f"confirmed={len(summary['confirmed'])} "
+            f"finalized={len(summary['finalized'])} "
+            f"failed={len(summary['failed'])}"
+        )
         if failures:
-            print(f"   ❌ {len(failures)} failed:")
+            print("   ❌ Sample failures:")
             for f in failures[:5]:
                 print(f"      - {f}")
             if len(failures) > 5:
                 print(f"      … and {len(failures) - 5} more")
 
-        return order_ids
+        return summary
 
     def _get_cached_product(self, product_id: int) -> Optional[Dict]:
         if product_id in self._product_cache:
@@ -494,6 +740,27 @@ class OptimizedOrderTestRunner:
                         pass
         return 0
 
+    def _extract_invoice_id(self, response_data: Dict[str, Any]) -> Optional[int]:
+        for key in ("invoice_id", "id_invoice"):
+            if key in response_data:
+                try:
+                    v = int(response_data[key])
+                    if v > 0:
+                        return v
+                except (TypeError, ValueError):
+                    pass
+        invoice = response_data.get("invoice")
+        if isinstance(invoice, dict):
+            for key in ("invoice_id", "id_invoice", "id"):
+                if key in invoice:
+                    try:
+                        v = int(invoice[key])
+                        if v > 0:
+                            return v
+                    except (TypeError, ValueError):
+                        pass
+        return None
+
     # ==================== MAIN RUNNER ====================
 
     async def run_tests(
@@ -503,7 +770,7 @@ class OptimizedOrderTestRunner:
         max_users: int = 5,
     ):
         print("\n" + "=" * 70)
-        print("🚀 OPTIMIZED ORDER TEST RUNNER - BULK CREATION")
+        print("🚀 OPTIMIZED ORDER TEST RUNNER — three-phase workflow")
         print("=" * 70)
         print(f"📍 Base URL: {self.base_url}")
         print(f"📦 Orders per user: {orders_per_user}")
@@ -545,7 +812,14 @@ class OptimizedOrderTestRunner:
         product_ids = self.context.created_products
         print(f"📦 Using {len(product_ids)} products for orders")
 
-        total_orders = 0
+        aggregate = {
+            'created': [],
+            'paid': [],
+            'confirmed': [],
+            'finalized': [],
+            'failed': [],
+        }
+
         start_time = time.time()
 
         for i, user in enumerate(authenticated_users):
@@ -556,14 +830,14 @@ class OptimizedOrderTestRunner:
                     print(f"   ⏭️ Skipping user {user.username} — auth failed")
                     continue
 
-            order_ids = await self.create_orders_bulk(
+            per_user = await self.create_orders_bulk(
                 user,
                 product_ids,
                 num_orders=orders_per_user,
                 include_delivery=True,
             )
-            total_orders += len(order_ids)
-            print(f"   📋 Created {len(order_ids)} orders for user {user.id}")
+            for key in aggregate:
+                aggregate[key].extend(per_user.get(key, []))
 
             await asyncio.sleep(0.2)
 
@@ -572,14 +846,17 @@ class OptimizedOrderTestRunner:
         print("\n" + "=" * 70)
         print("📊 SUMMARY")
         print("=" * 70)
-        print(f"✅ Created {total_orders} orders in {elapsed:.2f}s")
+        print(f"✅ Created:   {len(aggregate['created'])}")
+        print(f"💳 Paid:      {len(aggregate['paid'])}")
+        print(f"📦 Confirmed: {len(aggregate['confirmed'])}")
+        print(f"⚡ Finalized: {len(aggregate['finalized'])}")
+        print(f"❌ Failed:    {len(aggregate['failed'])}")
         if elapsed > 0:
-            print(f"📈 Rate: {total_orders / elapsed:.1f} orders/second")
-        print(f"👤 Used {len(authenticated_users)} users")
-        print(f"📦 Products used: {len(product_ids)}")
+            print(f"⏱️ Total time: {elapsed:.2f}s")
+            print(f"📈 Rate: {len(aggregate['created']) / elapsed:.1f} orders/second")
 
-        if self.context.created_orders:
-            unique_orders = list(set(self.context.created_orders))
+        if aggregate['created']:
+            unique_orders = list(dict.fromkeys(aggregate['created']))
             preview = ', '.join(map(str, unique_orders[:10]))
             tail = '...' if len(unique_orders) > 10 else ''
             print(f"\n📋 Order IDs: {preview}{tail}")
@@ -595,7 +872,7 @@ class OptimizedOrderTestRunner:
 async def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Optimized Order Test Runner - Bulk Creation")
+    parser = argparse.ArgumentParser(description="Optimized Order Test Runner — workflow-aware")
     parser.add_argument("--url", default="http://localhost:9000")
     parser.add_argument("--silo-url", default="http://gluttex-silo:9096")
     parser.add_argument("--context-file", default="test_context.json")

@@ -13,8 +13,7 @@ class OrderRepository:
                 PlacedOrder,
                 {PlacedOrder.id_placed_order: order_id},
                 [],
-                [PlacedOrder.ordered_item],
-                None
+                [PlacedOrder.ordered_item]
             )
         else:
             records = storage_broker.get(

@@ -8,7 +8,7 @@
 # from datetime import date
 # from typing import Optional
 
-# from api_server.core.persistent_models import Location
+# from core.persistent_models import Location
 # from core.api_models import Person_API, Location_API, Gender, BloodType, CountryCode
 # from core.models import Person, PersonDetails
 # from core.exceptions.specific.person_exceptions import *

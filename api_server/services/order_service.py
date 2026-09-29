@@ -22,6 +22,7 @@ from typing import List, Tuple, Dict, Any, Optional
 from datetime import datetime, timedelta
 import logging
 
+from core.models.finance_models import PaymentCreate
 from services.location_service import LocationService
 from repositories.financial_repository import FinancialRepository
 from core.models.api_models import Delivery_Info_API, OrderedItem_API, PlacedOrder_API
@@ -223,25 +224,31 @@ class OrderService:
     # LOCAL: BUILD PAYLOAD DICTS FOR THE WORKFLOW
     # ================================================================
 
-    def build_payment_create_payload(
-        self,
-        order: PlacedOrder,
-        invoice: Invoice,
-        payment_method: str,
-    ) -> Dict[str, Any]:
-        """
-        Local: shape the data the workflow will hand to the finance client.
-        Returns a plain dict so the workflow isn't coupled to the
-        PaymentCreate model.
-        """
-        return {
-            'invoice_id': invoice.invoice_id,
-            'amount': invoice.invoice_total_amount,
-            'payment_method': payment_method,
-            'user_id': order.ordering_user_id,
-            'notes': f"Order #{order.id_placed_order} payment",
-            'payment_type': 'payment',
-        }
+    def build_payment_create_payload(self, order, invoice, payment_method):
+        amount = invoice.invoice_total_amount
+        if amount is None:
+            raise OrderUpdateFailedException(
+                order_id=order.id_placed_order,
+                error=f"Invoice {invoice.invoice_id} has no total_amount",
+                fields_attempted=["payment"],
+            )
+
+        user_id = order.ordering_user_id
+        if user_id is None:
+            raise OrderUpdateFailedException(
+                order_id=order.id_placed_order,
+                error="Order has no ordering_user_id",
+                fields_attempted=["payment"],
+            )
+
+        return PaymentCreate(
+            invoice_id= invoice.invoice_id,
+            amount= float(amount),
+            payment_method= payment_method,
+            user_id= int(user_id),
+            notes= f"Order #{order.id_placed_order} payment",
+            payment_type= 'payment',)
+        
 
     def build_payment_transaction_details(
         self,
