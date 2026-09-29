@@ -421,21 +421,27 @@ class CartService:
         logger.info("Step 9: Confirming reservations...")
 
         ordered_payload = [
-            {
-                "id": item.id_ordered_item,
-                "quantity": item.ordered_quantity,
-            }
+            {"id": item.id_ordered_item, "quantity": item.ordered_quantity}
             for item in created_items
+            if item.ordered_quantity and item.ordered_quantity > 0
         ]
 
-        consumption_payload = [
-            {
-                "id": consumption.id_product_consumption,
-                "quantity": consumption.product_reserved_quantity,
-            }
-            for service in created_services
-            for consumption in service.product_consumption
-        ]
+        consumption_payload = []
+        for service in created_services:
+            for consumption in service.product_consumption:
+                pid = consumption.consumed_product_id
+                plan = reservation_plan.get(pid, {})
+                for source in plan.get("sources", []):
+                    if source.get("type") == "consumption" \
+                            and source.get("id") == consumption.resource_req_ref:
+                        qty = source.get("quantity", 0)
+                        if qty and qty > 0:
+                            consumption_payload.append({
+                                "id": consumption.id_product_consumption,
+                                "quantity": qty,
+                            })
+                        break
+
 
         await self.inventory_client.bulk_confirm(
             ordered_payload,

@@ -268,6 +268,7 @@ class OrderService:
                     # delivery_invoice_ref=created_invoice.invoice_id,
                     delivery_source_type='placed_order',
                     delivery_address_id = delivery_address_id if delivery_address_id else None,
+                    recipient_person = user_id,
                     delivery_source_id=created_order.id_placed_order,
                     delivery_provider_id=provider_id,
                     delivery_fee = delivery_data.delivery_fee if delivery_data else 0.0,
@@ -395,6 +396,7 @@ class OrderService:
             # ==================== SUCCESS ====================
             # Update order status to PROCESSING
             created_order.placed_order_state = 'PROCESSING'
+            created_order.placed_order_invoice = invoice.invoice_id
             created_order.placed_order_last_mod = datetime.now()
             created_order = self.order_repo.update_order(created_order)
             
