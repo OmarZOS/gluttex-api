@@ -1,9 +1,41 @@
 #!/usr/bin/env python3
 """
-Delivery Updater Script
-Fetches deliveries by provider and updates delivery details with address and tracking info.
-Uses users from the test context file.
-Run with: python update_deliveries.py
+Delivery Router Test Runner — business ops with Delivery_API body.
+
+Exercises the delivery router:
+
+  Reads:
+    GET  /delivery
+    GET  /delivery/{id}
+    GET  /delivery/{id}/next-states
+
+  Ops (POST with optional Delivery_API body):
+    POST /delivery/{id}/accept
+    POST /delivery/{id}/confirm
+    POST /delivery/{id}/ship
+    POST /delivery/{id}/in-transit
+    POST /delivery/{id}/out-for-delivery
+    POST /delivery/{id}/deliver
+    POST /delivery/{id}/cancel
+    POST /delivery/{id}/fail
+    POST /delivery/{id}/return
+    POST /delivery/{id}/refund
+    POST /delivery/{id}/tracking-pings
+    POST /delivery/{id}/reroute
+    POST /delivery/{id}/archive
+
+Bodies are built from Delivery_API. Real fields patch the delivery;
+signal fields (delivery_confirmed, proof_captured, ...) flow into the
+policy. The runner sets the signals it wants to assert; the server
+enforces the graph.
+
+Outcomes:
+  OK      → 2xx, transition accepted
+  DENIED  → 409, policy said no (expected for illegal actions)
+  FAILED  → anything else (5xx, transport, unexpected 4xx)
+
+Run:
+    python test_delivery_ops.py --provider 1 --limit 10 --probes
 """
 
 import asyncio
@@ -11,65 +43,127 @@ import httpx
 import json
 import sys
 import random
-import uuid
-from typing import Dict, Any, Optional, List
-from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
 from pathlib import Path
 import argparse
 
 
-# ============================================================================
-# CONFIGURATION
-# ============================================================================
-
-class Config:
-    """Configuration for the delivery updater"""
-    BASE_URL = "http://localhost:9000"
-    DEFAULT_PROVIDER_ID = 1  # Provider ID from test data
-    CONTEXT_FILE = "test_context.json"  # Use the main test context file
-    
-    # Delivery statuses matching the database enum
-    DELIVERY_STATUSES = [
-        "pending", "processing", "confirmed", "shipped", 
-        "in_transit", "out_for_delivery", "delivered", 
-        "failed", "cancelled", "returned", "refunded"
-    ]
-    
-    # Shipping methods matching the database enum
-    SHIPPING_METHODS = ["standard", "express", "overnight", "pickup", "courier", "same_day", "international"]
-    
-    # Status flow for delivery lifecycle
-    STATUS_FLOW = ["processing", "confirmed", "shipped", "in_transit", "out_for_delivery", "delivered"]
-    
-    # Terminal statuses (skip these)
-    TERMINAL_STATUSES = ["delivered", "cancelled", "returned", "refunded", "failed"]
+BASE = "/api/v1/business/delivery"
+ADDRESSES = "/api/v1/addresses"
 
 
 # ============================================================================
-# LOCATION GENERATOR
+# Happy path
+# ============================================================================
+#
+# Each step: (action, from_state, to_state, body_fields, signals)
+# The runner only performs an action if the delivery's current status
+# matches `from_state`. Otherwise the step is skipped for that delivery.
+
+HAPPY_PATH: List[Tuple[str, str, str, Dict[str, Any], Dict[str, Any]]] = [
+    # accept — optionally declare a package count at acceptance
+    (
+        "accept",
+        "pending",
+        "processing",
+        {
+            "delivery_package_count": 1,
+        },
+        {},
+    ),
+    # confirm — declare the real packing details here
+    (
+        "confirm",
+        "processing",
+        "confirmed",
+        {
+            "delivery_package_count": 3,
+            "delivery_total_weight": 12.5,
+            "delivery_cargo_dimensions": "30x20x15",
+            "delivery_goods_description": "Test package",
+        },
+        {},
+    ),
+    # ship — assert the carrier accepted
+    (
+        "ship",
+        "confirmed",
+        "shipped",
+        {
+            "delivery_merchant_name": "ACME Logistics",
+        },
+        {
+            "delivery_confirmed": True,
+        },
+    ),
+    # in transit — assert the carrier ack
+    (
+        "in-transit",
+        "shipped",
+        "in_transit",
+        {},
+        {
+            "in_transit_acknowledged": True,
+        },
+    ),
+    # out for delivery — no signal needed
+    (
+        "out-for-delivery",
+        "in_transit",
+        "out_for_delivery",
+        {},
+        {},
+    ),
+    # delivered — assert proof captured
+    (
+        "deliver",
+        "out_for_delivery",
+        "delivered",
+        {},
+        {
+            "proof_captured": True,
+        },
+    ),
+]
+
+
+# Deliberately-illegal probes. Each: (action, from_state, note)
+DENIAL_PROBES = [
+    ("confirm", "pending",
+     "cannot confirm before accepting"),
+    ("ship", "pending",
+     "cannot ship before confirming"),
+    ("deliver", "pending",
+     "cannot deliver before out for delivery"),
+    ("deliver", "confirmed",
+     "cannot deliver before out for delivery"),
+    ("ship", "processing",
+     "cannot ship before confirming"),
+]
+
+
+TERMINAL_STATUSES = {"delivered", "cancelled", "returned", "refunded"}
+
+
+# ============================================================================
+# Location helper
 # ============================================================================
 
 class LocationGenerator:
-    """Generate random location data for deliveries matching Location_API"""
-    
     CITIES = [
-        "Algiers", "Oran", "Constantine", "Annaba", "Blida", 
+        "Algiers", "Oran", "Constantine", "Annaba", "Blida",
         "Setif", "Tizi Ouzou", "Bejaia", "Batna", "Sidi Bel Abbes",
-        "Biskra", "Tebessa", "El Oued", "Ghardaia", "Tamanrasset"
     ]
     STREETS = [
-        "Main St", "Didouche Mourad", "1er Novembre", 
-        "Larbi Ben Mhidi", "Krim Belkacem", 
-        "Freres Bouadou", "Independance",
-        "Ali Khodja", "Colonel Amirouche", "Emir Abdelkader",
-        "Liberte", "Ben Boulaid", "Mohamed Khider"
+        "Main St", "Didouche Mourad", "1er Novembre",
+        "Larbi Ben Mhidi", "Krim Belkacem", "Independance",
     ]
-    COUNTRIES = ["DZ", "FR", "US", "CA", "DE", "GB", "IT", "ES", "MA", "TN"]
-    
+    COUNTRIES = ["DZ", "FR", "US", "CA", "DE", "GB"]
+
     @classmethod
-    def _get_city_coordinates(cls, city: str) -> tuple:
-        """Get approximate coordinates for a city"""
-        coords = {
+    def _coords(cls, city: str) -> Tuple[float, float]:
+        table = {
             "Algiers": (36.7538, 3.0588),
             "Oran": (35.6969, -0.6331),
             "Constantine": (36.3650, 6.6147),
@@ -80,607 +174,732 @@ class LocationGenerator:
             "Bejaia": (36.7558, 5.0843),
             "Batna": (35.5550, 6.1741),
             "Sidi Bel Abbes": (35.1937, -0.6322),
-            "Biskra": (34.8500, 5.7333),
-            "Tebessa": (35.4042, 8.1242),
-            "El Oued": (33.3667, 6.8500),
-            "Ghardaia": (32.4833, 3.6667),
-            "Tamanrasset": (22.7850, 5.5228)
         }
-        return coords.get(city, (36.7538, 3.0588))
-    
+        return table.get(city, (36.7538, 3.0588))
+
     @classmethod
-    def generate_location(cls, location_name: Optional[str] = None) -> Dict[str, Any]:
-        """Generate a complete Location_API structure"""
+    def address(cls, name: Optional[str] = None) -> Dict[str, Any]:
         city = random.choice(cls.CITIES)
-        country = random.choice(cls.COUNTRIES)
-        lat, lon = cls._get_city_coordinates(city)
-        
-        # Add slight random offset
+        lat, lon = cls._coords(city)
         lat += random.uniform(-0.02, 0.02)
         lon += random.uniform(-0.02, 0.02)
-        
-        # Ensure street name is not too long (max 255 chars)
         street = f"{random.randint(1, 999)} {random.choice(cls.STREETS)}"
-        if len(street) > 200:
-            street = street[:200]
-        
         return {
-            "id_location": 0,
-            "location_latitude": round(lat, 6),
-            "location_longitude": round(lon, 6),
-            "location_name": location_name or random.choice(["Home", "Work", "Clinic", "Office", "Shop", "Warehouse", "Distribution Center"]),
-            "location_address_id": 0,
-            "id_address": 0,
-            "address_street": street,
+            "address_street": street[:200],
             "address_city": city,
             "address_postal_code": f"{random.randint(1000, 9999)}",
-            "address_country": country
-        }
-    
-    @classmethod
-    def generate_tracking_location(cls, step: int, total_steps: int = 6) -> Dict[str, Any]:
-        """Generate a tracking location based on progress through the delivery"""
-        progress = step / total_steps
-        
-        # Start from a random city and move toward destination
-        if step == 0:
-            city = random.choice(["Algiers", "Oran", "Constantine"])
-            location_name = "Distribution Center"
-        else:
-            city = random.choice(cls.CITIES)
-            location_name = f"Tracking Point {step}"
-        
-        lat, lon = cls._get_city_coordinates(city)
-        
-        # Add random offset based on progress (closer to destination = less random)
-        offset = 0.02 * (1 - progress)
-        lat += random.uniform(-offset, offset)
-        lon += random.uniform(-offset, offset)
-        
-        # Ensure street name is not too long (max 255 chars)
-        street = f"TP{step} - {random.randint(1, 999)} {random.choice(cls.STREETS)}"
-        if len(street) > 200:
-            street = street[:200]
-        
-        return {
-            "id_location": 0,
+            "address_country": random.choice(cls.COUNTRIES),
             "location_latitude": round(lat, 6),
             "location_longitude": round(lon, 6),
-            "location_name": location_name,
-            "location_address_id": 0,
-            "id_address": 0,
-            "address_street": street,
-            "address_city": city,
-            "address_postal_code": f"{random.randint(1000, 9999)}",
-            "address_country": random.choice(cls.COUNTRIES)
+            "location_name": name or random.choice(
+                ["Home", "Office", "Clinic", "Shop"]
+            ),
         }
 
 
 # ============================================================================
-# DELIVERY UPDATER
+# Outcomes
 # ============================================================================
 
-class DeliveryUpdater:
-    """Updates delivery details for orders with address and tracking"""
-    
-    def __init__(self, base_url: str = Config.BASE_URL):
+class Outcome:
+    OK = "OK"
+    DENIED = "DENIED"
+    FAILED = "FAILED"
+
+
+class CallRecord:
+    __slots__ = (
+        "endpoint", "method", "action", "delivery_id",
+        "outcome", "status_code", "reason", "elapsed_ms",
+    )
+
+    def __init__(
+        self,
+        endpoint: str,
+        method: str,
+        action: Optional[str],
+        delivery_id: Optional[int],
+        outcome: str,
+        status_code: int,
+        reason: str = "",
+        elapsed_ms: float = 0.0,
+    ):
+        self.endpoint = endpoint
+        self.method = method
+        self.action = action
+        self.delivery_id = delivery_id
+        self.outcome = outcome
+        self.status_code = status_code
+        self.reason = reason
+        self.elapsed_ms = elapsed_ms
+
+
+# ============================================================================
+# Runner
+# ============================================================================
+
+class DeliveryOpsTestRunner:
+    def __init__(self, base_url: str, context_file: str, provider_id: int):
         self.base_url = base_url
-        self.client = None
-        self.auth_token = None
-        self.user_id = None
-        self.provider_id = Config.DEFAULT_PROVIDER_ID
-        self.context_users = []
-        self.stats = {
-            "deliveries_found": 0,
-            "deliveries_updated": 0,
-            "deliveries_failed": 0,
-            "status_transitions": 0,
-            "deliveries_skipped": 0,
-            "locations_created": 0,
-            "tracking_updates": 0,
-            "addresses_created": 0,
-            "addresses_failed": 0
-        }
-    
+        self.context_file = context_file
+        self.provider_id = provider_id
+        self.client: Optional[httpx.AsyncClient] = None
+        self.auth_token: Optional[str] = None
+        self.user_id: Optional[int] = None
+        self.context_users: List[Dict[str, Any]] = []
+        self.calls: List[CallRecord] = []
+
     async def __aenter__(self):
-        self.client = httpx.AsyncClient(timeout=30.0, verify=False)
+        self.client = httpx.AsyncClient(
+            timeout=30.0, verify=False, follow_redirects=False
+        )
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self.client:
             await self.client.aclose()
-    
-    def print_status(self, message: str, emoji: str = "ℹ️"):
-        """Print status message with timestamp"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        print(f"[{timestamp}] {emoji} {message}")
-    
-    def load_context_users(self) -> bool:
-        """Load users from the test context file"""
-        context_file = Config.CONTEXT_FILE
-        
-        if not Path(context_file).exists():
-            self.print_status(f"Context file {context_file} not found", "❌")
+
+    # ── Logging ─────────────────────────────────────────────────────
+
+    def log(self, msg: str, emoji: str = "ℹ️"):
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {emoji} {msg}")
+
+    # ── Auth ────────────────────────────────────────────────────────
+
+    def headers(self) -> Dict[str, str]:
+        return (
+            {"Authorization": f"Bearer {self.auth_token}"}
+            if self.auth_token
+            else {}
+        )
+
+    def load_context(self) -> bool:
+        p = Path(self.context_file)
+        if not p.exists():
+            self.log(f"Context file {p} not found", "❌")
             return False
-        
         try:
-            with open(context_file, 'r') as f:
+            with open(p) as f:
                 data = json.load(f)
-            
-            self.context_users = data.get('users', [])
-            self.print_status(f"Loaded {len(self.context_users)} users from context", "📂")
-            
-            if self.context_users:
-                for i, user in enumerate(self.context_users[:3]):
-                    self.print_status(f"  User {i+1}: {user.get('username')} (ID: {user.get('id')})", "👤")
-                if len(self.context_users) > 3:
-                    self.print_status(f"  ... and {len(self.context_users) - 3} more", "👤")
-            
-            return True
-            
+            self.context_users = data.get("users", [])
+            self.log(
+                f"Loaded {len(self.context_users)} users from context", "📂"
+            )
+            return bool(self.context_users)
         except Exception as e:
-            self.print_status(f"Error loading context: {e}", "❌")
+            self.log(f"Error loading context: {e}", "❌")
             return False
-    
-    async def login_with_context_user(self, user_index: int = 0) -> bool:
-        """Login using a user from the context"""
-        if not self.context_users:
-            self.print_status("No context users available", "❌")
-            return False
-        
+
+    async def login(self, user_index: int = 0) -> bool:
         if user_index >= len(self.context_users):
-            self.print_status(f"User index {user_index} out of range", "❌")
+            self.log(f"User index {user_index} out of range", "❌")
             return False
-        
         user = self.context_users[user_index]
-        username = user.get('username')
-        password = user.get('password')
-        
-        self.print_status(f"Logging in as '{username}' (ID: {user.get('id')})", "🔐")
-        
+        username = user.get("username")
+        password = user.get("password")
+        self.log(f"Logging in as '{username}'", "🔐")
+
         try:
-            response = await self.client.post(
+            r = await self.client.post(
                 f"{self.base_url}/api/v1/authentication/token",
                 json={
                     "app_user_name": username,
-                    "app_user_password": password
-                }
-            )
-            
-            if response.status_code == 200:
-                result = response.json()
-                self.auth_token = result.get('access_token')
-                self.user_id = user.get('id')
-                self.print_status(f"✅ Login successful as {username}", "✅")
-                return True
-            else:
-                self.print_status(f"Login failed: {response.status_code}", "❌")
-                print(f"   Response: {response.text[:200]}")
-                return False
-                
-        except Exception as e:
-            self.print_status(f"Login error: {e}", "❌")
-            return False
-    
-    async def get_deliveries_by_provider(self, provider_id: int) -> List[Dict]:
-        """Get all deliveries for a provider"""
-        self.print_status(f"Fetching deliveries for provider {provider_id}", "📦")
-        
-        if not self.auth_token:
-            return []
-        
-        try:
-            response = await self.client.get(
-                f"{self.base_url}/api/v1/business/delivery",
-                params={
-                    "provider_id": provider_id, 
-                    "offset": 0, 
-                    "limit": 100
+                    "app_user_password": password,
                 },
-                headers={"Authorization": f"Bearer {self.auth_token}"}
             )
-            
-            if response.status_code == 200:
-                result = response.json()
-                if isinstance(result, list):
-                    deliveries = result
-                elif isinstance(result, dict):
-                    deliveries = result.get('data', result.get('items', []))
-                else:
-                    deliveries = []
-                
-                self.stats["deliveries_found"] = len(deliveries)
-                self.print_status(f"Found {len(deliveries)} deliveries", "📦")
-                
-                # Show first few deliveries
-                for i, delivery in enumerate(deliveries[:5]):
-                    self.print_status(f"  Delivery {i+1}: ID={delivery.get('id_delivery')}, Status={delivery.get('delivery_status')}", "📋")
-                if len(deliveries) > 5:
-                    self.print_status(f"  ... and {len(deliveries) - 5} more", "📋")
-                
-                return deliveries
-            else:
-                self.print_status(f"Failed to fetch deliveries: {response.status_code}", "❌")
-                print(f"   Response: {response.text[:200]}")
-                return []
-                
         except Exception as e:
-            self.print_status(f"Error fetching deliveries: {e}", "❌")
+            self.log(f"Login network error: {e}", "❌")
+            return False
+
+        if r.status_code != 200:
+            self.log(
+                f"Login failed: {r.status_code} {r.text[:200]}", "❌"
+            )
+            return False
+
+        self.auth_token = r.json().get("access_token")
+        self.user_id = user.get("id")
+        self.log(f"Login ok as {username} (id={self.user_id})", "✅")
+        return bool(self.auth_token)
+
+    # ── Classification ──────────────────────────────────────────────
+
+    def _classify(self, response: httpx.Response) -> Tuple[str, str]:
+        if 200 <= response.status_code < 300:
+            return Outcome.OK, ""
+
+        reason = self._extract_reason(response)
+
+        if response.status_code == 409:
+            return Outcome.DENIED, reason or "transition not allowed"
+
+        # Some backends still return 400 for policy denials — classify
+        # those as DENIED too, when the reason names a state problem.
+        if response.status_code == 400:
+            lowered = (reason or "").lower()
+            if (
+                "not permitted" in lowered
+                or "transition" in lowered
+                or "cannot" in lowered
+            ):
+                return Outcome.DENIED, reason
+
+        return Outcome.FAILED, reason or f"http {response.status_code}"
+
+    @staticmethod
+    def _extract_reason(response: httpx.Response) -> str:
+        try:
+            payload = response.json()
+        except Exception:
+            return response.text[:200]
+
+        detail = payload.get("detail")
+        if isinstance(detail, dict):
+            return (
+                detail.get("reason")
+                or detail.get("message")
+                or json.dumps(detail)
+            )
+        if isinstance(detail, str):
+            return detail
+        return (
+            payload.get("message")
+            or payload.get("error")
+            or response.text[:200]
+        )
+
+    # ── HTTP plumbing ───────────────────────────────────────────────
+
+    async def call(
+        self,
+        method: str,
+        path: str,
+        *,
+        action: Optional[str] = None,
+        delivery_id: Optional[int] = None,
+        params: Optional[Dict[str, Any]] = None,
+        body: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[Optional[Any], str, str]:
+        start = datetime.now()
+        try:
+            r = await self.client.request(
+                method,
+                f"{self.base_url}{path}",
+                params=params,
+                json=body,
+                headers=self.headers(),
+            )
+        except Exception as e:
+            elapsed = (datetime.now() - start).total_seconds() * 1000
+            self.calls.append(CallRecord(
+                path, method, action, delivery_id,
+                Outcome.FAILED, 0, str(e), elapsed,
+            ))
+            return None, Outcome.FAILED, str(e)
+
+        elapsed = (datetime.now() - start).total_seconds() * 1000
+        outcome, reason = self._classify(r)
+        self.calls.append(CallRecord(
+            path, method, action, delivery_id,
+            outcome, r.status_code, reason, elapsed,
+        ))
+
+        parsed: Optional[Any] = None
+        if outcome == Outcome.OK:
+            try:
+                parsed = r.json()
+            except Exception:
+                parsed = None
+        return parsed, outcome, reason
+
+    # ── Reads ───────────────────────────────────────────────────────
+
+    async def list_deliveries(
+        self, limit: int = 20, status: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
+        params: Dict[str, Any] = {
+            "provider_id": self.provider_id,
+            "offset": 0,
+            "limit": limit,
+        }
+        if status:
+            params["status"] = status
+
+        body, outcome, reason = await self.call(
+            "GET", BASE,
+            action="list",
+            params=params,
+        )
+        self._report("GET /delivery", outcome, reason)
+        if outcome != Outcome.OK or not body:
             return []
-    
-    async def get_delivery_by_id(self, delivery_id: int) -> Optional[Dict]:
-        """Get delivery details by ID"""
-        if not self.auth_token:
+        if isinstance(body, list):
+            return body
+        if isinstance(body, dict):
+            return body.get("data") or body.get("items") or []
+        return []
+
+    async def get_one(self, delivery_id: int) -> Optional[Dict[str, Any]]:
+        body, outcome, reason = await self.call(
+            "GET", f"{BASE}/{delivery_id}",
+            action="get",
+            delivery_id=delivery_id,
+        )
+        self._report(f"GET /delivery/{delivery_id}", outcome, reason)
+        return body if outcome == Outcome.OK else None
+
+    async def next_states(self, delivery_id: int) -> Optional[List[str]]:
+        body, outcome, reason = await self.call(
+            "GET", f"{BASE}/{delivery_id}/next-states",
+            action="next-states",
+            delivery_id=delivery_id,
+        )
+        self._report(
+            f"GET /delivery/{delivery_id}/next-states", outcome, reason
+        )
+        if outcome == Outcome.OK and isinstance(body, dict):
+            return list(body.get("next_states") or [])
+        return None
+
+    # ── Action ──────────────────────────────────────────────────────
+
+    async def do_action(
+        self,
+        delivery_id: int,
+        action: str,
+        *,
+        body: Optional[Dict[str, Any]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> Tuple[str, str, Optional[Any]]:
+        parsed, outcome, reason = await self.call(
+            "POST", f"{BASE}/{delivery_id}/{action}",
+            action=action,
+            delivery_id=delivery_id,
+            params=params,
+            body=body,
+        )
+        self._report(
+            f"POST /delivery/{delivery_id}/{action}", outcome, reason
+        )
+        return outcome, reason, parsed
+
+    # ── Body builders ───────────────────────────────────────────────
+
+    @staticmethod
+    def _build_body(
+        patch_fields: Dict[str, Any],
+        signals: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Merge real patch fields and signal fields into one Delivery_API
+        body. Returns None when there is nothing to send.
+        """
+        merged: Dict[str, Any] = {}
+        merged.update(patch_fields or {})
+        merged.update(signals or {})
+        return merged or None
+
+    # ── Address helper ──────────────────────────────────────────────
+
+    async def create_address(
+        self, label: str = "TrackingPoint"
+    ) -> Optional[int]:
+        addr = LocationGenerator.address(label)
+        body, outcome, reason = await self.call(
+            "POST", ADDRESSES,
+            action="create-address",
+            body=addr,
+        )
+        if outcome != Outcome.OK or not body:
+            self._report("POST /addresses", outcome, reason)
             return None
-        
-        try:
-            response = await self.client.get(
-                f"{self.base_url}/api/v1/business/delivery/{delivery_id}",
-                params={"eager_load": True},
-                headers={"Authorization": f"Bearer {self.auth_token}"}
+        aid = (
+            body.get("id_address")
+            or body.get("address_id")
+            or (body.get("data") or {}).get("id_address")
+        )
+        return int(aid) if aid else None
+
+    # ── Scenarios ───────────────────────────────────────────────────
+
+    async def test_reads(self) -> None:
+        self.log("\n📖 READ endpoints", "📖")
+        print("=" * 70)
+        await self.list_deliveries(limit=5)
+
+    async def test_next_states(self, delivery: Dict[str, Any]) -> None:
+        delivery_id = delivery.get("id_delivery")
+        states = await self.next_states(delivery_id)
+        current = (delivery.get("delivery_status") or "").lower()
+        if states is not None:
+            self.log(
+                f"Delivery {delivery_id} is '{current}', next: {states}",
+                "🧭",
             )
-            
-            if response.status_code == 200:
-                return response.json()
-            else:
-                return None
-                
-        except Exception as e:
-            self.print_status(f"Error getting delivery {delivery_id}: {e}", "⚠️")
-            return None
-    
-    async def update_delivery_details(self, delivery_id: int, details: Dict[str, Any]) -> bool:
-        """Update delivery details using PUT endpoint"""
-        self.print_status(f"Updating delivery {delivery_id} with details", "✏️")
-        
-        if not self.auth_token:
-            return False
-        
-        try:
-            response = await self.client.put(
-                f"{self.base_url}/api/v1/business/delivery/{delivery_id}",
-                json=details,
-                headers={"Authorization": f"Bearer {self.auth_token}"}
-            )
-            
-            if response.status_code == 200:
-                self.stats["deliveries_updated"] += 1
-                self.print_status(f"✅ Delivery {delivery_id} updated successfully", "✅")
-                return True
-            else:
-                self.stats["deliveries_failed"] += 1
-                self.print_status(f"❌ Failed to update delivery {delivery_id}: {response.status_code}", "❌")
-                print(f"   Response: {response.text[:200]}")
-                return False
-                
-        except Exception as e:
-            self.stats["deliveries_failed"] += 1
-            self.print_status(f"❌ Error updating delivery {delivery_id}: {e}", "❌")
-            return False
-    
-    async def update_delivery_status(self, delivery_id: int, status: str) -> bool:
-        """Update delivery status"""
-        self.print_status(f"Updating delivery {delivery_id} status to '{status}'", "🔄")
-        
-        if not self.auth_token:
-            return False
-        
-        try:
-            response = await self.client.patch(
-                f"{self.base_url}/api/v1/business/delivery/{delivery_id}/status",
-                params={"status": status},
-                headers={"Authorization": f"Bearer {self.auth_token}"}
-            )
-            
-            if response.status_code == 200:
-                self.stats["status_transitions"] += 1
-                self.print_status(f"✅ Delivery {delivery_id} status updated to '{status}'", "✅")
-                return True
-            else:
-                self.print_status(f"❌ Failed to update status: {response.status_code}", "❌")
-                print(f"   Response: {response.text[:200]}")
-                return False
-                
-        except Exception as e:
-            self.print_status(f"❌ Error updating status: {e}", "❌")
-            return False
-    
-    async def update_delivery_tracking(self, delivery_id: int, current_address_id: int) -> bool:
-        """Update delivery tracking location by address ID"""
-        self.print_status(f"Updating delivery {delivery_id} tracking to address {current_address_id}", "📍")
-        
-        if not self.auth_token:
-            return False
-        
-        try:
-            response = await self.client.patch(
-                f"{self.base_url}/api/v1/business/delivery/{delivery_id}/tracking",
-                params={"current_address_id": current_address_id},
-                headers={"Authorization": f"Bearer {self.auth_token}"}
-            )
-            
-            if response.status_code == 200:
-                self.stats["tracking_updates"] += 1
-                self.print_status(f"✅ Delivery {delivery_id} tracking updated", "📍")
-                return True
-            else:
-                self.print_status(f"❌ Failed to update tracking: {response.status_code}", "❌")
-                print(f"   Response: {response.text[:200]}")
-                return False
-                
-        except Exception as e:
-            self.print_status(f"❌ Error updating tracking: {e}", "❌")
-            return False
-    
-    def generate_delivery_update_payload(self, delivery: Dict) -> Dict[str, Any]:
-        """Generate the full delivery update payload with locations"""
-        
-        # Generate locations using Location_API structure
-        destination_location = LocationGenerator.generate_location("Destination")
-        
-        # Base delivery details
-        payload = {
-            "delivery_package_count": str(random.randint(1, 5)),
-            "delivery_total_weight": round(random.uniform(0.5, 50.0), 1),
-            "delivery_cargo_dimensions": f"{random.randint(10, 100)}x{random.randint(10, 100)}x{random.randint(10, 100)}",
-            "delivery_goods_description": f"Package containing {random.choice(['medical supplies', 'pharmaceuticals', 'equipment', 'documents', 'samples'])}",
-            "hs_code": f"{random.randint(1000000000, 9999999999)}",
-            "delivery_merchant_name": f"Merchant_{uuid.uuid4().hex[:4]}",
-            "delivery_shipping_method": random.choice(Config.SHIPPING_METHODS),
-            "delivery_special_instructions": random.choice([
-                "Leave at reception desk",
-                "Call 30 minutes before arrival",
-                "Package requires signature",
-                "Fragile - handle with care",
-                "Temperature sensitive",
-                "Deliver between 9am-5pm",
-                "Ring the doorbell twice",
-                "Leave with security guard",
-                "Do not leave outside"
-            ]),
-            "delivery_fee": round(random.uniform(0, 50), 2),
-            # Add destination address fields
-            "delivery_address": destination_location.get("address_street"),
-            "delivery_city": destination_location.get("address_city"),
-            "delivery_postal_code": destination_location.get("address_postal_code"),
-            "delivery_country": destination_location.get("address_country"),
-            "delivery_latitude": destination_location.get("location_latitude"),
-            "delivery_longitude": destination_location.get("location_longitude"),
-            "delivery_location_name": destination_location.get("location_name")
-        }
-        
-        # Preserve existing fields
-        preserve_fields = [
-            'recipient_person', 'recipient_provider', 'delivery_source_type',
-            'delivery_source_id', 'delivery_invoice_ref', 'delivery_provider_id',
-            'delivery_broker_id', 'delivery_address_id', 'delivery_current_address_id'
+
+    async def test_denial_probes(self, delivery: Dict[str, Any]) -> None:
+        delivery_id = delivery.get("id_delivery")
+        current = (delivery.get("delivery_status") or "").lower()
+
+        applicable = [
+            (a, note) for a, frm, note in DENIAL_PROBES if frm == current
         ]
-        for field in preserve_fields:
-            if delivery.get(field):
-                payload[field] = delivery.get(field)
-        
-        return payload
-    
-    async def create_tracking_address(self, location: Dict[str, Any]) -> Optional[int]:
-        """Create a tracking address and return its ID"""
-        self.print_status(f"Creating tracking address...", "📍")
-        
-        if not self.auth_token:
-            return None
-        
-        # Build address data matching the Location_API structure
-        address_data = {
-            "address_street": location.get("address_street"),
-            "address_city": location.get("address_city"),
-            "address_postal_code": location.get("address_postal_code"),
-            "address_country": location.get("address_country"),
-            "location_latitude": location.get("location_latitude"),
-            "location_longitude": location.get("location_longitude"),
-            "location_name": location.get("location_name")
-        }
-        
-        try:
-            response = await self.client.post(
-                f"{self.base_url}/api/v1/addresses",
-                json=address_data,
-                headers={"Authorization": f"Bearer {self.auth_token}"}
-            )
-            
-            if response.status_code == 201:
-                result = response.json()
-                address_id = result.get('id_address')
-                if address_id:
-                    self.stats["addresses_created"] += 1
-                    self.print_status(f"✅ Tracking address created: {address_id}", "📍")
-                    return address_id
-                else:
-                    self.stats["addresses_failed"] += 1
-                    self.print_status(f"⚠️ Tracking address created but no ID returned", "⚠️")
-                    return None
-            else:
-                self.stats["addresses_failed"] += 1
-                self.print_status(f"❌ Failed to create tracking address: {response.status_code}", "❌")
-                print(f"   Response: {response.text[:200]}")
-                return None
-                
-        except Exception as e:
-            self.stats["addresses_failed"] += 1
-            self.print_status(f"❌ Error creating tracking address: {e}", "❌")
-            return None
-    
-    async def process_delivery(self, delivery: Dict) -> bool:
-        """
-        Process a single delivery:
-        1. Update delivery details with destination address (PUT)
-        2. Update delivery status through lifecycle (PATCH)
-        3. Create tracking addresses and update tracking at each step
-        """
-        delivery_id = delivery.get('id_delivery')
-        if not delivery_id:
-            return False
-        
-        current_status = delivery.get('delivery_status', 'pending')
-        
-        # Skip terminal statuses
-        if current_status in Config.TERMINAL_STATUSES:
-            self.print_status(f"Skipping delivery {delivery_id} - already {current_status}", "⏭️")
-            self.stats["deliveries_skipped"] += 1
-            return False
-        
-        self.print_status(f"\n🔧 Processing delivery {delivery_id}", "🔧")
-        print(f"   Current status: {current_status}")
-        
-        # Step 1: Generate and update delivery details with locations
-        payload = self.generate_delivery_update_payload(delivery)
-        
-        print(f"   📍 Destination: {payload.get('delivery_address')}, {payload.get('delivery_city')}")
-        
-        success = await self.update_delivery_details(delivery_id, payload)
-        
-        if not success:
-            self.stats["deliveries_failed"] += 1
-            return False
-        
-        self.stats["locations_created"] += 1
-        
-        # Step 2: Update delivery status through lifecycle with tracking
-        try:
-            start_index = Config.STATUS_FLOW.index(current_status) + 1
-        except ValueError:
-            start_index = 0
-        
-        for step_index, status in enumerate(Config.STATUS_FLOW[start_index:]):
-            # Update status first
-            result = await self.update_delivery_status(delivery_id, status)
-            if not result:
-                self.print_status(f"Failed to transition to {status}", "❌")
-                break
-            
-            # Only create tracking address and update tracking if not delivered
-            if status != 'delivered' and status not in ['cancelled', 'returned']:
-                # Generate new current location for this step
-                new_location = LocationGenerator.generate_tracking_location(
-                    start_index + step_index + 1, 
-                    len(Config.STATUS_FLOW)
-                )
-                
-                # Create tracking address and update delivery
-                new_tracking_id = await self.create_tracking_address(new_location)
-                if new_tracking_id:
-                    await self.update_delivery_tracking(delivery_id, new_tracking_id)
-                    print(f"   📍 Updated tracking to step {start_index + step_index + 1}")
-            
-            await asyncio.sleep(0.3)  # Small delay between updates
-        
-        return True
-    
-    async def process_all_deliveries_for_provider(self, provider_id: int, limit: int = 20):
-        """Process all deliveries for a provider"""
-        self.provider_id = provider_id
-        self.print_status(f"\n🚀 Processing deliveries for provider {provider_id}", "🚀")
-        print("="*70)
-        
-        # Get all deliveries for the provider
-        deliveries = await self.get_deliveries_by_provider(provider_id)
-        
-        if not deliveries:
-            self.print_status("No deliveries found to process", "ℹ️")
+        if not applicable:
             return
-        
-        # Process each delivery
-        processed_count = 0
-        for i, delivery in enumerate(deliveries):
-            if processed_count >= limit:
+
+        self.log(
+            f"🧪 Probing illegal actions on {delivery_id} "
+            f"(current: {current})",
+            "🧪",
+        )
+        for action, note in applicable:
+            outcome, reason, _ = await self.do_action(delivery_id, action)
+            if outcome == Outcome.DENIED:
+                self.log(f"  ✅ Correctly denied: {note}", "✅")
+            elif outcome == Outcome.OK:
+                self.log(
+                    f"  ⚠️  Policy ACCEPTED illegal '{action}': {note}",
+                    "⚠️",
+                )
+
+    async def walk_happy_path(self, delivery: Dict[str, Any]) -> bool:
+        delivery_id = delivery.get("id_delivery")
+        current = (delivery.get("delivery_status") or "pending").lower()
+
+        if current in TERMINAL_STATUSES:
+            self.log(
+                f"Skipping {delivery_id}: terminal '{current}'", "⏭️"
+            )
+            return False
+
+        self.log(
+            f"\n🔧 Walking delivery {delivery_id} "
+            f"from '{current}' to 'delivered'",
+            "🔧",
+        )
+
+        start_index = 0
+        for i, (_a, before, _after, _p, _s) in enumerate(HAPPY_PATH):
+            if before == current:
+                start_index = i
                 break
-            
-            print(f"\n📦 Processing delivery {processed_count + 1}/{min(len(deliveries), limit)}")
-            print(f"   ID: {delivery.get('id_delivery')}")
-            print(f"   Current status: {delivery.get('delivery_status')}")
-            
-            success = await self.process_delivery(delivery)
-            if success:
-                processed_count += 1
-            
-            # Small delay between processing deliveries
-            await asyncio.sleep(0.5)
-        
-        # Print statistics
-        self.print_stats()
-    
-    def print_stats(self):
-        """Print processing statistics"""
-        print("\n" + "="*70)
-        print("📊 PROCESSING STATISTICS")
-        print("="*70)
-        print(f"   👤 User ID: {self.user_id}")
-        print(f"   📦 Deliveries found: {self.stats['deliveries_found']}")
-        print(f"   ✅ Deliveries updated: {self.stats['deliveries_updated']}")
-        print(f"   ❌ Deliveries failed: {self.stats['deliveries_failed']}")
-        print(f"   ⏭️ Deliveries skipped: {self.stats['deliveries_skipped']}")
-        print(f"   🔄 Status transitions: {self.stats['status_transitions']}")
-        print(f"   📍 Locations created: {self.stats['locations_created']}")
-        print(f"   📍 Tracking updates: {self.stats['tracking_updates']}")
-        print(f"   📍 Addresses created: {self.stats['addresses_created']}")
-        print(f"   📍 Addresses failed: {self.stats['addresses_failed']}")
-        print("="*70)
+        else:
+            self.log(
+                f"  Delivery {delivery_id} is '{current}', not on the "
+                f"happy path",
+                "🛑",
+            )
+            return False
+
+        for action, _before, expected, patch_fields, signals in \
+                HAPPY_PATH[start_index:]:
+            body = self._build_body(patch_fields, signals)
+            outcome, reason, _ = await self.do_action(
+                delivery_id, action, body=body
+            )
+            if outcome != Outcome.OK:
+                self.log(
+                    f"  Stopped at '{action}': {outcome} — {reason}",
+                    "🛑",
+                )
+                return False
+
+            refreshed = await self.get_one(delivery_id)
+            if refreshed:
+                got = (refreshed.get("delivery_status") or "").lower()
+                if got != expected:
+                    self.log(
+                        f"  ⚠️  After '{action}', state is '{got}', "
+                        f"expected '{expected}'",
+                        "⚠️",
+                    )
+                    return False
+
+            if expected != "delivered":
+                addr_id = await self.create_address(f"tracking_{action}")
+                if addr_id:
+                    await self.do_action(
+                        delivery_id, "tracking-pings",
+                        params={"current_address_id": addr_id},
+                    )
+
+            await asyncio.sleep(0.15)
+
+        return True
+
+    async def test_cancel(self, delivery: Dict[str, Any]) -> bool:
+        delivery_id = delivery.get("id_delivery")
+        current = (delivery.get("delivery_status") or "").lower()
+
+        if current in TERMINAL_STATUSES:
+            return False
+
+        self.log(
+            f"\n🚫 Cancelling delivery {delivery_id} (from '{current}')",
+            "🚫",
+        )
+        outcome, reason, _ = await self.do_action(
+            delivery_id, "cancel",
+            params={"reason": "test cancellation"},
+        )
+        return outcome == Outcome.OK
+
+    async def test_reroute(self, delivery: Dict[str, Any]) -> bool:
+        delivery_id = delivery.get("id_delivery")
+        addr_id = await self.create_address("NewDestination")
+        if not addr_id:
+            return False
+        outcome, reason, _ = await self.do_action(
+            delivery_id, "reroute",
+            params={"address_id": addr_id},
+        )
+        return outcome == Outcome.OK
+
+    async def test_fail(self, delivery: Dict[str, Any]) -> bool:
+        delivery_id = delivery.get("id_delivery")
+        current = (delivery.get("delivery_status") or "").lower()
+
+        if current not in {"processing", "in_transit", "out_for_delivery"}:
+            return False
+
+        self.log(f"\n💥 Reporting failure on {delivery_id}", "💥")
+        outcome, reason, _ = await self.do_action(
+            delivery_id, "fail",
+            body={"failure_reported": True},
+            params={"reason": "test failure"},
+        )
+        return outcome == Outcome.OK
+
+    async def test_archive(self, delivery: Dict[str, Any]) -> bool:
+        delivery_id = delivery.get("id_delivery")
+        current = (delivery.get("delivery_status") or "").lower()
+
+        self.log(
+            f"\n🗄️  Archiving {delivery_id} (current: '{current}')", "🗄️"
+        )
+        outcome, reason, _ = await self.do_action(
+            delivery_id, "archive"
+        )
+        return outcome == Outcome.OK
+
+    # ── Reporting ───────────────────────────────────────────────────
+
+    def _report(self, label: str, outcome: str, reason: str) -> None:
+        emoji = {
+            Outcome.OK: "✅",
+            Outcome.DENIED: "🚫",
+            Outcome.FAILED: "❌",
+        }[outcome]
+        suffix = f" — {reason}" if reason else ""
+        print(f"   {emoji} {label}: {outcome}{suffix}")
+
+    def print_summary(self) -> None:
+        print("\n" + "=" * 70)
+        print("📊 SUMMARY")
+        print("=" * 70)
+
+        by_outcome = {Outcome.OK: 0, Outcome.DENIED: 0, Outcome.FAILED: 0}
+        by_action: Dict[str, Dict[str, int]] = {}
+
+        for c in self.calls:
+            by_outcome[c.outcome] = by_outcome.get(c.outcome, 0) + 1
+            label = f"{c.method} {c.action or c.endpoint}"
+            bucket = by_action.setdefault(
+                label,
+                {Outcome.OK: 0, Outcome.DENIED: 0, Outcome.FAILED: 0},
+            )
+            bucket[c.outcome] += 1
+
+        print(f"   ✅ OK:     {by_outcome[Outcome.OK]}")
+        print(f"   🚫 DENIED: {by_outcome[Outcome.DENIED]}")
+        print(f"   ❌ FAILED: {by_outcome[Outcome.FAILED]}")
+
+        print("\n   Per-action breakdown:")
+        for label, counts in sorted(by_action.items()):
+            print(
+                f"     {label:<48} "
+                f"OK={counts[Outcome.OK]:<3} "
+                f"DENIED={counts[Outcome.DENIED]:<3} "
+                f"FAILED={counts[Outcome.FAILED]}"
+            )
+
+        failures = [c for c in self.calls if c.outcome == Outcome.FAILED]
+        if failures:
+            print("\n   Failures:")
+            for c in failures[:10]:
+                print(
+                    f"     {c.method} {c.endpoint} "
+                    f"→ {c.status_code} {c.reason[:80]}"
+                )
+            if len(failures) > 10:
+                print(f"     ... and {len(failures) - 10} more")
+
+        denied = [c for c in self.calls if c.outcome == Outcome.DENIED]
+        if denied:
+            print("\n   Denials (policy rejections):")
+            for c in denied[:10]:
+                print(
+                    f"     {c.action or c.endpoint} on "
+                    f"delivery {c.delivery_id} → {c.reason[:80]}"
+                )
+            if len(denied) > 10:
+                print(f"     ... and {len(denied) - 10} more")
+
+        print("=" * 70)
+
+    # ── Main run ────────────────────────────────────────────────────
+
+    async def run(
+        self,
+        user_index: int,
+        limit: int,
+        do_probes: bool,
+        do_cancel: bool,
+        do_reroute: bool,
+        do_fail: bool,
+        do_archive: bool,
+    ) -> None:
+        print("\n" + "=" * 70)
+        print("🚚 DELIVERY OPS TEST RUNNER")
+        print("=" * 70)
+        print(f"📍 Base URL:        {self.base_url}")
+        print(f"🏢 Provider:        {self.provider_id}")
+        print(f"📊 Limit:           {limit}")
+        print(f"🧪 Denial probes:   {do_probes}")
+        print(f"🚫 Cancel test:     {do_cancel}")
+        print(f"📍 Reroute test:    {do_reroute}")
+        print(f"💥 Fail test:       {do_fail}")
+        print(f"🗄️  Archive test:    {do_archive}")
+        print("=" * 70)
+
+        if not self.load_context():
+            return
+        if not await self.login(user_index):
+            return
+
+        await self.test_reads()
+
+        deliveries = await self.list_deliveries(limit=limit)
+        if not deliveries:
+            self.log("No deliveries to test against", "⚠️")
+            self.print_summary()
+            return
+
+        self.log(f"Testing against {len(deliveries)} deliveries", "📦")
+        print("=" * 70)
+
+        completed: List[Dict[str, Any]] = []
+
+        for d in deliveries[:limit]:
+            delivery_id = d.get("id_delivery")
+            current = (d.get("delivery_status") or "").lower()
+
+            if current in TERMINAL_STATUSES:
+                self.log(
+                    f"Skipping {delivery_id} — terminal '{current}'", "⏭️"
+                )
+                if do_archive:
+                    await self.test_archive(d)
+                continue
+
+            await self.test_next_states(d)
+
+            if do_probes:
+                await self.test_denial_probes(d)
+
+            # decide flow: cancel, fail, or walk happy path
+            cancelled = False
+            failed = False
+
+            if do_cancel and random.random() < 0.2:
+                cancelled = await self.test_cancel(d)
+            elif do_fail and current in {"in_transit", "out_for_delivery"} \
+                    and random.random() < 0.15:
+                # advance to a failable state first, then fail
+                await self.walk_happy_path(d)
+                refreshed = await self.get_one(delivery_id)
+                if refreshed and (refreshed.get("delivery_status") or "") \
+                        in {"in_transit", "out_for_delivery"}:
+                    failed = await self.test_fail(refreshed)
+            else:
+                reached = await self.walk_happy_path(d)
+                if reached:
+                    refreshed = await self.get_one(delivery_id)
+                    if refreshed:
+                        completed.append(refreshed)
+                continue
+
+            refreshed = await self.get_one(delivery_id)
+            if refreshed:
+                completed.append(refreshed)
+
+            if do_reroute and random.random() < 0.15:
+                await self.test_reroute(d)
+
+            await asyncio.sleep(0.2)
+
+        if do_archive and completed:
+            self.log("\n🗄️  ARCHIVE terminal deliveries", "🗄️")
+            print("=" * 70)
+            for d in completed[:5]:
+                if (
+                    d.get("delivery_status") or ""
+                ).lower() in TERMINAL_STATUSES:
+                    await self.test_archive(d)
+
+        self.print_summary()
 
 
 # ============================================================================
-# MAIN ENTRY POINT
+# Main
 # ============================================================================
 
 async def main():
-    parser = argparse.ArgumentParser(description="Update delivery details for orders with addresses and tracking")
-    parser.add_argument("--url", default=Config.BASE_URL, help="Base URL of the API")
-    parser.add_argument("--provider", type=int, default=Config.DEFAULT_PROVIDER_ID, 
-                       help="Provider ID to process")
-    parser.add_argument("--user-index", type=int, default=0, 
-                       help="Index of user from context file to use (default: 0)")
-    parser.add_argument("--limit", type=int, default=20, 
-                       help="Maximum number of deliveries to process")
-    parser.add_argument("--context-file", default=Config.CONTEXT_FILE, 
-                       help="Context file to load users from")
-    
+    parser = argparse.ArgumentParser(
+        description="Delivery router test runner — business ops"
+    )
+    parser.add_argument("--url", default="http://localhost:9000")
+    parser.add_argument("--provider", type=int, default=1)
+    parser.add_argument("--user-index", type=int, default=0)
+    parser.add_argument("--limit", type=int, default=10)
+    parser.add_argument("--context-file", default="test_context.json")
+    parser.add_argument("--probes", action="store_true",
+                        help="Probe illegal actions and expect 409")
+    parser.add_argument("--cancel", action="store_true",
+                        help="Randomly cancel some deliveries")
+    parser.add_argument("--reroute", action="store_true",
+                        help="Randomly reroute some deliveries")
+    parser.add_argument("--fail", action="store_true",
+                        help="Randomly fail some in-flight deliveries")
+    parser.add_argument("--archive", action="store_true",
+                        help="Archive terminal deliveries")
+
     args = parser.parse_args()
-    
-    # Update config
-    Config.CONTEXT_FILE = args.context_file
-    Config.DEFAULT_PROVIDER_ID = args.provider
-    
-    print("\n" + "="*70)
-    print("🚚 DELIVERY UPDATER SERVICE (with Addresses & Tracking)")
-    print("="*70)
-    print(f"📍 Base URL: {args.url}")
-    print(f"🏢 Provider: {args.provider}")
-    print(f"📊 Limit: {args.limit}")
-    print(f"📂 Context: {args.context_file}")
-    print("="*70)
-    
-    async with DeliveryUpdater(args.url) as updater:
-        # Load users from context
-        if not updater.load_context_users():
-            print("\n❌ Failed to load context users. Exiting.")
-            return
-        
-        if not updater.context_users:
-            print("\n❌ No users found in context. Exiting.")
-            return
-        
-        # Login with the specified user
-        if not await updater.login_with_context_user(args.user_index):
-            print(f"\n❌ Failed to login with user index {args.user_index}. Exiting.")
-            return
-        
-        # Process deliveries
-        await updater.process_all_deliveries_for_provider(args.provider, args.limit)
+
+    async with DeliveryOpsTestRunner(
+        base_url=args.url,
+        context_file=args.context_file,
+        provider_id=args.provider,
+    ) as runner:
+        await runner.run(
+            user_index=args.user_index,
+            limit=args.limit,
+            do_probes=args.probes,
+            do_cancel=args.cancel,
+            do_reroute=args.reroute,
+            do_fail=args.fail,
+            do_archive=args.archive,
+        )
 
 
 if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n\n🛑 Process interrupted by user")
+        print("\n\n🛑 Interrupted")
         sys.exit(0)
     except Exception as e:
         print(f"\n💥 Error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)

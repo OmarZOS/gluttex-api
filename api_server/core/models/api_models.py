@@ -880,6 +880,31 @@ class Delivery_API(BaseModel):
             delivery_updated_at=db_delivery.delivery_updated_at
         )
 
+    delivery_confirmed: Optional[bool] = Field(
+        default=None, exclude=True,
+        description="confirmed → shipped: carrier accepted the handoff",
+    )
+    in_transit_acknowledged: Optional[bool] = Field(
+        default=None, exclude=True,
+        description="shipped → in_transit: carrier ack'd the last leg",
+    )
+    proof_captured: Optional[bool] = Field(
+        default=None, exclude=True,
+        description="out_for_delivery → delivered: proof of delivery captured",
+    )
+    failure_reported: Optional[bool] = Field(
+        default=None, exclude=True,
+        description="* → failed: an incident was filed",
+    )
+    return_confirmed: Optional[bool] = Field(
+        default=None, exclude=True,
+        description="delivered/failed → returned: goods came back",
+    )
+    refund_completed: Optional[bool] = Field(
+        default=None, exclude=True,
+        description="delivered → refunded: refund issued",
+    )
+
 
 # ============================================================================
 # DELIVERY UPDATE MODEL (for partial updates)
