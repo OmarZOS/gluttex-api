@@ -1,5 +1,6 @@
 # models/finance_models.py
 
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
@@ -15,6 +16,12 @@ class PaymentCreate(BaseModel):
     user_id: int = Field(..., description="ID of the user making the payment", gt=0)
     notes: Optional[str] = Field(None, description="Additional notes")
     payment_type: Optional[str] = Field('payment', description="Type of payment: payment, deposit, etc.")
+
+
+    @field_validator("amount")
+    @classmethod
+    def round_amount(cls, v: float) -> float:
+        return float(Decimal(str(v)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
     
     @field_validator('payment_method')
     @classmethod

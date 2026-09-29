@@ -1,6 +1,6 @@
 # repositories/delivery_repository.py
 from typing import Optional, List, Dict, Any
-from core.models.models import Delivery, Invoice, OrderedItem, PlacedOrder, Product
+from core.models.models import AppUser, Delivery, Invoice, OrderedItem, PlacedOrder, Product
 import storage.storage_broker as storage_broker
 
 class DeliveryRepository:
@@ -15,10 +15,12 @@ class DeliveryRepository:
                 [],
                 [
 
-                {Delivery.invoice:[{Invoice.placed_order:[{PlacedOrder.ordered_item:[{OrderedItem.ordered_product:[Product.product_provider_id]}]}]}]},
-                Delivery.delivery_address,
-                Delivery.delivery_provider,
-                Delivery.delivery_broker
+                {
+                    Delivery.invoice:[{Invoice.placed_order:[{PlacedOrder.ordering_user:[{AppUser.app_user_person:[]}]},{PlacedOrder.ordered_item:[{OrderedItem.ordered_product:[Product.product_provider_id]}]}]}]},
+                    Delivery.delivery_address,
+                    Delivery.recipient_person,
+                    Delivery.delivery_provider,
+                    Delivery.delivery_broker
                     # Delivery.cart,
                     # Delivery.placed_order,
                     # Delivery.delivery_provider,
@@ -63,7 +65,8 @@ class DeliveryRepository:
                 # Delivery.cart,
                 # Delivery.placed_order,
                 Delivery.delivery_provider,
-                Delivery.delivery_broker
+                Delivery.delivery_broker,
+                Delivery.delivery_address
             ]
         else:
             eager_load_depth = []

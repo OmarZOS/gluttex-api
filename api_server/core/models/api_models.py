@@ -677,6 +677,44 @@ class DeliverySourceType(str, Enum):
 # DELIVERY API MODEL
 # ============================================================================
 
+class OrderedItem_API(BaseModel):
+    """Ordered item model"""
+    id_ordered_item: Optional[int] = Field(default=0, description="Ordered item ID")
+    ordered_product_id: Optional[int] = Field(default=None, description="Product ID")
+    order_ref: Optional[int] = Field(default=None, description="Order reference")
+    
+    product_discount: Optional[float] = Field(default=0.0, ge=0, le=100, description="Product discount percentage")
+    ordered_quantity: Optional[int] = Field(default=1, gt=0, description="Quantity ordered")
+    unit_price: Optional[float] = Field(default=0.0, ge=0, description="Unit price")
+    applied_vat: Optional[float] = Field(default=0.0, ge=0, le=100, description="VAT percentage")
+    
+    @field_validator('ordered_quantity')
+    @classmethod
+    def validate_quantity(cls, v: Optional[int]) -> int:
+        """Validate quantity is positive"""
+        if v is None:
+            return 1
+        if v <= 0:
+            raise ValueError('Quantity must be greater than 0')
+        return v
+    
+    @field_validator('product_discount', 'applied_vat')
+    @classmethod
+    def validate_percentage(cls, v: Optional[float]) -> Optional[float]:
+        """Validate percentage values are between 0 and 100"""
+        if v is not None and (v < 0 or v > 100):
+            raise ValueError('Value must be between 0 and 100')
+        return v
+    
+    @model_validator(mode='after')
+    def validate_total_price_consistency(self) -> 'OrderedItem_API':
+        """Validate that unit_price * ordered_quantity makes sense with discount"""
+        # This is a cross-field validation
+        if self.ordered_quantity and self.unit_price:
+            # You could add additional validation here if needed
+            pass
+        return self
+
 class Delivery_API(BaseModel):
     """Delivery information model matching the database schema"""
     
@@ -694,6 +732,8 @@ class Delivery_API(BaseModel):
     delivery_goods_description: Optional[str] = Field(default=None, description="Goods description")
     hs_code: Optional[str] = Field(default=None, max_length=255, description="HS code")
     delivery_merchant_name: Optional[str] = Field(default=None, max_length=255, description="Merchant name")
+
+    delivery_ordered_items: Optional[List[OrderedItem_API]] = Field(default=[], description="Ordered items to confirm reservations")
     
     # Shipping details
     delivery_shipping_method: DeliveryShippingMethod = Field(
@@ -1329,43 +1369,7 @@ class PlacedOrder_API(BaseModel):
     payment_method: Optional[str] = Field(default="cash", max_length=50, description="Payment method")
     ordering_user_id: Optional[int] = Field(default=None, description="Ordering user ID")
 
-class OrderedItem_API(BaseModel):
-    """Ordered item model"""
-    id_ordered_item: Optional[int] = Field(default=0, description="Ordered item ID")
-    ordered_product_id: Optional[int] = Field(default=None, description="Product ID")
-    order_ref: Optional[int] = Field(default=None, description="Order reference")
-    
-    product_discount: Optional[float] = Field(default=0.0, ge=0, le=100, description="Product discount percentage")
-    ordered_quantity: Optional[int] = Field(default=1, gt=0, description="Quantity ordered")
-    unit_price: Optional[float] = Field(default=0.0, ge=0, description="Unit price")
-    applied_vat: Optional[float] = Field(default=0.0, ge=0, le=100, description="VAT percentage")
-    
-    @field_validator('ordered_quantity')
-    @classmethod
-    def validate_quantity(cls, v: Optional[int]) -> int:
-        """Validate quantity is positive"""
-        if v is None:
-            return 1
-        if v <= 0:
-            raise ValueError('Quantity must be greater than 0')
-        return v
-    
-    @field_validator('product_discount', 'applied_vat')
-    @classmethod
-    def validate_percentage(cls, v: Optional[float]) -> Optional[float]:
-        """Validate percentage values are between 0 and 100"""
-        if v is not None and (v < 0 or v > 100):
-            raise ValueError('Value must be between 0 and 100')
-        return v
-    
-    @model_validator(mode='after')
-    def validate_total_price_consistency(self) -> 'OrderedItem_API':
-        """Validate that unit_price * ordered_quantity makes sense with discount"""
-        # This is a cross-field validation
-        if self.ordered_quantity and self.unit_price:
-            # You could add additional validation here if needed
-            pass
-        return self
+
 
 
 class InvoiceStatus(str, Enum):

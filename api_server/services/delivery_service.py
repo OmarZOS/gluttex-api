@@ -8,6 +8,7 @@ from typing import Optional, List, Dict, Any
 from fastapi import BackgroundTasks
 import logging
 
+from services.order_service import OrderService
 from core.models.api_models import Delivery_API, DeliveryStatus, DeliveryUpdate_API
 from core.exceptions.specific.delivery_exceptions import (
     DeliveryNotFoundException,
@@ -62,6 +63,7 @@ class DeliveryService:
         self.delivery_repo = DeliveryRepository()
         self.address_repo = AddressRepository()
         self.location_service = LocationService()
+        self.order_service = OrderService()
     
     # ==================== Private Helper Methods ====================
     
@@ -415,9 +417,13 @@ class DeliveryService:
         
         # Build updated delivery
         updated_delivery = self._build_delivery_model(delivery_data, existing_delivery)
+
         
         # Save to database
         try:
+
+            
+            self.order_service.confirm_inventory_for_items()
             delivery = self.delivery_repo.update(updated_delivery)
             logger.info(f"Delivery {delivery_id} updated successfully")
             
