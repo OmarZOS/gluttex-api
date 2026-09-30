@@ -219,6 +219,7 @@ class DeliveryService:
 
         if delivery_data.delivery_cargo_dimensions is not None:
             delivery.delivery_cargo_dimensions = delivery_data.delivery_cargo_dimensions
+            delivery.delivery_package_count = len(delivery.delivery_cargo_dimensions.split(','))
 
         if delivery_data.delivery_goods_description is not None:
             delivery.delivery_goods_description = delivery_data.delivery_goods_description
@@ -387,7 +388,7 @@ class DeliveryService:
 
     def persist_delivery(self, delivery: Delivery) -> Delivery:
         """Local: write the delivery row. Used by the workflow."""
-        delivery.delivery_updated_at = datetime.now()
+        # delivery.delivery_updated_at = datetime.now()
         return self.delivery_repo.update(delivery)
 
     def delete_delivery(

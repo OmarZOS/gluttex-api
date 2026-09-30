@@ -118,6 +118,98 @@ class DeliveryCreationFailedException(DeliveryException):
             details=error_details
         )
 
+class DeliveryNotEditableException(DeliveryException):
+    """
+    Raised when a delivery's details are edited after the row has
+    reached a terminal state.
+
+    Terminal states represent history: a delivered, cancelled,
+    returned, or refunded delivery is done, and its packaging,
+    shipping method, and goods description should not be changed
+    retroactively. New work belongs on a new delivery, not on the
+    frozen one.
+    """
+
+    def __init__(
+        self,
+        delivery_id: int = None,
+        current_status: str = None,
+        editable_statuses: List[str] = None,
+        details: Dict[str, Any] = None,
+    ):
+        error_details = details or {}
+
+        if delivery_id:
+            error_details["delivery_id"] = delivery_id
+        if current_status:
+            error_details["current_status"] = current_status
+        if editable_statuses:
+            error_details["editable_statuses"] = editable_statuses
+
+        message = "Delivery details cannot be edited"
+        if delivery_id and current_status:
+            message = (
+                f"Delivery '{delivery_id}' cannot be edited because it "
+                f"is '{current_status}'"
+            )
+        elif current_status:
+            message = (
+                f"Delivery details cannot be edited in state "
+                f"'{current_status}'"
+            )
+
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.DELIVERY_NOT_EDITABLE,
+            status_code=HTTP_409_CONFLICT,
+            details=error_details,
+        )
+
+
+class DeliveryNotArchivableException(DeliveryException):
+    """
+    Raised when a delivery is archived while it is still active.
+
+    Archiving is the soft-remove operation: it takes a delivery out
+    of the operator's active queue. Only deliveries that have
+    already reached a terminal state can be archived — an active one
+    still has work to do, and archiving it would hide that work.
+    Finish the delivery or cancel it before archiving.
+    """
+
+    def __init__(
+        self,
+        delivery_id: int = None,
+        current_status: str = None,
+        terminal_statuses: List[str] = None,
+        details: Dict[str, Any] = None,
+    ):
+        error_details = details or {}
+
+        if delivery_id:
+            error_details["delivery_id"] = delivery_id
+        if current_status:
+            error_details["current_status"] = current_status
+        if terminal_statuses:
+            error_details["terminal_statuses"] = terminal_statuses
+
+        message = "Delivery cannot be archived"
+        if delivery_id and current_status:
+            message = (
+                f"Delivery '{delivery_id}' cannot be archived because "
+                f"it is still '{current_status}'"
+            )
+        elif current_status:
+            message = (
+                f"Delivery cannot be archived in state '{current_status}'"
+            )
+
+        super().__init__(
+            message=message,
+            error_code=ErrorCode.DELIVERY_NOT_ARCHIVABLE,
+            status_code=HTTP_409_CONFLICT,
+            details=error_details,
+        )
 
 class DeliveryUpdateFailedException(DeliveryException):
     """Exception when delivery update fails"""

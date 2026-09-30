@@ -726,7 +726,7 @@ class Delivery_API(BaseModel):
     recipient_provider: Optional[int] = Field(default=None, description="Recipient provider ID")
     
     # Cargo details
-    delivery_package_count: Optional[int] = Field(default=0, ge=0, description="Number of packages")
+    delivery_package_count: Optional[int] = Field(default=0, description="Number of packages")
     delivery_total_weight: Optional[float] = Field(default=None, ge=0, description="Total weight (kg)")
     delivery_cargo_dimensions: Optional[str] = Field(default=None, max_length=255, description="Cargo dimensions (LxWxH)")
     delivery_goods_description: Optional[str] = Field(default=None, description="Goods description")
@@ -879,31 +879,7 @@ class Delivery_API(BaseModel):
             delivery_created_at=db_delivery.delivery_created_at,
             delivery_updated_at=db_delivery.delivery_updated_at
         )
-
-    delivery_confirmed: Optional[bool] = Field(
-        default=None, exclude=True,
-        description="confirmed → shipped: carrier accepted the handoff",
-    )
-    in_transit_acknowledged: Optional[bool] = Field(
-        default=None, exclude=True,
-        description="shipped → in_transit: carrier ack'd the last leg",
-    )
-    proof_captured: Optional[bool] = Field(
-        default=None, exclude=True,
-        description="out_for_delivery → delivered: proof of delivery captured",
-    )
-    failure_reported: Optional[bool] = Field(
-        default=None, exclude=True,
-        description="* → failed: an incident was filed",
-    )
-    return_confirmed: Optional[bool] = Field(
-        default=None, exclude=True,
-        description="delivered/failed → returned: goods came back",
-    )
-    refund_completed: Optional[bool] = Field(
-        default=None, exclude=True,
-        description="delivered → refunded: refund issued",
-    )
+        
 
 
 # ============================================================================

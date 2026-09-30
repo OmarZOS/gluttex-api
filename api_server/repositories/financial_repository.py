@@ -10,6 +10,8 @@ class FinancialRepository:
         """Create an invoice"""
         from features.insertion import insert_or_complete_or_raise
         return insert_or_complete_or_raise(invoice)
+
+    
     
     def create_payment(self, payment: Payment) -> Payment:
         """Create a payment"""
@@ -20,6 +22,17 @@ class FinancialRepository:
     def get_invoice_by_id(self, invoice_id: int) -> Optional[Invoice]:
         """Get invoice by ID"""
         records = storage_broker.get(Invoice, {Invoice.invoice_id: invoice_id}, [], [Invoice.payment])
+        return records[0] if records else None
+
+    def get_payment_by_invoice_and_status(
+        self, invoice_id: int, status: str
+    ) -> Optional[Payment]:
+
+        records = storage_broker.get(Payment, {
+            Payment.payment_invoice_id : invoice_id,
+                        Payment.payment_status : status,
+            
+            }, [], [])
         return records[0] if records else None
     
     def get_payment_by_id(self, payment_id: int) -> Optional[Payment]:

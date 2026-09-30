@@ -32,6 +32,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from enum import Enum
 
+from core.models.finance_models import PaymentCreate
 from repositories.service_repository import ServiceRepository
 from repositories.order_repository import OrderRepository
 from repositories.financial_repository import FinancialRepository
@@ -246,16 +247,18 @@ class CartService:
         invoice: Invoice,
         payment_method: str,
         captured_amount: float,
-    ) -> Dict[str, Any]:
-        """Local: shape the data the workflow hands to the finance client."""
-        return {
-            'invoice_id': invoice.invoice_id,
-            'amount': captured_amount,
-            'payment_method': payment_method,
-            'user_id': cart.cart_selling_user,
-            'notes': f"Cart #{cart.cart_id} payment",
-            'payment_type': 'payment',
-        }
+    ) -> PaymentCreate:
+        """Local: shape the payload the workflow hands to the finance client."""
+        from core.models.finance_models import PaymentCreate
+
+        return PaymentCreate(
+            invoice_id=invoice.invoice_id,
+            amount=captured_amount,
+            payment_method=payment_method,
+            user_id=cart.cart_selling_user,
+            notes=f"Cart #{cart.cart_id} payment",
+            payment_type='payment',
+        )
 
     def build_payment_transaction_details(
         self,
@@ -419,6 +422,31 @@ class CartService:
                     "notes": service.ordered_service_notes,
                 })
         return services
+
+    # ==================== Invoice lookup ====================
+
+    def get_invoice_for_cart(self, cart: Cart) -> Invoice:
+        """
+        Local: fetch the Invoice attached to a Cart.
+
+        `persist_cart` sets `cart.cart_invoice = created_invoice.invoice_id`,
+        so this reads that id back through the financial repository.
+        """
+        invoice_id = getattr(cart, "cart_invoice", None)
+        if not invoice_id:
+            raise CartInvoiceCreationException(
+                error=f"Cart {getattr(cart, 'cart_id', '?')} has no linked invoice"
+            )
+
+        invoice = self.invoice_repo.get_invoice_by_id(invoice_id)
+        if not invoice:
+            raise CartInvoiceCreationException(
+                error=(
+                    f"Invoice {invoice_id} not found for cart "
+                    f"{getattr(cart, 'cart_id', '?')}"
+                )
+            )
+        return invoice
 
     # ==================== Entity / catalog validation (local) ====================
 
@@ -832,3 +860,23 @@ class CartService:
 
     # Backwards-compat alias
     _rollback_cart_creation = rollback_cart_creation
+
+    # ==================== Payment lookups (idempotency guards) ====================
+
+    def get_completed_payment_for_invoice(
+        self, invoice_id: int
+    ) -> Optional[Payment]:
+        """Local: find an existing completed payment for an invoice."""
+        return self.invoice_repo.get_payment_by_invoice_and_status(
+            invoice_id=invoice_id,
+            status="completed",
+        )
+
+    def get_pending_payment_for_invoice(
+        self, invoice_id: int
+    ) -> Optional[Payment]:
+        """Local: find an existing pending payment for an invoice."""
+        return self.invoice_repo.get_payment_by_invoice_and_status(
+            invoice_id=invoice_id,
+            status="pending",
+        )
