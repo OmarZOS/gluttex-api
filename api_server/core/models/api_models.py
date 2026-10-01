@@ -1525,28 +1525,147 @@ class AdditionalFee_API(BaseModel):
 # ============================================================================
 
 class ProductProvider_API(BaseModel):
-    """Product provider (supplier) model"""
+    """Product provider (supplier) model.
+
+    Two ways to supply the name:
+
+    1. **Flat.** Set `provider_name` (English). The service creates or
+       reuses a NamingContribution whose `en` is that string and whose
+       `ar` / `fr` default to it.
+
+    2. **Nested.** Set `naming` with all three languages. The service
+       creates or reuses a NamingContribution from those values and
+       links it via `provider_naming_ref`.
+
+    When both are supplied, `naming.en` wins for the naming row, but
+    the flat `provider_name` is still stored on the provider details
+    row for backward compatibility with code that reads it directly.
+    """
     id_product_provider: int = Field(default=0, ge=0, description="Provider ID")
     id_provider_owner: int = Field(default=0, ge=0, description="Owner ID")
     idprovider_details_id: int = Field(default=0, ge=0, description="Provider details ID")
     id_product_provider_type: int = Field(default=0, ge=0, description="Provider type ID")
     id_provider_organisation: int = Field(default=0, ge=0, description="Organization ID")
-    
+
     # Provider type
     product_provider_type_desc: Optional[str] = Field(default="", max_length=200, description="Provider type description")
     provider_organisation_name: Optional[str] = Field(default="", max_length=200, description="Organization name")
     provider_organisation_desc: Optional[str] = Field(default="", max_length=500, description="Organization description")
-    
+
     # Provider details
     provider_name: Optional[str] = Field(default="", max_length=200, description="Provider name")
     provider_contact_info: Optional[str] = Field(default="", max_length=500, description="Contact information (JSON)")
 
+    # ---------- Name (trilingual form) ----------
+    naming: Optional[NamingContribution_API] = Field(
+        default=None,
+        description=(
+            "Trilingual name contribution. When provided, drives the "
+            "NamingContribution row and sets the provider's "
+            "`provider_naming_ref`."
+        ),
+    )
+
+    # ==================== Validators ====================
+
+    @field_validator("naming")
+    @classmethod
+    def _naming_shape(
+        cls, v: Optional[NamingContribution_API],
+    ) -> Optional[NamingContribution_API]:
+        """Reject a naming object whose `en` is missing or whitespace."""
+        if v is None:
+            return None
+        if not v.en or not v.en.strip():
+            raise ValueError("naming.en must not be blank")
+        return v
+
+    # ==================== Serialisation helpers ====================
+
+    def resolved_naming(self) -> NamingContribution_API:
+        """
+        Return the naming object to persist, synthesising one from the
+        flat `provider_name` when `naming` is absent.
+
+        Guarantees the returned object has a non-empty `en`. Falls back
+        to a placeholder when both inputs are empty, so the caller
+        never has to handle a "no name at all" case downstream — the
+        DB has a NOT NULL-ish expectation on the English column.
+        """
+        if self.naming is not None:
+            return self.naming
+        flat = (self.provider_name or "").strip() or "Unnamed provider"
+        return NamingContribution_API(
+            en=flat,
+            ar=None,
+            fr=None,
+            naming_contribution_type=NamingContributionType.PROVIDER,
+        )
+
+    class Config:
+        use_enum_values = True
+        populate_by_name = True
+        from_attributes = True
+
 class ProviderOrganisation_API(BaseModel):
-    """Provider organization model"""
+    """Provider organization model.
+
+    Same two-form name handling as `ProductProvider_API`: the flat
+    `provider_organisation_name` is the fallback, the nested `naming`
+    block is the preferred source when present.
+    """
     id_provider_organisation: int = Field(default=0, ge=0, description="Organization ID")
     app_user_id: Optional[int] = Field(default=0, description="User ID")
     provider_organisation_name: Optional[str] = Field(default="", max_length=200, description="Organization name")
     provider_organisation_desc: Optional[str] = Field(default="", max_length=500, description="Organization description")
+
+    # ---------- Name (trilingual form) ----------
+    naming: Optional[NamingContribution_API] = Field(
+        default=None,
+        description=(
+            "Trilingual name contribution. When provided, drives the "
+            "NamingContribution row and sets the organisation's "
+            "`provider_organisation_naming_ref`."
+        ),
+    )
+
+    # ==================== Validators ====================
+
+    @field_validator("naming")
+    @classmethod
+    def _naming_shape(
+        cls, v: Optional[NamingContribution_API],
+    ) -> Optional[NamingContribution_API]:
+        """Reject a naming object whose `en` is missing or whitespace."""
+        if v is None:
+            return None
+        if not v.en or not v.en.strip():
+            raise ValueError("naming.en must not be blank")
+        return v
+
+    # ==================== Serialisation helpers ====================
+
+    def resolved_naming(self) -> NamingContribution_API:
+        """
+        Return the naming object to persist, synthesising one from the
+        flat `provider_organisation_name` when `naming` is absent.
+        """
+        if self.naming is not None:
+            return self.naming
+        flat = (
+            self.provider_organisation_name or ""
+        ).strip() or "Unnamed organisation"
+        return NamingContribution_API(
+            en=flat,
+            ar=None,
+            fr=None,
+            naming_contribution_type=NamingContributionType.PROVIDER,
+        )
+
+    class Config:
+        use_enum_values = True
+        populate_by_name = True
+        from_attributes = True
 
 class OrganisationImage_API(BaseModel):
     """Organization image model"""

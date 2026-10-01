@@ -26,8 +26,8 @@ class SupplierRepository:
                         Location.id_location, Location.location_address
                     ]},
                     ProductProvider.product_provider_type,
-                    ProductProvider.product_provider_details,
-                    ProductProvider.product_provider_org,
+                    {ProductProvider.product_provider_details:[{ProviderDetails.naming_contribution:[]}]},
+                    {ProductProvider.product_provider_org : [{ProviderOrganisation.naming_contribution:[]}]},
                     ProductProvider.provider_image,
                     ProductProvider.provider_reaction,
                     ProductProvider.management_rule
@@ -83,8 +83,8 @@ class SupplierRepository:
                     Location.location_address
                 ]},
                 ProductProvider.product_provider_type,
-                ProductProvider.product_provider_details,
-                ProductProvider.product_provider_org,
+                {ProductProvider.product_provider_details:[{ProviderDetails.naming_contribution:[]}]},
+                {ProductProvider.product_provider_org : [{ProviderOrganisation.naming_contribution:[]}]},
                 ProductProvider.provider_image,
                 ProductProvider.provider_reaction,
                 ProductProvider.management_rule
@@ -111,7 +111,7 @@ class SupplierRepository:
             None,
             [
                 ProductProvider.product_provider_location,
-                ProductProvider.product_provider_details,
+                {ProductProvider.product_provider_details:[{ProviderDetails.naming_contribution:[]}]},
                 ProductProvider.management_rule
             ]
         )
@@ -148,9 +148,9 @@ class SupplierRepository:
                 },
                 ProductProvider.product_provider_type,
                 
-                ProductProvider.product_provider_details,
+                {ProductProvider.product_provider_details:[{ProviderDetails.naming_contribution:[]}]},
                 ProductProvider.provider_image,
-                ProductProvider.product_provider_org
+                {ProductProvider.product_provider_org : [{ProviderOrganisation.naming_contribution:[]}]},
             ],
             offset=offset,
             limit=limit,
@@ -163,7 +163,7 @@ class SupplierRepository:
             ProductProvider,
             {ProductProvider.product_provider_type_id: type_id},
             None,
-            [ProductProvider.product_provider_details]
+            [{ProductProvider.product_provider_details:[{ProviderDetails.provider_naming_ref:[]}]}]
         )
     
     def create_supplier(self, supplier: ProductProvider) -> ProductProvider:
@@ -364,6 +364,7 @@ class OrganisationRepository:
                 [
                     ProviderOrganisation.organisation_image,
                     ProviderOrganisation.product_provider,
+                    ProviderOrganisation.naming_contribution,
                     ProviderOrganisation.management_rule
                 ]
             )
@@ -382,7 +383,7 @@ class OrganisationRepository:
             ProviderOrganisation,
             {ProviderOrganisation.provider_organisation_name: org_name},
             None,
-            []
+            [ProviderOrganisation.naming_contribution,]
         )
         return records[0] if records else None
     
@@ -392,7 +393,7 @@ class OrganisationRepository:
             ProviderOrganisation,
             {},
             None,
-            eager_load_depth=[ProviderOrganisation.organisation_image],
+            eager_load_depth=[ProviderOrganisation.organisation_image,ProviderOrganisation.naming_contribution,],
             offset=offset,
             limit=limit,
             serialize=True

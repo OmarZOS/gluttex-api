@@ -20,6 +20,10 @@ Fixes over the previous revision:
   - Cart/invoice/order/product/supplier/org id extraction covers the
     fields the backend actually returns.
   - Prints reasons instead of just HTTP codes.
+  - Organisations and suppliers now carry an optional trilingual
+    `naming` block (see generate_organisation_data /
+    generate_supplier_data). The runner sends both forms so the
+    API's synth-from-flat fallback is also exercised.
 """
 
 import asyncio
@@ -391,39 +395,111 @@ def generate_location_data(extended: bool = False) -> Dict[str, Any]:
     return data
 
 
-def generate_organisation_data() -> Dict[str, Any]:
-    name = get_random_item(REAL_ORG_NAMES) or "HealthCare Plus"
-    return {
-        "provider_organisation_name": f"{name} {uuid.uuid4().hex[:4]}",
-        "provider_organisation_desc": f"Leading healthcare provider specializing in {get_random_item(SPECIALITIES) or 'medicine'}",
-        "provider_organisation_naming": get_random_item(["LLC", "Inc", "Group", "Clinic", "Center", "Hospital", "Services"]),
-        "provider_organisation_icon_url": f"https://example.com/logos/{uuid.uuid4().hex[:8]}.png",
-        "verified_organisation": random.choice([True, False]),
+def generate_organisation_data(
+    *,
+    with_naming: bool = True,
+) -> Dict[str, Any]:
+    """
+    Build an organisation payload matching `ProviderOrganisation_API`.
+
+    Fields sent:
+        provider_organisation_name : flat English name (mirrors naming.en)
+        provider_organisation_desc : free-text description
+        naming                     : optional trilingual block
+
+    The nested `naming` block, when present, drives the naming
+    contribution. When absent, the service synthesises a contribution
+    from `provider_organisation_name` with all three languages set to
+    the same string.
+    """
+    base = get_random_item(REAL_ORG_NAMES) or "HealthCare Plus"
+    suffix = uuid.uuid4().hex[:4]
+
+    # Flat name: the org name plus a short suffix so generated rows are
+    # distinguishable in list views.
+    flat_name = f"{base} {suffix}"
+
+    payload: Dict[str, Any] = {
+        "provider_organisation_name": flat_name,
+        "provider_organisation_desc": (
+            f"Leading healthcare provider specializing in "
+            f"{get_random_item(SPECIALITIES) or 'medicine'}"
+        ),
     }
 
+    if with_naming:
+        # Trilingual block. `en` mirrors the flat name. `ar` and `fr`
+        # carry the same ASCII suffix so a mismatched translation is
+        # visible at a glance in the DB.
+        payload["naming"] = {
+            "en": flat_name,
+            "ar": f"مؤسسة {suffix}",
+            "fr": f"Organisation {suffix}",
+            "naming_contribution_type": "provider",
+            "id_naming_contribution": 0,
+        }
 
-def generate_supplier_data(org_id: int, owner_id: int) -> Dict[str, Any]:
-    name = get_random_item(REAL_SUPPLIER_NAMES) or "Medical Center"
-    return {
+    return payload
+
+
+def generate_supplier_data(
+    org_id: int,
+    owner_id: int,
+    *,
+    with_naming: bool = True,
+) -> Dict[str, Any]:
+    """
+    Build a supplier payload matching `ProductProvider_API`.
+
+    Fields sent:
+        id_provider_owner           : FK to the owning user
+        id_provider_organisation    : FK to the organisation
+        id_product_provider_type    : FK to the provider type
+        provider_name               : flat English name
+        provider_contact_info       : JSON string of contact details
+        naming                      : optional trilingual block
+
+    Extra fields the server model doesn't declare — provider rating,
+    reviews, verified flag, denormalised org name — are intentionally
+    left out. Sending them either triggers a strict-mode 422 or gets
+    silently dropped, and neither is a helpful signal.
+    """
+    base = get_random_item(REAL_SUPPLIER_NAMES) or "Medical Center"
+    suffix = uuid.uuid4().hex[:4]
+
+    payload: Dict[str, Any] = {
         "id_provider_owner": owner_id,
         "id_provider_organisation": org_id,
         "id_product_provider_type": random.choice([1, 2, 3, 4, 5, 6]),
-        "product_provider_type_desc": get_random_item(PROVIDER_TYPES) or "Medical",
-        "provider_organisation_name": f"{name} {uuid.uuid4().hex[:4]}",
-        "provider_organisation_desc": f"Provider of {get_random_item(['medical','dental','diagnostic','pharmaceutical','surgical','laboratory','therapeutic','rehabilitation'])} services",
-        "provider_name": f"Provider_{uuid.uuid4().hex[:8]}",
+        "provider_name": f"Provider_{suffix}",
         "provider_contact_info": json.dumps({
             "phone": random_phone(),
             "email": f"contact_{uuid.uuid4().hex[:4]}@example.com",
             "website": f"https://{uuid.uuid4().hex[:8]}.com",
-            "fax": f"+213-5{random.randint(10, 99)}{random.randint(10, 99)}{random.randint(10, 99)}",
+            "fax": (
+                f"+213-5{random.randint(10, 99)}"
+                f"{random.randint(10, 99)}{random.randint(10, 99)}"
+            ),
             "emergency_contact": random_phone(),
         }),
-        "provider_rating": round(random.uniform(1.0, 5.0), 1),
-        "provider_reviews": random.randint(0, 1000),
-        "verified_provider": random.choice([True, False]),
-        "provider_available": random.choice([True, False]),
     }
+
+    if with_naming:
+        # Supplier display name is a short human-readable string that
+        # an admin can recognize in a list; keep the base in the
+        # English name so it reads like the org it belongs to.
+        display_en = f"{base} {suffix}"
+
+        payload["provider_name"] = display_en
+        payload["naming"] = {
+            "en": display_en,
+            "ar": f"مزود {suffix}",
+            "fr": f"Fournisseur {suffix}",
+            "naming_contribution_type": "provider",
+            "id_naming_contribution": 0,
+        }
+
+    return payload
 
 
 def generate_product_data(provider_id: int, owner_id: int) -> Dict[str, Any]:
@@ -432,7 +508,6 @@ def generate_product_data(provider_id: int, owner_id: int) -> Dict[str, Any]:
     flat_name = f"{name_en} {suffix}"
 
     return {
-
         "product_name": flat_name,
         "naming": {
             "en": flat_name,
@@ -589,7 +664,7 @@ def generate_order_data(
 
     now = datetime.utcnow().isoformat() + "Z"
     order_states = ["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"]
-    payment_statuses = ["PENDING", "PAID", "FAILED", "REFUNDED"]
+    payment_statuses = ["pending", "paid", "failed", "refunded"]
     payment_methods = ["cash", "card", "bank_transfer"]
 
     n_items = random.randint(1, min(3, len(product_ids)))
@@ -853,8 +928,21 @@ class TestRunner:
 
     # ==================== ORGANISATIONS ====================
 
-    async def create_organisations(self, user: TestUser, count: int = 3) -> List[int]:
-        print(f"\n🏢 Creating {count} organisations for {user.username}...")
+    async def create_organisations(
+        self, user: TestUser, count: int = 3
+    ) -> List[int]:
+        """
+        Create `count` organisations owned by `user`.
+
+        Each organisation gets a trilingual naming block 85% of the
+        time; the remaining 15% carries only the flat name so the run
+        also exercises the service's synth-from-flat fallback. The
+        probability is rolled per call so a large run always contains
+        both variants.
+        """
+        print(
+            f"\n🏢 Creating {count} organisations for {user.username}..."
+        )
         headers = self.get_auth_headers(user)
         if not headers:
             print("   ❌ No auth token")
@@ -862,7 +950,9 @@ class TestRunner:
 
         org_ids: List[int] = []
         for i in range(count):
-            data = generate_organisation_data()
+            with_naming = random.random() < 0.85
+            data = generate_organisation_data(with_naming=with_naming)
+
             try:
                 response = await self.client.post(
                     f"{self.base_url}/api/v1/organisations",
@@ -875,11 +965,20 @@ class TestRunner:
                         org_ids.append(org_id)
                         self.context.created_organisations.append(org_id)
                         self.stats["organisations"] += 1
-                        print(f"   ✅ Organisation {i + 1}: {org_id}")
+                        kind = "trilingual" if with_naming else "flat-only"
+                        print(
+                            f"   ✅ Organisation {i + 1} ({kind}): "
+                            f"{org_id}"
+                        )
                     else:
-                        print(f"   ⚠️ Could not extract org id: {short(response.text, 200)}")
+                        print(
+                            f"   ⚠️ Could not extract org id: "
+                            f"{short(response.text, 200)}"
+                        )
                 else:
-                    self._record_failure(f"Organisation {i + 1}", response)
+                    self._record_failure(
+                        f"Organisation {i + 1}", response
+                    )
             except Exception as e:
                 print(f"   ❌ Error: {e}")
             await asyncio.sleep(0.1)
@@ -892,8 +991,18 @@ class TestRunner:
 
     # ==================== SUPPLIERS ====================
 
-    async def create_suppliers(self, user: TestUser, org_ids: List[int],
-                               count_per_org: int = 3) -> List[int]:
+    async def create_suppliers(
+        self,
+        user: TestUser,
+        org_ids: List[int],
+        count_per_org: int = 3,
+    ) -> List[int]:
+        """
+        Create suppliers under the given organisations.
+
+        Same 85/15 naming mix as organisations: most suppliers carry a
+        trilingual `naming` block, the rest only a flat `provider_name`.
+        """
         if not org_ids:
             return []
         print(f"\n🏥 Creating suppliers for {user.username}...")
@@ -909,8 +1018,12 @@ class TestRunner:
 
         for org_id in org_ids:
             for i in range(count_per_org):
-                sup_data = generate_supplier_data(org_id, user.id)
+                with_naming = random.random() < 0.85
+                sup_data = generate_supplier_data(
+                    org_id, user.id, with_naming=with_naming
+                )
                 loc_data = generate_location_data(extended=True)
+
                 try:
                     response = await self.client.post(
                         f"{self.base_url}/api/v1/suppliers",
@@ -924,11 +1037,22 @@ class TestRunner:
                             self.context.created_suppliers.append(sup_id)
                             self.stats["suppliers"] += 1
                             count += 1
-                            print(f"   ✅ Supplier {count}/{total}: {sup_id}")
+                            kind = (
+                                "trilingual" if with_naming else "flat-only"
+                            )
+                            print(
+                                f"   ✅ Supplier {count}/{total} "
+                                f"({kind}): {sup_id}"
+                            )
                         else:
-                            print(f"   ⚠️ Could not extract supplier id: {short(response.text, 200)}")
+                            print(
+                                f"   ⚠️ Could not extract supplier id: "
+                                f"{short(response.text, 200)}"
+                            )
                     else:
-                        self._record_failure(f"Supplier {count + 1}/{total}", response)
+                        self._record_failure(
+                            f"Supplier {count + 1}/{total}", response
+                        )
                 except Exception as e:
                     print(f"   ❌ Error: {e}")
                 await asyncio.sleep(0.1)
