@@ -796,7 +796,7 @@ CREATE TABLE IF NOT EXISTS `gluttex`.`product` (
   `product_quantifier` VARCHAR(45) NULL DEFAULT NULL,
   `product_owner` INT NULL DEFAULT NULL,
   `product_origin_id` INT NULL DEFAULT NULL,
-  `product_visibility` ENUM('VISIBLE', 'HIDDEN') NULL DEFAULT 'VISIBLE',
+  `product_visibility` ENUM('VISIBLE', 'HIDDEN', 'DELETED') NULL DEFAULT 'VISIBLE',
   PRIMARY KEY (`id_product`),
   INDEX `fk_product_1_idx` (`product_provider_id` ASC) VISIBLE,
   INDEX `fk_product_2_idx` (`product_category_id` ASC) VISIBLE,

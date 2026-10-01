@@ -558,19 +558,231 @@ class Iproduct_API(BaseModel):
     iproduct_model_name: Optional[str] = Field(default="None", max_length=100, description="AI model used")
     iproduct_image_url: Optional[str] = Field(default="", max_length=500, description="Product image URL")
 
+class ProductVisibility(str, Enum):
+    """Canonical visibility values. Must stay in sync with the
+    `Product.product_visibility` string on the Dart side."""
+    VISIBLE = "VISIBLE"
+    HIDDEN = "HIDDEN"
+    DELETED = "DELETED"
+
+
 class Product_API(BaseModel):
-    """Main product model"""
-    id_product: Optional[int] = Field(default=0, ge=0, description="Product ID")
-    product_provider_id: Optional[int] = Field(default=None, description="Provider ID")
-    product_category_id: Optional[int] = Field(default=None, description="Category ID (alias)")
-    product_price: Optional[float] = Field(default=0.0, ge=0, description="Product price")
-    product_quantity: Optional[float] = Field(default=0.0, ge=0, description="Available quantity")
-    product_name: Optional[str] = Field(default=None, max_length=200, description="Product name")
-    product_brand: Optional[str] = Field(default=None, max_length=100, description="Brand name")
-    product_barcode: Optional[str] = Field(default=None, max_length=100, description="Barcode")
-    product_description: Optional[str] = Field(default=None, max_length=1000, description="Product description")
-    product_quantifier: Optional[str] = Field(default="unit", max_length=50, description="Unit of measurement")
-    product_owner: Optional[int] = Field(default=None, description="Owner user ID")
+    """Main product model.
+
+    Field names mirror the JSON keys the Dart `Product.toJson()` emits
+    under the top-level `"product"` object, and the keys
+    `Product.fromJson` reads back from `getAllProducts` /
+    `focusOnProduct` responses. Keep the two in sync.
+    """
+
+    # ==================== Identity ====================
+
+    id_product: Optional[int] = Field(
+        default=0, ge=0, description="Product ID",
+    )
+    product_provider_id: Optional[int] = Field(
+        default=None, description="Provider ID",
+    )
+    product_category_id: Optional[int] = Field(
+        default=None, description="Category ID",
+    )
+
+    # Alias kept for backwards compatibility. The Dart side sends both
+    # `product_category_id` and `id_product_category` on writes and
+    # tolerates either on reads.
+    id_product_category: Optional[int] = Field(
+        default=None, description="Category ID (legacy alias)",
+    )
+
+    id_product_image: Optional[int] = Field(
+        default=None, description="Primary product image ID",
+    )
+
+    # Legacy reference; not the same as `product_origin_id`.
+    product_ref_id: Optional[int] = Field(
+        default=None, description="Legacy product reference ID",
+    )
+
+    product_owner: Optional[int] = Field(
+        default=None, description="Owner user ID",
+    )
+
+    # ==================== Descriptive ====================
+
+    product_name: Optional[str] = Field(
+        default=None, max_length=200, description="Product name",
+    )
+    product_brand: Optional[str] = Field(
+        default=None, max_length=100, description="Brand name",
+    )
+    product_barcode: Optional[str] = Field(
+        default=None, max_length=100, description="Barcode",
+    )
+    product_quantifier: Optional[str] = Field(
+        default="unit", max_length=50, description="Unit of measurement",
+    )
+    product_description: Optional[str] = Field(
+        default=None, max_length=1000, description="Product description",
+    )
+
+    # Category display name. Read-only on the server side; the Dart
+    # client sends it as `product_category_desc` inside `toJson()` for
+    # historical reasons.
+    product_category_desc: Optional[str] = Field(
+        default=None, max_length=200,
+        description="Category display name (echoed on read)",
+    )
+
+    # ==================== Pricing & stock ====================
+
+    product_price: Optional[float] = Field(
+        default=0.0, ge=0, description="Customer-facing price (VAT-inclusive)",
+    )
+    product_base_price: Optional[float] = Field(
+        default=0.0, ge=0, description="Supplier-side cost",
+    )
+    product_quantity: Optional[float] = Field(
+        default=0.0, ge=0, description="Available quantity",
+    )
+    product_reserved_quantity: Optional[float] = Field(
+        default=0.0, ge=0,
+        description="Quantity reserved by carts and pending orders",
+    )
+
+    # ==================== Status ====================
+
+    product_visibility: Optional[ProductVisibility] = Field(
+        default=ProductVisibility.VISIBLE,
+        description='"VISIBLE" | "HIDDEN". Defaults to VISIBLE.',
+    )
+
+    # ==================== Timestamps ====================
+
+    created: Optional[datetime] = Field(
+        default=None, description="Creation timestamp",
+    )
+    last_updated: Optional[datetime] = Field(
+        default=None, description="Last modification timestamp",
+    )
+
+    # ==================== Image (flattened convenience) ====================
+
+    product_image_url: Optional[str] = Field(
+        default=None, max_length=500,
+        description="Primary image URL (denormalised for reads)",
+    )
+
+    # ==================== Validators ====================
+
+    @field_validator("product_visibility", mode="before")
+    @classmethod
+    def _normalise_visibility(cls, v):
+        """Accept the canonical values case-insensitively, plus None.
+        Anything else is rejected so the DB never stores junk."""
+        if v is None:
+            return ProductVisibility.VISIBLE
+        if isinstance(v, ProductVisibility):
+            return v
+        if isinstance(v, str):
+            upper = v.upper().strip()
+            if upper in ("VISIBLE", "HIDDEN","DELETED"):
+                return ProductVisibility(upper)
+        raise ValueError(
+            f"product_visibility must be 'VISIBLE' or 'HIDDEN', got {v!r}"
+        )
+
+    # ==================== Serialisation helpers ====================
+
+    class Config:
+        # Emit enum values as their string form ("VISIBLE", not
+        # "ProductVisibility.VISIBLE") so the Dart client's
+        # `_asString(map['product_visibility'])` reads them cleanly.
+        use_enum_values = True
+        populate_by_name = True
+        from_attributes = True
+
+
+# ==================== Request wrapper ====================
+
+class ProductWritePayload(BaseModel):
+    """Shape the Dart client sends for create / update.
+
+    Matches `Product.toJson()`:
+
+        {
+          "product": { ...Product_API fields... },
+          "image":   { id_product_image, product_image_url, product_ref_id }
+        }
+    """
+    product: Product_API
+    image: Optional["ProductImagePayload"] = None
+
+
+class ProductImagePayload(BaseModel):
+    id_product_image: Optional[int] = Field(default=0, ge=0)
+    product_image_url: Optional[str] = Field(default="", max_length=500)
+    product_ref_id: Optional[int] = Field(default=0)
+
+
+ProductWritePayload.model_rebuild()
+
+
+# ==================== Read wrapper ====================
+
+class ProductImageRead(BaseModel):
+    """Shape of each entry in the `product_image` list on read. The Dart
+    side reads `.last` and pulls `id_product_image` / `product_image_url`
+    out of it."""
+    id_product_image: Optional[int] = Field(default=0, ge=0)
+    product_image_url: Optional[str] = Field(default="", max_length=500)
+    product_ref_id: Optional[int] = Field(default=None)
+
+
+class ProductRead(BaseModel):
+    """Shape returned by `getAllProducts` / `focusOnProduct`.
+
+    Superset of `Product_API` with the nested `product_category`,
+    `product_provider`, and `product_image` objects the Dart
+    `Product.fromJson` looks for.
+    """
+    # Everything from the write model…
+    id_product: Optional[int] = 0
+    product_provider_id: Optional[int] = None
+    product_category_id: Optional[int] = None
+    id_product_category: Optional[int] = None
+    id_product_image: Optional[int] = None
+    product_ref_id: Optional[int] = None
+    product_owner: Optional[int] = None
+    product_origin_id: Optional[int] = None
+
+    product_name: Optional[str] = None
+    product_brand: Optional[str] = None
+    product_barcode: Optional[str] = None
+    product_quantifier: Optional[str] = "unit"
+    product_description: Optional[str] = None
+    product_category_name: Optional[str] = None
+
+    product_price: Optional[float] = 0.0
+    product_base_price: Optional[float] = 0.0
+    product_quantity: Optional[float] = 0.0
+    product_reserved_quantity: Optional[float] = 0.0
+
+    product_visibility: Optional[ProductVisibility] = ProductVisibility.VISIBLE
+
+    created: Optional[datetime] = None
+    last_updated: Optional[datetime] = None
+
+    product_image_url: Optional[str] = None
+
+    # …plus the nested snapshots the Dart parser prefers when present.
+    product_category: Optional[dict] = None
+    product_provider: Optional[dict] = None
+    product_image: Optional[list[ProductImageRead]] = None
+
+    class Config:
+        use_enum_values = True
+        populate_by_name = True
+        from_attributes = True
 
 class ProductImage_API(BaseModel):
     """Product image model"""

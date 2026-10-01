@@ -3,6 +3,8 @@
 Business operation router for retrieving business operation data.
 """
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query, status
 from typing import Dict, Optional, List, Any
 import logging
@@ -29,10 +31,9 @@ def get_business_operation_service() -> BusinessOperationService:
 
 
 @business_operation_router.get(
-    "/",
-    # response_model=BusinessOperationsResponse,
+    "/operations",
     summary="Get business operations",
-    description="Get business operations with filters",
+    description="Get business operations with filters and aggregate statistics",
     responses={
         200: {"description": "Business operations retrieved successfully"},
         400: {"model": ErrorResponseModel},
@@ -41,68 +42,48 @@ def get_business_operation_service() -> BusinessOperationService:
 )
 def get_business_operations(
     supplier_id: int = Query(0, description="Filter by supplier ID"),
-    order_id: int = Query(0, description="Filter by order ID"),
-    cart_id: int = Query(0, description="Filter by cart ID"),
     client_id: int = Query(0, description="Filter by client ID"),
-    seller_id: int = Query(0, description="Filter by seller ID"),
     offset: int = Query(0, ge=0, description="Pagination offset"),
     limit: int = Query(100, ge=1, le=1000, description="Number of records to return (max 1000)"),
-    operation_service: BusinessOperationService = Depends(get_business_operation_service)
+    date_from: Optional[datetime] = Query(None, description="Inclusive lower bound on created_at"),
+    date_to: Optional[datetime] = Query(None, description="Inclusive upper bound on created_at"),
+    include_stats: bool = Query(True, description="Include aggregate statistics"),
+    operation_service: BusinessOperationService = Depends(get_business_operation_service),
 ):
     """
-    Get business operations with filters.
-    
-    - **supplier_id**: Filter by supplier ID (query parameter)
-    - **order_id**: Filter by order ID (query parameter)
-    - **cart_id**: Filter by cart ID (query parameter)
-    - **client_id**: Filter by client ID (query parameter)
-    - **seller_id**: Filter by seller ID (query parameter)
-    - **offset**: Pagination offset (query parameter)
-    - **limit**: Number of records to return (query parameter, max 1000)
+    Get business operations with filters and aggregate statistics.
+
+    Response shape:
+      - operations: list of per-operation dicts
+      - stats:      totals, ratios, distributions by status/source/supplier/client/day
+      - pagination: offset, limit, returned, total_in_window
+      - window:     normalised date range applied
     """
-    logger.info(f"Fetching business operations - supplier:{supplier_id}, order:{order_id}, cart:{cart_id}, client:{client_id}, seller:{seller_id}, offset:{offset}, limit:{limit}")
-    
-    filters_provided = any([
-        supplier_id > 0,
-        order_id > 0,
-        cart_id > 0,
-        client_id > 0,
-        seller_id > 0
-    ])
-    
-    if not filters_provided:
-        logger.info("No filters provided, returning all business operations")
-    
-    try:
-        result = operation_service.get_operations(
-            supplier_id if supplier_id > 0 else None,
-            order_id if order_id > 0 else None,
-            cart_id if cart_id > 0 else None,
-            client_id if client_id > 0 else None,
-            seller_id if seller_id > 0 else None,
-            offset,
-            limit
+    logger.info(
+        f"Fetching business operations - supplier:{supplier_id}, client:{client_id}, "
+        f"date_from:{date_from}, date_to:{date_to}, offset:{offset}, limit:{limit}, "
+        f"include_stats:{include_stats}"
+    )
+
+    if date_from and date_to and date_from > date_to:
+        raise BusinessOperationServiceException(
+            message="Invalid time window",
+            details={"error": "date_from must be <= date_to"},
         )
-        
-        filters = {
-            "supplier_id": supplier_id if supplier_id > 0 else None,
-            "order_id": order_id if order_id > 0 else None,
-            "cart_id": cart_id if cart_id > 0 else None,
-            "client_id": client_id if client_id > 0 else None,
-            "seller_id": seller_id if seller_id > 0 else None
-        }
-        
-        pagination = {
-            "offset": offset,
-            "limit": limit,
-            "total": len(result) if isinstance(result, list) else 0
-        }
-        
-        return result
-        
+
+    try:
+        return operation_service.get_operations(
+            supplier_id=supplier_id if supplier_id > 0 else 0,
+            client_id=client_id if client_id > 0 else 0,
+            offset=offset,
+            limit=limit,
+            date_from=date_from,
+            date_to=date_to,
+            include_stats=include_stats,
+        )
     except Exception as e:
         logger.error(f"Failed to fetch business operations: {e}")
         raise BusinessOperationServiceException(
             message="Failed to retrieve business operations",
-            details={"error": str(e)}
+            details={"error": str(e)},
         )

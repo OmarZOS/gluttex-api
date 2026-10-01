@@ -1115,7 +1115,7 @@ class Product(Base):
     product_quantifier = Column(String(45))
     product_owner = Column(Integer)
     product_origin_id = Column(Integer)
-    product_visibility = Column(Enum('VISIBLE', 'HIDDEN'), server_default=text("'VISIBLE'"))
+    product_visibility = Column(Enum('VISIBLE', 'HIDDEN', 'DELETED'), server_default=text("'VISIBLE'"))
 
     product_category = relationship('ProductCategory', back_populates='product')
     product_origin = relationship('Iproduct', back_populates='product')
