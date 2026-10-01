@@ -169,17 +169,17 @@ class RecipeRepository:
     
     def get_ingredient_by_id(self, ingredient_id: int) -> Optional[Ingredient]:
         """Get ingredient by ID"""
-        records = storage_broker.get(Ingredient, {Ingredient.id_ingredient: ingredient_id}, [], None)
+        records = storage_broker.get(Ingredient, {Ingredient.id_ingredient: ingredient_id}, [], [Ingredient.naming_contribution])
         return records[0] if records else None
     
     def get_ingredient_by_name(self, name: str) -> Optional[Ingredient]:
         """Get ingredient by name"""
-        records = storage_broker.get(Ingredient, {Ingredient.ingredient_name: name})
+        records = storage_broker.get(Ingredient, {Ingredient.ingredient_name: name}, [], [Ingredient.naming_contribution])
         return records[0] if records else None
     
     def get_all_ingredients(self, offset: int = 0, limit: int = 100) -> List[Ingredient]:
         """Get all ingredients with pagination"""
-        return storage_broker.get(Ingredient, None, [], [], offset=offset, limit=limit)
+        return storage_broker.get(Ingredient, None, [], [Ingredient.naming_contribution], offset=offset, limit=limit)
     
     def create_ingredient(self, ingredient: Ingredient) -> Ingredient:
         """Create an ingredient"""

@@ -541,22 +541,236 @@ class Symptoms_API(BaseModel):
 # PRODUCT & IPRODUCT MODELS
 # ============================================================================
 
+class GlutenStatus(str, Enum):
+    UNKNOWN = "unknown"
+    GLUTEN_FREE = "gluten_free"
+    CONTAINS_GLUTEN = "contains_gluten"
+    MAY_CONTAIN_GLUTEN = "may_contain_gluten"
+
+
+class NamingContributionType(str, Enum):
+    """Mirror of the DB enum on `naming_contribution.naming_contribution_type`.
+    Kept here so the API contract declares every allowed value explicitly."""
+    PRODUCT = "product"
+    PROVIDER = "provider"
+    INGREDIENT = "ingredient"
+    RECIPE = "recipe"
+    SERVICE = "service"
+    SYMPTOM = "symptom"
+    ROLE = "role"
+
+
+# ==================== Nested naming object ====================
+
+class NamingContribution_API(BaseModel):
+    """Trilingual name payload.
+
+    Maps to a row in `naming_contribution`. Carried as a nested object
+    on every entity that has translatable names (products, categories,
+    providers, ingredients, ...).
+
+    `en` is required: it is the canonical anchor that seeds use as the
+    idempotency key. `ar` and `fr` are optional at the API level but
+    the seeding convention is to fill them; missing translations fall
+    back to `en` on the client.
+    """
+    id_naming_contribution: Optional[int] = Field(
+        default=0, ge=0, description="Naming contribution ID",
+    )
+    en: str = Field(
+        ..., min_length=1, max_length=255,
+        description="English name — the canonical anchor",
+    )
+    ar: Optional[str] = Field(
+        default=None, max_length=255, description="Arabic name",
+    )
+    fr: Optional[str] = Field(
+        default=None, max_length=255, description="French name",
+    )
+
+    naming_contribution_status: Optional[str] = Field(
+        default="PENDING",
+        description=(
+            "PENDING | ACCEPTED | APP_TRANSLATED | REJECTED. "
+            "Seed data uses APP_TRANSLATED."
+        ),
+    )
+    naming_contribution_icon_url: Optional[str] = Field(
+        default=None, max_length=255,
+        description="Optional icon URL attached to the contribution",
+    )
+    naming_contribution_type: Optional[NamingContributionType] = Field(
+        default=None,
+        description="Discriminator: product / provider / ingredient / ...",
+    )
+
+    class Config:
+        use_enum_values = True
+        populate_by_name = True
+        from_attributes = True
+
+
+# ==================== Iproduct API ====================
+
 class Iproduct_API(BaseModel):
-    """External/imported product information"""
-    id_iproduct: Optional[int] = Field(default=0, ge=0, description="IProduct ID")
-    iproduct_name: Optional[str] = Field(default="", max_length=200, description="Product name")
-    iproduct_barcode: Optional[str] = Field(default="", max_length=100, description="Barcode")
-    iproduct_brand: Optional[str] = Field(default="", max_length=100, description="Brand name")
-    iproduct_estimated_price: Optional[float] = Field(default=0.0, ge=0, description="Estimated price")
-    iproduct_price_currency: Optional[str] = Field(default="DZD", max_length=3, description="Currency code")
-    iproduct_gluten_status: Optional[GlutenStatus] = Field(default=GlutenStatus.UNKNOWN, description="Gluten status")
-    iproduct_info_source: Optional[str] = Field(default="openai", max_length=50, description="Information source")
-    iproduct_info_confidence: Optional[float] = Field(default=0.0, ge=0, le=1, description="Confidence score")
-    iproduct_last_price_update: Optional[datetime] = Field(default_factory=datetime.now, description="Last price update")
-    iproduct_created_at: Optional[datetime] = Field(default_factory=datetime.now, description="Creation timestamp")
-    iproduct_last_update: Optional[datetime] = Field(default_factory=datetime.now, description="Last update timestamp")
-    iproduct_model_name: Optional[str] = Field(default="None", max_length=100, description="AI model used")
-    iproduct_image_url: Optional[str] = Field(default="", max_length=500, description="Product image URL")
+    """External / imported product.
+
+    Two ways to supply the name:
+
+    1. **Flat.** Set `iproduct_name` (English). The server creates or
+       reuses a NamingContribution whose `en` is that string and whose
+       `ar` / `fr` default to it.
+
+    2. **Nested.** Set `naming` with all three languages. The server
+       creates or reuses a NamingContribution from those values and
+       copies `naming.en` into `iproduct_name` for backward
+       compatibility with code that reads the flat column.
+
+    When both are supplied, `naming.en` wins and `iproduct_name` is
+    overwritten server-side. That keeps `iproduct_name` and
+    `naming.en` from ever drifting.
+    """
+
+    # ---------- Identity ----------
+    id_iproduct: Optional[int] = Field(
+        default=0, ge=0, description="IProduct ID",
+    )
+
+    # ---------- Name (flat form) ----------
+    iproduct_name: Optional[str] = Field(
+        default="",
+        max_length=200,
+        description=(
+            "English product name. Kept for backward compatibility. "
+            "When `naming` is provided, this is set from `naming.en`."
+        ),
+    )
+
+    # ---------- Name (trilingual form) ----------
+    naming: Optional[NamingContribution_API] = Field(
+        default=None,
+        description=(
+            "Trilingual name contribution. When provided, drives the "
+            "NamingContribution row and sets `iproduct_name`."
+        ),
+    )
+
+    # ---------- Barcode ----------
+    iproduct_barcode: Optional[str] = Field(
+        default="", max_length=100, description="Barcode",
+    )
+
+    # ---------- Brand ----------
+    iproduct_brand: Optional[str] = Field(
+        default="", max_length=100, description="Brand name",
+    )
+
+    # ---------- Pricing ----------
+    iproduct_estimated_price: Optional[float] = Field(
+        default=0.0, ge=0, description="Estimated price",
+    )
+    iproduct_price_currency: Optional[str] = Field(
+        default="DZD", max_length=3, description="Currency code",
+    )
+    iproduct_last_price_update: Optional[datetime] = Field(
+        default_factory=datetime.now,
+        description="Last price update",
+    )
+
+    # ---------- Classification ----------
+    iproduct_gluten_status: Optional[GlutenStatus] = Field(
+        default=GlutenStatus.UNKNOWN, description="Gluten status",
+    )
+
+    # ---------- Provenance ----------
+    iproduct_info_source: Optional[str] = Field(
+        default="openai", max_length=50,
+        description="Information source",
+    )
+    iproduct_info_confidence: Optional[float] = Field(
+        default=0.0, ge=0, le=1, description="Confidence score",
+    )
+    iproduct_model_name: Optional[str] = Field(
+        default="None", max_length=100, description="AI model used",
+    )
+
+    # ---------- Media ----------
+    iproduct_image_url: Optional[str] = Field(
+        default="", max_length=500, description="Product image URL",
+    )
+
+    # ---------- Timestamps ----------
+    iproduct_created_at: Optional[datetime] = Field(
+        default_factory=datetime.now, description="Creation timestamp",
+    )
+    iproduct_last_update: Optional[datetime] = Field(
+        default_factory=datetime.now, description="Last update timestamp",
+    )
+
+    # ==================== Validators ====================
+
+    @field_validator("iproduct_barcode")
+    @classmethod
+    def _barcode_shape(cls, v: Optional[str]) -> Optional[str]:
+        """Barcodes are digits-only when non-empty; empty normalises to
+        the empty string to match the model's default."""
+        if v is None or v == "":
+            return ""
+        if not v.isdigit():
+            raise ValueError("iproduct_barcode must contain digits only")
+        return v
+
+    @field_validator("iproduct_price_currency")
+    @classmethod
+    def _currency_shape(cls, v: Optional[str]) -> str:
+        """Upper-case three-letter currency code."""
+        if not v:
+            return "DZD"
+        upper = v.strip().upper()
+        if len(upper) != 3 or not upper.isalpha():
+            raise ValueError(
+                "iproduct_price_currency must be a 3-letter ISO code"
+            )
+        return upper
+
+    @field_validator("naming")
+    @classmethod
+    def _naming_shape(
+        cls, v: Optional[NamingContribution_API],
+    ) -> Optional[NamingContribution_API]:
+        """Reject a naming object whose `en` is missing or whitespace."""
+        if v is None:
+            return None
+        if not v.en or not v.en.strip():
+            raise ValueError("naming.en must not be blank")
+        return v
+
+    # ==================== Serialisation helpers ====================
+
+    def resolved_naming(self) -> NamingContribution_API:
+        """
+        Return the naming object to persist, synthesising one from the
+        flat `iproduct_name` when `naming` is absent.
+
+        Guarantees the returned object has a non-empty `en`. Falls back
+        to a placeholder when both inputs are empty, so the caller
+        never has to handle a "no name at all" case downstream — the
+        DB has a NOT NULL-ish expectation on the English column.
+        """
+        if self.naming is not None:
+            return self.naming
+        flat = (self.iproduct_name or "").strip() or "Unnamed product"
+        return NamingContribution_API(
+            en=flat,
+            ar=None,
+            fr=None,
+            naming_contribution_type=NamingContributionType.PRODUCT,
+        )
+
+    class Config:
+        use_enum_values = True
+        populate_by_name = True
+        from_attributes = True
 
 class ProductVisibility(str, Enum):
     """Canonical visibility values. Must stay in sync with the

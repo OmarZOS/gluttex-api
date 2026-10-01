@@ -4,12 +4,13 @@ Product service — local operations only.
 
 Responsibilities (strictly local):
   - validations against the repository (existence, category, uniqueness)
-  - model construction (Product, ProductImage, Iproduct)
+  - model construction (Product, ProductImage, Iproduct, NamingContribution)
   - persistence via repositories
   - entity-level rollback (delete local rows)
 
 Allowed collaborators:
-  - repositories (ProductRepository, IProductRepository)
+  - repositories (ProductRepository, IProductRepository,
+    NamingContributionRepository)
   - pure-local helpers that have no I/O beyond repos
 
 Forbidden collaborators:
@@ -33,6 +34,7 @@ from core.models.api_models import (
     Product_API,
     ProductImage_API,
     Iproduct_API,
+    NamingContribution_API,
 )
 from core.exceptions.specific.product_exceptions import (
     ProductNotFoundException,
@@ -46,12 +48,19 @@ from core.exceptions.specific.product_exceptions import (
 from core.models.models import Product, ProductImage, Iproduct
 from repositories.product_repository import ProductRepository
 from repositories.iproduct_repository import IProductRepository
+from repositories.naming_contribution_repository import (
+    NamingContributionRepository,
+)
 
 logger = logging.getLogger(__name__)
 
 # Canonical visibility values accepted by the service.
 VISIBILITY_VISIBLE = 'VISIBLE'
 VISIBILITY_HIDDEN = 'HIDDEN'
+
+# Contribution type used for every iproduct naming row. Matches the
+# enum on `naming_contribution.naming_contribution_type`.
+IPRODUCT_CONTRIBUTION_TYPE = 'product'
 
 
 class ProductService:
@@ -60,6 +69,7 @@ class ProductService:
     def __init__(self):
         self.product_repo = ProductRepository()
         self.iproduct_repo = IProductRepository()
+        self.naming_repo = NamingContributionRepository()
 
     # ==================== Retrieval ====================
 
@@ -162,6 +172,10 @@ class ProductService:
         Local: build and persist a Product. All validation happens here
         against the local repositories. The workflow is responsible for
         producing `iproduct` (via AI) before calling.
+
+        When `iproduct` carries a `naming` block, the naming contribution
+        is resolved (or created) *before* the iproduct insert, so the
+        iproduct row always has a valid `iproduct_naming_ref`.
         """
         logger.info(f"Creating new product: {product_api.product_name}")
 
@@ -274,7 +288,8 @@ class ProductService:
         require the caller to send a full Product_API or risk overwriting
         other fields.
 
-        `visibility` must be either 'VISIBLE' or 'HIDDEN' (case-sensitive).
+        `visibility` must be either 'VISIBLE' or 'HIDDEN' (case-insensitive
+        on input; stored upper-case).
         """
         normalized = (visibility or '').strip().upper()
         if normalized not in (VISIBILITY_VISIBLE, VISIBILITY_HIDDEN):
@@ -326,9 +341,7 @@ class ProductService:
         #             error="Product has existing dependencies (orders, carts)",
         #         )
 
-            
         product.product_visibility = "DELETED"
-
 
         try:
             result = self.product_repo.update_product(product)
@@ -385,10 +398,24 @@ class ProductService:
             last_updated=datetime.now(),
         )
 
+    # ==================== Iproduct + NamingContribution ====================
+
     def attach_iproduct(self, product: Product, iproduct_api: Iproduct_API) -> None:
         """
-        Local: link an Iproduct to a Product. Either reuses an existing row
-        or builds a new one. Persists the Iproduct only, not the Product.
+        Local: link an Iproduct to a Product.
+
+        Order of operations matters:
+          1. Resolve the naming contribution from the API payload
+             (either the nested `naming` block or the flat
+             `iproduct_name`). This may create a NamingContribution row.
+          2. Create or update the Iproduct, pointing its
+             `iproduct_naming_ref` at the contribution.
+          3. Link the Iproduct onto the Product via `product.product_origin`.
+
+        Steps 1 and 2 are wrapped in a best-effort rollback: if the
+        iproduct insert fails, the freshly-created naming row is
+        deleted so a retry doesn't leave an orphan behind. If the naming
+        row already existed, it is left alone.
         """
         if iproduct_api.id_iproduct:
             existing = self.iproduct_repo.get_by_id(iproduct_api.id_iproduct)
@@ -398,14 +425,143 @@ class ProductService:
                 logger.debug(f"Linked existing IProduct {existing.id_iproduct}")
                 return
 
-        new_iproduct = self.create_iproduct_from_api(iproduct_api)
-        product.product_origin = new_iproduct
-        logger.debug("Linked new IProduct to product")
+        # New iproduct path: resolve naming first.
+        contribution = self.resolve_naming_contribution(iproduct_api)
+        created_naming = contribution is not None and getattr(
+            contribution, "_was_just_created", False
+        )
 
-    def create_iproduct_from_api(self, iproduct_api: Iproduct_API) -> Iproduct:
+        try:
+            new_iproduct = self.create_iproduct_from_api(
+                iproduct_api,
+                naming_contribution_id=(
+                    contribution.id_naming_contribution
+                    if contribution else None
+                ),
+            )
+            product.product_origin = new_iproduct
+            logger.debug("Linked new IProduct to product")
+        except Exception:
+            # Roll back the contribution we just created so retries
+            # don't accumulate orphans. Existing contributions are
+            # left untouched.
+            if created_naming and contribution is not None:
+                try:
+                    self.naming_repo.delete(contribution.id_naming_contribution)
+                    logger.warning(
+                        "Rolled back NamingContribution %s after iproduct "
+                        "insert failed",
+                        contribution.id_naming_contribution,
+                    )
+                except Exception as rollback_err:
+                    logger.error(
+                        "Failed to roll back NamingContribution %s: %s",
+                        contribution.id_naming_contribution,
+                        rollback_err,
+                    )
+            raise
+
+    def resolve_naming_contribution(
+        self,
+        iproduct_api: Iproduct_API,
+    ) -> Optional[Any]:
+        """
+        Local: produce the NamingContribution row backing this iproduct.
+
+        Resolution order:
+          1. Nested `naming` block on the API payload — full control.
+          2. Flat `iproduct_name` — synthesise en/ar/fr from it.
+          3. Neither — return None. The iproduct will be persisted with
+             `iproduct_naming_ref = None`, which is allowed by the FK
+             (nullable) and can be backfilled later.
+
+        Tags the returned row with `_was_just_created = True` when this
+        call inserted it, so the caller can roll back on downstream
+        failure. The attribute is transient and not persisted.
+        """
+        nested: Optional[NamingContribution_API] = getattr(
+            iproduct_api, "naming", None
+        )
+
+        if nested is not None:
+            name_en = (nested.en or "").strip()
+            if not name_en:
+                logger.warning(
+                    "Iproduct_API.naming.en is blank; skipping naming "
+                    "contribution."
+                )
+                return None
+
+            existing = self.naming_repo.get_by_english(
+                name_en, contribution_type=IPRODUCT_CONTRIBUTION_TYPE
+            )
+            if existing:
+                return existing
+
+            contribution = self.naming_repo.get_or_create(
+                name_en=name_en,
+                name_ar=nested.ar,
+                name_fr=nested.fr,
+                contribution_type=IPRODUCT_CONTRIBUTION_TYPE,
+                icon_url=(
+                    nested.naming_contribution_icon_url
+                    or iproduct_api.iproduct_image_url
+                ),
+                status=nested.naming_contribution_status or "APP_TRANSLATED",
+            )
+            setattr(contribution, "_was_just_created", True)
+            return contribution
+
+        flat_name = (iproduct_api.iproduct_name or "").strip()
+        if not flat_name:
+            logger.debug(
+                "Iproduct has neither `naming` nor `iproduct_name`; "
+                "persisting without a naming contribution."
+            )
+            return None
+
+        existing = self.naming_repo.get_by_english(
+            flat_name, contribution_type=IPRODUCT_CONTRIBUTION_TYPE
+        )
+        if existing:
+            return existing
+
+        contribution = self.naming_repo.get_or_create(
+            name_en=flat_name,
+            name_ar=flat_name,
+            name_fr=flat_name,
+            contribution_type=IPRODUCT_CONTRIBUTION_TYPE,
+            icon_url=iproduct_api.iproduct_image_url,
+        )
+        setattr(contribution, "_was_just_created", True)
+        return contribution
+
+    def create_iproduct_from_api(
+        self,
+        iproduct_api: Iproduct_API,
+        naming_contribution_id: Optional[int] = None,
+    ) -> Iproduct:
+        """
+        Build and persist an Iproduct.
+
+        `iproduct_name` is set from `naming.en` when a naming block is
+        present, so the flat column and the naming row never drift.
+        The `naming_contribution_id` argument overrides anything the
+        caller might have set on the API payload — the FK is owned by
+        the service, not by the client.
+        """
         now = datetime.now()
-        return Iproduct(
-            iproduct_name=iproduct_api.iproduct_name or "Unknown",
+
+        nested: Optional[NamingContribution_API] = getattr(
+            iproduct_api, "naming", None
+        )
+        flat_name = (iproduct_api.iproduct_name or "").strip()
+        resolved_name = (
+            (nested.en or "").strip() if nested is not None else ""
+        ) or flat_name or "Unknown"
+
+        iproduct = Iproduct(
+            iproduct_name=resolved_name,
             iproduct_barcode=iproduct_api.iproduct_barcode,
             iproduct_brand=iproduct_api.iproduct_brand or "Unknown",
             iproduct_estimated_price=iproduct_api.iproduct_estimated_price or 0.0,
@@ -418,12 +574,33 @@ class ProductService:
             iproduct_last_update=iproduct_api.iproduct_last_update or now.isoformat(),
             iproduct_model_name=iproduct_api.iproduct_model_name,
             iproduct_image_url=iproduct_api.iproduct_image_url,
+            iproduct_naming_ref=naming_contribution_id,
         )
 
+        self.iproduct_repo.create(iproduct)
+        return iproduct
+
     def update_iproduct(self, existing: Iproduct, new_data: Iproduct_API) -> Iproduct:
+        """
+        Apply fields to an existing Iproduct.
+
+        When the payload carries a `naming` block, the naming
+        contribution is resolved (or created) and the iproduct's
+        `iproduct_naming_ref` is updated to point at it. The flat
+        `iproduct_name` is kept in sync with `naming.en`.
+        """
         now = datetime.now()
-        if new_data.iproduct_name:
+
+        nested: Optional[NamingContribution_API] = getattr(new_data, "naming", None)
+        if nested is not None and (nested.en or "").strip():
+            contribution = self.resolve_naming_contribution(new_data)
+            if contribution is not None:
+                existing.iproduct_naming_ref = contribution.id_naming_contribution
+                # Naming wins over the flat name.
+                existing.iproduct_name = (nested.en or "").strip()
+        elif new_data.iproduct_name:
             existing.iproduct_name = new_data.iproduct_name
+
         if new_data.iproduct_brand:
             existing.iproduct_brand = new_data.iproduct_brand
         if new_data.iproduct_estimated_price is not None:
@@ -435,10 +612,15 @@ class ProductService:
             existing.iproduct_info_source = new_data.iproduct_info_source
         if new_data.iproduct_info_confidence is not None:
             existing.iproduct_info_confidence = new_data.iproduct_info_confidence
+        if new_data.iproduct_image_url:
+            existing.iproduct_image_url = new_data.iproduct_image_url
+
         existing.iproduct_last_update = now.isoformat()
         self.iproduct_repo.update(existing)
         logger.debug(f"Updated IProduct {existing.id_iproduct}")
         return existing
+
+    # ==================== Images ====================
 
     def handle_product_image(self, image: ProductImage_API, product: Product) -> None:
         """Local: create or update the product's image row."""

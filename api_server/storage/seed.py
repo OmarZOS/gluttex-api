@@ -336,7 +336,7 @@ async def seed_database(
         
         # Seed ingredients
         logger.info("Seeding ingredients...")
-        results["ingredients"] = seed_ingredients(use_quantifiers=with_quantifiers)
+        results["ingredients"] = seed_ingredients()
         
         # Seed iproducts
         logger.info("Seeding iproducts...")

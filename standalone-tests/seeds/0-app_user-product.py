@@ -39,6 +39,45 @@ from pathlib import Path
 # REALISTIC DATA
 # ============================================================================
 
+IPRODUCT_NAME_POOL = [
+    ("Paracetamol", "باراسيتامول", "Paracétamol"),
+    ("Ibuprofen", "إيبوبروفين", "Ibuprofène"),
+    ("Amoxicillin", "أموكسيسيلين", "Amoxicilline"),
+    ("Vitamin C", "فيتامين سي", "Vitamine C"),
+    ("Omega-3", "أوميغا 3", "Oméga-3"),
+    ("Antibiotic", "مضاد حيوي", "Antibiotique"),
+    ("Pain Relief", "مسكن للألم", "Antidouleur"),
+    ("Allergy Medicine", "دواء الحساسية", "Médicament antiallergique"),
+    ("Cough Syrup", "شراب السعال", "Sirop pour la toux"),
+    ("Medical Device", "جهاز طبي", "Dispositif médical"),
+    ("Surgical Mask", "كمامة جراحية", "Masque chirurgical"),
+    ("Hand Sanitizer", "معقم اليدين", "Désinfectant pour les mains"),
+    ("Thermometer", "ميزان حرارة", "Thermomètre"),
+    ("Blood Pressure Monitor", "جهاز قياس ضغط الدم", "Tensiomètre"),
+    ("Stethoscope", "سماعة طبية", "Stéthoscope"),
+    ("Syringe", "محقنة", "Seringue"),
+    ("Bandage", "ضمادة", "Bandage"),
+    ("Antiseptic", "مطهر", "Antiseptique"),
+    ("Antibiotic Cream", "كريم مضاد حيوي", "Crème antibiotique"),
+    ("Painkiller", "مسكن", "Antalgique"),
+    ("Antihistamine", "مضاد الهيستامين", "Antihistaminique"),
+    ("Decongestant", "مزيل الاحتقان", "Décongestionnant"),
+    ("Antacid", "مضاد للحموضة", "Anti-acide"),
+    ("Insulin", "الأنسولين", "Insuline"),
+    ("Vaccine", "لقاح", "Vaccin"),
+    ("Antiviral", "مضاد فيروسات", "Antiviral"),
+    ("Antifungal", "مضاد فطريات", "Antifongique"),
+    ("Hemostatic Agent", "عامل مرقئ", "Hémostatique"),
+    ("Suture Kit", "طقم خياطة", "Kit de suture"),
+    ("Surgical Gloves", "قفازات جراحية", "Gants chirurgicaux"),
+    ("Medical Tape", "شريط طبي", "Ruban médical"),
+    ("Wound Dressing", "ضمادة الجروح", "Pansement"),
+    ("Compression Bandage", "ضمادة ضاغطة", "Bande de compression"),
+    ("First Aid Kit", "حقيبة الإسعافات الأولية", "Trousse de premiers secours"),
+    ("Splint", "جبيرة", "Attelle"),
+]
+
+
 REAL_FIRST_NAMES = [
     "Mohamed", "Ahmed", "Ali", "Fatima", "Youssef", "Amina", "Karim", "Sara",
     "Nadia", "Rachid", "Leila", "Hassan", "Khadija", "Omar", "Soukaina",
@@ -388,8 +427,20 @@ def generate_supplier_data(org_id: int, owner_id: int) -> Dict[str, Any]:
 
 
 def generate_product_data(provider_id: int, owner_id: int) -> Dict[str, Any]:
+    name_en = get_random_item(REAL_PRODUCT_NAMES) or "Product"
+    suffix = uuid.uuid4().hex[:4]
+    flat_name = f"{name_en} {suffix}"
+
     return {
-        "product_name": f"{get_random_item(REAL_PRODUCT_NAMES) or 'Product'} {uuid.uuid4().hex[:4]}",
+
+        "product_name": flat_name,
+        "naming": {
+            "en": flat_name,
+            "ar": None,
+            "fr": None,
+            "naming_contribution_type": "product",
+            "id_naming_contribution": 0,
+        },
         "product_brand": get_random_item(["BrandA", "BrandB", "BrandC", "Generic", "Premium", "MedicalPro", "HealthPlus", "CareMed"]) or "Generic",
         "product_provider_id": provider_id,
         "product_category_id": random.choice([1, 2, 3, 4, 5]),
@@ -421,14 +472,57 @@ def generate_product_image_data() -> Dict[str, Any]:
 
 
 def generate_iproduct_data() -> Dict[str, Any]:
+    """
+    Build a trilingual iproduct payload matching the current
+    `Iproduct_API` shape.
+
+    Emits both forms the API accepts:
+      - `naming` with `en` / `ar` / `fr`, which the server unpacks into
+        a NamingContribution row.
+      - `iproduct_name` mirroring `naming.en`, so any reader still on
+        the flat field sees a consistent value.
+
+    Sending both is deliberate: the API overwrites the flat name from
+    `naming.en` when both are present, and doing it on the client
+    side proves the round-trip preserves the invariant.
+    """
+    name_en, name_ar, name_fr = random.choice(IPRODUCT_NAME_POOL)
+    suffix = uuid.uuid4().hex[:4]
+
+    # The flat name keeps a suffix so generated rows don't collide on
+    # display in the list view. The naming.en also gets the suffix so
+    # the two stay byte-for-byte identical — that's the invariant the
+    # API enforces.
+    flat_name = f"{name_en} {suffix}"
+
     return {
-        "iproduct_name": f"Product_{uuid.uuid4().hex[:8]}",
+        # -------- Trilingual naming block --------
+        "naming": {
+            "en": flat_name,
+            "ar": f"{name_ar} {suffix}",
+            "fr": f"{name_fr} {suffix}",
+            "naming_contribution_type": "product",
+            # The runner doesn't know the DB id yet. 0 signals "insert"
+            # to the API; the server fills it in and returns it.
+            "id_naming_contribution": 0,
+        },
+
+        # -------- Flat name (mirrors naming.en) --------
+        "iproduct_name": flat_name,
+
+        # -------- Everything else as before --------
         "iproduct_barcode": f"{random.randint(1000000000000, 9999999999999)}",
-        "iproduct_brand": get_random_item(["BrandA", "BrandB", "BrandC", "Generic", "Premium"]) or "Generic",
+        "iproduct_brand": get_random_item(
+            ["BrandA", "BrandB", "BrandC", "Generic", "Premium"]
+        ) or "Generic",
         "iproduct_estimated_price": random_price(5.0, 200.0),
         "iproduct_price_currency": "DZD",
-        "iproduct_gluten_status": random.choice(["gluten_free", "contains_gluten", "may_contain", "unknown"]),
-        "iproduct_info_source": random.choice(["openai", "manual", "csv_import", "api", "user_submitted"]),
+        "iproduct_gluten_status": random.choice(
+            ["gluten_free", "contains_gluten", "may_contain_gluten", "unknown"]
+        ),
+        "iproduct_info_source": random.choice(
+            ["openai", "manual", "csv_import", "api", "user_submitted"]
+        ),
         "iproduct_info_confidence": round(random.uniform(0.5, 1.0), 2),
         "iproduct_category_id": random.choice([1, 2, 3, 4, 5]),
         "iproduct_verified": random.choice([True, False]),

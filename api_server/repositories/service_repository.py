@@ -48,7 +48,6 @@ class ServiceRepository:
         eager_fields = [ProvidedService.service_resource_requirement]
         if eager_load:
             eager_fields = [
-                
                 ProvidedService.service_staff_requirement,
                 ProvidedService.provided_service_category,
                 ProvidedService.provided_service_product_provider,
@@ -122,7 +121,7 @@ class ServiceRepository:
                 StaffRole,
                 {StaffRole.staff_role_service_category_ref: category_id},
                 [],
-                None,
+                [StaffRole.naming_contribution],
                 offset,
                 limit
             )

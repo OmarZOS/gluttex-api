@@ -3,6 +3,7 @@ from typing import Optional, List
 from sqlalchemy import or_,not_
 
 from core.models.models import (
+    NamingContribution,
     Product,
     Iproduct,
     ProductCategory,
@@ -56,6 +57,7 @@ class ProductRepository:
                 Product.product_category,
                 Product.product_provider,
                 Product.product_image,
+                {Product.product_origin: [{Iproduct:[Iproduct.naming_contribution]}]},
             ]
             if eager_load
             else []
@@ -96,6 +98,7 @@ class ProductRepository:
                 Product.product_category,
                 Product.product_provider,
                 Product.product_image,
+                {Product.product_origin: [{Iproduct:[Iproduct.naming_contribution]}]},
             ]
             if eager_load
             else []
@@ -150,6 +153,7 @@ class ProductRepository:
                         ProductImage.product_image_url,
                     ]
                 },
+                {Product.product_origin: [{Iproduct.naming_contribution:[NamingContribution]}]},
             ],
             offset=offset,
             limit=limit,
@@ -176,6 +180,7 @@ class ProductRepository:
                 Product.product_image,
                 Product.product_category,
                 Product.product_provider,
+                {Product.product_origin: [{Iproduct:[Iproduct.naming_contribution]}]},
             ],
             None,
             offset,
@@ -204,7 +209,7 @@ class ProductRepository:
 
     def get_product_categories(self) -> List[ProductCategory]:
         """Get all product categories."""
-        return storage_broker.get(ProductCategory, serialize=True)
+        return storage_broker.get(ProductCategory,None,None,[ProductCategory.naming_contribution])
 
     def get_product_category_by_id(
         self, category_id: str
@@ -213,6 +218,8 @@ class ProductRepository:
         records = storage_broker.get(
             ProductCategory,
             {ProductCategory.id_product_category: category_id},
+            None,
+            [ProductCategory.naming_contribution]
         )
         return records[0] if records else None
 
